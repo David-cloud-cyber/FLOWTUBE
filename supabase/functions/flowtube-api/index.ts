@@ -5,10 +5,15 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const DEMO_USER_ID = Deno.env.get("FLOWTUBE_DEMO_USER_ID") || "00000000-0000-0000-0000-000000000001";
 const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
+const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://flowtube-two.vercel.app").replace(/\/$/, "");
+const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
 const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
 const MEDIA_MARGIN_MULTIPLIER = 3.5;
 const EXPENSIVE_CREDIT_THRESHOLD = 200;
+const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
+const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
+const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,6 +53,8 @@ type PlanLimits = {
   id: string;
   displayName: string;
   includedCredits: number;
+  monthlyPriceUsd: number;
+  annualPriceUsd: number;
   monthlyMessageLimit: number;
   dailyMessageLimit: number;
   dailyVideoLimit: number;
@@ -56,6 +63,14 @@ type PlanLimits = {
   allowedMediaTypes: string[];
   watermarkRequired: boolean;
   mediaRetentionDays: number;
+  storageGb: number;
+  maxUploadMb: number;
+  seatLimit: number;
+  supportLevel: string;
+  priorityQueue: boolean;
+  stripeMonthlyPriceId?: string;
+  stripeAnnualPriceId?: string;
+  metadata: Record<string, unknown>;
 };
 
 class FlowtubeError extends Error {
@@ -79,12 +94,12 @@ const modelRegistry: PricingModel[] = [
 ];
 
 const fallbackPlans: Record<string, PlanLimits> = {
-  free: { id: "free", displayName: "Free", includedCredits: 100, monthlyMessageLimit: 400, dailyMessageLimit: 20, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7 },
-  basic: { id: "basic", displayName: "Basic", includedCredits: 1000, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30 },
-  starter: { id: "starter", displayName: "Starter", includedCredits: 1000, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30 },
-  pro: { id: "pro", displayName: "Pro", includedCredits: 4500, monthlyMessageLimit: 1500, dailyMessageLimit: 150, dailyVideoLimit: 8, concurrentImageJobs: 4, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90 },
-  max: { id: "max", displayName: "Max", includedCredits: 12000, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180 },
-  studio: { id: "studio", displayName: "Studio", includedCredits: 12000, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180 },
+  free: { id: "free", displayName: "Free", includedCredits: 100, monthlyPriceUsd: 0, annualPriceUsd: 0, monthlyMessageLimit: 60, dailyMessageLimit: 10, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7, storageGb: 1, maxUploadMb: 25, seatLimit: 1, supportLevel: "community", priorityQueue: false, metadata: { checkout: false } },
+  basic: { id: "basic", displayName: "Basic", includedCredits: 1000, monthlyPriceUsd: 15, annualPriceUsd: 144, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 10, maxUploadMb: 100, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { alias: "starter", checkout: true } },
+  starter: { id: "starter", displayName: "Starter", includedCredits: 1000, monthlyPriceUsd: 15, annualPriceUsd: 144, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 10, maxUploadMb: 100, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { canonical: "basic", checkout: true } },
+  pro: { id: "pro", displayName: "Pro", includedCredits: 4500, monthlyPriceUsd: 49, annualPriceUsd: 468, monthlyMessageLimit: 1500, dailyMessageLimit: 150, dailyVideoLimit: 8, concurrentImageJobs: 4, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 100, maxUploadMb: 250, seatLimit: 3, supportLevel: "priority", priorityQueue: false, metadata: { checkout: true } },
+  max: { id: "max", displayName: "Max", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1188, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 500, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { alias: "studio", checkout: true } },
+  studio: { id: "studio", displayName: "Studio", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1188, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 500, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { canonical: "max", checkout: true } },
 };
 
 function serviceKey() {
@@ -103,6 +118,25 @@ function serviceKey() {
 
 function adminClient() {
   return createClient(SUPABASE_URL, serviceKey(), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function publishableKey() {
+  const raw = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      return String(parsed.default || Object.values(parsed)[0] || "");
+    } catch (_err) {
+      // Fall back below.
+    }
+  }
+  return Deno.env.get("SUPABASE_ANON_KEY") || serviceKey();
+}
+
+function publicClient() {
+  return createClient(SUPABASE_URL, publishableKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -132,6 +166,60 @@ async function bodyJson(req: Request) {
   }
 }
 
+async function bodyText(req: Request) {
+  try {
+    return await req.text();
+  } catch (_err) {
+    return "";
+  }
+}
+
+function requestIp(req: Request) {
+  return req.headers.get("cf-connecting-ip")
+    || req.headers.get("x-real-ip")
+    || (req.headers.get("x-forwarded-for") || "").split(",")[0].trim()
+    || "0.0.0.0";
+}
+
+async function sha256Hex(value: string) {
+  const data = new TextEncoder().encode(value);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hmacSha256Hex(secret: string, payload: string) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function enforceRateLimit(req: Request, supabase: ReturnType<typeof adminClient>, route: string, userId?: string, limit = DEFAULT_RATE_LIMIT) {
+  const ipHash = await sha256Hex(`${requestIp(req)}:${Deno.env.get("FLOWTUBE_RATE_LIMIT_SALT") || "flowtube"}`);
+  const windowStart = new Date(Math.floor(Date.now() / (RATE_LIMIT_WINDOW_SECONDS * 1000)) * RATE_LIMIT_WINDOW_SECONDS * 1000).toISOString();
+  await supabase.from("rate_limit_events").insert({
+    user_id: userId || null,
+    ip_hash: ipHash,
+    route,
+    window_start: windowStart,
+    metadata: { method: req.method },
+  });
+  const { count } = await supabase.from("rate_limit_events")
+    .select("id", { count: "exact", head: true })
+    .eq("route", route)
+    .eq("window_start", windowStart)
+    .eq("ip_hash", ipHash);
+  if ((count || 0) > limit) {
+    throw new FlowtubeError(429, "Trop de requetes. Reessaie dans quelques instants.", { code: "RATE_LIMITED" });
+  }
+}
+
 async function userIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
   const auth = req.headers.get("authorization") || "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
@@ -140,6 +228,17 @@ async function userIdFromRequest(req: Request, supabase: ReturnType<typeof admin
     if (data.user?.id) return data.user.id;
   }
   return DEMO_USER_ID;
+}
+
+async function authenticatedUserIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>, allowDemo = false) {
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
+  if (token) {
+    const { data } = await supabase.auth.getUser(token);
+    if (data.user?.id) return data.user.id;
+  }
+  if (allowDemo || Deno.env.get("FLOWTUBE_ALLOW_DEMO_BILLING") === "true") return DEMO_USER_ID;
+  throw new FlowtubeError(401, "Connecte-toi pour continuer cette action.", { code: "AUTH_REQUIRED" });
 }
 
 function normalizePricingModel(row: Record<string, unknown>): PricingModel {
@@ -217,10 +316,13 @@ function normalizePlanId(plan: string | null | undefined) {
 
 function normalizePlan(row: Record<string, unknown>): PlanLimits {
   const id = normalizePlanId(String(row.id || "free"));
+  const envKey = (suffix: string) => Deno.env.get(`STRIPE_PRICE_${id.toUpperCase()}_${suffix}`);
   return {
     id,
     displayName: String(row.display_name || row.displayName || id),
     includedCredits: Number(row.included_credits || 0),
+    monthlyPriceUsd: Number(row.monthly_price_usd || 0),
+    annualPriceUsd: Number(row.annual_price_usd || 0),
     monthlyMessageLimit: Number(row.monthly_message_limit || 300),
     dailyMessageLimit: Number(row.daily_message_limit || 50),
     dailyVideoLimit: Number(row.daily_video_limit || 1),
@@ -229,6 +331,14 @@ function normalizePlan(row: Record<string, unknown>): PlanLimits {
     allowedMediaTypes: (row.allowed_media_types as string[]) || ["image"],
     watermarkRequired: Boolean(row.watermark_required),
     mediaRetentionDays: Number(row.media_retention_days || 30),
+    storageGb: Number(row.storage_gb || 1),
+    maxUploadMb: Number(row.max_upload_mb || 25),
+    seatLimit: Number(row.seat_limit || 1),
+    supportLevel: String(row.support_level || "community"),
+    priorityQueue: Boolean(row.priority_queue),
+    stripeMonthlyPriceId: String(row.stripe_monthly_price_id || envKey("MONTHLY") || ""),
+    stripeAnnualPriceId: String(row.stripe_annual_price_id || envKey("ANNUAL") || ""),
+    metadata: (row.metadata || {}) as Record<string, unknown>,
   };
 }
 
@@ -237,6 +347,150 @@ async function resolvePlan(supabase: ReturnType<typeof adminClient>, plan: strin
   const { data, error } = await supabase.from("pricing_plans").select("*").eq("id", normalized).maybeSingle();
   if (!error && data) return normalizePlan(data);
   return fallbackPlans[normalized] || fallbackPlans.free;
+}
+
+function planPublic(plan: PlanLimits) {
+  return {
+    id: plan.id,
+    displayName: plan.displayName,
+    includedCredits: plan.includedCredits,
+    monthlyPriceUsd: plan.monthlyPriceUsd,
+    annualPriceUsd: plan.annualPriceUsd,
+    monthlyMessageLimit: plan.monthlyMessageLimit,
+    dailyMessageLimit: plan.dailyMessageLimit,
+    dailyVideoLimit: plan.dailyVideoLimit,
+    concurrentImageJobs: plan.concurrentImageJobs,
+    concurrentVideoJobs: plan.concurrentVideoJobs,
+    allowedMediaTypes: plan.allowedMediaTypes,
+    watermarkRequired: plan.watermarkRequired,
+    mediaRetentionDays: plan.mediaRetentionDays,
+    storageGb: plan.storageGb,
+    maxUploadMb: plan.maxUploadMb,
+    seatLimit: plan.seatLimit,
+    supportLevel: plan.supportLevel,
+    priorityQueue: plan.priorityQueue,
+    checkoutEnabled: Boolean(plan.metadata.checkout !== false && (plan.monthlyPriceUsd > 0 || plan.annualPriceUsd > 0)),
+    stripeConfigured: Boolean(plan.stripeMonthlyPriceId || plan.stripeAnnualPriceId),
+    metadata: plan.metadata,
+  };
+}
+
+function stripeSecret() {
+  return Deno.env.get("STRIPE_SECRET_KEY") || "";
+}
+
+function stripePriceForPlan(plan: PlanLimits, interval: string) {
+  if (interval === "annual") return plan.stripeAnnualPriceId || Deno.env.get(`STRIPE_PRICE_${plan.id.toUpperCase()}_ANNUAL`) || "";
+  return plan.stripeMonthlyPriceId || Deno.env.get(`STRIPE_PRICE_${plan.id.toUpperCase()}_MONTHLY`) || "";
+}
+
+function stripePriceForPack(pack: Record<string, unknown>) {
+  return String(pack.stripe_price_id || Deno.env.get(`STRIPE_PRICE_PACK_${String(pack.id).toUpperCase().replace(/[^A-Z0-9]/g, "_")}`) || "");
+}
+
+function formBody(params: Record<string, string | number | boolean | null | undefined>) {
+  const body = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") body.set(key, String(value));
+  }
+  return body;
+}
+
+async function stripeRequest(path: string, params?: Record<string, string | number | boolean | null | undefined>) {
+  const key = stripeSecret();
+  if (!key) {
+    throw new FlowtubeError(503, "Stripe n'est pas encore configure. Ajoute STRIPE_SECRET_KEY et les Price IDs.", { code: "STRIPE_NOT_CONFIGURED" });
+  }
+  const response = await fetch(`https://api.stripe.com/v1${path}`, {
+    method: params ? "POST" : "GET",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params ? formBody(params) : undefined,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = data?.error?.message || "Stripe request failed";
+    throw new FlowtubeError(response.status, message, { code: "STRIPE_ERROR", stripe: data?.error || data });
+  }
+  return data;
+}
+
+async function ensureBillingCustomer(supabase: ReturnType<typeof adminClient>, profile: Record<string, unknown>) {
+  if (profile.stripe_customer_id) return String(profile.stripe_customer_id);
+  const email = String(profile.email || profile.billing_email || `demo-${profile.id}@flowtube.local`);
+  const existing = await supabase.from("billing_customers").select("*").eq("user_id", profile.id).maybeSingle();
+  if (existing.data?.stripe_customer_id) return String(existing.data.stripe_customer_id);
+  const stripe = await stripeRequest("/customers", {
+    email,
+    name: String(profile.display_name || "FLOWTUBE user"),
+    "metadata[user_id]": String(profile.id),
+  });
+  await supabase.from("billing_customers").upsert({
+    user_id: profile.id,
+    stripe_customer_id: stripe.id,
+    email,
+    name: String(profile.display_name || ""),
+    currency: String(profile.currency || "usd"),
+  }, { onConflict: "user_id" });
+  await supabase.from("profiles").update({ stripe_customer_id: stripe.id, billing_email: email }).eq("id", profile.id);
+  return String(stripe.id);
+}
+
+async function sendTransactionalEmail(supabase: ReturnType<typeof adminClient>, userId: string | null, to: string, template: string, subject: string, html: string, metadata: Record<string, unknown> = {}) {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey || !to) {
+    await supabase.from("email_events").insert({ user_id: userId, template, to_email: to || null, subject, status: "skipped", metadata });
+    return;
+  }
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: Deno.env.get("FLOWTUBE_EMAIL_FROM") || "FLOWTUBE <noreply@flowtube.ai>",
+        to,
+        subject,
+        html,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    await supabase.from("email_events").insert({ user_id: userId, template, to_email: to, subject, status: response.ok ? "sent" : "failed", provider_message_id: data?.id || null, metadata: { ...metadata, response: data } });
+  } catch (err) {
+    await supabase.from("email_events").insert({ user_id: userId, template, to_email: to, subject, status: "failed", metadata: { ...metadata, error: err instanceof Error ? err.message : "email failed" } });
+  }
+}
+
+function moderationDecision(prompt: string) {
+  const text = prompt.toLowerCase();
+  const blocked = [
+    /abus sexuel|mineur sexuel|child sexual|csam/,
+    /fabrique.*bombe|explosif maison|arme biologique/,
+    /voler une carte|pirater un compte|steal credit card/,
+  ];
+  if (blocked.some((pattern) => pattern.test(text))) {
+    return { decision: "blocked", reason: "policy_safety" };
+  }
+  const review = [/nudite/, /gore/, /violence graphique/, /deepfake/, /usurpation/];
+  return review.some((pattern) => pattern.test(text)) ? { decision: "review", reason: "needs_review" } : { decision: "approved", reason: "" };
+}
+
+async function enforcePromptPolicy(supabase: ReturnType<typeof adminClient>, profile: Record<string, unknown>, prompt: string, projectId?: string) {
+  const decision = moderationDecision(prompt);
+  const uuidish = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  await supabase.from("moderation_events").insert({
+    user_id: profile.id,
+    project_id: projectId && uuidish.test(projectId) ? projectId : null,
+    decision: decision.decision,
+    reason: decision.reason || null,
+    prompt_hash: await sha256Hex(prompt),
+    metadata: { length: prompt.length },
+  });
+  if (decision.decision === "blocked") {
+    throw new FlowtubeError(400, "Cette demande ne peut pas etre traitee par FLOWTUBE.", { code: "PROMPT_BLOCKED" });
+  }
+  return decision;
 }
 
 function sceneFromPrompt(prompt: string) {
@@ -386,10 +640,11 @@ async function bootstrap(req: Request) {
   await ensureSeedData(supabase, userId);
   const projects = await listProjectData(supabase, userId);
   const catalog = await pricingCatalog(supabase);
-  const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("monthly_price_usd", { ascending: true });
+  const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("sort_order", { ascending: true });
   const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
+  const { data: subscription } = await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
   return json({
-    user: { id: profile.id, name: profile.display_name, email: profile.email, plan: profile.plan },
+    user: { id: profile.id, name: profile.display_name, email: profile.email, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end },
     credits: profile.credits,
     creditsMax: profile.credits_max,
     pricing: {
@@ -409,13 +664,33 @@ async function bootstrap(req: Request) {
         requiresConfirmation: quote.requiresConfirmation,
       };
     }),
-    plans: (plans || []).map(normalizePlan),
+    plans: (plans || []).filter((plan) => !["starter", "studio"].includes(String(plan.id))).map((plan) => planPublic(normalizePlan(plan))),
     creditPacks: (creditPacks || []).map((pack) => ({
       id: pack.id,
       label: pack.label,
       credits: pack.credits,
       priceUsd: pack.price_usd,
+      checkoutEnabled: Boolean(pack.metadata?.checkout !== false),
+      stripeConfigured: Boolean(pack.stripe_price_id || stripePriceForPack(pack)),
     })),
+    billing: {
+      stripeConfigured: Boolean(stripeSecret()),
+      subscription: subscription ? {
+        planId: subscription.plan_id,
+        status: subscription.status,
+        interval: subscription.billing_interval,
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      } : null,
+    },
+    production: {
+      auth: true,
+      billing: true,
+      storage: true,
+      providerWebhooks: true,
+      moderation: true,
+      transactionalEmail: Boolean(Deno.env.get("RESEND_API_KEY")),
+    },
     projects,
   });
 }
@@ -637,6 +912,8 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   const quote = quoteFor(model, requestedUnits);
   const credits = quote.credits;
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+  await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
+  const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(body.projectId || ""));
   await enforceGenerationGuards(supabase, profile, plan, model, quote);
 
   if (quote.requiresConfirmation && body.confirmed !== true) {
@@ -701,6 +978,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       gross_margin_floor_usd: quote.grossMarginFloorUsd,
       requires_confirmation: quote.requiresConfirmation,
       confirmed_at: quote.requiresConfirmation ? new Date().toISOString() : null,
+      moderation_status: moderation.decision,
       params: {
         scene: String(body.scene || sceneFromPrompt(prompt)),
         pricing: quote,
@@ -739,9 +1017,11 @@ async function chat(req: Request) {
         const userId = await userIdFromRequest(req, supabase);
         const profile = await ensureProfile(supabase, userId);
         await ensureSeedData(supabase, userId);
+        await enforceRateLimit(req, supabase, "chat", userId, DEFAULT_RATE_LIMIT);
         const plan = await resolvePlan(supabase, String(profile.plan || "free"));
         await enforceMessageLimits(supabase, userId, plan);
         const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
+        await enforcePromptPolicy(supabase, profile, prompt, project.id);
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -867,6 +1147,107 @@ function extractUrl(value: unknown): string {
   return "";
 }
 
+function extensionFromContentType(contentType: string, fallbackType: string) {
+  if (contentType.includes("png")) return "png";
+  if (contentType.includes("jpeg") || contentType.includes("jpg")) return "jpg";
+  if (contentType.includes("webp")) return "webp";
+  if (contentType.includes("mp4")) return "mp4";
+  if (contentType.includes("mpeg")) return "mp3";
+  if (contentType.includes("wav")) return "wav";
+  return fallbackType === "video" ? "mp4" : fallbackType === "audio" ? "mp3" : "png";
+}
+
+async function persistMediaAsset(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
+  const resultUrl = String(generation.result_url || "");
+  if (!resultUrl) return;
+  const { data: existing } = await supabase.from("media_assets").select("id").eq("generation_id", generation.id).limit(1).maybeSingle();
+  if (existing) return;
+  const params = (generation.params || {}) as Record<string, unknown>;
+  const retentionDays = Number(params.media_retention_days || 30);
+  const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000).toISOString();
+  let asset = {
+    user_id: generation.user_id,
+    generation_id: generation.id,
+    bucket: MEDIA_BUCKET,
+    object_path: `${generation.user_id}/${generation.id}/remote`,
+    source_url: resultUrl,
+    public_url: resultUrl,
+    expires_at: expiresAt,
+    status: "available",
+    metadata: { persisted: false },
+  } as Record<string, unknown>;
+
+  if (Deno.env.get("FLOWTUBE_STORE_MEDIA") === "true") {
+    try {
+      const response = await fetch(resultUrl);
+      if (!response.ok) throw new Error(`download ${response.status}`);
+      const contentType = response.headers.get("content-type") || "application/octet-stream";
+      const buffer = await response.arrayBuffer();
+      const ext = extensionFromContentType(contentType, String(generation.type || "image"));
+      const path = `${generation.user_id}/${generation.id}/result.${ext}`;
+      const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, buffer, { contentType, upsert: true });
+      if (uploadError) throw uploadError;
+      const signedSeconds = Math.max(3600, Math.min(retentionDays * 24 * 60 * 60, 60 * 60 * 24 * 30));
+      const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, signedSeconds);
+      const signedExpiresAt = new Date(Date.now() + signedSeconds * 1000).toISOString();
+      asset = {
+        ...asset,
+        object_path: path,
+        content_type: contentType,
+        bytes: buffer.byteLength,
+        public_url: signed?.signedUrl || resultUrl,
+        signed_url_expires_at: signedExpiresAt,
+        metadata: { persisted: true },
+      };
+      await supabase.from("generations").update({
+        storage_bucket: MEDIA_BUCKET,
+        storage_path: path,
+        storage_url_expires_at: signedExpiresAt,
+        expires_at: expiresAt,
+        result_url: signed?.signedUrl || resultUrl,
+      }).eq("id", generation.id);
+    } catch (err) {
+      asset.metadata = { persisted: false, error: err instanceof Error ? err.message : "storage failed" };
+      asset.status = "failed";
+    }
+  }
+
+  await supabase.from("media_assets").insert(asset);
+}
+
+async function refundFailedGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
+  if (!generation?.debited_at || generation.failure_refunded_at) return;
+  const userId = String(generation.user_id);
+  const credits = Number(generation.credits || 0);
+  if (!credits) return;
+  const { data: profile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
+  const nextCredits = Number(profile?.credits || 0) + credits;
+  await supabase.from("profiles").update({ credits: nextCredits }).eq("id", userId);
+  await supabase.from("credit_transactions").insert({
+    user_id: userId,
+    generation_id: generation.id,
+    amount: credits,
+    reason: "generation_refunded",
+    balance_after: nextCredits,
+    metadata: { failed_status: generation.status, provider_cost_usd: generation.cost_usd || 0 },
+  });
+  await supabase.from("pricing_audit_logs").insert({
+    user_id: userId,
+    generation_id: generation.id,
+    pricing_model_id: generation.pricing_model_id || generation.model_id,
+    credits_charged: credits,
+    credit_floor_usd: generation.credit_floor_usd || CREDIT_FLOOR_USD,
+    retail_credit_usd: generation.retail_credit_usd || RETAIL_CREDIT_USD,
+    provider_cost_usd: generation.cost_usd || 0,
+    status: "refunded",
+    metadata: { reason: "generation_failed" },
+  });
+  await supabase.from("generations").update({
+    failure_refunded_at: new Date().toISOString(),
+    refunded_at: new Date().toISOString(),
+  }).eq("id", generation.id);
+}
+
 async function debitCredits(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
   if (generation.debited_at || generation.status !== "completed") return;
   const userId = String(generation.user_id);
@@ -915,6 +1296,7 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
     revenue_floor_usd: revenueFloorUsd,
     gross_margin_floor_usd: grossMarginFloorUsd,
   }).eq("id", generation.id);
+  await persistMediaAsset(supabase, generation);
 }
 
 async function syncGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
@@ -949,6 +1331,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
         status: "failed",
         error_message: err instanceof Error ? err.message : "fal.ai status failed",
       }).eq("id", generation.id).select("*").single();
+      await refundFailedGeneration(supabase, data);
       return data;
     }
   }
@@ -988,6 +1371,400 @@ async function createProjectRoute(req: Request) {
   return json({ project: { id: result.project.id, title: result.project.title, conversationId: result.conversation.id } });
 }
 
+async function authRoute(req: Request, action: string) {
+  const body = await bodyJson(req);
+  const supabase = adminClient();
+  const authClient = publicClient();
+  if (action === "signup" && req.method === "POST") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
+    if (!email || password.length < 8) throw new FlowtubeError(400, "Email et mot de passe de 8 caracteres minimum requis.", { code: "INVALID_AUTH_INPUT" });
+    const { data, error } = await authClient.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: body.displayName || body.name || "Utilisateur" } },
+    });
+    if (error) throw new FlowtubeError(400, error.message, { code: "SIGNUP_FAILED" });
+    if (data.user?.id) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email,
+        billing_email: email,
+        display_name: String(body.displayName || body.name || "Utilisateur"),
+        plan: "free",
+        credits: 100,
+        credits_max: 100,
+      }, { onConflict: "id" });
+    }
+    return json({ user: data.user, session: data.session, needsEmailConfirmation: !data.session });
+  }
+
+  if (action === "login" && req.method === "POST") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
+    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+    if (error) throw new FlowtubeError(401, error.message, { code: "LOGIN_FAILED" });
+    if (data.user?.id) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email,
+        billing_email: email,
+        display_name: data.user.user_metadata?.display_name || data.user.email || "Utilisateur",
+      }, { onConflict: "id" });
+    }
+    return json({ user: data.user, session: data.session });
+  }
+
+  if (action === "recover" && req.method === "POST") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const { error } = await authClient.auth.resetPasswordForEmail(email, { redirectTo: `${APP_BASE_URL}/` });
+    if (error) throw new FlowtubeError(400, error.message, { code: "RECOVER_FAILED" });
+    return json({ ok: true });
+  }
+
+  if (action === "me" && req.method === "GET") {
+    const userId = await authenticatedUserIdFromRequest(req, supabase);
+    const profile = await ensureProfile(supabase, userId);
+    return json({ user: { id: profile.id, email: profile.email, name: profile.display_name, plan: profile.plan }, credits: profile.credits, creditsMax: profile.credits_max });
+  }
+
+  return json({ error: { message: "Auth route not found" } }, 404);
+}
+
+async function createCheckout(req: Request) {
+  const body = await bodyJson(req);
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  await enforceRateLimit(req, supabase, "billing.checkout", userId, 12);
+  const profile = await ensureProfile(supabase, userId);
+  const interval = String(body.interval || "monthly") === "annual" ? "annual" : "monthly";
+  const type = String(body.type || (body.creditPackId ? "credits" : "subscription"));
+  const customerId = await ensureBillingCustomer(supabase, profile);
+  const successUrl = String(body.successUrl || `${APP_BASE_URL}/?checkout=success`);
+  const cancelUrl = String(body.cancelUrl || `${APP_BASE_URL}/?checkout=cancelled`);
+
+  if (type === "credits") {
+    const packId = String(body.creditPackId || body.packId || "");
+    const { data: pack } = await supabase.from("credit_packs").select("*").eq("id", packId).eq("active", true).maybeSingle();
+    if (!pack) throw new FlowtubeError(404, "Pack de credits introuvable.", { code: "PACK_NOT_FOUND" });
+    const priceId = stripePriceForPack(pack);
+    if (!priceId) throw new FlowtubeError(503, "Price ID Stripe manquant pour ce pack.", { code: "STRIPE_PRICE_MISSING", packId });
+    const session = await stripeRequest("/checkout/sessions", {
+      mode: "payment",
+      customer: customerId,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      "line_items[0][price]": priceId,
+      "line_items[0][quantity]": 1,
+      "metadata[user_id]": userId,
+      "metadata[credit_pack_id]": pack.id,
+      "metadata[type]": "credits",
+    });
+    await supabase.from("billing_checkout_sessions").insert({
+      user_id: userId,
+      stripe_session_id: session.id,
+      mode: "payment",
+      credit_pack_id: pack.id,
+      status: session.status || "open",
+      amount_usd: pack.price_usd,
+      currency: session.currency || "usd",
+      checkout_url: session.url,
+      expires_at: session.expires_at ? new Date(Number(session.expires_at) * 1000).toISOString() : null,
+      metadata: { pack },
+    });
+    return json({ url: session.url, sessionId: session.id });
+  }
+
+  const planId = normalizePlanId(String(body.planId || "basic"));
+  const plan = await resolvePlan(supabase, planId);
+  if (plan.id === "free") throw new FlowtubeError(400, "Le plan Free ne necessite pas de checkout.", { code: "FREE_PLAN" });
+  const priceId = stripePriceForPlan(plan, interval);
+  if (!priceId) throw new FlowtubeError(503, "Price ID Stripe manquant pour ce plan.", { code: "STRIPE_PRICE_MISSING", planId: plan.id, interval });
+  const session = await stripeRequest("/checkout/sessions", {
+    mode: "subscription",
+    customer: customerId,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    "line_items[0][price]": priceId,
+    "line_items[0][quantity]": 1,
+    "metadata[user_id]": userId,
+    "metadata[plan_id]": plan.id,
+    "metadata[interval]": interval,
+    "subscription_data[metadata][user_id]": userId,
+    "subscription_data[metadata][plan_id]": plan.id,
+    "subscription_data[metadata][interval]": interval,
+  });
+  await supabase.from("billing_checkout_sessions").insert({
+    user_id: userId,
+    stripe_session_id: session.id,
+    mode: "subscription",
+    plan_id: plan.id,
+    billing_interval: interval,
+    status: session.status || "open",
+    amount_usd: interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd,
+    currency: session.currency || "usd",
+    checkout_url: session.url,
+    expires_at: session.expires_at ? new Date(Number(session.expires_at) * 1000).toISOString() : null,
+    metadata: { plan: planPublic(plan) },
+  });
+  return json({ url: session.url, sessionId: session.id });
+}
+
+async function billingStatus(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase, true);
+  const profile = await ensureProfile(supabase, userId);
+  const { data: transactions } = await supabase.from("credit_transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+  const { data: subscription } = await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: invoices } = await supabase.from("invoices").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+  return json({
+    user: { id: profile.id, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end },
+    credits: profile.credits,
+    creditsMax: profile.credits_max,
+    subscription,
+    invoices: invoices || [],
+    transactions: transactions || [],
+  });
+}
+
+function requireAdmin(req: Request) {
+  const secret = Deno.env.get("FLOWTUBE_ADMIN_SECRET") || "";
+  if (!secret) throw new FlowtubeError(503, "Admin secret missing.", { code: "ADMIN_NOT_CONFIGURED" });
+  if (req.headers.get("x-flowtube-admin-secret") !== secret) throw new FlowtubeError(401, "Unauthorized admin request.", { code: "ADMIN_UNAUTHORIZED" });
+}
+
+async function adminRoute(req: Request, action: string) {
+  requireAdmin(req);
+  const supabase = adminClient();
+  if (action === "pricing" && req.method === "GET") {
+    const { data: plans } = await supabase.from("pricing_plans").select("*").order("sort_order", { ascending: true });
+    const { data: models } = await supabase.from("pricing_models").select("*").order("media_type", { ascending: true });
+    const { data: packs } = await supabase.from("credit_packs").select("*").order("price_usd", { ascending: true });
+    return json({ plans, models, packs });
+  }
+  if (action === "pricing" && req.method === "POST") {
+    const body = await bodyJson(req);
+    const table = String(body.table || "");
+    const allowed = new Set(["pricing_plans", "pricing_models", "credit_packs"]);
+    if (!allowed.has(table)) throw new FlowtubeError(400, "Table pricing invalide.", { code: "INVALID_ADMIN_TABLE" });
+    const id = String(body.id || "");
+    const patch = (body.patch || {}) as Record<string, unknown>;
+    delete patch.id;
+    delete patch.created_at;
+    const { data, error } = await supabase.from(table).update(patch).eq("id", id).select("*").single();
+    if (error) throw error;
+    await supabase.from("app_events").insert({ event_name: "admin_pricing_update", metadata: { table, id, patch } });
+    return json({ item: data });
+  }
+  if (action === "audit" && req.method === "GET") {
+    const { data: recent } = await supabase.from("pricing_audit_logs").select("*").order("created_at", { ascending: false }).limit(50);
+    const { data: profiles } = await supabase.from("profiles").select("plan", { count: "exact" });
+    const { data: events } = await supabase.from("payment_events").select("event_type,processed,created_at").order("created_at", { ascending: false }).limit(50);
+    return json({ recentPricing: recent || [], profiles: profiles || [], paymentEvents: events || [] });
+  }
+  return json({ error: { message: "Admin route not found" } }, 404);
+}
+
+async function verifyStripeSignature(req: Request, raw: string) {
+  const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
+  if (!secret) throw new FlowtubeError(503, "Stripe webhook secret missing.", { code: "STRIPE_WEBHOOK_SECRET_MISSING" });
+  const header = req.headers.get("stripe-signature") || "";
+  const timestamp = (header.match(/t=([^,]+)/) || [])[1] || "";
+  const signatures = [...header.matchAll(/v1=([^,]+)/g)].map((m) => m[1]);
+  if (!timestamp || !signatures.length) throw new FlowtubeError(400, "Stripe signature missing.", { code: "STRIPE_SIGNATURE_MISSING" });
+  const signedPayload = `${timestamp}.${raw}`;
+  const expected = await hmacSha256Hex(secret, signedPayload);
+  if (!signatures.some((signature) => safeEqual(signature, expected))) {
+    throw new FlowtubeError(400, "Stripe signature invalid.", { code: "STRIPE_SIGNATURE_INVALID" });
+  }
+}
+
+async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string) {
+  const plan = await resolvePlan(supabase, planId);
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  const nextCredits = Number(profile?.credits || 0) + plan.includedCredits;
+  await supabase.from("profiles").update({
+    plan: plan.id,
+    billing_status: "active",
+    credits: nextCredits,
+    credits_max: Math.max(Number(profile?.credits_max || 0), plan.includedCredits),
+    current_period_end: periodEnd || null,
+  }).eq("id", userId);
+  await supabase.from("subscriptions").upsert({
+    user_id: userId,
+    plan_id: plan.id,
+    stripe_subscription_id: subscriptionId || null,
+    status: "active",
+    billing_interval: interval,
+    current_period_end: periodEnd || null,
+    metadata: { source: "stripe_webhook" },
+  }, { onConflict: "stripe_subscription_id" });
+  await supabase.from("credit_transactions").insert({
+    user_id: userId,
+    amount: plan.includedCredits,
+    reason: "subscription_renewal",
+    balance_after: nextCredits,
+    metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null },
+  });
+  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan FLOWTUBE est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
+}
+
+async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string) {
+  const { data: pack } = await supabase.from("credit_packs").select("*").eq("id", packId).maybeSingle();
+  if (!pack) return;
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  const nextCredits = Number(profile?.credits || 0) + Number(pack.credits || 0);
+  await supabase.from("profiles").update({ credits: nextCredits, credits_max: Math.max(Number(profile?.credits_max || 0), nextCredits) }).eq("id", userId);
+  await supabase.from("credit_transactions").insert({
+    user_id: userId,
+    amount: Number(pack.credits || 0),
+    reason: "credit_pack_purchase",
+    balance_after: nextCredits,
+    metadata: { pack_id: pack.id, price_usd: pack.price_usd },
+  });
+  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "credit_pack", "Tes credits FLOWTUBE sont disponibles", `<p>${pack.credits} credits ont ete ajoutes a ton compte.</p>`, { pack_id: pack.id });
+}
+
+async function stripeWebhook(req: Request) {
+  const raw = await bodyText(req);
+  await verifyStripeSignature(req, raw);
+  const event = JSON.parse(raw);
+  const supabase = adminClient();
+  const { data: existing } = await supabase.from("payment_events").select("id,processed").eq("provider", "stripe").eq("provider_event_id", event.id).maybeSingle();
+  if (existing?.processed) return json({ received: true, duplicate: true });
+
+  const object = event.data?.object || {};
+  const metadata = object.metadata || {};
+  const userId = metadata.user_id || object.client_reference_id || null;
+  await supabase.from("payment_events").upsert({
+    provider: "stripe",
+    provider_event_id: event.id,
+    event_type: event.type,
+    user_id: userId,
+    processed: false,
+    metadata: event,
+  }, { onConflict: "provider,provider_event_id" });
+
+  if (event.type === "checkout.session.completed") {
+    await supabase.from("billing_checkout_sessions").update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      metadata: object,
+    }).eq("stripe_session_id", object.id);
+    if (metadata.type === "credits" && metadata.credit_pack_id && userId) {
+      await grantCreditPack(supabase, String(userId), String(metadata.credit_pack_id));
+    } else if (metadata.plan_id && userId) {
+      await grantPlanCredits(supabase, String(userId), String(metadata.plan_id), String(metadata.interval || "monthly"), object.subscription || undefined);
+    }
+  }
+
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    const subMetadata = object.metadata || {};
+    const subUserId = subMetadata.user_id || userId;
+    if (subUserId) {
+      await supabase.from("subscriptions").upsert({
+        user_id: subUserId,
+        plan_id: normalizePlanId(String(subMetadata.plan_id || "basic")),
+        stripe_subscription_id: object.id,
+        stripe_customer_id: object.customer,
+        status: object.status,
+        billing_interval: String(subMetadata.interval || "monthly"),
+        current_period_start: object.current_period_start ? new Date(Number(object.current_period_start) * 1000).toISOString() : null,
+        current_period_end: object.current_period_end ? new Date(Number(object.current_period_end) * 1000).toISOString() : null,
+        cancel_at_period_end: Boolean(object.cancel_at_period_end),
+        metadata: object,
+      }, { onConflict: "stripe_subscription_id" });
+      await supabase.from("profiles").update({
+        billing_status: object.status,
+        current_period_end: object.current_period_end ? new Date(Number(object.current_period_end) * 1000).toISOString() : null,
+      }).eq("id", subUserId);
+    }
+  }
+
+  if (event.type === "invoice.payment_succeeded") {
+    const subId = object.subscription || "";
+    const { data: subscription } = subId ? await supabase.from("subscriptions").select("*").eq("stripe_subscription_id", subId).maybeSingle() : { data: null };
+    const invoiceUserId = subscription?.user_id || userId;
+    await supabase.from("invoices").upsert({
+      user_id: invoiceUserId,
+      stripe_invoice_id: object.id,
+      stripe_customer_id: object.customer,
+      stripe_subscription_id: subId || null,
+      status: object.status || "paid",
+      amount_due_usd: Number(object.amount_due || 0) / 100,
+      amount_paid_usd: Number(object.amount_paid || 0) / 100,
+      currency: object.currency || "usd",
+      hosted_invoice_url: object.hosted_invoice_url || null,
+      invoice_pdf: object.invoice_pdf || null,
+      period_start: object.period_start ? new Date(Number(object.period_start) * 1000).toISOString() : null,
+      period_end: object.period_end ? new Date(Number(object.period_end) * 1000).toISOString() : null,
+      metadata: object,
+    }, { onConflict: "stripe_invoice_id" });
+  }
+
+  await supabase.from("payment_events").update({ processed: true }).eq("provider", "stripe").eq("provider_event_id", event.id);
+  return json({ received: true });
+}
+
+async function consentRoute(req: Request) {
+  const body = await bodyJson(req);
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const type = String(body.documentType || body.type || "terms");
+  const version = String(body.version || "2026-06-29");
+  const ipHash = await sha256Hex(requestIp(req));
+  await supabase.from("user_consents").upsert({
+    user_id: userId,
+    document_type: type,
+    version,
+    ip_hash: ipHash,
+    user_agent: req.headers.get("user-agent") || "",
+    metadata: { source: "api" },
+  }, { onConflict: "user_id,document_type,version" });
+  const patch: Record<string, string> = {};
+  if (type === "terms") patch.consented_terms_at = new Date().toISOString();
+  if (type === "privacy") patch.consented_privacy_at = new Date().toISOString();
+  if (Object.keys(patch).length) await supabase.from("profiles").update(patch).eq("id", userId);
+  return json({ ok: true });
+}
+
+async function falWebhook(req: Request) {
+  const expected = Deno.env.get("FAL_WEBHOOK_SECRET") || "";
+  if (expected && req.headers.get("x-flowtube-provider-secret") !== expected && req.headers.get("x-fal-webhook-secret") !== expected) {
+    return unauthorized();
+  }
+  const body = await bodyJson(req);
+  const supabase = adminClient();
+  const requestId = String(body.request_id || body.requestId || body.fal_job_id || "");
+  if (!requestId) throw new FlowtubeError(400, "Missing provider request id.", { code: "MISSING_PROVIDER_REQUEST_ID" });
+  const { data: generation } = await supabase.from("generations").select("*").eq("fal_job_id", requestId).maybeSingle();
+  if (!generation) return json({ ok: true, ignored: true });
+  const status = String(body.status || body.state || "").toUpperCase();
+  if (status === "FAILED" || status === "ERROR") {
+    const { data } = await supabase.from("generations").update({
+      status: "failed",
+      error_message: String(body.error || body.message || "Provider failed"),
+      provider_payload: body,
+    }).eq("id", generation.id).select("*").single();
+    await refundFailedGeneration(supabase, data);
+    return json({ ok: true });
+  }
+  if (status === "COMPLETED" || body.output || body.result) {
+    const resultUrl = extractUrl(body.output || body.result || body);
+    const { data } = await supabase.from("generations").update({
+      status: "completed",
+      progress: 100,
+      result_url: resultUrl,
+      provider_payload: body,
+      completed_at: new Date().toISOString(),
+    }).eq("id", generation.id).select("*").single();
+    await debitCredits(supabase, data);
+    return json({ ok: true });
+  }
+  await supabase.from("generations").update({ status: "running", provider_payload: body }).eq("id", generation.id);
+  return json({ ok: true });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const secretFailure = checkSecret(req);
@@ -1005,6 +1782,13 @@ Deno.serve(async (req: Request) => {
     if (first === "generate" && req.method === "POST") return await directGenerate(req);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
+    if (first === "auth" && route[1]) return await authRoute(req, route[1]);
+    if (first === "billing" && route[1] === "checkout" && req.method === "POST") return await createCheckout(req);
+    if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);
+    if (first === "billing" && route[1] === "webhook" && req.method === "POST") return await stripeWebhook(req);
+    if (first === "legal" && route[1] === "consent" && req.method === "POST") return await consentRoute(req);
+    if (first === "provider" && route[1] === "fal-webhook" && req.method === "POST") return await falWebhook(req);
+    if (first === "admin" && route[1]) return await adminRoute(req, route[1]);
     return json({ error: { message: "Not found" } }, 404);
   } catch (err) {
     if (err instanceof FlowtubeError) return json(err.payload, err.status);

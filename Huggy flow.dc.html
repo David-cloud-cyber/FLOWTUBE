@@ -916,6 +916,22 @@ class Component extends DCLogic {
     this.addAgentText(cid, 'Je prépare une animation courte à partir de ce visuel.');
     this.requestDirectGeneration({ projectId:cid, type:'video', prompt, aspectRatio:'9:16', modelId:'veol', scene:scene || 'studio', duration:5 }).catch(()=>this.addMedia(cid, { type:'video', model:'Veo 3.1', ratio:'9:16', scene: scene||'btp', text:'Animation prête — panoramique doux et révélation du bandeau d’offre.', dur:'0:05' }));
   }
+  async startCheckout(planId, packId){
+    const cid = this.state.activeId;
+    try{
+      const body = packId ? { type:'credits', creditPackId:packId } : { type:'subscription', planId, interval:this.state.billing || 'annual' };
+      const res = await this.apiFetch('/api/billing/checkout', { method:'POST', body:JSON.stringify(body) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok){
+        this.addAgentText(cid, data && data.error && data.error.message ? data.error.message : 'Checkout indisponible pour le moment.');
+        return;
+      }
+      if(data.url) window.location.href = data.url;
+    }catch(err){
+      this.addAgentText(cid, 'Checkout indisponible pour le moment.');
+    }
+  }
+
   recreate(cid, id){
     const conv = this.state.conversations[cid];
     const msg = conv && conv.messages.find(x=>x.id===id);
@@ -980,40 +996,40 @@ class Component extends DCLogic {
     const close = ()=>this.setState({ pricingOpen:false });
 
     const raw = [
-      { name:'BASIC', sub:'For first-time AI content creators', cardStyle:cardBase, badges:[],
+      { id:'basic', name:'BASIC', sub:'For first-time AI content creators', cardStyle:cardBase, badges:[],
         creditsBig:'1000 credits/mo.', creditsSubs:['= 15 Nano Banana Pro generations','= 3 Kling 3.0 videos'],
         showSlider:false, fixedText:'Fixed amount of 1000 credits/mo', sliderMarks:[],
         priceOrig:'', priceNow:'$15', priceUnit:unit, saveNote:'Floor price stays above $0.008/credit',
         cta:'Get Basic', ctaStyle: ctaBase+'background:#F5F5F4;color:#08080A;',
-        features:[ feat('ok','Parallel generations: up to 2 Videos, 2 Images'), feat('ok','Access to Supercomputer'), feat('ok','Access to Seedance 2.0 Fast & 2.0 Mini'), feat('ok','Access to selected models & features'), feat('no','Early access to advanced AI features'), feat('no','Access to unlimited marketplace'), feat('no','Lowest cost per credit') ],
+        features:[ feat('ok','Parallel generations: 1 Video, 2 Images'), feat('ok','2 videos/day, 300 messages/mo'), feat('ok','10 GB media storage, 30-day retention'), feat('ok','Access to image and video models'), feat('no','Audio, lipsync and edit workflows'), feat('no','Voice clone and agency controls'), feat('no','Priority queue') ],
         seedance:[ srow(false,'Seedance 2.0',[tag('No access','grey')]), srow(true,'Seedance 2.0 Fast',[tag('Full access','lime')]) ],
         unlimitedLocked:true, unlimited:[ srow(false,'Nano Banana Pro',[]), srow(false,'Nano Banana 2',[]), srow(false,'Kling 3.0',[]), srow(false,'No unlimited & free generation models',[]) ], unlimitedPlus:'' },
 
-      { name:'PRO', sub:'For consistent and easy AI content creation',
+      { id:'pro', name:'PRO', sub:'For consistent and easy AI content creation',
         cardStyle: cardBase+'border-color:'+A+'40;background:linear-gradient(180deg,rgba(78,94,24,.30),#0f110d 52%);box-shadow:0 0 60px -26px '+A+';',
         badges:[ tag('21% OFF','magenta') ],
         creditsBig:'4500 credits/mo.', creditsSubs:['= 68 Nano Banana Pro generations','= 17 Kling 3.0 videos'],
         showSlider:true, fixedText:'', sliderMarks:[ {l:'4500',active:true},{l:'6000',active:false} ],
         priceOrig: annual?'$49':'', priceNow: annual?'$39':'$49', priceUnit:unit, saveNote: annual?'Agent fair-use included':'',
         cta:'Get Pro', ctaStyle: ctaBase+'background:'+A+';color:#08080A;box-shadow:0 0 26px -6px '+A+';',
-        features:[ feat('ok','Parallel generations: up to 3 Videos, 4 Images'), feat('ok','Access to Supercomputer'), feat('ok','Access to all Seedance models'), feat('ok','Access to all models & features'), feat('ok','Early access to advanced AI features'), feat('ok','Access to unlimited marketplace'), feat('no','Lowest cost per credit') ],
+        features:[ feat('ok','Parallel generations: 2 Videos, 4 Images'), feat('ok','8 videos/day, 1500 messages/mo'), feat('ok','100 GB media storage, 90-day retention'), feat('ok','Image, video, audio, lipsync and edit workflows'), feat('ok','Priority support'), feat('ok','Advanced AI features'), feat('no','Voice clone and agency controls') ],
         seedance:[ srow(true,'Seedance 2.0',[tag('Full access','lime')]), srow(true,'Seedance 2.0 Fast',[tag('Full access','lime')]) ],
         unlimitedLocked:false, unlimited:[ srow(false,'Nano Banana Pro',[tag('No unlimited','grey')]), srow(true,'Nano Banana 2',[tag('2K','lime'),tag('7 days unlimited','lime')]), srow(true,'Kling 3.0',[tag('7 days unlimited','lime')]) ], unlimitedPlus:'+ 7 unlimited & free generation models' },
 
-      { name:'MAX', sub:'For creators building AI projects',
+      { id:'max', name:'MAX', sub:'For creators building AI projects',
         cardStyle: cardBase+'border-color:'+M+'55;background:linear-gradient(180deg,rgba(128,20,60,.40),#140d11 52%);box-shadow:0 0 60px -26px '+M+';',
         badges:[ tag('25% OFF','magenta'), tag('BEST VALUE','blue'), tag('SEEDANCE 2.0','blue') ],
         creditsBig:'12000 credits/mo.', creditsSubs:['= 181 Nano Banana Pro generations','= 45 Kling 3.0 videos'],
         showSlider:true, fixedText:'', sliderMarks:[ {l:'12000',active:true},{l:'18000',active:false},{l:'24000',active:false} ],
         priceOrig: annual?'$129':'', priceNow: annual?'$99':'$129', priceUnit:unit, saveNote: annual?'Priority queue and agency fair-use':'',
         cta:'Get Max', ctaStyle: ctaBase+'background:'+M+';color:#fff;box-shadow:0 0 26px -6px '+M+';',
-        features:[ feat('ok','Parallel generations: up to 8 Videos, 8 Images'), feat('ok','Access to Supercomputer'), feat('ok','Access to all Seedance models'), feat('ok','Access to all models & features'), feat('ok','Early access to advanced AI features'), feat('ok','Access to unlimited marketplace'), feat('ok','Lowest cost per credit', tag('60% CHEAPER','lime')) ],
+        features:[ feat('ok','Parallel generations: 4 Videos, 8 Images'), feat('ok','20 videos/day, 4000 messages/mo'), feat('ok','500 GB media storage, 180-day retention'), feat('ok','All models including voice clone'), feat('ok','Priority queue'), feat('ok','Agency controls, 10 seats'), feat('ok','Lowest cost per credit', tag('60% CHEAPER','lime')) ],
         seedance:[ srow(true,'Seedance 2.0',[tag('Full access','lime')]), srow(true,'Seedance 2.0 Fast',[tag('Full access','lime')]) ],
         unlimitedLocked:false, unlimited:[ srow(true,'Nano Banana Pro',[tag('2K','lime'),tag('7 days unlimited','lime')]), srow(true,'Nano Banana 2',[tag('2K','lime'),tag('7 days unlimited','lime')]), srow(true,'Kling 3.0',[tag('7 days unlimited','lime')]) ], unlimitedPlus:'+ 7 unlimited & free generation models' },
     ];
 
     const plans = raw.map(p=>Object.assign({}, p, {
-      onClick: close,
+      onClick: ()=>this.startCheckout(p.id),
       hasBadges: p.badges.length>0,
       showSave: !!p.saveNote, hasOrig: !!p.priceOrig,
       hasPlus: !!p.unlimitedPlus,

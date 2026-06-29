@@ -2,7 +2,14 @@ const EDGE_BASE = (process.env.SUPABASE_EDGE_URL || "https://fuvrxobxjcqyevsjsdf
 
 function copyHeaders(req) {
   const headers = {};
-  const pass = ["content-type", "authorization"];
+  const pass = [
+    "content-type",
+    "authorization",
+    "stripe-signature",
+    "x-flowtube-provider-secret",
+    "x-fal-webhook-secret",
+    "x-flowtube-admin-secret"
+  ];
   for (const name of pass) {
     if (req.headers[name]) headers[name] = req.headers[name];
   }
