@@ -284,7 +284,7 @@ textarea{resize:none;font-family:inherit}
             <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#FF2E73;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.04em">◆ SPECIAL 30% OFF</span>
             <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#FF2E73;line-height:1.1;margin-top:16px">NANO BANANA PRO &amp; NANO BANANA 2 UNLIMITED.</div>
             <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#F5F5F4;line-height:1.1;margin-top:5px">KLING 3.0 UNLIMITED WITH 30% OFF</div>
-            <p style="margin:14px 0 0;font-size:13.5px;color:rgba(255,255,255,.6)">Get Nano Banana 2 &amp; Pro Unlimited on the Max plan for 7 days with a special 30% discount.</p>
+            <p style="margin:14px 0 0;font-size:13.5px;color:rgba(255,255,255,.6)">Credits are priced from the provider cost with a 3.5x safety margin and charged only after successful generations.</p>
           </div>
 
           <div style="margin-top:40px">
@@ -893,7 +893,18 @@ class Component extends DCLogic {
   async requestDirectGeneration(payload, existingMessageId){
     const cid = payload.projectId || this.state.activeId;
     const res = await this.apiFetch('/api/generate', { method:'POST', body:JSON.stringify(payload) });
-    if(!res.ok) throw new Error('generate '+res.status);
+    if(!res.ok){
+      let data = null; try{ data = await res.json(); }catch(e){}
+      if(data && data.requiresConfirmation){
+        this.addAgentText(cid, data.error && data.error.message ? data.error.message : 'Confirme cette action pour lancer la génération.');
+        return;
+      }
+      if(data && data.error && data.error.message){
+        this.addAgentText(cid, data.error.message);
+        return;
+      }
+      throw new Error('generate '+res.status);
+    }
     const data = await res.json();
     const generation = Object.assign({}, data.generation || data, existingMessageId ? { messageId:existingMessageId } : {});
     this.addGenerationCard(cid, generation);
@@ -970,9 +981,9 @@ class Component extends DCLogic {
 
     const raw = [
       { name:'BASIC', sub:'For first-time AI content creators', cardStyle:cardBase, badges:[],
-        creditsBig:'120 credits/mo.', creditsSubs:['= 60 Nano Banana Pro Generations','= 14 Kling 3.0 videos'],
-        showSlider:false, fixedText:'Fixed amount of 120 credits/mo', sliderMarks:[],
-        priceOrig:'', priceNow:'$9', priceUnit:unit, saveNote:'No difference compared to monthly',
+        creditsBig:'1000 credits/mo.', creditsSubs:['= 15 Nano Banana Pro generations','= 3 Kling 3.0 videos'],
+        showSlider:false, fixedText:'Fixed amount of 1000 credits/mo', sliderMarks:[],
+        priceOrig:'', priceNow:'$15', priceUnit:unit, saveNote:'Floor price stays above $0.008/credit',
         cta:'Get Basic', ctaStyle: ctaBase+'background:#F5F5F4;color:#08080A;',
         features:[ feat('ok','Parallel generations: up to 2 Videos, 2 Images'), feat('ok','Access to Supercomputer'), feat('ok','Access to Seedance 2.0 Fast & 2.0 Mini'), feat('ok','Access to selected models & features'), feat('no','Early access to advanced AI features'), feat('no','Access to unlimited marketplace'), feat('no','Lowest cost per credit') ],
         seedance:[ srow(false,'Seedance 2.0',[tag('No access','grey')]), srow(true,'Seedance 2.0 Fast',[tag('Full access','lime')]) ],
@@ -981,9 +992,9 @@ class Component extends DCLogic {
       { name:'PRO', sub:'For consistent and easy AI content creation',
         cardStyle: cardBase+'border-color:'+A+'40;background:linear-gradient(180deg,rgba(78,94,24,.30),#0f110d 52%);box-shadow:0 0 60px -26px '+A+';',
         badges:[ tag('21% OFF','magenta') ],
-        creditsBig:'600 credits/mo.', creditsSubs:['= 300 Nano Banana Pro Generations','= 69 Kling 3.0 videos'],
-        showSlider:true, fixedText:'', sliderMarks:[ {l:'600',active:true},{l:'900',active:false} ],
-        priceOrig: annual?'$29':'', priceNow: annual?'$23':'$29', priceUnit:unit, saveNote: annual?'Save $72 compared to monthly':'',
+        creditsBig:'4500 credits/mo.', creditsSubs:['= 68 Nano Banana Pro generations','= 17 Kling 3.0 videos'],
+        showSlider:true, fixedText:'', sliderMarks:[ {l:'4500',active:true},{l:'6000',active:false} ],
+        priceOrig: annual?'$49':'', priceNow: annual?'$39':'$49', priceUnit:unit, saveNote: annual?'Agent fair-use included':'',
         cta:'Get Pro', ctaStyle: ctaBase+'background:'+A+';color:#08080A;box-shadow:0 0 26px -6px '+A+';',
         features:[ feat('ok','Parallel generations: up to 3 Videos, 4 Images'), feat('ok','Access to Supercomputer'), feat('ok','Access to all Seedance models'), feat('ok','Access to all models & features'), feat('ok','Early access to advanced AI features'), feat('ok','Access to unlimited marketplace'), feat('no','Lowest cost per credit') ],
         seedance:[ srow(true,'Seedance 2.0',[tag('Full access','lime')]), srow(true,'Seedance 2.0 Fast',[tag('Full access','lime')]) ],
@@ -992,9 +1003,9 @@ class Component extends DCLogic {
       { name:'MAX', sub:'For creators building AI projects',
         cardStyle: cardBase+'border-color:'+M+'55;background:linear-gradient(180deg,rgba(128,20,60,.40),#140d11 52%);box-shadow:0 0 60px -26px '+M+';',
         badges:[ tag('25% OFF','magenta'), tag('BEST VALUE','blue'), tag('SEEDANCE 2.0','blue') ],
-        creditsBig:'1800 credits/mo.', creditsSubs:['= 900 Nano Banana Pro Generations','= 206 Kling 3.0 videos'],
-        showSlider:true, fixedText:'', sliderMarks:[ {l:'1800',active:true},{l:'3600',active:false},{l:'5400',active:false} ],
-        priceOrig: annual?'$79':'', priceNow: annual?'$59':'$79', priceUnit:unit, saveNote: annual?'Save $240 compared to monthly':'',
+        creditsBig:'12000 credits/mo.', creditsSubs:['= 181 Nano Banana Pro generations','= 45 Kling 3.0 videos'],
+        showSlider:true, fixedText:'', sliderMarks:[ {l:'12000',active:true},{l:'18000',active:false},{l:'24000',active:false} ],
+        priceOrig: annual?'$129':'', priceNow: annual?'$99':'$129', priceUnit:unit, saveNote: annual?'Priority queue and agency fair-use':'',
         cta:'Get Max', ctaStyle: ctaBase+'background:'+M+';color:#fff;box-shadow:0 0 26px -6px '+M+';',
         features:[ feat('ok','Parallel generations: up to 8 Videos, 8 Images'), feat('ok','Access to Supercomputer'), feat('ok','Access to all Seedance models'), feat('ok','Access to all models & features'), feat('ok','Early access to advanced AI features'), feat('ok','Access to unlimited marketplace'), feat('ok','Lowest cost per credit', tag('60% CHEAPER','lime')) ],
         seedance:[ srow(true,'Seedance 2.0',[tag('Full access','lime')]), srow(true,'Seedance 2.0 Fast',[tag('Full access','lime')]) ],
@@ -1015,7 +1026,7 @@ class Component extends DCLogic {
       { q:'How many images or videos can I generate?', a:'It depends on your monthly credits and the models you use. The estimates on each plan (e.g. 60 Nano Banana Pro generations) assume default settings — lighter models stretch credits further.' },
       { q:'How can I purchase extra credits?', a:'Run out before your cycle resets? Top-up packs are available in your billing dashboard and never expire while your subscription is active.' },
       { q:'How does Unlimited work?', a:'On eligible plans, selected models run unlimited for a 7-day window — generate as much as you want without spending credits, subject to fair-use speed adjustments during peak hours.' },
-      { q:'How does the 30% launch promo work?', a:'New annual subscribers get 30% off Pro and Max, plus a 7-day Unlimited window on Nano Banana 2, Nano Banana Pro and Kling 3.0. The discount applies automatically at checkout.' },
+      { q:'Why are videos priced higher?', a:'Video costs much more at the provider level. FLOWTUBE quotes video per real second, asks confirmation before launch, then charges credits only when the job succeeds.' },
       { q:'Can I change my subscription after purchase?', a:'Absolutely. Upgrade instantly with prorated billing, or downgrade at the end of your current period. Your remaining credits carry over.' },
       { q:'How much does it cost to use the Huggy flow Supercomputer?', a:'Supercomputer access is included on all paid plans. Heavy batch jobs simply draw from your credit balance at the listed per-second rate of each model.' },
     ];
@@ -1025,15 +1036,15 @@ class Component extends DCLogic {
     const compareCats = [
       { name:'Video', rows:[
         crow('Concurrent Jobs','','2 concurrent jobs','3 concurrent jobs','8 concurrent jobs'),
-        crow('Seedance 2.0 720p','22 credits/5s','x','320 videos','960 videos'),
-        crow('Seedance 2.0 Fast 720p','17 credits/5s','82 videos','411 videos','1234 videos'),
-        crow('Kling 3.0 720p','30 credits/5s','192 videos','960 videos','2880 videos'),
-        crow('Veo 3.1 1080p','45 credits/5s','x','213 videos','640 videos'),
+        crow('Seedance 2.0 720p','175 credits/5s','5 videos','25 videos','68 videos'),
+        crow('Kling 3.0 720p','263 credits/5s','3 videos','17 videos','45 videos'),
+        crow('Veo 3.1 1080p','438 credits/5s','2 videos','10 videos','27 videos'),
+        crow('Veo 3.1 audio','875 credits/5s','1 video','5 videos','13 videos'),
       ]},
       { name:'Images', rows:[
-        crow('Nano Banana Pro','2 credits/image','60 images','300 images','900 images'),
-        crow('Nano Banana 2','2 credits/image','60 images','300 images','900 images'),
-        crow('Flux','1 credit/image','120 images','600 images','1800 images'),
+        crow('Nano Banana Pro','66 credits/image','15 images','68 images','181 images'),
+        crow('Nano Banana 2','35 credits/image','28 images','128 images','342 images'),
+        crow('Flux','18 credits/image','55 images','250 images','666 images'),
       ]},
     ];
 

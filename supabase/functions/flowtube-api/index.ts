@@ -5,6 +5,10 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const DEMO_USER_ID = Deno.env.get("FLOWTUBE_DEMO_USER_ID") || "00000000-0000-0000-0000-000000000001";
 const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
+const CREDIT_FLOOR_USD = 0.008;
+const RETAIL_CREDIT_USD = 0.013;
+const MEDIA_MARGIN_MULTIPLIER = 3.5;
+const EXPENSIVE_CREDIT_THRESHOLD = 200;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,14 +16,76 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 };
 
-const modelRegistry = [
-  { id: "nano", name: "Nano Banana Pro", type: "image", endpoint: Deno.env.get("FAL_MODEL_NANO") || "fal-ai/nano-banana-pro", costUsd: 0.15 },
-  { id: "flux", name: "Flux", type: "image", endpoint: Deno.env.get("FAL_MODEL_FLUX") || "fal-ai/flux/schnell", costUsd: 0.04 },
-  { id: "veoq", name: "Veo 3.1 Quality", type: "video", endpoint: Deno.env.get("FAL_MODEL_VEO_QUALITY") || "fal-ai/veo3", costPerSecondUsd: 0.2, duration: 5 },
-  { id: "veol", name: "Veo 3.1 Lite", type: "video", endpoint: Deno.env.get("FAL_MODEL_VEO_LITE") || "fal-ai/veo3/fast", costPerSecondUsd: 0.1, duration: 5 },
-  { id: "kling", name: "Kling", type: "video", endpoint: Deno.env.get("FAL_MODEL_KLING") || "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", costPerSecondUsd: 0.12, duration: 5 },
-  { id: "seedance", name: "Seedance", type: "video", endpoint: Deno.env.get("FAL_MODEL_SEEDANCE") || "fal-ai/bytedance/seedance/v1/lite/text-to-video", costPerSecondUsd: 0.08, duration: 5 },
+type PricingModel = {
+  id: string;
+  name: string;
+  type: string;
+  endpoint?: string;
+  pricingUnit: "unit" | "second" | "thousand_chars";
+  costPerUnitUsd: number;
+  defaultUnits: number;
+  minimumUnits: number;
+  maximumUnits?: number;
+  creditFloorUsd: number;
+  retailCreditUsd: number;
+  marginMultiplier: number;
+  requiresConfirmation: boolean;
+  premium: boolean;
+  metadata: Record<string, unknown>;
+};
+
+type PricingQuote = {
+  credits: number;
+  units: number;
+  providerCostUsd: number;
+  revenueFloorUsd: number;
+  revenueRetailUsd: number;
+  grossMarginFloorUsd: number;
+  requiresConfirmation: boolean;
+};
+
+type PlanLimits = {
+  id: string;
+  displayName: string;
+  includedCredits: number;
+  monthlyMessageLimit: number;
+  dailyMessageLimit: number;
+  dailyVideoLimit: number;
+  concurrentImageJobs: number;
+  concurrentVideoJobs: number;
+  allowedMediaTypes: string[];
+  watermarkRequired: boolean;
+  mediaRetentionDays: number;
+};
+
+class FlowtubeError extends Error {
+  status: number;
+  payload: Record<string, unknown>;
+
+  constructor(status: number, message: string, payload: Record<string, unknown> = {}) {
+    super(message);
+    this.status = status;
+    this.payload = { error: { message }, ...payload };
+  }
+}
+
+const modelRegistry: PricingModel[] = [
+  { id: "nano", name: "Nano Banana Pro", type: "image", endpoint: Deno.env.get("FAL_MODEL_NANO") || "fal-ai/nano-banana-pro", pricingUnit: "unit", costPerUnitUsd: 0.15, defaultUnits: 1, minimumUnits: 1, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: false, premium: true, metadata: { tier: "premium" } },
+  { id: "flux", name: "Flux", type: "image", endpoint: Deno.env.get("FAL_MODEL_FLUX") || "fal-ai/flux/schnell", pricingUnit: "unit", costPerUnitUsd: 0.04, defaultUnits: 1, minimumUnits: 1, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: false, premium: false, metadata: { tier: "standard" } },
+  { id: "veoq", name: "Veo 3.1 Quality", type: "video", endpoint: Deno.env.get("FAL_MODEL_VEO_QUALITY") || "fal-ai/veo3", pricingUnit: "second", costPerUnitUsd: 0.2, defaultUnits: 5, minimumUnits: 5, maximumUnits: 8, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: true, metadata: { tier: "premium", audio: false } },
+  { id: "veol", name: "Veo 3.1 Lite", type: "video", endpoint: Deno.env.get("FAL_MODEL_VEO_LITE") || "fal-ai/veo3/fast", pricingUnit: "second", costPerUnitUsd: 0.1, defaultUnits: 5, minimumUnits: 5, maximumUnits: 8, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: false, metadata: { tier: "standard", audio: false } },
+  { id: "kling", name: "Kling", type: "video", endpoint: Deno.env.get("FAL_MODEL_KLING") || "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", pricingUnit: "second", costPerUnitUsd: 0.12, defaultUnits: 5, minimumUnits: 5, maximumUnits: 15, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: true, metadata: { tier: "premium", audio: false } },
+  { id: "seedance", name: "Seedance", type: "video", endpoint: Deno.env.get("FAL_MODEL_SEEDANCE") || "fal-ai/bytedance/seedance/v1/lite/text-to-video", pricingUnit: "second", costPerUnitUsd: 0.08, defaultUnits: 5, minimumUnits: 5, maximumUnits: 15, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: false, metadata: { tier: "standard", audio: false } },
 ];
+
+const fallbackPlans: Record<string, PlanLimits> = {
+  free: { id: "free", displayName: "Free", includedCredits: 100, monthlyMessageLimit: 400, dailyMessageLimit: 20, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7 },
+  basic: { id: "basic", displayName: "Basic", includedCredits: 1000, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30 },
+  starter: { id: "starter", displayName: "Starter", includedCredits: 1000, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30 },
+  pro: { id: "pro", displayName: "Pro", includedCredits: 4500, monthlyMessageLimit: 1500, dailyMessageLimit: 150, dailyVideoLimit: 8, concurrentImageJobs: 4, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90 },
+  max: { id: "max", displayName: "Max", includedCredits: 12000, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180 },
+  studio: { id: "studio", displayName: "Studio", includedCredits: 12000, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180 },
+};
 
 function serviceKey() {
   const rawSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
@@ -76,17 +142,101 @@ async function userIdFromRequest(req: Request, supabase: ReturnType<typeof admin
   return DEMO_USER_ID;
 }
 
-function resolveModel(modelId: string | undefined, type: string) {
-  return modelRegistry.find((m) => m.id === modelId && m.type === type)
+function normalizePricingModel(row: Record<string, unknown>): PricingModel {
+  return {
+    id: String(row.id),
+    name: String(row.label || row.name || row.id),
+    type: String(row.media_type || row.type || "image"),
+    endpoint: row.fal_endpoint ? String(row.fal_endpoint) : undefined,
+    pricingUnit: String(row.pricing_unit || "unit") as PricingModel["pricingUnit"],
+    costPerUnitUsd: Number(row.cost_per_unit_usd || row.costUsd || 0.04),
+    defaultUnits: Number(row.default_units || row.duration || 1),
+    minimumUnits: Number(row.minimum_units || 1),
+    maximumUnits: row.maximum_units ? Number(row.maximum_units) : undefined,
+    creditFloorUsd: Number(row.credit_floor_usd || CREDIT_FLOOR_USD),
+    retailCreditUsd: Number(row.retail_credit_usd || RETAIL_CREDIT_USD),
+    marginMultiplier: Number(row.margin_multiplier || MEDIA_MARGIN_MULTIPLIER),
+    requiresConfirmation: Boolean(row.requires_confirmation),
+    premium: Boolean(row.premium),
+    metadata: (row.metadata || {}) as Record<string, unknown>,
+  };
+}
+
+async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
+  const { data, error } = await supabase.from("pricing_models").select("*").eq("active", true);
+  if (!error && data?.length) return data.map(normalizePricingModel);
+  return modelRegistry;
+}
+
+function resolveModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string) {
+  const defaultId = type === "video" ? "veol" : "nano";
+  return catalog.find((m) => m.id === modelId && m.type === type)
+    || catalog.find((m) => m.id === defaultId && m.type === type)
+    || catalog.find((m) => m.type === type)
+    || modelRegistry.find((m) => m.id === modelId && m.type === type)
+    || modelRegistry.find((m) => m.id === defaultId && m.type === type)
     || modelRegistry.find((m) => m.type === type)
     || modelRegistry[0];
 }
 
-function creditsFor(model: Record<string, unknown>, duration?: number) {
-  const cost = model.type === "video"
-    ? Number(model.costPerSecondUsd || 0.1) * Number(duration || model.duration || 5)
-    : Number(model.costUsd || 0.04);
-  return Math.ceil((cost * 3.5) / 0.008);
+function unitsFor(model: PricingModel, requestedUnits?: number) {
+  const raw = Number(requestedUnits || model.defaultUnits || 1);
+  const min = Math.max(model.minimumUnits || 1, 0.01);
+  const max = model.maximumUnits || raw;
+  return Math.max(min, Math.min(raw, max));
+}
+
+function quoteFor(model: PricingModel, requestedUnits?: number): PricingQuote {
+  const units = unitsFor(model, requestedUnits);
+  const providerCostUsd = Number((model.costPerUnitUsd * units).toFixed(4));
+  const credits = Math.ceil((providerCostUsd * model.marginMultiplier) / model.creditFloorUsd);
+  const revenueFloorUsd = Number((credits * model.creditFloorUsd).toFixed(4));
+  const revenueRetailUsd = Number((credits * model.retailCreditUsd).toFixed(4));
+  const grossMarginFloorUsd = Number((revenueFloorUsd - providerCostUsd).toFixed(4));
+  return {
+    credits,
+    units,
+    providerCostUsd,
+    revenueFloorUsd,
+    revenueRetailUsd,
+    grossMarginFloorUsd,
+    requiresConfirmation: model.requiresConfirmation || credits >= EXPENSIVE_CREDIT_THRESHOLD,
+  };
+}
+
+function creditsFor(model: PricingModel, duration?: number) {
+  return quoteFor(model, duration).credits;
+}
+
+function normalizePlanId(plan: string | null | undefined) {
+  const id = String(plan || "free").toLowerCase();
+  if (id === "starter") return "basic";
+  if (id === "studio") return "max";
+  return id;
+}
+
+function normalizePlan(row: Record<string, unknown>): PlanLimits {
+  const id = normalizePlanId(String(row.id || "free"));
+  return {
+    id,
+    displayName: String(row.display_name || row.displayName || id),
+    includedCredits: Number(row.included_credits || 0),
+    monthlyMessageLimit: Number(row.monthly_message_limit || 300),
+    dailyMessageLimit: Number(row.daily_message_limit || 50),
+    dailyVideoLimit: Number(row.daily_video_limit || 1),
+    concurrentImageJobs: Number(row.concurrent_image_jobs || 1),
+    concurrentVideoJobs: Number(row.concurrent_video_jobs || 0),
+    allowedMediaTypes: (row.allowed_media_types as string[]) || ["image"],
+    watermarkRequired: Boolean(row.watermark_required),
+    mediaRetentionDays: Number(row.media_retention_days || 30),
+  };
+}
+
+async function resolvePlan(supabase: ReturnType<typeof adminClient>, plan: string | null | undefined) {
+  const normalized = normalizePlanId(plan);
+  const { data, error } = await supabase.from("pricing_plans").select("*").eq("id", normalized).maybeSingle();
+  if (!error && data) return normalizePlan(data);
+  return fallbackPlans[normalized] || fallbackPlans.free;
 }
 
 function sceneFromPrompt(prompt: string) {
@@ -235,11 +385,37 @@ async function bootstrap(req: Request) {
   const profile = await ensureProfile(supabase, userId);
   await ensureSeedData(supabase, userId);
   const projects = await listProjectData(supabase, userId);
+  const catalog = await pricingCatalog(supabase);
+  const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("monthly_price_usd", { ascending: true });
+  const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
   return json({
     user: { id: profile.id, name: profile.display_name, email: profile.email, plan: profile.plan },
     credits: profile.credits,
     creditsMax: profile.credits_max,
-    models: modelRegistry.map((model) => ({ id: model.id, name: model.name, type: model.type, credits: creditsFor(model) })),
+    pricing: {
+      creditFloorUsd: CREDIT_FLOOR_USD,
+      retailCreditUsd: RETAIL_CREDIT_USD,
+      marginMultiplier: MEDIA_MARGIN_MULTIPLIER,
+      expensiveCreditThreshold: EXPENSIVE_CREDIT_THRESHOLD,
+    },
+    models: catalog.map((model) => {
+      const quote = quoteFor(model);
+      return {
+        id: model.id,
+        name: model.name,
+        type: model.type,
+        credits: quote.credits,
+        providerCostUsd: quote.providerCostUsd,
+        requiresConfirmation: quote.requiresConfirmation,
+      };
+    }),
+    plans: (plans || []).map(normalizePlan),
+    creditPacks: (creditPacks || []).map((pack) => ({
+      id: pack.id,
+      label: pack.label,
+      credits: pack.credits,
+      priceUsd: pack.price_usd,
+    })),
     projects,
   });
 }
@@ -281,23 +457,23 @@ async function anthropicReply(prompt: string, type: string, credits: number) {
   }
 }
 
-function falInput(model: Record<string, unknown>, prompt: string, aspectRatio: string, duration: number) {
+function falInput(model: PricingModel, prompt: string, aspectRatio: string, duration: number) {
   if (model.type === "video") {
     return { prompt, aspect_ratio: aspectRatio, duration: String(duration) };
   }
   return { prompt, aspect_ratio: aspectRatio, num_images: 1 };
 }
 
-async function startFalGeneration(generation: Record<string, unknown>, model: Record<string, unknown>) {
+async function startFalGeneration(generation: Record<string, unknown>, model: PricingModel) {
   const key = Deno.env.get("FAL_KEY");
   const supabase = adminClient();
-  if (!key) {
+  if (!key || !model.endpoint) {
     await supabase.from("generations").update({ status: "running", provider_payload: { demo: true } }).eq("id", generation.id);
     return;
   }
   try {
     fal.config({ credentials: key });
-    const request = await fal.queue.submit(String(model.endpoint), {
+    const request = await fal.queue.submit(String(model.endpoint || ""), {
       input: falInput(model, String(generation.prompt || ""), String(generation.aspect_ratio || "4:5"), Number(generation.duration_seconds || 5)),
     });
     await supabase.from("generations").update({
@@ -340,17 +516,153 @@ async function resolveProjectAndConversation(supabase: ReturnType<typeof adminCl
   return { project, conversation };
 }
 
+function monthStartIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+function dayStartIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+}
+
+function isConfirmationText(prompt: string) {
+  return /^(oui|ok|okay|confirme|confirm|lance|go|vas-y|valide|je confirme)\b/i.test(prompt.trim());
+}
+
+function isCancelText(prompt: string) {
+  return /^(non|annule|stop|cancel|ne lance pas)\b/i.test(prompt.trim());
+}
+
+function cleanMetadata(value: unknown) {
+  return (value && typeof value === "object" && !Array.isArray(value)) ? value as Record<string, unknown> : {};
+}
+
+async function savePendingGeneration(supabase: ReturnType<typeof adminClient>, profile: Record<string, unknown>, pending: Record<string, unknown>) {
+  const metadata = cleanMetadata(profile.metadata);
+  metadata.pending_generation = {
+    ...pending,
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+  };
+  await supabase.from("profiles").update({ metadata }).eq("id", profile.id);
+}
+
+async function clearPendingGeneration(supabase: ReturnType<typeof adminClient>, profile: Record<string, unknown>) {
+  const metadata = cleanMetadata(profile.metadata);
+  delete metadata.pending_generation;
+  await supabase.from("profiles").update({ metadata }).eq("id", profile.id);
+}
+
+function confirmationMessage(model: PricingModel, quote: PricingQuote) {
+  const unitLabel = model.pricingUnit === "second" ? `${quote.units}s` : `${quote.units}`;
+  return `Cette action coute ${quote.credits} credits (${model.name}, ${unitLabel}). Confirme avec "oui" pour lancer, ou "annule" pour ignorer.`;
+}
+
+async function enforceMessageLimits(supabase: ReturnType<typeof adminClient>, userId: string, plan: PlanLimits) {
+  const { count: monthlyCount } = await supabase.from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("role", "user")
+    .gte("created_at", monthStartIso());
+  if ((monthlyCount || 0) >= plan.monthlyMessageLimit) {
+    throw new FlowtubeError(429, `Plafond mensuel atteint pour le plan ${plan.displayName}. Passe au plan superieur pour continuer.`, { code: "MONTHLY_MESSAGE_LIMIT" });
+  }
+
+  const { count: dailyCount } = await supabase.from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("role", "user")
+    .gte("created_at", dayStartIso());
+  if ((dailyCount || 0) >= plan.dailyMessageLimit) {
+    throw new FlowtubeError(429, `Plafond journalier atteint pour le plan ${plan.displayName}. Reviens demain ou upgrade.`, { code: "DAILY_MESSAGE_LIMIT" });
+  }
+}
+
+async function enforceGenerationGuards(
+  supabase: ReturnType<typeof adminClient>,
+  profile: Record<string, unknown>,
+  plan: PlanLimits,
+  model: PricingModel,
+  quote: PricingQuote,
+) {
+  const userId = String(profile.id);
+  if (!plan.allowedMediaTypes.includes(model.type)) {
+    throw new FlowtubeError(403, `Le plan ${plan.displayName} ne permet pas encore ce type de generation.`, { code: "MEDIA_TYPE_NOT_ALLOWED" });
+  }
+  if (Number(profile.credits || 0) < quote.credits) {
+    throw new FlowtubeError(402, `Solde insuffisant : ${quote.credits} credits requis, ${Number(profile.credits || 0)} disponibles.`, {
+      code: "INSUFFICIENT_CREDITS",
+      requiredCredits: quote.credits,
+      availableCredits: Number(profile.credits || 0),
+    });
+  }
+
+  if (model.type === "video") {
+    const { count: dailyVideos } = await supabase.from("generations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("type", "video")
+      .gte("created_at", dayStartIso())
+      .not("status", "in", "(failed,cancelled)");
+    if ((dailyVideos || 0) >= plan.dailyVideoLimit) {
+      throw new FlowtubeError(429, `Plafond video journalier atteint pour le plan ${plan.displayName}.`, { code: "DAILY_VIDEO_LIMIT" });
+    }
+  }
+
+  const runningType = model.type === "video" ? "video" : "image";
+  const maxConcurrent = model.type === "video" ? plan.concurrentVideoJobs : plan.concurrentImageJobs;
+  const { count: runningJobs } = await supabase.from("generations")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("type", runningType)
+    .in("status", ["pending", "running"]);
+  if ((runningJobs || 0) >= maxConcurrent) {
+    throw new FlowtubeError(429, `Trop de generations ${runningType} en cours pour le plan ${plan.displayName}.`, { code: "CONCURRENT_JOB_LIMIT" });
+  }
+}
+
 async function createGeneration(req: Request, body: Record<string, unknown>, assistantText?: string) {
   const supabase = adminClient();
   const userId = await userIdFromRequest(req, supabase);
-  await ensureProfile(supabase, userId);
+  const profile = await ensureProfile(supabase, userId);
   await ensureSeedData(supabase, userId);
 
   const prompt = String(body.prompt || body.message || "");
-  const type = String(body.type || body.mode || "image") === "video" ? "video" : "image";
-  const duration = Number(body.duration || 5);
-  const model = resolveModel(String(body.modelId || ""), type);
-  const credits = creditsFor(model, duration);
+  const rawType = String(body.type || body.mode || "image");
+  const allowedTypes = ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"];
+  const type = allowedTypes.includes(rawType) ? rawType : (rawType === "video" ? "video" : "image");
+  const catalog = await pricingCatalog(supabase);
+  const model = resolveModelFromCatalog(catalog, String(body.modelId || ""), type);
+  const requestedUnits = model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits) : Number(body.units || model.defaultUnits);
+  const quote = quoteFor(model, requestedUnits);
+  const credits = quote.credits;
+  const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+  await enforceGenerationGuards(supabase, profile, plan, model, quote);
+
+  if (quote.requiresConfirmation && body.confirmed !== true) {
+    const pendingBody = {
+      projectId: body.projectId,
+      prompt,
+      type,
+      modelId: model.id,
+      aspectRatio: body.aspectRatio || "4:5",
+      scene: body.scene || sceneFromPrompt(prompt),
+      duration: model.pricingUnit === "second" ? quote.units : undefined,
+      units: model.pricingUnit !== "second" ? quote.units : undefined,
+    };
+    await savePendingGeneration(supabase, profile, {
+      body: pendingBody,
+      model: { id: model.id, name: model.name, type: model.type },
+      quote,
+    });
+    throw new FlowtubeError(402, confirmationMessage(model, quote), {
+      code: "CONFIRMATION_REQUIRED",
+      requiresConfirmation: true,
+      quote,
+      model: { id: model.id, name: model.name, type: model.type },
+    });
+  }
+
   const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
 
   const { data: assistantMessage, error: messageError } = await supabase.from("messages")
@@ -375,13 +687,27 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       status: "pending",
       model_id: model.id,
       model_label: model.name,
+      pricing_model_id: model.id,
       prompt,
       aspect_ratio: String(body.aspectRatio || "4:5"),
-      duration_seconds: type === "video" ? duration : null,
+      duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
       progress: 1,
       credits,
-      cost_usd: model.type === "video" ? Number(model.costPerSecondUsd || 0.1) * duration : Number(model.costUsd || 0.04),
-      params: { scene: String(body.scene || sceneFromPrompt(prompt)) },
+      cost_usd: quote.providerCostUsd,
+      credit_floor_usd: model.creditFloorUsd,
+      retail_credit_usd: model.retailCreditUsd,
+      margin_multiplier: model.marginMultiplier,
+      revenue_floor_usd: quote.revenueFloorUsd,
+      gross_margin_floor_usd: quote.grossMarginFloorUsd,
+      requires_confirmation: quote.requiresConfirmation,
+      confirmed_at: quote.requiresConfirmation ? new Date().toISOString() : null,
+      params: {
+        scene: String(body.scene || sceneFromPrompt(prompt)),
+        pricing: quote,
+        pricing_unit: model.pricingUnit,
+        watermark_required: plan.watermarkRequired,
+        media_retention_days: plan.mediaRetentionDays,
+      },
     })
     .select("*")
     .single();
@@ -403,10 +729,6 @@ async function directGenerate(req: Request) {
 async function chat(req: Request) {
   const body = await bodyJson(req);
   const prompt = String(body.message || "");
-  const mode = String(body.mode || "image");
-  const type = mode === "video" ? "video" : "image";
-  const model = resolveModel(String(body.modelId || ""), type);
-  const credits = creditsFor(model, type === "video" ? 5 : undefined);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -415,8 +737,10 @@ async function chat(req: Request) {
       try {
         const supabase = adminClient();
         const userId = await userIdFromRequest(req, supabase);
-        await ensureProfile(supabase, userId);
+        const profile = await ensureProfile(supabase, userId);
         await ensureSeedData(supabase, userId);
+        const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+        await enforceMessageLimits(supabase, userId, plan);
         const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
         await supabase.from("messages").insert({
           user_id: userId,
@@ -426,13 +750,70 @@ async function chat(req: Request) {
           content: prompt,
         });
 
+        const metadata = cleanMetadata(profile.metadata);
+        const pending = metadata.pending_generation as Record<string, unknown> | undefined;
+        const pendingExpired = pending?.expiresAt ? new Date(String(pending.expiresAt)).getTime() < Date.now() : false;
+        if (pending && pendingExpired) await clearPendingGeneration(supabase, profile);
+
+        if (pending && !pendingExpired && isCancelText(prompt)) {
+          await clearPendingGeneration(supabase, profile);
+          send("text", { delta: "Generation annulee. Aucun credit n'a ete debite." });
+          send("done", { ok: true });
+          return;
+        }
+
+        if (pending && !pendingExpired && isConfirmationText(prompt)) {
+          await clearPendingGeneration(supabase, profile);
+          const pendingBody = (pending.body || {}) as Record<string, unknown>;
+          const reply = "Confirmation recue. Je lance la generation maintenant.";
+          send("text", { delta: reply });
+          const result = await createGeneration(req, {
+            ...pendingBody,
+            projectId: pendingBody.projectId || project.id,
+            confirmed: true,
+          }, reply);
+          send("generation", result.generation);
+          const { data: freshProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
+          send("credits", { credits: freshProfile?.credits ?? 0 });
+          send("done", { ok: true });
+          return;
+        }
+
+        const mode = String(body.mode || "image");
+        const type = mode === "video" ? "video" : "image";
+        const catalog = await pricingCatalog(supabase);
+        const model = resolveModelFromCatalog(catalog, String(body.modelId || ""), type);
+        const quote = quoteFor(model, type === "video" ? 5 : undefined);
+        const willGenerate = shouldGenerateMedia(prompt, mode);
+
+        if (willGenerate && quote.requiresConfirmation && body.confirmed !== true) {
+          await enforceGenerationGuards(supabase, profile, plan, model, quote);
+          await savePendingGeneration(supabase, profile, {
+            body: {
+              projectId: project.id,
+              prompt,
+              type,
+              modelId: model.id,
+              aspectRatio: body.aspectRatio || "4:5",
+              scene: sceneFromPrompt(prompt),
+              duration: type === "video" ? quote.units : undefined,
+            },
+            model: { id: model.id, name: model.name, type: model.type },
+            quote,
+          });
+          send("text", { delta: confirmationMessage(model, quote) });
+          send("done", { ok: true, requiresConfirmation: true });
+          return;
+        }
+
+        const credits = quote.credits;
         const reply = await anthropicReply(prompt, type, credits);
         for (const word of reply.split(/(\s+)/)) {
           if (word) send("text", { delta: word });
           await new Promise((resolve) => setTimeout(resolve, 8));
         }
 
-        if (shouldGenerateMedia(prompt, mode)) {
+        if (willGenerate) {
           const result = await createGeneration(req, {
             projectId: project.id,
             prompt,
@@ -441,14 +822,16 @@ async function chat(req: Request) {
             aspectRatio: body.aspectRatio,
             scene: sceneFromPrompt(prompt),
             duration: type === "video" ? 5 : undefined,
+            confirmed: body.confirmed === true || !quote.requiresConfirmation,
           }, reply);
           send("generation", result.generation);
         }
-        const { data: profile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
-        send("credits", { credits: profile?.credits ?? 0 });
+        const { data: finalProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
+        send("credits", { credits: finalProfile?.credits ?? 0 });
         send("done", { ok: true });
       } catch (err) {
-        send("error", { message: err instanceof Error ? err.message : "Chat failed" });
+        if (err instanceof FlowtubeError) send("error", { message: err.message, ...err.payload });
+        else send("error", { message: err instanceof Error ? err.message : "Chat failed" });
       } finally {
         controller.close();
       }
@@ -490,6 +873,11 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
   const credits = Number(generation.credits || 0);
   const { data: profile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
   const nextCredits = Math.max(0, Number(profile?.credits || 0) - credits);
+  const creditFloorUsd = Number(generation.credit_floor_usd || CREDIT_FLOOR_USD);
+  const retailCreditUsd = Number(generation.retail_credit_usd || RETAIL_CREDIT_USD);
+  const providerCostUsd = Number(generation.cost_usd || 0);
+  const revenueFloorUsd = Number((credits * creditFloorUsd).toFixed(4));
+  const grossMarginFloorUsd = Number((revenueFloorUsd - providerCostUsd).toFixed(4));
   await supabase.from("profiles").update({ credits: nextCredits }).eq("id", userId);
   await supabase.from("credit_transactions").insert({
     user_id: userId,
@@ -497,8 +885,36 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
     amount: -credits,
     reason: "generation_completed",
     balance_after: nextCredits,
+    metadata: {
+      pricing_model_id: generation.pricing_model_id || generation.model_id,
+      credit_floor_usd: creditFloorUsd,
+      retail_credit_usd: retailCreditUsd,
+      provider_cost_usd: providerCostUsd,
+      revenue_floor_usd: revenueFloorUsd,
+      gross_margin_floor_usd: grossMarginFloorUsd,
+    },
   });
-  await supabase.from("generations").update({ debited_at: new Date().toISOString() }).eq("id", generation.id);
+  await supabase.from("pricing_audit_logs").insert({
+    user_id: userId,
+    generation_id: generation.id,
+    pricing_model_id: generation.pricing_model_id || generation.model_id,
+    credits_charged: credits,
+    credit_floor_usd: creditFloorUsd,
+    retail_credit_usd: retailCreditUsd,
+    provider_cost_usd: providerCostUsd,
+    status: "completed",
+    metadata: {
+      model_label: generation.model_label,
+      media_type: generation.type,
+      margin_multiplier: generation.margin_multiplier || MEDIA_MARGIN_MULTIPLIER,
+      result_url_present: Boolean(generation.result_url),
+    },
+  });
+  await supabase.from("generations").update({
+    debited_at: new Date().toISOString(),
+    revenue_floor_usd: revenueFloorUsd,
+    gross_margin_floor_usd: grossMarginFloorUsd,
+  }).eq("id", generation.id);
 }
 
 async function syncGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
@@ -507,7 +923,9 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
   if (key && generation.fal_job_id) {
     try {
       fal.config({ credentials: key });
-      const model = resolveModel(String(generation.model_id), String(generation.type));
+      const catalog = await pricingCatalog(supabase);
+      const model = resolveModelFromCatalog(catalog, String(generation.model_id), String(generation.type));
+      if (!model.endpoint) throw new Error("No fal.ai endpoint configured for model");
       const status = await fal.queue.status(String(model.endpoint), { requestId: String(generation.fal_job_id), logs: true });
       const statusText = String((status as Record<string, unknown>).status || "").toUpperCase();
       if (statusText === "COMPLETED") {
@@ -589,6 +1007,7 @@ Deno.serve(async (req: Request) => {
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
     return json({ error: { message: "Not found" } }, 404);
   } catch (err) {
+    if (err instanceof FlowtubeError) return json(err.payload, err.status);
     return json({ error: { message: err instanceof Error ? err.message : "Unexpected Edge error" } }, 500);
   }
 });
