@@ -350,7 +350,7 @@ export async function saveGeneration(input: {
 }): Promise<Generation> {
   seedMemory();
   const generation: Generation = {
-    id: id("gen"),
+    id: id(`gen_${input.type}`),
     messageId: input.messageId,
     userId: input.userId,
     type: input.type,

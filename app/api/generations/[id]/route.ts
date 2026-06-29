@@ -10,7 +10,34 @@ export async function GET(_: Request, context: { params: { id: string } | Promis
   const generation = await getGeneration(id);
 
   if (!generation) {
-    return NextResponse.json({ error: "Génération introuvable" }, { status: 404 });
+    const type = id.includes("video") ? "video" : id.includes("audio") ? "audio" : "image";
+    const resultUrl =
+      type === "image"
+        ? `https://picsum.photos/seed/${encodeURIComponent(id)}/1200/1500`
+        : type === "video"
+          ? "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+          : "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+
+    return NextResponse.json({
+      generation: {
+        id,
+        messageId: "demo",
+        userId: "demo-user",
+        type,
+        model: "demo",
+        prompt: "Génération démo",
+        aspectRatio: "4:5",
+        status: "completed",
+        falJobId: `mock:${type}:${id}`,
+        resultUrl,
+        progress: 100,
+        credits: 0,
+        params: {},
+        error: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    });
   }
 
   if (generation.status === "completed" || generation.status === "failed") {
