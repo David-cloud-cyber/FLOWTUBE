@@ -1,8 +1,7 @@
-.env
-.env*.local
-dist
-node_modules
-.vercel
+node_modules/
+.vercel/
 *.log
-*.tsbuildinfo
-.DS_Store
+.env
+.env.*
+supabase/functions/.env
+supabase/.branches/
