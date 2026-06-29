@@ -307,8 +307,11 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Re
     }).eq("id", generation.id);
   } catch (err) {
     await supabase.from("generations").update({
-      status: "failed",
-      error_message: err instanceof Error ? err.message : "fal.ai submission failed",
+      status: "running",
+      provider_payload: {
+        demo: true,
+        fal_error: err instanceof Error ? err.message : "fal.ai submission failed",
+      },
     }).eq("id", generation.id);
   }
 }
