@@ -52,5 +52,5 @@ http.createServer(async (req, res) => {
     res.end(JSON.stringify({ error: err.message }));
   }
 }).listen(3000, () => {
-  console.log("FLOWTUBE dev server: http://localhost:3000");
+  console.log("Huggyflow dev server: http://localhost:3000");
 });

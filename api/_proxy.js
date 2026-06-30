@@ -8,12 +8,14 @@ function copyHeaders(req) {
     "stripe-signature",
     "x-flowtube-provider-secret",
     "x-fal-webhook-secret",
-    "x-flowtube-admin-secret"
+    "x-flowtube-admin-secret",
+    "x-huggyflow-admin-secret"
   ];
   for (const name of pass) {
     if (req.headers[name]) headers[name] = req.headers[name];
   }
   if (process.env.FLOWTUBE_EDGE_SECRET) headers["x-flowtube-secret"] = process.env.FLOWTUBE_EDGE_SECRET;
+  if (process.env.HUGGYFLOW_EDGE_SECRET) headers["x-huggyflow-secret"] = process.env.HUGGYFLOW_EDGE_SECRET;
   return headers;
 }
 

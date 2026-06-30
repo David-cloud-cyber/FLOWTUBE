@@ -3,9 +3,9 @@ import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { fal } from "npm:@fal-ai/client@1.10.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
-const DEMO_USER_ID = Deno.env.get("FLOWTUBE_DEMO_USER_ID") || "00000000-0000-0000-0000-000000000001";
+const APP_NAME = "Huggyflow";
 const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
-const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://flowtube-two.vercel.app").replace(/\/$/, "");
+const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
 const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
@@ -17,7 +17,7 @@ const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATIO
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret, x-huggyflow-secret, x-flowtube-admin-secret, x-huggyflow-admin-secret, stripe-signature, x-flowtube-provider-secret, x-fal-webhook-secret",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 };
 
@@ -155,7 +155,8 @@ function unauthorized() {
 function checkSecret(req: Request) {
   const required = Deno.env.get("FLOWTUBE_EDGE_SECRET");
   if (!required) return null;
-  return req.headers.get("x-flowtube-secret") === required ? null : unauthorized();
+  const provided = req.headers.get("x-flowtube-secret") || req.headers.get("x-huggyflow-secret");
+  return provided === required ? null : unauthorized();
 }
 
 async function bodyJson(req: Request) {
@@ -220,24 +221,29 @@ async function enforceRateLimit(req: Request, supabase: ReturnType<typeof adminC
   }
 }
 
-async function userIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
+async function optionalUserIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
   const auth = req.headers.get("authorization") || "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
   if (token) {
     const { data } = await supabase.auth.getUser(token);
     if (data.user?.id) return data.user.id;
   }
-  return DEMO_USER_ID;
+  return null;
 }
 
-async function authenticatedUserIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>, allowDemo = false) {
+async function userIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
+  const userId = await optionalUserIdFromRequest(req, supabase);
+  if (userId) return userId;
+  throw new FlowtubeError(401, "Connecte-toi a Huggyflow pour continuer.", { code: "AUTH_REQUIRED" });
+}
+
+async function authenticatedUserIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
   const auth = req.headers.get("authorization") || "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
   if (token) {
     const { data } = await supabase.auth.getUser(token);
     if (data.user?.id) return data.user.id;
   }
-  if (allowDemo || Deno.env.get("FLOWTUBE_ALLOW_DEMO_BILLING") === "true") return DEMO_USER_ID;
   throw new FlowtubeError(401, "Connecte-toi pour continuer cette action.", { code: "AUTH_REQUIRED" });
 }
 
@@ -419,12 +425,12 @@ async function stripeRequest(path: string, params?: Record<string, string | numb
 
 async function ensureBillingCustomer(supabase: ReturnType<typeof adminClient>, profile: Record<string, unknown>) {
   if (profile.stripe_customer_id) return String(profile.stripe_customer_id);
-  const email = String(profile.email || profile.billing_email || `demo-${profile.id}@flowtube.local`);
+  const email = String(profile.email || profile.billing_email || `guest-${profile.id}@huggyflow.fun`);
   const existing = await supabase.from("billing_customers").select("*").eq("user_id", profile.id).maybeSingle();
   if (existing.data?.stripe_customer_id) return String(existing.data.stripe_customer_id);
   const stripe = await stripeRequest("/customers", {
     email,
-    name: String(profile.display_name || "FLOWTUBE user"),
+    name: String(profile.display_name || `${APP_NAME} user`),
     "metadata[user_id]": String(profile.id),
   });
   await supabase.from("billing_customers").upsert({
@@ -449,7 +455,7 @@ async function sendTransactionalEmail(supabase: ReturnType<typeof adminClient>, 
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: Deno.env.get("FLOWTUBE_EMAIL_FROM") || "FLOWTUBE <noreply@flowtube.ai>",
+        from: Deno.env.get("FLOWTUBE_EMAIL_FROM") || `${APP_NAME} <noreply@huggyflow.fun>`,
         to,
         subject,
         html,
@@ -488,7 +494,7 @@ async function enforcePromptPolicy(supabase: ReturnType<typeof adminClient>, pro
     metadata: { length: prompt.length },
   });
   if (decision.decision === "blocked") {
-    throw new FlowtubeError(400, "Cette demande ne peut pas etre traitee par FLOWTUBE.", { code: "PROMPT_BLOCKED" });
+    throw new FlowtubeError(400, "Cette demande ne peut pas etre traitee par Huggyflow.", { code: "PROMPT_BLOCKED" });
   }
   return decision;
 }
@@ -511,11 +517,11 @@ async function ensureProfile(supabase: ReturnType<typeof adminClient>, userId: s
   if (data) return data;
   const profile = {
     id: userId,
-    email: userId === DEMO_USER_ID ? "demo@flowtube.local" : null,
-    display_name: userId === DEMO_USER_ID ? "Awa Diop" : "Utilisateur",
-    plan: "basic",
-    credits: 1240,
-    credits_max: 1800,
+    email: null,
+    display_name: "Utilisateur",
+    plan: "free",
+    credits: 100,
+    credits_max: 100,
   };
   const { data: inserted, error } = await supabase.from("profiles").insert(profile).select("*").single();
   if (error) throw error;
@@ -552,25 +558,8 @@ async function createProject(supabase: ReturnType<typeof adminClient>, userId: s
 }
 
 async function ensureSeedData(supabase: ReturnType<typeof adminClient>, userId: string) {
-  const { data: existing, error } = await supabase.from("projects")
-    .select("id")
-    .eq("user_id", userId)
-    .limit(1);
-  if (error) throw error;
-  if ((existing || []).length > 0) return;
-
-  await createProject(supabase, userId, "Affiche promo BTP", [
-    { role: "user", content: "Cree-moi une affiche promo pour un service de devis BTP en 10 minutes grace a l'IA, prix 5 000 FCFA au lieu de 15 000, format reseaux sociaux." },
-    { role: "assistant", content: "J'ai place un artisan casque sur un chantier au coucher du soleil, un telephone qui affiche le devis, et un bandeau d'offre 48 h. Composition verticale, prete pour les reseaux.", metadata: { media: { type: "image", status: "done", progress: 100, model: "Nano Banana Pro", ratio: "4:5", scene: "btp" } } },
-  ]);
-  await createProject(supabase, userId, "Video produit", [
-    { role: "user", content: "Une courte video packshot pour un parfum, fond sombre elegant." },
-    { role: "assistant", content: "Packshot tournant, lumiere rasante et reflets soyeux sur le flacon.", metadata: { media: { type: "video", status: "done", progress: 100, model: "Veo 3.1 Quality", ratio: "9:16", scene: "product", dur: "0:06" } } },
-  ]);
-  await createProject(supabase, userId, "Storyboard pub");
-  await createProject(supabase, userId, "Personnage coherent");
-  await createProject(supabase, userId, "Affiche evenement");
-  await createProject(supabase, userId, "Logo anime");
+  void supabase;
+  void userId;
 }
 
 function mediaFromGeneration(generation: Record<string, unknown>) {
@@ -635,18 +624,26 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
 
 async function bootstrap(req: Request) {
   const supabase = adminClient();
-  const userId = await userIdFromRequest(req, supabase);
-  const profile = await ensureProfile(supabase, userId);
-  await ensureSeedData(supabase, userId);
-  const projects = await listProjectData(supabase, userId);
+  const userId = await optionalUserIdFromRequest(req, supabase);
+  const profile = userId ? await ensureProfile(supabase, userId) : null;
+  const projects = userId ? await listProjectData(supabase, userId) : [];
   const catalog = await pricingCatalog(supabase);
   const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("sort_order", { ascending: true });
   const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
-  const { data: subscription } = await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: subscription } = userId
+    ? await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()
+    : { data: null };
+  const { count: generationCount } = userId
+    ? await supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)
+    : { count: 0 };
   return json({
-    user: { id: profile.id, name: profile.display_name, email: profile.email, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end },
-    credits: profile.credits,
-    creditsMax: profile.credits_max,
+    user: profile ? { id: profile.id, name: profile.display_name, email: profile.email, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end } : null,
+    credits: profile?.credits || 0,
+    creditsMax: profile?.credits_max || 100,
+    stats: {
+      projects: projects.length,
+      generations: generationCount || 0,
+    },
     pricing: {
       creditFloorUsd: CREDIT_FLOOR_USD,
       retailCreditUsd: RETAIL_CREDIT_USD,
@@ -707,7 +704,7 @@ function fallbackReply(prompt: string, type: string, credits: number) {
 async function anthropicReply(prompt: string, type: string, credits: number) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return fallbackReply(prompt, type, credits);
-  const system = "Tu es le directeur creatif IA de FLOWTUBE. Reponds en francais, tres concis, concret, sans jargon. Si une generation media va etre lancee, annonce le sujet, le style, le format et le cout en credits.";
+  const system = "Tu es le directeur creatif IA de Huggyflow. Reponds en francais, tres concis, concret, sans jargon. Si une generation media va etre lancee, annonce le sujet, le style, le format et le cout en credits.";
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -739,11 +736,24 @@ function falInput(model: PricingModel, prompt: string, aspectRatio: string, dura
   return { prompt, aspect_ratio: aspectRatio, num_images: 1 };
 }
 
+function ensureProviderReady(model: PricingModel) {
+  if (!Deno.env.get("FAL_KEY")) {
+    throw new FlowtubeError(503, "fal.ai n'est pas encore configure. Ajoute FAL_KEY dans Supabase avant de lancer des generations.", { code: "PROVIDER_NOT_CONFIGURED" });
+  }
+  if (!model.endpoint) {
+    throw new FlowtubeError(503, `Endpoint fal.ai manquant pour ${model.name}.`, { code: "PROVIDER_ENDPOINT_MISSING", modelId: model.id });
+  }
+}
+
 async function startFalGeneration(generation: Record<string, unknown>, model: PricingModel) {
   const key = Deno.env.get("FAL_KEY");
   const supabase = adminClient();
   if (!key || !model.endpoint) {
-    await supabase.from("generations").update({ status: "running", provider_payload: { demo: true } }).eq("id", generation.id);
+    await supabase.from("generations").update({
+      status: "failed",
+      error_message: !key ? "fal.ai is not configured" : "fal.ai endpoint is missing",
+      provider_payload: { provider_configured: false },
+    }).eq("id", generation.id);
     return;
   }
   try {
@@ -758,9 +768,9 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
     }).eq("id", generation.id);
   } catch (err) {
     await supabase.from("generations").update({
-      status: "running",
+      status: "failed",
+      error_message: err instanceof Error ? err.message : "fal.ai submission failed",
       provider_payload: {
-        demo: true,
         fal_error: err instanceof Error ? err.message : "fal.ai submission failed",
       },
     }).eq("id", generation.id);
@@ -900,7 +910,6 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   const supabase = adminClient();
   const userId = await userIdFromRequest(req, supabase);
   const profile = await ensureProfile(supabase, userId);
-  await ensureSeedData(supabase, userId);
 
   const prompt = String(body.prompt || body.message || "");
   const rawType = String(body.type || body.mode || "image");
@@ -915,6 +924,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
   const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(body.projectId || ""));
   await enforceGenerationGuards(supabase, profile, plan, model, quote);
+  ensureProviderReady(model);
 
   if (quote.requiresConfirmation && body.confirmed !== true) {
     const pendingBody = {
@@ -1016,7 +1026,6 @@ async function chat(req: Request) {
         const supabase = adminClient();
         const userId = await userIdFromRequest(req, supabase);
         const profile = await ensureProfile(supabase, userId);
-        await ensureSeedData(supabase, userId);
         await enforceRateLimit(req, supabase, "chat", userId, DEFAULT_RATE_LIMIT);
         const plan = await resolvePlan(supabase, String(profile.plan || "free"));
         await enforceMessageLimits(supabase, userId, plan);
@@ -1068,6 +1077,7 @@ async function chat(req: Request) {
 
         if (willGenerate && quote.requiresConfirmation && body.confirmed !== true) {
           await enforceGenerationGuards(supabase, profile, plan, model, quote);
+          ensureProviderReady(model);
           await savePendingGeneration(supabase, profile, {
             body: {
               projectId: project.id,
@@ -1086,6 +1096,7 @@ async function chat(req: Request) {
           return;
         }
 
+        if (willGenerate) ensureProviderReady(model);
         const credits = quote.credits;
         const reply = await anthropicReply(prompt, type, credits);
         for (const word of reply.split(/(\s+)/)) {
@@ -1121,12 +1132,6 @@ async function chat(req: Request) {
   return new Response(stream, {
     headers: { ...corsHeaders, "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform" },
   });
-}
-
-function demoResultUrl(generation: Record<string, unknown>) {
-  if (generation.type === "video") return "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
-  const prompt = encodeURIComponent(String(generation.prompt || "FLOWTUBE").slice(0, 90));
-  return `https://placehold.co/1200x1500/121214/D7F94B/png?text=${prompt}`;
 }
 
 function extractUrl(value: unknown): string {
@@ -1337,13 +1342,13 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
   }
 
   const createdAt = new Date(String(generation.created_at)).getTime();
-  const readyMs = generation.type === "video" ? 9500 : 6200;
-  const progress = Math.min(100, Math.max(5, Math.round(((Date.now() - createdAt) / readyMs) * 100)));
-  const patch = progress >= 100
-    ? { status: "completed", progress: 100, result_url: demoResultUrl(generation), completed_at: new Date().toISOString() }
-    : { status: "running", progress };
-  const { data } = await supabase.from("generations").update(patch).eq("id", generation.id).select("*").single();
-  if (data?.status === "completed") await debitCredits(supabase, data);
+  if (Deno.env.get("FAL_KEY") && Date.now() - createdAt < 120000) return generation;
+
+  const { data } = await supabase.from("generations").update({
+    status: "failed",
+    error_message: Deno.env.get("FAL_KEY") ? "fal.ai job id missing" : "fal.ai is not configured",
+  }).eq("id", generation.id).select("*").single();
+  await refundFailedGeneration(supabase, data);
   return data;
 }
 
@@ -1512,7 +1517,7 @@ async function createCheckout(req: Request) {
 
 async function billingStatus(req: Request) {
   const supabase = adminClient();
-  const userId = await authenticatedUserIdFromRequest(req, supabase, true);
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
   const profile = await ensureProfile(supabase, userId);
   const { data: transactions } = await supabase.from("credit_transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
   const { data: subscription } = await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -1530,7 +1535,8 @@ async function billingStatus(req: Request) {
 function requireAdmin(req: Request) {
   const secret = Deno.env.get("FLOWTUBE_ADMIN_SECRET") || "";
   if (!secret) throw new FlowtubeError(503, "Admin secret missing.", { code: "ADMIN_NOT_CONFIGURED" });
-  if (req.headers.get("x-flowtube-admin-secret") !== secret) throw new FlowtubeError(401, "Unauthorized admin request.", { code: "ADMIN_UNAUTHORIZED" });
+  const provided = req.headers.get("x-flowtube-admin-secret") || req.headers.get("x-huggyflow-admin-secret");
+  if (provided !== secret) throw new FlowtubeError(401, "Unauthorized admin request.", { code: "ADMIN_UNAUTHORIZED" });
 }
 
 async function adminRoute(req: Request, action: string) {
@@ -1606,7 +1612,7 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
     balance_after: nextCredits,
     metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null },
   });
-  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan FLOWTUBE est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
+  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
 }
 
 async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string) {
@@ -1622,7 +1628,7 @@ async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId:
     balance_after: nextCredits,
     metadata: { pack_id: pack.id, price_usd: pack.price_usd },
   });
-  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "credit_pack", "Tes credits FLOWTUBE sont disponibles", `<p>${pack.credits} credits ont ete ajoutes a ton compte.</p>`, { pack_id: pack.id });
+  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "credit_pack", "Tes credits Huggyflow sont disponibles", `<p>${pack.credits} credits ont ete ajoutes a ton compte.</p>`, { pack_id: pack.id });
 }
 
 async function stripeWebhook(req: Request) {
