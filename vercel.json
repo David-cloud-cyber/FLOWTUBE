@@ -1,4 +1,7 @@
 {
   "framework": null,
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "rewrites": [
+    { "source": "/callback", "destination": "/api/callback" }
+  ]
 }

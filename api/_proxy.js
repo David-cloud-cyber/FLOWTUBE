@@ -6,6 +6,8 @@ function copyHeaders(req) {
     "content-type",
     "authorization",
     "stripe-signature",
+    "x-moneyfusion-secret",
+    "x-moneyfusion-signature",
     "x-flowtube-provider-secret",
     "x-fal-webhook-secret",
     "x-flowtube-admin-secret",
@@ -29,7 +31,8 @@ async function readBody(req) {
 
 async function proxy(req, res, path) {
   const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req);
-  const response = await fetch(EDGE_BASE + path, {
+  const query = req.url && req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+  const response = await fetch(EDGE_BASE + path + query, {
     method: req.method,
     headers: copyHeaders(req),
     body,

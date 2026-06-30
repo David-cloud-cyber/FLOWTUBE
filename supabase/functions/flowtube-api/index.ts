@@ -5,7 +5,7 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const APP_NAME = "Huggyflow";
 const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
-const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://huggyflow.fun").replace(/\/$/, "");
+const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
 const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
@@ -17,7 +17,7 @@ const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATIO
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret, x-huggyflow-secret, x-flowtube-admin-secret, x-huggyflow-admin-secret, stripe-signature, x-flowtube-provider-secret, x-fal-webhook-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret, x-huggyflow-secret, x-flowtube-admin-secret, x-huggyflow-admin-secret, stripe-signature, x-moneyfusion-secret, x-moneyfusion-signature, x-flowtube-provider-secret, x-fal-webhook-secret",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 };
 
@@ -99,6 +99,8 @@ const fallbackPlans: Record<string, PlanLimits> = {
   starter: { id: "starter", displayName: "Starter", includedCredits: 1000, monthlyPriceUsd: 15, annualPriceUsd: 144, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 10, maxUploadMb: 100, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { canonical: "basic", checkout: true } },
   pro: { id: "pro", displayName: "Pro", includedCredits: 4500, monthlyPriceUsd: 49, annualPriceUsd: 468, monthlyMessageLimit: 1500, dailyMessageLimit: 150, dailyVideoLimit: 8, concurrentImageJobs: 4, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 100, maxUploadMb: 250, seatLimit: 3, supportLevel: "priority", priorityQueue: false, metadata: { checkout: true } },
   max: { id: "max", displayName: "Max", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1188, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 500, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { alias: "studio", checkout: true } },
+  scale: { id: "scale", displayName: "Scale", includedCredits: 28000, monthlyPriceUsd: 249, annualPriceUsd: 2388, monthlyMessageLimit: 10000, dailyMessageLimit: 650, dailyVideoLimit: 55, concurrentImageJobs: 14, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1500, maxUploadMb: 1000, seatLimit: 25, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Agences et equipes en volume" } },
+  enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 65000, monthlyPriceUsd: 499, annualPriceUsd: 4788, monthlyMessageLimit: 30000, dailyMessageLimit: 1500, dailyVideoLimit: 140, concurrentImageJobs: 30, concurrentVideoJobs: 16, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 5000, maxUploadMb: 2000, seatLimit: 75, supportLevel: "dedicated", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Production intensive et organisations", dedicated_support: true } },
   studio: { id: "studio", displayName: "Studio", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1188, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 500, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { canonical: "max", checkout: true } },
 };
 
@@ -394,6 +396,57 @@ function stripePriceForPack(pack: Record<string, unknown>) {
   return String(pack.stripe_price_id || Deno.env.get(`STRIPE_PRICE_PACK_${String(pack.id).toUpperCase().replace(/[^A-Z0-9]/g, "_")}`) || "");
 }
 
+function moneyFusionCheckoutUrl() {
+  return Deno.env.get("MONEYFUSION_CHECKOUT_URL") || Deno.env.get("MONEYFUSION_API_URL") || "";
+}
+
+function moneyFusionCallbackUrl() {
+  return Deno.env.get("MONEYFUSION_CALLBACK_URL") || `${APP_BASE_URL}/callback`;
+}
+
+function moneyFusionReturnUrl() {
+  return Deno.env.get("MONEYFUSION_RETURN_URL") || `${APP_BASE_URL}/?checkout=success`;
+}
+
+function moneyFusionAmount(usd: number) {
+  const currency = (Deno.env.get("MONEYFUSION_CURRENCY") || "USD").toUpperCase();
+  if (currency === "USD") return Number(usd.toFixed(2));
+  const rate = Number(Deno.env.get("MONEYFUSION_USD_RATE") || 0);
+  if (!rate) throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_USD_RATE manque pour convertir les tarifs.", { code: "MONEYFUSION_RATE_MISSING", currency });
+  return Math.round(usd * rate);
+}
+
+function moneyFusionPaymentUrl(data: Record<string, unknown>) {
+  const nested = (data.data || data.result || {}) as Record<string, unknown>;
+  return String(data.url || data.payment_url || data.paymentUrl || data.link || nested.url || nested.payment_url || nested.paymentUrl || nested.link || "");
+}
+
+function moneyFusionToken(data: Record<string, unknown>) {
+  const nested = (data.data || data.result || {}) as Record<string, unknown>;
+  return String(data.token || data.payment_token || data.paymentToken || data.transaction_id || data.reference || nested.token || nested.payment_token || nested.paymentToken || nested.transaction_id || nested.reference || "");
+}
+
+async function moneyFusionRequest(payload: Record<string, unknown>) {
+  const url = moneyFusionCheckoutUrl();
+  if (!url) {
+    throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_CHECKOUT_URL manque dans les variables Supabase.", { code: "MONEYFUSION_NOT_CONFIGURED" });
+  }
+  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+  const apiKey = Deno.env.get("MONEYFUSION_API_KEY") || "";
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new FlowtubeError(response.status, "MoneyFusion a refuse la creation du paiement.", { code: "MONEYFUSION_ERROR", moneyfusion: data });
+  }
+  const paymentUrl = moneyFusionPaymentUrl(data);
+  const token = moneyFusionToken(data);
+  if (!paymentUrl) {
+    throw new FlowtubeError(502, "MoneyFusion n'a pas renvoye d'URL de paiement.", { code: "MONEYFUSION_URL_MISSING", moneyfusion: data });
+  }
+  return { data, paymentUrl, token };
+}
+
 function formBody(params: Record<string, string | number | boolean | null | undefined>) {
   const body = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -672,6 +725,9 @@ async function bootstrap(req: Request) {
     })),
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
+      moneyFusionConfigured: Boolean(moneyFusionCheckoutUrl()),
+      moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
+      siteUrl: APP_BASE_URL,
       subscription: subscription ? {
         planId: subscription.plan_id,
         status: subscription.status,
@@ -1488,6 +1544,80 @@ async function authRoute(req: Request, action: string) {
   return json({ error: { message: "Auth route not found" } }, 404);
 }
 
+async function createMoneyFusionCheckout(
+  supabase: ReturnType<typeof adminClient>,
+  profile: Record<string, unknown>,
+  body: Record<string, unknown>,
+  type: string,
+  interval: string,
+  successUrl: string,
+  cancelUrl: string,
+) {
+  const userId = String(profile.id);
+  const profileMetadata = (profile.metadata || {}) as Record<string, unknown>;
+  const phone = String(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "").trim();
+  if (!phone) {
+    throw new FlowtubeError(400, "MoneyFusion demande un numero client. Envoie customerPhone avec le checkout.", { code: "MONEYFUSION_PHONE_REQUIRED" });
+  }
+
+  let amountUsd = 0;
+  let article = `${APP_NAME} credits`;
+  let plan: PlanLimits | null = null;
+  let pack: Record<string, unknown> | null = null;
+  const metadata: Record<string, unknown> = { provider: "moneyfusion", type, interval };
+
+  if (type === "credits") {
+    const packId = String(body.creditPackId || body.packId || "");
+    const { data } = await supabase.from("credit_packs").select("*").eq("id", packId).eq("active", true).maybeSingle();
+    if (!data) throw new FlowtubeError(404, "Pack de credits introuvable.", { code: "PACK_NOT_FOUND" });
+    pack = data;
+    amountUsd = Number(data.price_usd || 0);
+    article = `${APP_NAME} - ${data.label || "pack credits"}`;
+    metadata.credit_pack_id = data.id;
+  } else {
+    const planId = normalizePlanId(String(body.planId || "basic"));
+    plan = await resolvePlan(supabase, planId);
+    if (plan.id === "free") throw new FlowtubeError(400, "Le plan Free ne necessite pas de checkout.", { code: "FREE_PLAN" });
+    amountUsd = interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd;
+    article = `${APP_NAME} ${plan.displayName} ${interval}`;
+    metadata.plan_id = plan.id;
+  }
+
+  const reference = crypto.randomUUID();
+  const payload = {
+    totalPrice: moneyFusionAmount(amountUsd),
+    article,
+    numeroSend: phone,
+    nomclient: String(profile.display_name || profile.email || "Client Huggyflow"),
+    return_url: String(body.successUrl || successUrl || moneyFusionReturnUrl()),
+    webhook_url: moneyFusionCallbackUrl(),
+    reference,
+    metadata,
+  };
+  const session = await moneyFusionRequest(payload);
+  const providerToken = session.token || reference;
+
+  await supabase.from("billing_checkout_sessions").insert({
+    user_id: userId,
+    provider: "moneyfusion",
+    provider_session_id: reference,
+    provider_payment_token: providerToken,
+    stripe_session_id: providerToken,
+    mode: type === "credits" ? "payment" : "subscription",
+    plan_id: plan?.id || null,
+    credit_pack_id: pack?.id || null,
+    billing_interval: type === "credits" ? null : interval,
+    status: "open",
+    amount_usd: amountUsd,
+    currency: Deno.env.get("MONEYFUSION_CURRENCY") || "usd",
+    checkout_url: session.paymentUrl,
+    metadata: { moneyfusion: session.data, payload, plan: plan ? planPublic(plan) : null, pack },
+    provider_payload: session.data,
+  });
+
+  return json({ url: session.paymentUrl, sessionId: reference, provider: "moneyfusion", token: providerToken });
+}
+
 async function createCheckout(req: Request) {
   const body = await bodyJson(req);
   const supabase = adminClient();
@@ -1496,11 +1626,16 @@ async function createCheckout(req: Request) {
   const profile = await ensureProfile(supabase, userId);
   const interval = String(body.interval || "monthly") === "annual" ? "annual" : "monthly";
   const type = String(body.type || (body.creditPackId ? "credits" : "subscription"));
-  const customerId = await ensureBillingCustomer(supabase, profile);
   const successUrl = String(body.successUrl || `${APP_BASE_URL}/?checkout=success`);
   const cancelUrl = String(body.cancelUrl || `${APP_BASE_URL}/?checkout=cancelled`);
+  const provider = String(body.provider || Deno.env.get("BILLING_PROVIDER") || "stripe").toLowerCase();
+
+  if (provider === "moneyfusion" || provider === "fusionpay") {
+    return await createMoneyFusionCheckout(supabase, profile, body as Record<string, unknown>, type, interval, successUrl, cancelUrl);
+  }
 
   if (type === "credits") {
+    const customerId = await ensureBillingCustomer(supabase, profile);
     const packId = String(body.creditPackId || body.packId || "");
     const { data: pack } = await supabase.from("credit_packs").select("*").eq("id", packId).eq("active", true).maybeSingle();
     if (!pack) throw new FlowtubeError(404, "Pack de credits introuvable.", { code: "PACK_NOT_FOUND" });
@@ -1535,6 +1670,7 @@ async function createCheckout(req: Request) {
   const planId = normalizePlanId(String(body.planId || "basic"));
   const plan = await resolvePlan(supabase, planId);
   if (plan.id === "free") throw new FlowtubeError(400, "Le plan Free ne necessite pas de checkout.", { code: "FREE_PLAN" });
+  const customerId = await ensureBillingCustomer(supabase, profile);
   const priceId = stripePriceForPlan(plan, interval);
   if (!priceId) throw new FlowtubeError(503, "Price ID Stripe manquant pour ce plan.", { code: "STRIPE_PRICE_MISSING", planId: plan.id, interval });
   const session = await stripeRequest("/checkout/sessions", {
@@ -1764,6 +1900,68 @@ async function stripeWebhook(req: Request) {
   return json({ received: true });
 }
 
+async function moneyFusionCallback(req: Request) {
+  const required = Deno.env.get("MONEYFUSION_CALLBACK_SECRET") || "";
+  const url = new URL(req.url);
+  const provided = req.headers.get("x-moneyfusion-secret") || url.searchParams.get("secret") || "";
+  if (required && provided !== required) return unauthorized();
+
+  const body = req.method === "GET" ? {} : await bodyJson(req);
+  const supabase = adminClient();
+  const token = String(body.token || body.payment_token || body.paymentToken || body.transaction_id || body.reference || url.searchParams.get("token") || url.searchParams.get("reference") || "");
+  const reference = String(body.reference || body.order_id || body.orderId || url.searchParams.get("reference") || "");
+  const eventId = token || reference || crypto.randomUUID();
+  const rawStatus = String(body.status || body.statut || body.payment_status || body.etat || url.searchParams.get("status") || "").toLowerCase();
+  const paid = ["paid", "success", "successful", "completed", "complete", "approved", "valid", "valide", "succeeded"].some((s) => rawStatus.includes(s));
+
+  await supabase.from("payment_events").upsert({
+    provider: "moneyfusion",
+    provider_event_id: eventId,
+    event_type: rawStatus || "callback",
+    processed: false,
+    metadata: { body, query: Object.fromEntries(url.searchParams.entries()) },
+  }, { onConflict: "provider,provider_event_id" });
+
+  let session: Record<string, unknown> | null = null;
+  if (token) {
+    const { data } = await supabase.from("billing_checkout_sessions").select("*").eq("provider", "moneyfusion").eq("provider_payment_token", token).maybeSingle();
+    session = data as Record<string, unknown> | null;
+  }
+  if (!session && reference) {
+    const { data } = await supabase.from("billing_checkout_sessions").select("*").eq("provider", "moneyfusion").eq("provider_session_id", reference).maybeSingle();
+    session = data as Record<string, unknown> | null;
+  }
+  if (!session) {
+    await supabase.from("payment_events").update({ processed: true }).eq("provider", "moneyfusion").eq("provider_event_id", eventId);
+    return json({ received: true, ignored: true });
+  }
+
+  if (paid && session.status !== "completed") {
+    await supabase.from("billing_checkout_sessions").update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      provider_payload: body,
+      metadata: Object.assign({}, session.metadata || {}, { callback: body }),
+    }).eq("id", session.id);
+
+    const userId = String(session.user_id || "");
+    if (session.credit_pack_id) {
+      await grantCreditPack(supabase, userId, String(session.credit_pack_id));
+    } else if (session.plan_id) {
+      await grantPlanCredits(supabase, userId, String(session.plan_id), String(session.billing_interval || "monthly"), `moneyfusion:${eventId}`);
+    }
+  } else if (!paid && rawStatus) {
+    await supabase.from("billing_checkout_sessions").update({
+      status: rawStatus.includes("fail") || rawStatus.includes("cancel") ? "failed" : "open",
+      provider_payload: body,
+      metadata: Object.assign({}, session.metadata || {}, { callback: body }),
+    }).eq("id", session.id);
+  }
+
+  await supabase.from("payment_events").update({ processed: true }).eq("provider", "moneyfusion").eq("provider_event_id", eventId);
+  return json({ received: true, processed: paid });
+}
+
 async function consentRoute(req: Request) {
   const body = await bodyJson(req);
   const supabase = adminClient();
@@ -1844,6 +2042,7 @@ Deno.serve(async (req: Request) => {
     if (first === "billing" && route[1] === "checkout" && req.method === "POST") return await createCheckout(req);
     if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);
     if (first === "billing" && route[1] === "webhook" && req.method === "POST") return await stripeWebhook(req);
+    if (first === "billing" && route[1] === "moneyfusion-callback" && (req.method === "POST" || req.method === "GET")) return await moneyFusionCallback(req);
     if (first === "legal" && route[1] === "consent" && req.method === "POST") return await consentRoute(req);
     if (first === "provider" && route[1] === "fal-webhook" && req.method === "POST") return await falWebhook(req);
     if (first === "admin" && route[1]) return await adminRoute(req, route[1]);
