@@ -39,6 +39,14 @@ type PricingModel = {
   metadata: Record<string, unknown>;
 };
 
+type ModelOverride = Partial<PricingModel> & {
+  label?: string;
+  capabilities?: string[];
+  qualityTier?: string;
+  inputProfile?: string;
+  family?: string;
+};
+
 type PricingQuote = {
   credits: number;
   units: number;
@@ -84,14 +92,311 @@ class FlowtubeError extends Error {
   }
 }
 
-const modelRegistry: PricingModel[] = [
-  { id: "nano", name: "Nano Banana Pro", type: "image", endpoint: Deno.env.get("FAL_MODEL_NANO") || "fal-ai/nano-banana-pro", pricingUnit: "unit", costPerUnitUsd: 0.15, defaultUnits: 1, minimumUnits: 1, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: false, premium: true, metadata: { tier: "premium" } },
-  { id: "flux", name: "Flux", type: "image", endpoint: Deno.env.get("FAL_MODEL_FLUX") || "fal-ai/flux/schnell", pricingUnit: "unit", costPerUnitUsd: 0.04, defaultUnits: 1, minimumUnits: 1, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: false, premium: false, metadata: { tier: "standard" } },
-  { id: "veoq", name: "Veo 3.1 Quality", type: "video", endpoint: Deno.env.get("FAL_MODEL_VEO_QUALITY") || "fal-ai/veo3", pricingUnit: "second", costPerUnitUsd: 0.2, defaultUnits: 5, minimumUnits: 5, maximumUnits: 8, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: true, metadata: { tier: "premium", audio: false } },
-  { id: "veol", name: "Veo 3.1 Lite", type: "video", endpoint: Deno.env.get("FAL_MODEL_VEO_LITE") || "fal-ai/veo3/fast", pricingUnit: "second", costPerUnitUsd: 0.1, defaultUnits: 5, minimumUnits: 5, maximumUnits: 8, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: false, metadata: { tier: "standard", audio: false } },
-  { id: "kling", name: "Kling", type: "video", endpoint: Deno.env.get("FAL_MODEL_KLING") || "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", pricingUnit: "second", costPerUnitUsd: 0.12, defaultUnits: 5, minimumUnits: 5, maximumUnits: 15, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: true, metadata: { tier: "premium", audio: false } },
-  { id: "seedance", name: "Seedance", type: "video", endpoint: Deno.env.get("FAL_MODEL_SEEDANCE") || "fal-ai/bytedance/seedance/v1/lite/text-to-video", pricingUnit: "second", costPerUnitUsd: 0.08, defaultUnits: 5, minimumUnits: 5, maximumUnits: 15, creditFloorUsd: CREDIT_FLOOR_USD, retailCreditUsd: RETAIL_CREDIT_USD, marginMultiplier: MEDIA_MARGIN_MULTIPLIER, requiresConfirmation: true, premium: false, metadata: { tier: "standard", audio: false } },
+const FAL_ENDPOINTS = [
+  "bytedance/seedance-2.0/image-to-video",
+  "bytedance/seedance-2.0/fast/image-to-video",
+  "bytedance/seedance-2.0/fast/reference-to-video",
+  "bytedance/seedance-2.0/fast/text-to-video",
+  "bytedance/seedance-2.0/mini/image-to-video",
+  "bytedance/seedance-2.0/mini/reference-to-video",
+  "bytedance/seedance-2.0/mini/text-to-video",
+  "bytedance/seedance-2.0/reference-to-video",
+  "bytedance/seedance-2.0/text-to-video",
+  "fal-ai/krea-2/turbo",
+  "fal-ai/krea-2/turbo/lora",
+  "alibaba/happy-horse/v1.1/image-to-video",
+  "alibaba/happy-horse/v1.1/reference-to-video",
+  "alibaba/happy-horse/v1.1/text-to-video",
+  "fal-ai/kling-video/v3/pro/image-to-video",
+  "fal-ai/kling-video/v3/4k/image-to-video",
+  "fal-ai/kling-video/v3/4k/text-to-video",
+  "fal-ai/kling-video/v3/pro/text-to-video",
+  "fal-ai/kling-video/v3/standard/image-to-video",
+  "fal-ai/kling-video/v3/standard/text-to-video",
+  "fal-ai/pixverse/v6/image-to-video",
+  "fal-ai/nano-banana-2/edit",
+  "fal-ai/nano-banana-2",
+  "openai/gpt-image-2/edit",
+  "openai/gpt-image-2",
+  "fal-ai/nano-banana-pro/edit",
+  "fal-ai/nano-banana-pro",
+  "fal-ai/flux/schnell",
+  "fal-ai/flux/dev",
+  "fal-ai/flux/dev/image-to-image",
+  "fal-ai/flux/dev/redux",
+  "fal-ai/flux/schnell/redux",
+  "fal-ai/bytedance/seedream/v4.5/edit",
+  "fal-ai/bytedance/seedream/v4.5/text-to-image",
+  "fal-ai/bytedance/seedream/v5/lite/text-to-image",
+  "fal-ai/flux-2-pro",
+  "fal-ai/flux-2-pro/edit",
+  "fal-ai/flux-2-pro/outpaint",
+  "fal-ai/bria/background/remove",
+  "fal-ai/elevenlabs/voice-changer",
+  "fal-ai/elevenlabs/dubbing",
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2",
+  "fal-ai/elevenlabs/music",
+  "fal-ai/elevenlabs/text-to-dialogue/eleven-v3",
+  "fal-ai/heygen/avatar5/digital-twin",
+  "fal-ai/heygen/v3/video-agent",
+  "fal-ai/heygen/v3/lipsync/precision",
+  "fal-ai/heygen/v3/lipsync/speed",
+  "fal-ai/heygen/avatar4/image-to-video",
+  "fal-ai/heygen/avatar4/digital-twin",
+  "fal-ai/heygen/v2/translate/speed",
+  "fal-ai/heygen/v2/translate/precision",
+  "fal-ai/heygen/avatar3/digital-twin",
+  "fal-ai/heygen/v2/video-agent",
+  "google/gemini-omni-flash/image-to-video",
+  "google/gemini-omni-flash/edit",
+  "google/gemini-omni-flash",
+  "fal-ai/veo3",
+  "fal-ai/veo3/fast",
+  "fal-ai/veo3.1/lite/first-last-frame-to-video",
+  "fal-ai/veo3.1/lite/image-to-video",
+  "fal-ai/veo3.1/fast/extend-video",
+  "fal-ai/veo3.1/extend-video",
+  "fal-ai/gemini-3.1-flash-image-preview/edit",
+  "fal-ai/gemini-3.1-flash-image-preview",
+  "fal-ai/lyria3/pro",
+  "fal-ai/gemini-3.1-flash-tts",
+  "luma/agent/ray/v3.2/video-to-video",
+  "luma/agent/ray/v3.2/reframe",
+  "luma/agent/ray/v3.2/text-to-video",
+  "luma/agent/ray/v3.2/image-to-video",
+  "luma/agent/uni-1/v1/edit",
+  "luma/agent/uni-1/v1/max",
+  "luma/agent/uni-1/v1/max/edit",
+  "luma/agent/uni-1/v1/text-to-image",
+  "bria/fibo-edit/edit",
+  "fal-ai/minimax/speech-2.8-hd",
+  "fal-ai/minimax/speech-2.8-turbo",
+  "fal-ai/minimax/voice-clone",
+  "xai/grok-imagine-video/v1.5/image-to-video",
+  "xai/grok-imagine-image/quality/text-to-image",
+  "xai/grok-imagine-image/quality/edit",
+  "xai/grok-imagine-video/reference-to-video",
+  "xai/grok-imagine-video/extend-video",
+  "xai/grok-imagine-image/edit",
+  "veed/subtitles",
+  "veed/fabric-1.0/text",
+  "veed/fabric-1.0",
+  "veed/avatars/text-to-video",
+  "veed/avatars/audio-to-video",
+  "veed/video-background-removal/fast",
+  "veed/video-background-removal",
+  "veed/video-background-removal/green-screen",
+  "fal-ai/creatify/aurora",
+  "fal-ai/bytedance/omnihuman/v1.5",
+  "fal-ai/sync-lipsync/v3/image-to-video",
+  "fal-ai/sync-lipsync/v3",
+  "fal-ai/seedvr/upscale/image",
+  "fal-ai/topaz/upscale/video",
+  "fal-ai/ideogram/remove-background",
+  "sonilo/v1.1/text-to-music",
 ];
+
+const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
+  "fal-ai/nano-banana-pro": { id: "nano", label: "Nano Banana Pro", costPerUnitUsd: 0.15, qualityTier: "premium" },
+  "fal-ai/nano-banana-2": { id: "nano2", label: "Nano Banana 2", costPerUnitUsd: 0.08, qualityTier: "premium" },
+  "fal-ai/nano-banana-2/edit": { id: "nano2-edit", label: "Nano Banana 2 Edit", costPerUnitUsd: 0.08, qualityTier: "premium" },
+  "fal-ai/flux/schnell": { id: "flux", label: "Flux Schnell", costPerUnitUsd: 0.04, qualityTier: "standard" },
+  "fal-ai/bytedance/seedream/v5/lite/text-to-image": { id: "seedream-lite", label: "Seedream 5.0 Lite", costPerUnitUsd: 0.035, qualityTier: "economy" },
+  "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": { id: "kling", label: "Kling 2.5 Turbo Pro", costPerUnitUsd: 0.12, qualityTier: "premium", maximumUnits: 15 },
+  "fal-ai/bytedance/seedance/v1/lite/text-to-video": { id: "seedance", label: "Seedance 1.0 Lite", costPerUnitUsd: 0.08, qualityTier: "standard", maximumUnits: 15 },
+  "fal-ai/veo3": { id: "veoq", label: "Veo 3.1 Quality", costPerUnitUsd: 0.2, qualityTier: "premium", maximumUnits: 8 },
+  "fal-ai/veo3/fast": { id: "veol", label: "Veo 3.1 Lite", costPerUnitUsd: 0.1, qualityTier: "standard", maximumUnits: 8 },
+  "openai/gpt-image-2": { id: "gpt-image-2", label: "GPT Image 2", costPerUnitUsd: 0.08, qualityTier: "premium" },
+  "openai/gpt-image-2/edit": { id: "gpt-image-2-edit", label: "GPT Image 2 Edit", costPerUnitUsd: 0.08, qualityTier: "premium" },
+  "fal-ai/gemini-3.1-flash-image-preview": { id: "gemini-flash-image", label: "Gemini 3.1 Flash Image", costPerUnitUsd: 0.04, qualityTier: "standard" },
+  "fal-ai/gemini-3.1-flash-image-preview/edit": { id: "gemini-flash-image-edit", label: "Gemini 3.1 Flash Image Edit", costPerUnitUsd: 0.04, qualityTier: "standard" },
+  "fal-ai/minimax/speech-2.8-hd": { id: "minimax-tts", label: "MiniMax Speech 2.8 HD", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "premium" },
+  "fal-ai/minimax/speech-2.8-turbo": { id: "minimax-tts-turbo", label: "MiniMax Speech 2.8 Turbo", costPerUnitUsd: 0.05, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "standard" },
+  "fal-ai/minimax/voice-clone": { id: "minimax-voice-clone", label: "MiniMax Voice Clone", costPerUnitUsd: 1.5, qualityTier: "premium", maximumUnits: 1 },
+  "fal-ai/gemini-3.1-flash-tts": { id: "gemini-flash-tts", label: "Gemini 3.1 Flash TTS", costPerUnitUsd: 0.04, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "standard" },
+  "fal-ai/lyria3/pro": { id: "lyria3-pro", label: "Lyria 3 Pro", costPerUnitUsd: 0.18, pricingUnit: "second", defaultUnits: 30, minimumUnits: 10, maximumUnits: 120, qualityTier: "premium" },
+  "sonilo/v1.1/text-to-music": { id: "sonilo-music", label: "Sonilo 1.1 Music", costPerUnitUsd: 0.08, pricingUnit: "second", defaultUnits: 30, minimumUnits: 10, maximumUnits: 120, qualityTier: "standard" },
+};
+
+function idFromEndpoint(endpoint: string) {
+  return endpoint.replace(/^fal-ai\//, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
+}
+
+function labelFromEndpoint(endpoint: string) {
+  const clean = endpoint.replace(/^fal-ai\//, "").replace(/\//g, " ");
+  return clean.split(/[-_\s]+/).filter(Boolean).map((part) => {
+    if (/^(ai|api|tts|hd|v\d+|3d|4k)$/i.test(part)) return part.toUpperCase();
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  }).join(" ");
+}
+
+function capabilitiesForEndpoint(endpoint: string) {
+  const e = endpoint.toLowerCase();
+  const caps = new Set<string>();
+  if (e.includes("text-to-image") || e.includes("gpt-image") || e.includes("nano-banana") || e.includes("flux") || e.includes("krea") || e.includes("gemini-omni-flash")) caps.add("text-to-image");
+  if (e.includes("image-to-image") || e.includes("redux")) caps.add("image-to-image");
+  if (e.includes("/edit") || e.includes("fibo-edit") || e.includes("outpaint") || e.includes("background") || e.includes("remove-background")) caps.add("edit");
+  if (e.includes("outpaint")) caps.add("outpaint");
+  if (e.includes("remove-background") || e.includes("background/remove")) caps.add("remove-background");
+  if (e === "fal-ai/veo3" || e === "fal-ai/veo3/fast") caps.add("text-to-video");
+  if (e.includes("text-to-video") || e.includes("video-agent") || e.includes("avatars/text-to-video")) caps.add("text-to-video");
+  if (e.includes("image-to-video") || e.includes("omnihuman")) caps.add("image-to-video");
+  if (e.includes("reference-to-video")) caps.add("reference-to-video");
+  if (e.includes("first-last-frame")) caps.add("first-last-frame-to-video");
+  if (e.includes("extend-video")) caps.add("extend-video");
+  if (e.includes("video-to-video") || e.includes("reframe")) caps.add("video-to-video");
+  if (e.includes("upscale/image")) caps.add("image-upscale");
+  if (e.includes("upscale/video")) caps.add("video-upscale");
+  if (e.includes("lipsync")) caps.add("lipsync");
+  if (e.includes("voice-clone") || e.includes("digital-twin")) caps.add("voice-clone");
+  if (e.includes("speech") || e.includes("tts") || e.includes("text-to-dialogue")) caps.add("tts");
+  if (e.includes("speech-to-text")) caps.add("speech-to-text");
+  if (e.includes("music") || e.includes("lyria") || e.includes("text-to-music")) caps.add("music");
+  if (e.includes("dubbing") || e.includes("translate")) caps.add("dubbing");
+  if (e.includes("voice-changer")) caps.add("voice-change");
+  if (e.includes("avatar") || e.includes("heygen") || e.includes("omnihuman")) caps.add("avatar");
+  if (e.includes("subtitles")) caps.add("subtitles");
+  if (!caps.size) caps.add("text-to-image");
+  return Array.from(caps);
+}
+
+function mediaTypeForCapabilities(caps: string[]) {
+  if (caps.includes("lipsync")) return "lipsync";
+  if (caps.includes("voice-clone")) return "voice_clone";
+  if (caps.some((cap) => ["tts", "music", "speech-to-text", "dubbing", "voice-change"].includes(cap))) return "audio";
+  if (caps.some((cap) => ["edit", "outpaint", "remove-background", "image-upscale", "image-to-image"].includes(cap)) && !caps.some((cap) => cap.includes("video"))) return "image_edit";
+  if (caps.some((cap) => ["video-upscale", "video-to-video", "subtitles"].includes(cap))) return "video_edit";
+  if (caps.some((cap) => cap.includes("video") || cap === "avatar")) return "video";
+  return "image";
+}
+
+function actionForCapabilities(type: string, caps: string[]) {
+  if (caps.includes("remove-background")) return "remove_background";
+  if (caps.includes("image-to-image") || caps.includes("edit") || caps.includes("outpaint")) return "edit_image";
+  if (caps.includes("image-upscale")) return "upscale_image";
+  if (caps.includes("text-to-image")) return "generate_image";
+  if (caps.includes("text-to-video")) return "generate_video";
+  if (caps.includes("image-to-video")) return "image_to_video";
+  if (caps.includes("reference-to-video")) return "reference_to_video";
+  if (caps.includes("extend-video")) return "extend_video";
+  if (caps.includes("video-to-video")) return "video_to_video";
+  if (caps.includes("video-upscale")) return "upscale_video";
+  if (caps.includes("lipsync")) return "lipsync";
+  if (caps.includes("voice-clone")) return "clone_voice";
+  if (caps.includes("music")) return "generate_music";
+  if (caps.includes("speech-to-text")) return "speech_to_text";
+  if (caps.includes("tts")) return "generate_voice";
+  if (caps.includes("dubbing")) return "dubbing";
+  if (caps.includes("subtitles")) return "subtitles";
+  if (type === "audio") return "generate_audio";
+  return "generate";
+}
+
+function qualityTierForEndpoint(endpoint: string) {
+  const e = endpoint.toLowerCase();
+  if (e.includes("4k") || e.includes("pro") || e.includes("quality") || e.includes("max") || e.includes("v3/pro") || e.includes("gpt-image-2") || e.includes("nano-banana-pro")) return "premium";
+  if (e.includes("mini") || e.includes("schnell") || e.includes("lite") || e.includes("fast") || e.includes("turbo")) return "economy";
+  return "standard";
+}
+
+function pricingUnitForEndpoint(type: string, caps: string[]) {
+  if (type === "video" || type === "video_edit" || type === "lipsync" || caps.includes("music")) return "second";
+  if (type === "audio" && (caps.includes("tts") || caps.includes("dubbing") || caps.includes("speech-to-text"))) return "thousand_chars";
+  return "unit";
+}
+
+function costForEndpoint(endpoint: string, type: string, caps: string[]) {
+  const e = endpoint.toLowerCase();
+  if (e.includes("4k")) return 0.35;
+  if (e.includes("veo3.1") || e.includes("veo3")) return e.includes("lite") || e.includes("fast") ? 0.1 : 0.2;
+  if (e.includes("kling-video/v3/pro")) return 0.18;
+  if (e.includes("kling-video/v3/standard")) return 0.12;
+  if (e.includes("seedance-2.0/mini")) return 0.06;
+  if (e.includes("seedance-2.0/fast")) return 0.08;
+  if (e.includes("seedance-2.0")) return 0.12;
+  if (e.includes("ray/v3.2")) return 0.18;
+  if (e.includes("grok-imagine-video")) return 0.18;
+  if (e.includes("happy-horse") || e.includes("pixverse")) return 0.08;
+  if (e.includes("avatar") || e.includes("heygen") || e.includes("omnihuman")) return 0.14;
+  if (type === "video" || type === "video_edit" || type === "lipsync") return 0.1;
+  if (e.includes("voice-clone") || e.includes("digital-twin")) return 1.5;
+  if (caps.includes("music")) return 0.08;
+  if (type === "audio") return 0.05;
+  if (e.includes("gpt-image-2") || e.includes("nano-banana-pro")) return 0.08;
+  if (e.includes("nano-banana-2")) return 0.08;
+  if (e.includes("flux-2-pro")) return 0.06;
+  if (e.includes("flux/dev")) return 0.04;
+  if (e.includes("flux/schnell")) return 0.04;
+  if (e.includes("seedream")) return 0.035;
+  if (e.includes("remove-background") || e.includes("background/remove")) return 0.01;
+  return 0.04;
+}
+
+function defaultUnitsForEndpoint(type: string, caps: string[]) {
+  if (type === "video" || type === "video_edit" || type === "lipsync") return 5;
+  if (caps.includes("music")) return 30;
+  return 1;
+}
+
+function maximumUnitsForEndpoint(type: string, caps: string[], endpoint: string) {
+  const e = endpoint.toLowerCase();
+  if (e.includes("veo3")) return 8;
+  if (caps.includes("music")) return 120;
+  if (type === "video" || type === "video_edit") return e.includes("4k") ? 10 : 15;
+  if (type === "lipsync") return 60;
+  if (type === "audio") return 20;
+  return undefined;
+}
+
+function inputProfileForCapabilities(caps: string[]) {
+  if (caps.includes("first-last-frame-to-video")) return "first_last_frame";
+  if (caps.includes("reference-to-video")) return "reference_video";
+  if (caps.includes("image-to-video")) return "image_video";
+  if (caps.includes("extend-video") || caps.includes("video-to-video")) return "video_reference";
+  if (caps.includes("image-to-image") || caps.includes("edit") || caps.includes("outpaint") || caps.includes("remove-background") || caps.includes("image-upscale")) return "image_edit";
+  if (caps.includes("lipsync")) return "lipsync";
+  if (caps.includes("tts") || caps.includes("music")) return "audio_prompt";
+  return "text_prompt";
+}
+
+function falModel(endpoint: string, override: ModelOverride = {}): PricingModel {
+  const caps = override.capabilities || capabilitiesForEndpoint(endpoint);
+  const type = override.type || mediaTypeForCapabilities(caps);
+  const qualityTier = override.qualityTier || qualityTierForEndpoint(endpoint);
+  const pricingUnit = override.pricingUnit || pricingUnitForEndpoint(type, caps);
+  const cost = override.costPerUnitUsd || costForEndpoint(endpoint, type, caps);
+  const defaultUnits = override.defaultUnits || defaultUnitsForEndpoint(type, caps);
+  const premium = override.premium ?? qualityTier === "premium";
+  return {
+    id: override.id || idFromEndpoint(endpoint),
+    name: override.name || override.label || labelFromEndpoint(endpoint),
+    type,
+    endpoint,
+    pricingUnit,
+    costPerUnitUsd: cost,
+    defaultUnits,
+    minimumUnits: override.minimumUnits || (pricingUnit === "second" ? Math.min(defaultUnits, 5) : 1),
+    maximumUnits: override.maximumUnits || maximumUnitsForEndpoint(type, caps, endpoint),
+    creditFloorUsd: override.creditFloorUsd || CREDIT_FLOOR_USD,
+    retailCreditUsd: override.retailCreditUsd || RETAIL_CREDIT_USD,
+    marginMultiplier: override.marginMultiplier || MEDIA_MARGIN_MULTIPLIER,
+    requiresConfirmation: override.requiresConfirmation ?? (type !== "image" && type !== "image_edit" || premium || cost >= 0.08),
+    premium,
+    metadata: {
+      provider: "fal.ai",
+      endpoint,
+      capabilities: caps,
+      input_profile: override.inputProfile || inputProfileForCapabilities(caps),
+      quality_tier: qualityTier,
+      family: override.family || endpoint.split("/")[0],
+      fal_only: true,
+      cost_estimate: true,
+      ...(override.metadata || {}),
+    },
+  };
+}
+
+const modelRegistry: PricingModel[] = FAL_ENDPOINTS.map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
 
 const fallbackPlans: Record<string, PlanLimits> = {
   free: { id: "free", displayName: "Free", includedCredits: 100, monthlyPriceUsd: 0, annualPriceUsd: 0, monthlyMessageLimit: 60, dailyMessageLimit: 10, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7, storageGb: 1, maxUploadMb: 25, seatLimit: 1, supportLevel: "community", priorityQueue: false, metadata: { checkout: false } },
@@ -271,12 +576,134 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
 
 async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
   const { data, error } = await supabase.from("pricing_models").select("*").eq("active", true);
-  if (!error && data?.length) return data.map(normalizePricingModel);
+  if (!error && data?.length) {
+    const dbModels = data.map(normalizePricingModel);
+    const dbById = new Map(dbModels.map((model) => [model.id, model]));
+    const merged = modelRegistry.map((registryModel) => {
+      const dbModel = dbById.get(registryModel.id);
+      if (!dbModel) return registryModel;
+      dbById.delete(registryModel.id);
+      return {
+        ...registryModel,
+        ...dbModel,
+        endpoint: dbModel.endpoint || registryModel.endpoint,
+        metadata: {
+          ...registryModel.metadata,
+          ...(dbModel.metadata || {}),
+          provider: "fal.ai",
+          fal_only: true,
+        },
+      };
+    });
+    for (const model of dbById.values()) {
+      if (model.endpoint) merged.push({
+        ...model,
+        metadata: { ...(model.metadata || {}), provider: "fal.ai", fal_only: true },
+      });
+    }
+    return merged.filter((model) => Boolean(model.endpoint));
+  }
   return modelRegistry;
 }
 
+function modelCapabilities(model: PricingModel) {
+  const raw = (model.metadata || {}).capabilities;
+  return Array.isArray(raw) ? raw.map(String) : capabilitiesForEndpoint(String(model.endpoint || ""));
+}
+
+function requestTypeFromBody(body: Record<string, unknown>, prompt: string) {
+  const explicitType = String(body.type || "").toLowerCase();
+  const raw = String(body.mode || "").toLowerCase();
+  const allowedTypes = ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"];
+  if (allowedTypes.includes(explicitType)) return explicitType;
+  const text = prompt.toLowerCase();
+  if (/lip[-\s]?sync|synchronise.*l[eè]vres|doublage.*l[eè]vres/.test(text)) return "lipsync";
+  if (/clone.*voix|clonage.*voix|voice clone|digital twin/.test(text)) return "voice_clone";
+  if (/musique|music|chanson|soundtrack|bande son|tts|voix off|voice over|audio|doublage|transcri/.test(text)) return "audio";
+  if (/retouche|modifier|edite|edit|background|arriere-plan|upscale|agrandir|remove/.test(text) && raw === "image") return "image_edit";
+  if (/reframe|extend|prolonge|upscale.*video|sous-titre|subtitle|fond.*video/.test(text) && raw === "video") return "video_edit";
+  if (allowedTypes.includes(raw)) return raw;
+  return "image";
+}
+
+function requestedCapability(type: string, prompt: string, body: Record<string, unknown>) {
+  const text = prompt.toLowerCase();
+  const hasImageRef = Boolean(body.imageUrl || body.referenceImageUrl || body.firstFrameUrl || body.referenceUrls);
+  const hasVideoRef = Boolean(body.videoUrl || body.sourceVideoUrl);
+  if (type === "image" && /logo|poster|affiche|image|photo|visuel|illustration|packshot|portrait/.test(text)) return "text-to-image";
+  if (type === "image_edit") {
+    if (/remove|supprime.*fond|background|arriere-plan/.test(text)) return "remove-background";
+    if (/outpaint|etendre|agrandir/.test(text)) return "outpaint";
+    if (/upscale|ameliore.*resolution|haute resolution/.test(text)) return "image-upscale";
+    return hasImageRef ? "edit" : "image-to-image";
+  }
+  if (type === "video") {
+    if (body.firstFrameUrl || body.lastFrameUrl || /first.*last|dernier.*frame/.test(text)) return "first-last-frame-to-video";
+    if (/reference|meme personnage|coherence|avatar/.test(text)) return "reference-to-video";
+    if (hasImageRef || /anime|animer|image vers video|photo vers video/.test(text)) return "image-to-video";
+    return "text-to-video";
+  }
+  if (type === "video_edit") {
+    if (/extend|prolonge/.test(text)) return "extend-video";
+    if (/upscale|4k|resolution/.test(text)) return "video-upscale";
+    if (/sous-titre|subtitle/.test(text)) return "subtitles";
+    return hasVideoRef ? "video-to-video" : "video-to-video";
+  }
+  if (type === "lipsync") return "lipsync";
+  if (type === "voice_clone") return "voice-clone";
+  if (type === "audio") {
+    if (/musique|music|chanson|soundtrack/.test(text)) return "music";
+    if (/transcri|speech.?to.?text|scribe/.test(text)) return "speech-to-text";
+    if (/doublage|translate|tradu/.test(text)) return "dubbing";
+    return "tts";
+  }
+  return type === "video" ? "text-to-video" : "text-to-image";
+}
+
+function scoreModel(model: PricingModel, type: string, capability: string, prompt: string) {
+  if (model.type !== type) return -1000;
+  const caps = modelCapabilities(model);
+  if (!caps.includes(capability)) return -200;
+  const text = prompt.toLowerCase();
+  const tier = String((model.metadata || {}).quality_tier || "standard");
+  let score = 100;
+  score += tier === "premium" ? 40 : tier === "standard" ? 24 : 12;
+  if (model.premium) score += 12;
+  const endpoint = String(model.endpoint || "").toLowerCase();
+  if (/4k|ultra|maximum|cinema|pub|premium|qualite|qualité/.test(text) && endpoint.includes("4k")) score += 35;
+  if (/rapide|vite|draft|test|brouillon/.test(text) && /fast|turbo|schnell|mini|lite/.test(endpoint)) score += 28;
+  if (/personnage|avatar|humain|face|visage|talking head/.test(text) && /heygen|omnihuman|avatar|sync-lipsync/.test(endpoint)) score += 30;
+  if (/cinema|cinematique|realiste|camera|mouvement/.test(text) && /veo|kling|ray|seedance/.test(endpoint)) score += 24;
+  if (/image|photo|visuel|affiche|packshot|logo/.test(text) && /gpt-image-2|nano-banana|flux-2|gemini/.test(endpoint)) score += 22;
+  if (capability.includes("video") && /seedance-2.0|kling-video\/v3|veo3.1|ray\/v3.2|grok-imagine-video/.test(endpoint)) score += 18;
+  score -= Math.min(30, quoteFor(model).credits / 80);
+  return score;
+}
+
+function resolveBestModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string, prompt = "", body: Record<string, unknown> = {}) {
+  const explicit = String(modelId || "").toLowerCase();
+  if (explicit && explicit !== "auto" && explicit !== "huggy-auto") {
+    return resolveModelFromCatalog(catalog, modelId, type);
+  }
+  const capability = requestedCapability(type, prompt, body);
+  const ranked = catalog
+    .map((model) => ({ model, score: scoreModel(model, type, capability, prompt) }))
+    .filter((item) => item.score > -100)
+    .sort((a, b) => b.score - a.score);
+  return ranked[0]?.model || resolveModelFromCatalog(catalog, undefined, type);
+}
+
 function resolveModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string) {
-  const defaultId = type === "video" ? "veol" : "nano";
+  const defaults: Record<string, string> = {
+    image: "gpt-image-2",
+    image_edit: "gpt-image-2-edit",
+    video: "veoq",
+    video_edit: "luma-agent-ray-v3-2-video-to-video",
+    audio: "minimax-tts",
+    lipsync: "heygen-v3-lipsync-precision",
+    voice_clone: "minimax-voice-clone",
+  };
+  const defaultId = defaults[type] || "nano";
   return catalog.find((m) => m.id === modelId && m.type === type)
     || catalog.find((m) => m.id === defaultId && m.type === type)
     || catalog.find((m) => m.type === type)
@@ -624,6 +1051,8 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
     progress: generation.progress || 0,
     model: generation.model_label,
     modelLabel: generation.model_label,
+    modelId: generation.model_id,
+    prompt: generation.prompt || "",
     aspectRatio: generation.aspect_ratio,
     ratio: generation.aspect_ratio,
     scene: (generation.params as Record<string, unknown> | null)?.scene || sceneFromPrompt(String(generation.prompt || "")),
@@ -709,6 +1138,15 @@ async function bootstrap(req: Request) {
         id: model.id,
         name: model.name,
         type: model.type,
+        endpoint: model.endpoint,
+        pricingUnit: model.pricingUnit,
+        defaultUnits: model.defaultUnits,
+        maximumUnits: model.maximumUnits,
+        premium: model.premium,
+        capabilities: modelCapabilities(model),
+        qualityTier: String((model.metadata || {}).quality_tier || "standard"),
+        inputProfile: String((model.metadata || {}).input_profile || "text_prompt"),
+        family: String((model.metadata || {}).family || "fal.ai"),
         credits: quote.credits,
         providerCostUsd: quote.providerCostUsd,
         requiresConfirmation: quote.requiresConfirmation,
@@ -774,7 +1212,10 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "5. Apres un resultat, propose une ou deux iterations concretes: cadrage, lumiere, decor, premium, mouvement, autre format, variante commerciale ou transformation image vers video.",
   "",
   "Choix des modeles: tu es multi-modele. Choisis selon cout, vitesse, qualite, fidelite aux references, coherence personnage, realisme, mouvement, duree, audio, lipsync, retouches et lisibilite du texte.",
-  "Regle par defaut: utilise le modele le moins couteux capable de produire un bon resultat. Passe au premium seulement si l'utilisateur le demande, si la qualite l'exige, si la coherence personnage est critique, si le mouvement est complexe, si l'audio/lipsync est indispensable, ou si une version moins chere a echoue.",
+  "Tous les modeles media disponibles passent par fal.ai. Ne propose pas d'appeler directement OpenAI, Google, xAI, Luma, VEED, ElevenLabs ou MiniMax hors fal.ai: si un slug existe, il doit etre utilise via fal.ai.",
+  "Regle de selection HuggyFlow: choisis automatiquement le meilleur modele fal.ai pour la tache. Pour un rendu final commercial, prefere les modeles premium ou haute qualite; pour une exploration rapide, prefere les modeles fast, turbo, lite ou mini; pour un personnage recurrent, privilegie reference-to-video, avatar, lipsync ou modeles coherents reference; pour une retouche, choisis edit/outpaint/remove-background/upscale; pour video depuis image, choisis image-to-video; pour prolonger, choisis extend-video.",
+  "Regle par defaut: utilise le modele le plus puissant justifie par l'objectif, tout en gardant la rentabilite credits. Ne baisse en gamme que pour brouillon, test rapide, contrainte de credits ou demande explicite d'economie.",
+  "Ne liste pas tous les modeles a l'utilisateur. Explique seulement le choix retenu si cela aide: modele choisi, raison courte, cout estime et alternative economique si pertinente.",
   "",
   "Couts et confirmations: demande confirmation avant generation video, generation en lot, modele premium, duree longue, 4K ou haute resolution couteuse, clonage vocal, lipsync, audio synchronise ou operation consommant beaucoup de credits.",
   "Formule recommandee: Cette option coutera environ [X] credits. Je recommande cette version car [raison courte]. Tu confirmes ?",
@@ -837,11 +1278,58 @@ async function anthropicReply(prompt: string, type: string, credits: number) {
   }
 }
 
-function falInput(model: PricingModel, prompt: string, aspectRatio: string, duration: number) {
-  if (model.type === "video") {
-    return { prompt, aspect_ratio: aspectRatio, duration: String(duration) };
+function firstString(value: unknown) {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstString(item);
+      if (found) return found;
+    }
   }
-  return { prompt, aspect_ratio: aspectRatio, num_images: 1 };
+  return "";
+}
+
+function stringArray(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => firstString(item)).filter(Boolean);
+}
+
+function falInput(model: PricingModel, prompt: string, aspectRatio: string, duration: number, params: Record<string, unknown> = {}) {
+  const caps = modelCapabilities(model);
+  const input: Record<string, unknown> = {
+    prompt,
+    aspect_ratio: aspectRatio,
+  };
+  const imageUrl = firstString(params.imageUrl || params.image_url || params.referenceImageUrl || params.reference_image_url || params.sourceImageUrl || params.source_image_url);
+  const videoUrl = firstString(params.videoUrl || params.video_url || params.sourceVideoUrl || params.source_video_url);
+  const audioUrl = firstString(params.audioUrl || params.audio_url || params.voiceUrl || params.voice_url);
+  const firstFrameUrl = firstString(params.firstFrameUrl || params.first_frame_url);
+  const lastFrameUrl = firstString(params.lastFrameUrl || params.last_frame_url);
+  const refs = stringArray(params.referenceUrls || params.reference_urls || params.referenceImageUrls || params.reference_image_urls);
+
+  if (model.pricingUnit === "second") input.duration = Math.round(duration);
+  if (model.type === "image" || model.type === "image_edit") input.num_images = Number(params.numImages || params.num_images || 1);
+  if (imageUrl) {
+    input.image_url = imageUrl;
+    input.input_image_url = imageUrl;
+  }
+  if (videoUrl) input.video_url = videoUrl;
+  if (audioUrl) input.audio_url = audioUrl;
+  if (firstFrameUrl) input.first_frame_image_url = firstFrameUrl;
+  if (lastFrameUrl) input.last_frame_image_url = lastFrameUrl;
+  if (refs.length) {
+    input.image_urls = refs;
+    input.reference_image_urls = refs;
+    input.reference_images = refs;
+  }
+  if (caps.includes("tts") || caps.includes("music") || caps.includes("speech-to-text")) {
+    input.text = prompt;
+  }
+  if (caps.includes("remove-background")) {
+    delete input.prompt;
+    if (imageUrl) input.image_url = imageUrl;
+  }
+  return input;
 }
 
 function ensureProviderReady(model: PricingModel) {
@@ -866,8 +1354,9 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
   }
   try {
     fal.config({ credentials: key });
+    const params = cleanMetadata(generation.params);
     const request = await fal.queue.submit(String(model.endpoint || ""), {
-      input: falInput(model, String(generation.prompt || ""), String(generation.aspect_ratio || "4:5"), Number(generation.duration_seconds || 5)),
+      input: falInput(model, String(generation.prompt || ""), String(generation.aspect_ratio || "4:5"), Number(generation.duration_seconds || model.defaultUnits || 5), params),
     });
     await supabase.from("generations").update({
       status: "running",
@@ -1020,11 +1509,9 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   const profile = await ensureProfile(supabase, userId);
 
   const prompt = String(body.prompt || body.message || "");
-  const rawType = String(body.type || body.mode || "image");
-  const allowedTypes = ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"];
-  const type = allowedTypes.includes(rawType) ? rawType : (rawType === "video" ? "video" : "image");
+  const type = requestTypeFromBody(body, prompt);
   const catalog = await pricingCatalog(supabase);
-  const model = resolveModelFromCatalog(catalog, String(body.modelId || ""), type);
+  const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body);
   const requestedUnits = model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits) : Number(body.units || model.defaultUnits);
   const quote = quoteFor(model, requestedUnits);
   const credits = quote.credits;
@@ -1044,6 +1531,12 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       scene: body.scene || sceneFromPrompt(prompt),
       duration: model.pricingUnit === "second" ? quote.units : undefined,
       units: model.pricingUnit !== "second" ? quote.units : undefined,
+      imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url,
+      videoUrl: body.videoUrl || body.video_url,
+      audioUrl: body.audioUrl || body.audio_url,
+      referenceUrls: body.referenceUrls || body.reference_urls,
+      firstFrameUrl: body.firstFrameUrl || body.first_frame_url,
+      lastFrameUrl: body.lastFrameUrl || body.last_frame_url,
     };
     await savePendingGeneration(supabase, profile, {
       body: pendingBody,
@@ -1101,6 +1594,13 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
         scene: String(body.scene || sceneFromPrompt(prompt)),
         pricing: quote,
         pricing_unit: model.pricingUnit,
+        selected_capability: requestedCapability(type, prompt, body),
+        imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url || null,
+        videoUrl: body.videoUrl || body.video_url || null,
+        audioUrl: body.audioUrl || body.audio_url || null,
+        referenceUrls: body.referenceUrls || body.reference_urls || [],
+        firstFrameUrl: body.firstFrameUrl || body.first_frame_url || null,
+        lastFrameUrl: body.lastFrameUrl || body.last_frame_url || null,
         watermark_required: plan.watermarkRequired,
         media_retention_days: plan.mediaRetentionDays,
       },
@@ -1177,10 +1677,10 @@ async function chat(req: Request) {
         }
 
         const mode = String(body.mode || "image");
-        const type = mode === "video" ? "video" : "image";
+        const type = requestTypeFromBody({ ...body, mode }, prompt);
         const catalog = await pricingCatalog(supabase);
-        const model = resolveModelFromCatalog(catalog, String(body.modelId || ""), type);
-        const quote = quoteFor(model, type === "video" ? 5 : undefined);
+        const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body as Record<string, unknown>);
+        const quote = quoteFor(model, model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits || 5) : undefined);
         const willGenerate = shouldGenerateMedia(prompt, mode);
 
         if (willGenerate && quote.requiresConfirmation && body.confirmed !== true) {
@@ -1195,6 +1695,12 @@ async function chat(req: Request) {
               aspectRatio: body.aspectRatio || "4:5",
               scene: sceneFromPrompt(prompt),
               duration: type === "video" ? quote.units : undefined,
+              imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url,
+              videoUrl: body.videoUrl || body.video_url,
+              audioUrl: body.audioUrl || body.audio_url,
+              referenceUrls: body.referenceUrls || body.reference_urls,
+              firstFrameUrl: body.firstFrameUrl || body.first_frame_url,
+              lastFrameUrl: body.lastFrameUrl || body.last_frame_url,
             },
             model: { id: model.id, name: model.name, type: model.type },
             quote,
@@ -1217,11 +1723,17 @@ async function chat(req: Request) {
             projectId: project.id,
             prompt,
             type,
-            modelId: body.modelId,
+            modelId: model.id,
             aspectRatio: body.aspectRatio,
             scene: sceneFromPrompt(prompt),
-            duration: type === "video" ? 5 : undefined,
+            duration: model.pricingUnit === "second" ? quote.units : undefined,
             confirmed: body.confirmed === true || !quote.requiresConfirmation,
+            imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url,
+            videoUrl: body.videoUrl || body.video_url,
+            audioUrl: body.audioUrl || body.audio_url,
+            referenceUrls: body.referenceUrls || body.reference_urls,
+            firstFrameUrl: body.firstFrameUrl || body.first_frame_url,
+            lastFrameUrl: body.lastFrameUrl || body.last_frame_url,
           }, reply);
           send("generation", result.generation);
         }

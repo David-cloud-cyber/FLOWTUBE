@@ -74,7 +74,7 @@ textarea{resize:none;font-family:inherit}
           <sc-if value="{{ collectionsOpen }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex;flex-direction:column;gap:2px">
               <sc-for list="{{ collections }}" as="c" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:10px;cursor:pointer;font-size:13px;color:#A8A8AA;transition:background .2s" style-hover="background:rgba(255,255,255,.05)">
+                <div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:10px;cursor:pointer;font-size:13px;color:#A8A8AA;transition:background .2s" style-hover="background:rgba(255,255,255,.05)">
                   <span style="font-size:14px;width:18px;text-align:center">{{ c.icon }}</span>{{ c.name }}
                 </div>
               </sc-for>
@@ -224,10 +224,10 @@ textarea{resize:none;font-family:inherit}
     <div style="{{ composerOuterStyle }}">
       <div style="position:relative;width:100%;max-width:780px;pointer-events:auto">
         <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;z-index:40;bottom:80px;left:8px;width:242px;background:#161618;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:7px;box-shadow:0 26px 60px -16px rgba(0,0,0,.9);animation:fadeUp .18s both">
-            <div style="padding:7px 12px 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5f5f62;font-weight:600">Modèle</div>
-            <sc-for list="{{ modelItems }}" as="it" hint-placeholder-count="6">
-              <div onClick="{{ it.onClick }}" style="{{ it.rowStyle }}" style-hover="background:rgba(255,255,255,.06)"><span style="{{ it.dotStyle }}"></span><span style="flex:1">{{ it.name }}</span><span style="{{ it.checkStyle }}">✓</span></div>
+          <div style="position:absolute;z-index:40;bottom:80px;left:8px;width:min(560px,calc(100vw - 42px));max-height:430px;overflow-y:auto;background:#161618;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:8px;box-shadow:0 26px 60px -16px rgba(0,0,0,.9);animation:fadeUp .18s both">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;gap:12px"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5f5f62;font-weight:700">Modèles fal.ai</div><div style="font-size:11.5px;color:#8a8a8c">{{ modelCountLabel }}</div></div>
+            <sc-for list="{{ modelItems }}" as="it" hint-placeholder-count="8">
+              <div onClick="{{ it.onClick }}" style="{{ it.rowStyle }}" style-hover="background:rgba(255,255,255,.06)"><span style="{{ it.dotStyle }}"></span><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span><span style="{{ it.tierStyle }}">{{ it.tier }}</span></div><div style="font-size:11.5px;color:#858589;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.meta }}</div></div><span style="{{ it.creditStyle }}">{{ it.creditsLabel }}</span><span style="{{ it.checkStyle }}">✓</span></div>
             </sc-for>
           </div>
         </sc-if>
@@ -606,6 +606,55 @@ textarea{resize:none;font-family:inherit}
     </div>
   </sc-if>
 
+  <sc-if value="{{ showCollectionPanel }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCollectionPanel }}" style="position:absolute;inset:0;z-index:145;display:flex;align-items:center;justify-content:center;padding:32px;background:rgba(4,4,6,.72);backdrop-filter:blur(12px);animation:fadeUp .2s both">
+      <div onClick="{{ stop }}" style="width:min(760px,100%);max-height:min(760px,88vh);overflow:hidden;background:#101012;border:1px solid rgba(255,255,255,.11);border-radius:20px;box-shadow:0 36px 90px -28px #000">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.07)">
+          <div>
+            <div style="font-size:12px;color:#8a8a8c;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Collections</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;margin-top:3px;color:#F5F5F4">{{ collectionTitle }}</div>
+          </div>
+          <div onClick="{{ closeCollectionPanel }}" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9A9C;transition:all .2s" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:14px 18px 0">
+          <button onClick="{{ setCollectionHistory }}" style="{{ collectionHistoryStyle }}">Historique</button>
+          <button onClick="{{ setCollectionTemplates }}" style="{{ collectionTemplatesStyle }}">Templates</button>
+        </div>
+        <div style="padding:18px;overflow-y:auto;max-height:calc(88vh - 142px)">
+          <sc-if value="{{ collectionEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:14px;padding:22px;color:#9a9a9c;font-size:14px;line-height:1.5">Aucune création disponible dans cette collection. Lance une génération puis reviens ici pour la remixer.</div>
+          </sc-if>
+          <sc-if value="{{ showCollectionHistory }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+              <sc-for list="{{ collectionItems }}" as="item" hint-placeholder-count="4">
+                <div style="border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:14px;padding:12px;min-height:138px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-size:13.5px;font-weight:800;color:#F5F5F4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.title }}</div>
+                  <div style="font-size:11.5px;color:#858589;line-height:1.4">{{ item.meta }}</div>
+                  <div style="flex:1"></div>
+                  <button onClick="{{ item.remix }}" style="padding:9px 11px;border-radius:10px;border:none;background:#D7F94B;color:#08080A;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit">Remix</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showCollectionTemplates }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+              <sc-for list="{{ collectionTemplates }}" as="item" hint-placeholder-count="4">
+                <div style="border:1px solid rgba(215,249,75,.13);background:rgba(215,249,75,.045);border-radius:14px;padding:12px;min-height:138px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-size:13.5px;font-weight:800;color:#F5F5F4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.title }}</div>
+                  <div style="font-size:11.5px;color:#858589;line-height:1.4">{{ item.meta }}</div>
+                  <div style="flex:1"></div>
+                  <button onClick="{{ item.remix }}" style="padding:9px 11px;border-radius:10px;border:none;background:#D7F94B;color:#08080A;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit">Utiliser ce template</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ authModalOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeAuthModal }}" style="{{ authOverlayStyle }}">
       <div onClick="{{ stop }}" style="{{ authCardStyle }}">
@@ -659,7 +708,7 @@ class Component extends DCLogic {
       activeId: 'welcome',
       input: '',
       mode: p.startMode === 'Vidéo' ? 'video' : 'image',
-      modelId: 'nano',
+      modelId: 'auto',
       ratio: '4:5',
       modelMenu: false,
       ratioMenu: false,
@@ -690,6 +739,9 @@ class Component extends DCLogic {
       accountMenu: false,
       accountAnchor: 'header',
       panel: null,
+      collectionPanelOpen: false,
+      collectionKind: 'image',
+      collectionTab: 'history',
       settings: { emailNotif:true, autoRenew:true, newsletter:false },
       conversations: this.seed(),
     };
@@ -699,14 +751,30 @@ class Component extends DCLogic {
     return { welcome: { title:'Nouveau projet', messages:[] } };
   }
 
-  get MODELS(){ return [
-    { id:'nano', name:'Nano Banana Pro', dot:'#D7F94B' },
-    { id:'flux', name:'Flux', dot:'#7CC7FF' },
-    { id:'veoq', name:'Veo 3.1 Quality', dot:'#C99BFF' },
-    { id:'veol', name:'Veo 3.1 Lite', dot:'#9A9A9C' },
-    { id:'kling', name:'Kling', dot:'#FF9B7C' },
-    { id:'seedance', name:'Seedance', dot:'#7CFFB0' },
-  ]; }
+  get MODELS(){
+    const palette = { image:'#D7F94B', image_edit:'#7CC7FF', video:'#C99BFF', video_edit:'#FF9B7C', audio:'#7CFFB0', lipsync:'#FF6FB1', voice_clone:'#E8D17A' };
+    const source = this.state.pricingModels && this.state.pricingModels.length ? this.state.pricingModels : [
+      { id:'nano', name:'Nano Banana Pro', type:'image', credits:66, capabilities:['text-to-image'], qualityTier:'premium' },
+      { id:'flux', name:'Flux', type:'image', credits:18, capabilities:['text-to-image'], qualityTier:'standard' },
+      { id:'veoq', name:'Veo 3.1 Quality', type:'video', credits:438, capabilities:['text-to-video'], qualityTier:'premium' },
+      { id:'veol', name:'Veo 3.1 Lite', type:'video', credits:219, capabilities:['text-to-video'], qualityTier:'standard' },
+      { id:'kling', name:'Kling', type:'video', credits:263, capabilities:['text-to-video'], qualityTier:'premium' },
+      { id:'seedance', name:'Seedance', type:'video', credits:175, capabilities:['text-to-video'], qualityTier:'standard' },
+    ];
+    const normalized = source.map((m,i)=>({
+      id:m.id,
+      name:m.name || m.id,
+      type:m.type || 'image',
+      credits:Number(m.credits || 0),
+      premium:!!m.premium,
+      qualityTier:m.qualityTier || (m.premium?'premium':'standard'),
+      capabilities:m.capabilities || [],
+      family:m.family || 'fal.ai',
+      endpoint:m.endpoint || '',
+      dot:palette[m.type] || ['#D7F94B','#7CC7FF','#C99BFF','#FF9B7C','#7CFFB0'][i%5],
+    }));
+    return [{ id:'auto', name:'Auto HuggyFlow', type:'auto', credits:0, premium:true, qualityTier:'auto', capabilities:['best-model'], family:'fal.ai', endpoint:'', dot:'#D7F94B' }].concat(normalized);
+  }
   get RATIOS(){ return ['16:9','9:16','1:1','4:3','3:4','4:5']; }
 
   accent(){ return this.props && this.props.accentColor ? this.props.accentColor : '#D7F94B'; }
@@ -808,6 +876,8 @@ class Component extends DCLogic {
       status: this.toUiStatus(md.status),
       progress: Number(md.progress || 0),
       model: md.modelLabel || md.model || this.modelName(),
+      modelId: md.modelId || md.pricingModelId || '',
+      prompt: md.prompt || '',
       ratio: md.aspectRatio || md.ratio || this.state.ratio,
       scene: md.scene || this.guessScene(md.prompt || ''),
       dur: md.dur || (md.duration ? '0:'+String(md.duration).padStart(2,'0') : undefined),
@@ -1006,12 +1076,12 @@ class Component extends DCLogic {
     const cid = this.state.activeId;
     if(!this.state.authToken){
       const pendingPrompt = 'Anime cette creation en clip court, mouvement de camera doux, lumiere cinematographique, fin propre.';
-      this.requireAuth('Connecte-toi pour transformer ce visuel en video et suivre la progression.', { type:'generate', payload:{ projectId:cid, type:'video', prompt:pendingPrompt, aspectRatio:'9:16', modelId:'veol', scene:scene || 'studio', duration:5 } });
+      this.requireAuth('Connecte-toi pour transformer ce visuel en video et suivre la progression.', { type:'generate', payload:{ projectId:cid, type:'video', prompt:pendingPrompt, aspectRatio:'9:16', modelId:'auto', scene:scene || 'studio', duration:5 } });
       return;
     }
     const prompt = 'Anime cette création en clip court, mouvement de caméra doux, lumière cinématique, fin propre.';
     this.addAgentText(cid, 'Je prépare une animation courte à partir de ce visuel.');
-    this.requestDirectGeneration({ projectId:cid, type:'video', prompt, aspectRatio:'9:16', modelId:'veol', scene:scene || 'studio', duration:5 }).catch(()=>this.addAgentText(cid, 'Animation indisponible pour le moment. Vérifie la configuration fal.ai puis réessaie.'));
+    this.requestDirectGeneration({ projectId:cid, type:'video', prompt, aspectRatio:'9:16', modelId:'auto', scene:scene || 'studio', duration:5 }).catch(()=>this.addAgentText(cid, 'Animation indisponible pour le moment. Vérifie la configuration fal.ai puis réessaie.'));
   }
   async startCheckout(planId, packId){
     const cid = this.state.activeId;
@@ -1164,6 +1234,46 @@ class Component extends DCLogic {
       if(text) this.setState({ input:(this.state.input ? this.state.input + ' ' : '') + text });
     };
     rec.start();
+  }
+
+  openCollection(kind){
+    this.setState({ collectionPanelOpen:true, collectionKind:kind || 'image', collectionTab:'history', modelMenu:false, ratioMenu:false, accountMenu:false });
+  }
+
+  collectionMedia(kind){
+    const wanted = kind === 'video' ? 'video' : 'image';
+    const items = [];
+    Object.keys(this.state.conversations || {}).forEach(cid=>{
+      const conv = this.state.conversations[cid] || {};
+      (conv.messages || []).forEach(msg=>{
+        const md = msg.media;
+        if(!md || md.type !== wanted) return;
+        items.push({ cid, conv, msg, media:md });
+      });
+    });
+    return items.reverse();
+  }
+
+  remixFromMedia(item, asTemplate){
+    const md = item.media || {};
+    const basePrompt = md.prompt || item.msg.text || (md.type === 'video' ? 'Remix video avec une variation premium.' : 'Remix image avec une variation premium.');
+    const prompt = asTemplate
+      ? 'Remix ce template en gardant la structure creative, mais propose une version plus premium : '+basePrompt
+      : 'Remix cette creation avec une variation propre et plus puissante : '+basePrompt;
+    this.setState({ collectionPanelOpen:false, activeId:item.cid, input:prompt, mode:md.type === 'video' ? 'video' : 'image', modelId:'auto' });
+  }
+
+  collectionVM(kind, tab){
+    const items = this.collectionMedia(kind).map(item=>{
+      const md = item.media || {};
+      return {
+        title:(item.conv.title || (kind === 'video' ? 'Video' : 'Image')),
+        meta:[md.model || 'Modele', md.ratio || '', md.credits ? md.credits+' credits' : ''].filter(Boolean).join(' · '),
+        remix:()=>this.remixFromMedia(item, tab === 'templates'),
+      };
+    });
+    const templates = items.slice(0, 12);
+    return { history:items, templates };
   }
 
   async newProject(){
@@ -1387,12 +1497,23 @@ class Component extends DCLogic {
       return vm;
     });
 
-    const modelItems = this.MODELS.map(m=>({
-      name:m.name, onClick:()=>this.pickModel(m.id),
-      dotStyle:'width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:'+m.dot+';box-shadow:0 0 5px '+m.dot+'99;',
-      rowStyle:'display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13.5px;transition:background .15s;'+(m.id===st.modelId?'background:rgba(255,255,255,.06);color:#F5F5F4;':'color:#C9C9CA;'),
-      checkStyle:'font-size:12px;color:'+A+';opacity:'+(m.id===st.modelId?'1':'0')+';',
-    }));
+    const modelItems = this.MODELS.map(m=>{
+      const caps = (m.capabilities || []).slice(0,3).join(' · ') || 'fal.ai';
+      const tier = String(m.qualityTier || 'standard').toUpperCase();
+      return {
+        name:m.name,
+        onClick:()=>this.pickModel(m.id),
+        meta:m.id === 'auto' ? 'L’agent choisit le meilleur modèle selon la tâche' : (m.type+' · '+caps+' · '+(m.family || 'fal.ai')),
+        tier:m.id === 'auto' ? 'AUTO' : tier,
+        creditsLabel:m.id === 'auto' ? 'auto' : ((m.credits || 0)+' cr.'),
+        dotStyle:'width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:'+m.dot+';box-shadow:0 0 5px '+m.dot+'99;',
+        rowStyle:'display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;cursor:pointer;font-size:13.5px;transition:background .15s;'+(m.id===st.modelId?'background:rgba(255,255,255,.06);color:#F5F5F4;':'color:#C9C9CA;'),
+        tierStyle:'font-size:10px;font-weight:800;letter-spacing:.05em;color:'+(m.qualityTier==='premium'?A:'#8a8a8c')+';background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:2px 6px;flex:0 0 auto;',
+        creditStyle:'font-size:11.5px;font-weight:700;color:#9a9a9c;white-space:nowrap;',
+        checkStyle:'font-size:12px;color:'+A+';opacity:'+(m.id===st.modelId?'1':'0')+';',
+      };
+    });
+    const modelCountLabel = Math.max(0, this.MODELS.length - 1)+' endpoints';
     const ratioItems = this.RATIOS.map(r=>({
       label:r, onClick:()=>this.pickRatio(r),
       style:'display:flex;align-items:center;justify-content:center;padding:10px 0;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;'+(r===st.ratio?'background:'+A+'1f;color:'+A+';border:1px solid '+A+'59;':'color:#C9C9CA;border:1px solid rgba(255,255,255,.08);'),
@@ -1448,6 +1569,14 @@ class Component extends DCLogic {
     const authInputStyle = 'width:100%;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10);color:#F5F5F4;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;';
     const authPrimaryStyle = 'flex:1;min-width:160px;padding:12px 15px;border-radius:12px;border:none;background:'+A+';color:#08080A;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 0 14px -8px '+A+';';
     const authSecondaryStyle = 'flex:1;min-width:140px;padding:12px 15px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.045);color:#F5F5F4;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;';
+    const collectionKind = st.collectionKind === 'video' ? 'video' : 'image';
+    const collectionData = this.collectionVM(collectionKind, st.collectionTab);
+    const collectionItems = collectionData.history;
+    const collectionTemplates = collectionData.templates;
+    const collectionActiveItems = st.collectionTab === 'templates' ? collectionTemplates : collectionItems;
+    const collectionSegBase = 'padding:9px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.10);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;';
+    const collectionHistoryStyle = collectionSegBase + (st.collectionTab === 'history' ? 'background:'+A+';color:#08080A;border-color:'+A+';' : 'background:rgba(255,255,255,.05);color:#C9C9CA;');
+    const collectionTemplatesStyle = collectionSegBase + (st.collectionTab === 'templates' ? 'background:'+A+';color:#08080A;border-color:'+A+';' : 'background:rgba(255,255,255,.05);color:#C9C9CA;');
 
     return {
       authModalOpen: st.authModalOpen,
@@ -1518,6 +1647,21 @@ class Component extends DCLogic {
       toggleSidebar: ()=>this.setState({ sidebarCollapsed:!st.sidebarCollapsed }),
       toggleCollections: ()=>this.setState({ collectionsOpen:!st.collectionsOpen }),
       collections: [ {icon:'🖼', name:'Images'}, {icon:'🎬', name:'Vidéos'}, {icon:'👤', name:'Personnages'} ],
+      collections: [
+        {icon:'IMG', name:'Images', onClick:()=>this.openCollection('image')},
+        {icon:'VID', name:'VidÃ©os', onClick:()=>this.openCollection('video')},
+        {icon:'PRS', name:'Personnages', onClick:()=>this.openCollection('image')},
+      ],
+      showCollectionPanel: st.collectionPanelOpen,
+      collectionTitle: collectionKind === 'video' ? 'VidÃ©os' : 'Images',
+      showCollectionHistory: st.collectionTab !== 'templates',
+      showCollectionTemplates: st.collectionTab === 'templates',
+      collectionItems, collectionTemplates,
+      collectionEmpty: collectionActiveItems.length === 0,
+      collectionHistoryStyle, collectionTemplatesStyle,
+      setCollectionHistory:()=>this.setState({ collectionTab:'history' }),
+      setCollectionTemplates:()=>this.setState({ collectionTab:'templates' }),
+      closeCollectionPanel:()=>this.setState({ collectionPanelOpen:false }),
       logoStyle:'width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;letter-spacing:-.02em;color:#0A0A06;background:'+A+';box-shadow:0 0 10px -5px '+A+';',
       newProjStyle:'display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 14px;border-radius:13px;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:700;color:#0A0A06;background:'+A+';box-shadow:0 0 0 1px '+A+'33,0 8px 18px -14px '+A+';transition:transform .2s;',
       creditsFillStyle:'height:100%;width:'+creditPct+'%;border-radius:4px;background:'+A+';box-shadow:0 0 6px '+A+'99;',
@@ -1555,7 +1699,7 @@ class Component extends DCLogic {
       modelMenu: st.modelMenu, ratioMenu: st.ratioMenu,
       toggleModelMenu:()=>this.setState({ modelMenu:!st.modelMenu, ratioMenu:false }),
       toggleRatioMenu:()=>this.setState({ ratioMenu:!st.ratioMenu, modelMenu:false }),
-      modelItems, ratioItems,
+      modelItems, modelCountLabel, ratioItems,
       sendStyle:'width:38px;height:38px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;font-family:inherit;transition:all .2s;'+(st.input.trim()?'cursor:pointer;color:#0A0A06;background:'+A+';box-shadow:0 0 12px -7px '+A+';':'cursor:default;color:#6b6b6e;background:rgba(255,255,255,.08);'),
     };
   }
