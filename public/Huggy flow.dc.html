@@ -224,7 +224,7 @@ textarea{resize:none;font-family:inherit}
     <div style="{{ composerOuterStyle }}">
       <div style="position:relative;width:100%;max-width:780px;pointer-events:auto">
         <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;z-index:40;bottom:80px;left:8px;width:min(560px,calc(100vw - 42px));max-height:430px;overflow-y:auto;background:#161618;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:8px;box-shadow:0 26px 60px -16px rgba(0,0,0,.9);animation:fadeUp .18s both">
+          <div style="position:absolute;z-index:40;bottom:72px;left:6px;width:min(390px,calc(100vw - 28px));max-height:326px;overflow-y:auto;background:#121214;border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:6px;box-shadow:0 22px 52px -18px rgba(0,0,0,.92);animation:fadeUp .16s both">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;gap:12px"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5f5f62;font-weight:700">Modèles fal.ai</div><div style="font-size:11.5px;color:#8a8a8c">{{ modelCountLabel }}</div></div>
             <sc-for list="{{ modelItems }}" as="it" hint-placeholder-count="8">
               <div onClick="{{ it.onClick }}" style="{{ it.rowStyle }}" style-hover="background:rgba(255,255,255,.06)"><span style="{{ it.dotStyle }}"></span><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span><span style="{{ it.tierStyle }}">{{ it.tier }}</span></div><div style="font-size:11.5px;color:#858589;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.meta }}</div></div><span style="{{ it.creditStyle }}">{{ it.creditsLabel }}</span><span style="{{ it.checkStyle }}">✓</span></div>
@@ -290,14 +290,14 @@ textarea{resize:none;font-family:inherit}
         <div style="max-width:1180px;margin:0 auto;padding:26px 30px 72px">
           <div style="position:relative;overflow:hidden;border-radius:20px;padding:30px 34px;background:radial-gradient(130% 180% at 90% 10%, rgba(255,46,115,.55), transparent 55%),linear-gradient(105deg,#2a0a18,#3d0e22 50%,#170610);border:1px solid rgba(255,46,115,.28)">
             <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#FF2E73;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.04em">HUGGYFLOW PRICING</span>
-            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#FF2E73;line-height:1.1;margin-top:16px">Real credits, real model costs.</div>
-            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#F5F5F4;line-height:1.1;margin-top:5px">Charged only after successful generations.</div>
-            <p style="margin:14px 0 0;font-size:13.5px;color:rgba(255,255,255,.6)">Prices use the Supabase pricing catalog and provider-cost guardrails. VAT and local taxes are calculated at checkout.</p>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#FF2E73;line-height:1.1;margin-top:16px">Credits reels. Modeles premium.</div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#F5F5F4;line-height:1.1;margin-top:5px">Tu paies seulement les generations reussies.</div>
+            <p style="margin:14px 0 0;font-size:13.5px;color:rgba(255,255,255,.6)">Chaque plan garde une marge saine avec les couts fal.ai, et les jobs chers demandent confirmation avant lancement.</p>
           </div>
 
           <div style="margin-top:40px">
-            <h2 style="font-size:34px;font-weight:800;letter-spacing:-.03em;margin:0;color:#F5F5F4">Huggyflow pricing</h2>
-            <p style="margin:10px 0 0;font-size:15px;color:#9a9a9c">Plans, credits and limits are loaded from the production backend.</p>
+            <h2 style="font-size:34px;font-weight:800;letter-spacing:-.03em;margin:0;color:#F5F5F4">Tarifs HuggyFlow</h2>
+            <p style="margin:10px 0 0;font-size:15px;color:#9a9a9c">Plans, credits, limites et meilleurs modeles viennent du backend production.</p>
           </div>
 
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:26px">
@@ -378,7 +378,7 @@ textarea{resize:none;font-family:inherit}
                 </div>
 
                 <div style="{{ pl.seedBoxStyle }}">
-                  <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#cfe0ff;margin-bottom:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="18" y1="20" x2="18" y2="14"></line></svg>MODEL COSTS</div>
+                  <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#cfe0ff;margin-bottom:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="18" y1="20" x2="18" y2="14"></line></svg>BEST MODELS</div>
                   <sc-for list="{{ pl.seedance }}" as="s" hint-placeholder-count="3">
                     <div style="display:flex;gap:9px;align-items:center;padding:5px 0;font-size:13px">
                       <span style="display:flex;flex:0 0 auto;color:{{ s.iconColor }}"><sc-if value="{{ s.ok }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if><sc-if value="{{ s.notOk }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></sc-if></span>
@@ -754,16 +754,17 @@ class Component extends DCLogic {
   get MODELS(){
     const palette = { image:'#D7F94B', image_edit:'#7CC7FF', video:'#C99BFF', video_edit:'#FF9B7C', audio:'#7CFFB0', lipsync:'#FF6FB1', voice_clone:'#E8D17A' };
     const source = this.state.pricingModels && this.state.pricingModels.length ? this.state.pricingModels : [
-      { id:'nano', name:'Nano Banana Pro', type:'image', credits:66, capabilities:['text-to-image'], qualityTier:'premium' },
-      { id:'flux', name:'Flux', type:'image', credits:18, capabilities:['text-to-image'], qualityTier:'standard' },
-      { id:'veoq', name:'Veo 3.1 Quality', type:'video', credits:438, capabilities:['text-to-video'], qualityTier:'premium' },
-      { id:'veol', name:'Veo 3.1 Lite', type:'video', credits:219, capabilities:['text-to-video'], qualityTier:'standard' },
-      { id:'kling', name:'Kling', type:'video', credits:263, capabilities:['text-to-video'], qualityTier:'premium' },
-      { id:'seedance', name:'Seedance', type:'video', credits:175, capabilities:['text-to-video'], qualityTier:'standard' },
+      { id:'gpt-image-2', name:'GPT Image 2', type:'image', credits:35, capabilities:['text-to-image'], qualityTier:'premium', recommended:true, badge:'TOP', rank:1 },
+      { id:'gpt-image-2-edit', name:'GPT Image Edit', type:'image_edit', credits:35, capabilities:['edit'], qualityTier:'premium', recommended:true, badge:'TOP', rank:2 },
+      { id:'veoq', name:'Veo 3', type:'video', credits:438, capabilities:['text-to-video'], qualityTier:'premium', recommended:true, badge:'TOP', rank:3 },
+      { id:'kling-video-v3-pro-text-to-video', name:'Kling 3 Pro', type:'video', credits:394, capabilities:['text-to-video'], qualityTier:'premium', recommended:true, badge:'TOP', rank:4 },
+      { id:'bytedance-seedance-2-0-text-to-video', name:'Seedance 2', type:'video', credits:263, capabilities:['text-to-video'], qualityTier:'standard', recommended:true, badge:'FAST', rank:5 },
+      { id:'minimax-tts', name:'MiniMax Voice', type:'audio', credits:22, capabilities:['tts'], qualityTier:'premium', recommended:true, badge:'TOP', rank:6 },
     ];
     const normalized = source.map((m,i)=>({
       id:m.id,
-      name:m.name || m.id,
+      name:this.shortModelName(m),
+      fullName:m.fullName || m.name || m.id,
       type:m.type || 'image',
       credits:Number(m.credits || 0),
       premium:!!m.premium,
@@ -771,13 +772,24 @@ class Component extends DCLogic {
       capabilities:m.capabilities || [],
       family:m.family || 'fal.ai',
       endpoint:m.endpoint || '',
+      recommended:!!m.recommended,
+      badge:m.badge || '',
+      rank:Number(m.rank || 999),
       dot:palette[m.type] || ['#D7F94B','#7CC7FF','#C99BFF','#FF9B7C','#7CFFB0'][i%5],
-    }));
+    })).sort((a,b)=>(Number(b.recommended)-Number(a.recommended)) || a.rank-b.rank || String(a.type).localeCompare(String(b.type)) || a.name.localeCompare(b.name));
     return [{ id:'auto', name:'Auto HuggyFlow', type:'auto', credits:0, premium:true, qualityTier:'auto', capabilities:['best-model'], family:'fal.ai', endpoint:'', dot:'#D7F94B' }].concat(normalized);
   }
   get RATIOS(){ return ['16:9','9:16','1:1','4:3','3:4','4:5']; }
 
   accent(){ return this.props && this.props.accentColor ? this.props.accentColor : '#D7F94B'; }
+  shortModelName(m){
+    const aliases = {
+      'gpt-image-2':'GPT Image 2','gpt-image-2-edit':'GPT Image Edit','nano':'Nano Pro','nano2':'Nano 2','nano2-edit':'Nano Edit','flux':'Flux Fast','flux-2-pro':'Flux 2 Pro','flux-2-pro-edit':'Flux 2 Edit','seedream-lite':'Seedream Lite','veoq':'Veo 3','veol':'Veo Fast','kling-video-v3-pro-text-to-video':'Kling 3 Pro','kling-video-v3-pro-image-to-video':'Kling 3 Pro I2V','kling-video-v3-4k-text-to-video':'Kling 3 4K','kling-video-v3-standard-text-to-video':'Kling 3 Std','bytedance-seedance-2-0-text-to-video':'Seedance 2','bytedance-seedance-2-0-image-to-video':'Seedance 2 I2V','bytedance-seedance-2-0-fast-text-to-video':'Seedance Fast','bytedance-seedance-2-0-mini-text-to-video':'Seedance Mini','pixverse-v6-image-to-video':'PixVerse 6','luma-agent-ray-v3-2-text-to-video':'Ray 3.2','luma-agent-ray-v3-2-image-to-video':'Ray 3.2 I2V','luma-agent-ray-v3-2-video-to-video':'Ray Remix','minimax-tts':'MiniMax Voice','minimax-tts-turbo':'MiniMax Turbo','lyria3-pro':'Lyria Music','sonilo-music':'Sonilo Music','heygen-v3-lipsync-precision':'HeyGen Lipsync','sync-lipsync-v3':'Sync Lipsync','minimax-voice-clone':'Voice Clone'
+    };
+    if(aliases[m.id]) return aliases[m.id];
+    const raw = String(m.shortName || m.name || m.id || 'Modele');
+    return raw.replace(/^Fal Ai\s+/i,'').replace(/Bytedance Seedance 2\.0/i,'Seedance 2').replace(/Kling Video V3/i,'Kling 3').replace(/Text To Video/i,'T2V').replace(/Image To Video/i,'I2V').replace(/Reference To Video/i,'Ref').replace(/\s+/g,' ').slice(0,28).trim();
+  }
   modelDotFor(name){ const m = this.MODELS.find(x=>x.name===name); return m?m.dot:this.accent(); }
   modelName(){ const m = this.MODELS.find(x=>x.id===this.state.modelId); return m?m.name:this.MODELS[0].name; }
 
@@ -1318,16 +1330,19 @@ class Component extends DCLogic {
     const limitBox = 'background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 15px;margin-top:12px;';
     const fallbackPlans = [
       { id:'free', displayName:'Free', includedCredits:100, monthlyPriceUsd:0, annualPriceUsd:0, monthlyMessageLimit:60, dailyVideoLimit:0, concurrentImageJobs:1, concurrentVideoJobs:0, allowedMediaTypes:['image'], watermarkRequired:true, mediaRetentionDays:7, storageGb:1, seatLimit:1, supportLevel:'community', priorityQueue:false },
-      { id:'basic', displayName:'Basic', includedCredits:1000, monthlyPriceUsd:15, annualPriceUsd:144, monthlyMessageLimit:300, dailyVideoLimit:2, concurrentImageJobs:2, concurrentVideoJobs:1, allowedMediaTypes:['image','video'], watermarkRequired:false, mediaRetentionDays:30, storageGb:10, seatLimit:1, supportLevel:'standard', priorityQueue:false },
-      { id:'pro', displayName:'Pro', includedCredits:4500, monthlyPriceUsd:49, annualPriceUsd:468, monthlyMessageLimit:1500, dailyVideoLimit:8, concurrentImageJobs:4, concurrentVideoJobs:2, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit'], watermarkRequired:false, mediaRetentionDays:90, storageGb:100, seatLimit:3, supportLevel:'priority', priorityQueue:false },
-      { id:'max', displayName:'Max', includedCredits:12000, monthlyPriceUsd:129, annualPriceUsd:1188, monthlyMessageLimit:4000, dailyVideoLimit:20, concurrentImageJobs:8, concurrentVideoJobs:4, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:180, storageGb:500, seatLimit:10, supportLevel:'priority', priorityQueue:true },
-      { id:'scale', displayName:'Scale', includedCredits:28000, monthlyPriceUsd:249, annualPriceUsd:2388, monthlyMessageLimit:10000, dailyVideoLimit:55, concurrentImageJobs:14, concurrentVideoJobs:8, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:365, storageGb:1500, seatLimit:25, supportLevel:'priority', priorityQueue:true },
-      { id:'enterprise', displayName:'Enterprise', includedCredits:65000, monthlyPriceUsd:499, annualPriceUsd:4788, monthlyMessageLimit:30000, dailyVideoLimit:140, concurrentImageJobs:30, concurrentVideoJobs:16, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:730, storageGb:5000, seatLimit:75, supportLevel:'dedicated', priorityQueue:true },
+      { id:'basic', displayName:'Creator', includedCredits:1600, monthlyPriceUsd:19, annualPriceUsd:180, monthlyMessageLimit:500, dailyVideoLimit:2, concurrentImageJobs:2, concurrentVideoJobs:1, allowedMediaTypes:['image','video','image_edit'], watermarkRequired:false, mediaRetentionDays:30, storageGb:20, seatLimit:1, supportLevel:'standard', priorityQueue:false },
+      { id:'pro', displayName:'Pro', includedCredits:5500, monthlyPriceUsd:59, annualPriceUsd:588, monthlyMessageLimit:1800, dailyVideoLimit:10, concurrentImageJobs:5, concurrentVideoJobs:2, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit'], watermarkRequired:false, mediaRetentionDays:90, storageGb:150, seatLimit:3, supportLevel:'priority', priorityQueue:false },
+      { id:'max', displayName:'Max', includedCredits:15000, monthlyPriceUsd:149, annualPriceUsd:1428, monthlyMessageLimit:5000, dailyVideoLimit:26, concurrentImageJobs:9, concurrentVideoJobs:4, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:180, storageGb:600, seatLimit:8, supportLevel:'priority', priorityQueue:true },
+      { id:'scale', displayName:'Scale', includedCredits:30000, monthlyPriceUsd:299, annualPriceUsd:2868, monthlyMessageLimit:12000, dailyVideoLimit:60, concurrentImageJobs:14, concurrentVideoJobs:8, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:365, storageGb:1500, seatLimit:20, supportLevel:'priority', priorityQueue:true },
+      { id:'enterprise', displayName:'Enterprise', includedCredits:60000, monthlyPriceUsd:599, annualPriceUsd:5988, monthlyMessageLimit:30000, dailyVideoLimit:130, concurrentImageJobs:28, concurrentVideoJobs:14, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:730, storageGb:5000, seatLimit:60, supportLevel:'dedicated', priorityQueue:true },
     ];
     const fallbackModels = [
-      { id:'flux', name:'Flux', type:'image', credits:18 },
-      { id:'nano', name:'Nano Banana Pro', type:'image', credits:66 },
-      { id:'kling', name:'Kling', type:'video', credits:263 },
+      { id:'gpt-image-2', name:'GPT Image 2', type:'image', credits:35 },
+      { id:'gpt-image-2-edit', name:'GPT Image Edit', type:'image_edit', credits:35 },
+      { id:'bytedance-seedance-2-0-text-to-video', name:'Seedance 2', type:'video', credits:263 },
+      { id:'kling-video-v3-pro-text-to-video', name:'Kling 3 Pro', type:'video', credits:394 },
+      { id:'veoq', name:'Veo 3', type:'video', credits:438 },
+      { id:'minimax-tts', name:'MiniMax Voice', type:'audio', credits:22 },
     ];
     const planIds = ['free','basic','pro','max','scale','enterprise'];
     const businessIds = ['max','scale','enterprise'];
@@ -1340,7 +1355,7 @@ class Component extends DCLogic {
       const m = modelById(modelId);
       const allowed = (plan.allowedMediaTypes || []).indexOf(m.type) >= 0;
       const count = allowed && m.credits ? Math.floor(Number(plan.includedCredits || 0) / Number(m.credits || 1)) : 0;
-      const unit = m.type === 'video' ? 'clips 5s' : 'images';
+      const unit = m.type === 'video' ? 'clips 5s' : m.type === 'audio' ? 'voix' : 'images';
       return allowed ? `${count} ${unit}` : 'Non inclus';
     };
     const workflowLabel = (types)=>{
@@ -1353,7 +1368,7 @@ class Component extends DCLogic {
       const annualMonthly = plan.annualPriceUsd ? Number((Number(plan.annualPriceUsd) / 12).toFixed(2)) : monthly;
       const price = annual && annualMonthly ? annualMonthly : monthly;
       const isFree = plan.id === 'free';
-      const badges = plan.id === 'pro' ? [tag('POPULAR','lime')] : plan.id === 'max' ? [tag('TEAM','magenta')] : plan.id === 'scale' ? [tag('SCALE','blue')] : plan.id === 'enterprise' ? [tag('DEDICATED','lime')] : isFree ? [tag('FREE','grey')] : [];
+      const badges = plan.id === 'basic' ? [tag('CREATOR','blue')] : plan.id === 'pro' ? [tag('POPULAR','lime')] : plan.id === 'max' ? [tag('BEST VALUE','magenta')] : plan.id === 'scale' ? [tag('SCALE','blue')] : plan.id === 'enterprise' ? [tag('DEDICATED','lime')] : isFree ? [tag('FREE','grey')] : [];
       const accent = plan.id === 'pro' ? A : plan.id === 'max' ? M : plan.id === 'scale' ? BL : plan.id === 'enterprise' ? '#F5F5F4' : '#F5F5F4';
       const cardStyle = plan.id === 'pro'
         ? cardBase+'border-color:'+A+'32;background:linear-gradient(180deg,rgba(78,94,24,.20),#0f110d 52%);box-shadow:0 0 22px -18px '+A+';'
@@ -1366,10 +1381,10 @@ class Component extends DCLogic {
               : cardBase;
       return {
         id:plan.id, name:String(plan.displayName || plan.id).toUpperCase(),
-        sub: isFree ? 'Pour tester Huggyflow' : plan.id === 'basic' ? 'Pour creer regulierement' : plan.id === 'pro' ? 'Pour produire du contenu chaque semaine' : plan.id === 'max' ? 'Pour equipes et agences' : plan.id === 'scale' ? 'Pour volume multi-clients' : 'Pour production intensive',
+        sub: isFree ? 'Pour tester HuggyFlow' : plan.id === 'basic' ? 'Pour createurs solo' : plan.id === 'pro' ? 'Pour produire chaque semaine' : plan.id === 'max' ? 'Pour studio et petites equipes' : plan.id === 'scale' ? 'Pour agences multi-clients' : 'Pour production intensive',
         cardStyle, badges, hasBadges: badges.length>0,
         creditsBig: pretty(plan.includedCredits)+' credits/mo.',
-        creditsSubs:[`= ${estimate(plan,'nano')} Nano Banana Pro`,`= ${estimate(plan,'kling')} Kling`],
+        creditsSubs:[`= ${estimate(plan,'gpt-image-2')} GPT Image 2`,`= ${estimate(plan,'bytedance-seedance-2-0-text-to-video')} Seedance 2`,`= ${estimate(plan,'veoq')} Veo 3`],
         showSlider:false, fixedText:`${pretty(plan.includedCredits)} credits included each cycle`, sliderMarks:[],
         priceOrig: annual && monthly && annualMonthly && annualMonthly < monthly ? money(monthly) : '',
         priceNow: money(price), priceUnit: isFree ? 'forever' : unit,
@@ -1388,9 +1403,10 @@ class Component extends DCLogic {
           feat((plan.seatLimit || 1) > 1 ? 'ok' : 'no', `${plan.seatLimit || 1} seat${(plan.seatLimit || 1)>1?'s':''}`),
         ],
         seedance:[
-          srow(true, modelById('flux').name, [tag((modelById('flux').credits || 0)+' credits','grey'), tag(estimate(plan,'flux'),'lime')]),
-          srow((plan.allowedMediaTypes || []).indexOf('image')>=0, modelById('nano').name, [tag((modelById('nano').credits || 0)+' credits','grey'), tag(estimate(plan,'nano'),'lime')]),
-          srow((plan.allowedMediaTypes || []).indexOf('video')>=0, modelById('kling').name, [tag((modelById('kling').credits || 0)+' credits/5s','grey'), tag(estimate(plan,'kling'), (plan.allowedMediaTypes || []).indexOf('video')>=0?'lime':'grey')]),
+          srow((plan.allowedMediaTypes || []).indexOf('image')>=0, modelById('gpt-image-2').name, [tag((modelById('gpt-image-2').credits || 0)+' cr.','grey'), tag(estimate(plan,'gpt-image-2'),'lime')]),
+          srow((plan.allowedMediaTypes || []).indexOf('image_edit')>=0, modelById('gpt-image-2-edit').name, [tag((modelById('gpt-image-2-edit').credits || 0)+' cr.','grey'), tag(estimate(plan,'gpt-image-2-edit'),'lime')]),
+          srow((plan.allowedMediaTypes || []).indexOf('video')>=0, modelById('bytedance-seedance-2-0-text-to-video').name, [tag((modelById('bytedance-seedance-2-0-text-to-video').credits || 0)+' cr./5s','grey'), tag(estimate(plan,'bytedance-seedance-2-0-text-to-video'), (plan.allowedMediaTypes || []).indexOf('video')>=0?'lime':'grey')]),
+          srow((plan.allowedMediaTypes || []).indexOf('video')>=0, modelById('veoq').name, [tag((modelById('veoq').credits || 0)+' cr./5s','grey'), tag(estimate(plan,'veoq'), (plan.allowedMediaTypes || []).indexOf('video')>=0?'lime':'grey')]),
         ],
         unlimitedLocked:false,
         unlimited:[
@@ -1419,9 +1435,10 @@ class Component extends DCLogic {
         crow('Retention','', comparePlans.map(p=>`${p.mediaRetentionDays || 0} days`)),
       ]},
       { name:'Model costs', rows:[
-        crow(modelById('flux').name, `${modelById('flux').credits || 0} credits/image`, comparePlans.map(p=>estimate(p,'flux'))),
-        crow(modelById('nano').name, `${modelById('nano').credits || 0} credits/image`, comparePlans.map(p=>estimate(p,'nano'))),
-        crow(modelById('kling').name, `${modelById('kling').credits || 0} credits/5s`, comparePlans.map(p=>estimate(p,'kling'))),
+        crow(modelById('gpt-image-2').name, `${modelById('gpt-image-2').credits || 0} credits/image`, comparePlans.map(p=>estimate(p,'gpt-image-2'))),
+        crow(modelById('gpt-image-2-edit').name, `${modelById('gpt-image-2-edit').credits || 0} credits/edit`, comparePlans.map(p=>estimate(p,'gpt-image-2-edit'))),
+        crow(modelById('bytedance-seedance-2-0-text-to-video').name, `${modelById('bytedance-seedance-2-0-text-to-video').credits || 0} credits/5s`, comparePlans.map(p=>estimate(p,'bytedance-seedance-2-0-text-to-video'))),
+        crow(modelById('veoq').name, `${modelById('veoq').credits || 0} credits/5s`, comparePlans.map(p=>estimate(p,'veoq'))),
       ]},
     ];
     const faqs = [
@@ -1497,23 +1514,26 @@ class Component extends DCLogic {
       return vm;
     });
 
+    const typeLabels = { image:'Image', image_edit:'Edit', video:'Video', video_edit:'Video edit', audio:'Audio', lipsync:'Lipsync', voice_clone:'Voice' };
+    const capLabels = { 'text-to-image':'T2I', 'image-to-image':'I2I', 'text-to-video':'T2V', 'image-to-video':'I2V', 'reference-to-video':'Ref', 'video-to-video':'V2V', 'remove-background':'BG', 'speech-to-text':'STT', 'voice-clone':'Clone', 'best-model':'Best' };
     const modelItems = this.MODELS.map(m=>{
       const caps = (m.capabilities || []).slice(0,3).join(' · ') || 'fal.ai';
-      const tier = String(m.qualityTier || 'standard').toUpperCase();
+      const tier = String(m.badge || m.qualityTier || 'standard').toUpperCase();
       return {
         name:m.name,
         onClick:()=>this.pickModel(m.id),
         meta:m.id === 'auto' ? 'L’agent choisit le meilleur modèle selon la tâche' : (m.type+' · '+caps+' · '+(m.family || 'fal.ai')),
+        meta:m.id === 'auto' ? 'Meilleur modele selon la tache' : ((typeLabels[m.type] || m.type)+' / '+((m.capabilities || []).slice(0,2).map(c=>capLabels[c] || String(c).replace(/-/g,' ')).join(' / ') || 'fal.ai')),
         tier:m.id === 'auto' ? 'AUTO' : tier,
         creditsLabel:m.id === 'auto' ? 'auto' : ((m.credits || 0)+' cr.'),
-        dotStyle:'width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:'+m.dot+';box-shadow:0 0 5px '+m.dot+'99;',
-        rowStyle:'display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;cursor:pointer;font-size:13.5px;transition:background .15s;'+(m.id===st.modelId?'background:rgba(255,255,255,.06);color:#F5F5F4;':'color:#C9C9CA;'),
-        tierStyle:'font-size:10px;font-weight:800;letter-spacing:.05em;color:'+(m.qualityTier==='premium'?A:'#8a8a8c')+';background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:2px 6px;flex:0 0 auto;',
-        creditStyle:'font-size:11.5px;font-weight:700;color:#9a9a9c;white-space:nowrap;',
+        dotStyle:'width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:'+m.dot+';box-shadow:0 0 4px '+m.dot+'80;',
+        rowStyle:'display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;cursor:pointer;font-size:12.5px;transition:background .15s;'+(m.id===st.modelId?'background:rgba(255,255,255,.065);color:#F5F5F4;':'color:#C9C9CA;'),
+        tierStyle:'font-size:9.5px;font-weight:850;letter-spacing:.04em;color:'+((m.badge==='TOP'||m.qualityTier==='premium')?A:'#8a8a8c')+';background:rgba(255,255,255,.052);border:1px solid rgba(255,255,255,.075);border-radius:999px;padding:1px 5px;flex:0 0 auto;',
+        creditStyle:'font-size:10.5px;font-weight:750;color:#9a9a9c;white-space:nowrap;',
         checkStyle:'font-size:12px;color:'+A+';opacity:'+(m.id===st.modelId?'1':'0')+';',
       };
     });
-    const modelCountLabel = Math.max(0, this.MODELS.length - 1)+' endpoints';
+    const modelCountLabel = Math.max(0, this.MODELS.length - 1)+' modeles';
     const ratioItems = this.RATIOS.map(r=>({
       label:r, onClick:()=>this.pickRatio(r),
       style:'display:flex;align-items:center;justify-content:center;padding:10px 0;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;'+(r===st.ratio?'background:'+A+'1f;color:'+A+';border:1px solid '+A+'59;':'color:#C9C9CA;border:1px solid rgba(255,255,255,.08);'),

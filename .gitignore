@@ -1,9 +1,11 @@
 node_modules/
 .vercel/
 .tools/
+.supabase-home/
 *.log
 .env
 .env.*
+.env.local
 supabase/functions/.env
 supabase/.branches/
 supabase/.temp/

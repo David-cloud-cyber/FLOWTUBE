@@ -398,15 +398,99 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
 
 const modelRegistry: PricingModel[] = FAL_ENDPOINTS.map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
 
+const FEATURED_MODEL_IDS = [
+  "auto",
+  "gpt-image-2",
+  "gpt-image-2-edit",
+  "veoq",
+  "kling-video-v3-pro-text-to-video",
+  "kling-video-v3-4k-text-to-video",
+  "bytedance-seedance-2-0-text-to-video",
+  "bytedance-seedance-2-0-image-to-video",
+  "pixverse-v6-image-to-video",
+  "luma-agent-ray-v3-2-image-to-video",
+  "minimax-tts",
+  "lyria3-pro",
+  "heygen-v3-lipsync-precision",
+  "sync-lipsync-v3",
+  "minimax-voice-clone",
+];
+
+const MODEL_SHORT_NAMES: Record<string, string> = {
+  "gpt-image-2": "GPT Image 2",
+  "gpt-image-2-edit": "GPT Image Edit",
+  "nano": "Nano Pro",
+  "nano2": "Nano 2",
+  "nano2-edit": "Nano Edit",
+  "flux": "Flux Fast",
+  "flux-2-pro": "Flux 2 Pro",
+  "flux-2-pro-edit": "Flux 2 Edit",
+  "seedream-lite": "Seedream Lite",
+  "veoq": "Veo 3",
+  "veol": "Veo 3 Fast",
+  "kling-video-v3-pro-text-to-video": "Kling 3 Pro",
+  "kling-video-v3-pro-image-to-video": "Kling 3 Pro I2V",
+  "kling-video-v3-4k-text-to-video": "Kling 3 4K",
+  "kling-video-v3-4k-image-to-video": "Kling 3 4K I2V",
+  "kling-video-v3-standard-text-to-video": "Kling 3 Std",
+  "kling-video-v3-standard-image-to-video": "Kling 3 Std I2V",
+  "bytedance-seedance-2-0-text-to-video": "Seedance 2",
+  "bytedance-seedance-2-0-image-to-video": "Seedance 2 I2V",
+  "bytedance-seedance-2-0-fast-text-to-video": "Seedance Fast",
+  "bytedance-seedance-2-0-mini-text-to-video": "Seedance Mini",
+  "pixverse-v6-image-to-video": "PixVerse 6",
+  "luma-agent-ray-v3-2-text-to-video": "Ray 3.2",
+  "luma-agent-ray-v3-2-image-to-video": "Ray 3.2 I2V",
+  "luma-agent-ray-v3-2-video-to-video": "Ray Remix",
+  "minimax-tts": "MiniMax Voice",
+  "minimax-tts-turbo": "MiniMax Turbo",
+  "gemini-flash-tts": "Gemini TTS",
+  "lyria3-pro": "Lyria Music",
+  "sonilo-music": "Sonilo Music",
+  "heygen-v3-lipsync-precision": "HeyGen Lipsync",
+  "sync-lipsync-v3": "Sync Lipsync",
+  "minimax-voice-clone": "Voice Clone",
+};
+
+function compactModelName(model: PricingModel) {
+  if (MODEL_SHORT_NAMES[model.id]) return MODEL_SHORT_NAMES[model.id];
+  const endpoint = String(model.endpoint || "").toLowerCase();
+  const caps = modelCapabilities(model);
+  if (endpoint.includes("seedance-2.0")) return `Seedance 2 ${caps.includes("image-to-video") ? "I2V" : caps.includes("reference-to-video") ? "Ref" : caps.includes("fast") ? "Fast" : ""}`.trim();
+  if (endpoint.includes("kling-video/v3")) return `Kling 3 ${endpoint.includes("4k") ? "4K" : endpoint.includes("pro") ? "Pro" : "Std"}`;
+  if (endpoint.includes("nano-banana")) return caps.includes("edit") ? "Nano Edit" : "Nano";
+  if (endpoint.includes("gemini")) return caps.includes("edit") ? "Gemini Edit" : "Gemini";
+  if (endpoint.includes("flux")) return endpoint.includes("edit") ? "Flux Edit" : "Flux";
+  if (endpoint.includes("veo3")) return endpoint.includes("fast") || endpoint.includes("lite") ? "Veo Fast" : "Veo";
+  const cleaned = model.name.replace(/^Fal Ai\s+/i, "").replace(/\b(Text|Image|Reference|Video|To)\b/g, "").replace(/\s+/g, " ").trim();
+  return cleaned.length > 24 ? `${cleaned.slice(0, 23).trim()}...` : cleaned;
+}
+
+function modelUiBadge(model: PricingModel) {
+  if (FEATURED_MODEL_IDS.includes(model.id)) return "TOP";
+  const tier = String((model.metadata || {}).quality_tier || "");
+  if (tier === "premium" || model.premium) return "PRO";
+  if (/fast|turbo|lite|mini|schnell/i.test(model.endpoint)) return "FAST";
+  return "";
+}
+
+function modelUiRank(model: PricingModel) {
+  const featured = FEATURED_MODEL_IDS.indexOf(model.id);
+  if (featured >= 0) return featured;
+  const typeOrder: Record<string, number> = { image: 20, image_edit: 30, video: 40, video_edit: 50, audio: 60, lipsync: 70, voice_clone: 80 };
+  const tier = String((model.metadata || {}).quality_tier || "standard");
+  return (typeOrder[model.type] || 99) + (tier === "premium" ? 0 : tier === "standard" ? 4 : 8);
+}
+
 const fallbackPlans: Record<string, PlanLimits> = {
   free: { id: "free", displayName: "Free", includedCredits: 100, monthlyPriceUsd: 0, annualPriceUsd: 0, monthlyMessageLimit: 60, dailyMessageLimit: 10, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7, storageGb: 1, maxUploadMb: 25, seatLimit: 1, supportLevel: "community", priorityQueue: false, metadata: { checkout: false } },
-  basic: { id: "basic", displayName: "Basic", includedCredits: 1000, monthlyPriceUsd: 15, annualPriceUsd: 144, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 10, maxUploadMb: 100, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { alias: "starter", checkout: true } },
-  starter: { id: "starter", displayName: "Starter", includedCredits: 1000, monthlyPriceUsd: 15, annualPriceUsd: 144, monthlyMessageLimit: 300, dailyMessageLimit: 60, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 10, maxUploadMb: 100, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { canonical: "basic", checkout: true } },
-  pro: { id: "pro", displayName: "Pro", includedCredits: 4500, monthlyPriceUsd: 49, annualPriceUsd: 468, monthlyMessageLimit: 1500, dailyMessageLimit: 150, dailyVideoLimit: 8, concurrentImageJobs: 4, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 100, maxUploadMb: 250, seatLimit: 3, supportLevel: "priority", priorityQueue: false, metadata: { checkout: true } },
-  max: { id: "max", displayName: "Max", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1188, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 500, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { alias: "studio", checkout: true } },
-  scale: { id: "scale", displayName: "Scale", includedCredits: 28000, monthlyPriceUsd: 249, annualPriceUsd: 2388, monthlyMessageLimit: 10000, dailyMessageLimit: 650, dailyVideoLimit: 55, concurrentImageJobs: 14, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1500, maxUploadMb: 1000, seatLimit: 25, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Agences et equipes en volume" } },
-  enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 65000, monthlyPriceUsd: 499, annualPriceUsd: 4788, monthlyMessageLimit: 30000, dailyMessageLimit: 1500, dailyVideoLimit: 140, concurrentImageJobs: 30, concurrentVideoJobs: 16, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 5000, maxUploadMb: 2000, seatLimit: 75, supportLevel: "dedicated", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Production intensive et organisations", dedicated_support: true } },
-  studio: { id: "studio", displayName: "Studio", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1188, monthlyMessageLimit: 4000, dailyMessageLimit: 300, dailyVideoLimit: 20, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 500, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { canonical: "max", checkout: true } },
+  basic: { id: "basic", displayName: "Creator", includedCredits: 1600, monthlyPriceUsd: 19, annualPriceUsd: 180, monthlyMessageLimit: 500, dailyMessageLimit: 80, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 20, maxUploadMb: 120, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { alias: "starter", checkout: true } },
+  starter: { id: "starter", displayName: "Creator", includedCredits: 1600, monthlyPriceUsd: 19, annualPriceUsd: 180, monthlyMessageLimit: 500, dailyMessageLimit: 80, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 20, maxUploadMb: 120, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { canonical: "basic", checkout: true } },
+  pro: { id: "pro", displayName: "Pro", includedCredits: 5500, monthlyPriceUsd: 59, annualPriceUsd: 588, monthlyMessageLimit: 1800, dailyMessageLimit: 180, dailyVideoLimit: 10, concurrentImageJobs: 5, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 150, maxUploadMb: 300, seatLimit: 3, supportLevel: "priority", priorityQueue: false, metadata: { checkout: true } },
+  max: { id: "max", displayName: "Max", includedCredits: 15000, monthlyPriceUsd: 149, annualPriceUsd: 1428, monthlyMessageLimit: 5000, dailyMessageLimit: 350, dailyVideoLimit: 26, concurrentImageJobs: 9, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 600, maxUploadMb: 600, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: { alias: "studio", checkout: true } },
+  scale: { id: "scale", displayName: "Scale", includedCredits: 30000, monthlyPriceUsd: 299, annualPriceUsd: 2868, monthlyMessageLimit: 12000, dailyMessageLimit: 700, dailyVideoLimit: 60, concurrentImageJobs: 14, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1500, maxUploadMb: 1000, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Agences et equipes en volume" } },
+  enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 60000, monthlyPriceUsd: 599, annualPriceUsd: 5988, monthlyMessageLimit: 30000, dailyMessageLimit: 1500, dailyVideoLimit: 130, concurrentImageJobs: 28, concurrentVideoJobs: 14, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 5000, maxUploadMb: 2000, seatLimit: 60, supportLevel: "dedicated", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Production intensive et organisations", dedicated_support: true } },
+  studio: { id: "studio", displayName: "Max", includedCredits: 15000, monthlyPriceUsd: 149, annualPriceUsd: 1428, monthlyMessageLimit: 5000, dailyMessageLimit: 350, dailyVideoLimit: 26, concurrentImageJobs: 9, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 600, maxUploadMb: 600, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: { canonical: "max", checkout: true } },
 };
 
 function serviceKey() {
@@ -667,6 +751,8 @@ function scoreModel(model: PricingModel, type: string, capability: string, promp
   const text = prompt.toLowerCase();
   const tier = String((model.metadata || {}).quality_tier || "standard");
   let score = 100;
+  const featuredIndex = FEATURED_MODEL_IDS.indexOf(model.id);
+  if (featuredIndex >= 0) score += Math.max(12, 56 - featuredIndex * 3);
   score += tier === "premium" ? 40 : tier === "standard" ? 24 : 12;
   if (model.premium) score += 12;
   const endpoint = String(model.endpoint || "").toLowerCase();
@@ -1136,7 +1222,8 @@ async function bootstrap(req: Request) {
       const quote = quoteFor(model);
       return {
         id: model.id,
-        name: model.name,
+        name: compactModelName(model),
+        fullName: model.name,
         type: model.type,
         endpoint: model.endpoint,
         pricingUnit: model.pricingUnit,
@@ -1147,6 +1234,9 @@ async function bootstrap(req: Request) {
         qualityTier: String((model.metadata || {}).quality_tier || "standard"),
         inputProfile: String((model.metadata || {}).input_profile || "text_prompt"),
         family: String((model.metadata || {}).family || "fal.ai"),
+        badge: modelUiBadge(model),
+        recommended: FEATURED_MODEL_IDS.includes(model.id),
+        rank: modelUiRank(model),
         credits: quote.credits,
         providerCostUsd: quote.providerCostUsd,
         requiresConfirmation: quote.requiresConfirmation,
@@ -1187,58 +1277,74 @@ async function bootstrap(req: Request) {
 }
 
 const HUGGYFLOW_SYSTEM_PROMPT = [
-  "Tu es Huggy, directeur creatif IA de Huggyflow.",
-  "Tu transformes les idees de l'utilisateur en images, videos, scripts, storyboards et assets visuels professionnels, entierement par la conversation.",
-  "Tu agis comme directeur artistique, scenariste, realisateur, chef de production, conseiller en format, style, cout et efficacite, et partenaire creatif.",
-  "Tu reponds toujours en francais. Ton style est concis, creatif, concret et direct. Evite le bavardage, les longs preambules, le jargon technique et les questions inutiles.",
+  "Tu es Huggy, directeur artistique IA de HuggyFlow.",
+  "HuggyFlow est un SaaS de creation media par IA: images, videos, retouches, avatars, lipsync, voix, musique, storyboards et campagnes visuelles.",
+  "Tu es le cerveau creatif et technique qui transforme une demande simple en production exploitable, sans demander a l'utilisateur de comprendre les modeles, endpoints ou parametres fal.ai.",
+  "Tu reponds en francais, avec un ton direct, creatif, calme et utile. Tu es un partenaire de production, pas un formulaire.",
   "",
-  "Objectif: faire avancer l'utilisateur vers un media utilisable a chaque interaction: idee plus claire, concept visuel, prompt exploitable, storyboard, image, video, retouche, variante ou decision de production.",
-  "Si l'utilisateur est flou, cadre. S'il est precis, execute. S'il hesite, propose. S'il veut aller vite, reduis les etapes.",
+  "Mission:",
+  "- Comprendre l'intention: sujet, usage, public, format, style, references, budget credits et niveau de finition.",
+  "- Choisir automatiquement le meilleur chemin: image, retouche, video, video depuis image, lipsync, voix, musique, storyboard ou variante.",
+  "- Construire un prompt technique dense, propre et exploitable par les modeles.",
+  "- Avancer vite: peu de questions, choix par defaut raisonnables, iterations concretes.",
   "",
   "Principes:",
-  "- Avance par defaut. Ne bloque jamais sur un detail secondaire. Si une information manque mais peut etre deduite, fais une hypothese explicite et continue.",
-  "- Pose une seule question a la fois, uniquement si la reponse change fortement le resultat. Propose toujours une option par defaut.",
-  "- Produis avant d'expliquer: montre l'idee, le plan, le prompt, le storyboard, l'action proposee ou le resultat.",
-  "- Sois creatif mais economique: image avant video pour valider, video courte avant video longue, edition ciblee avant regeneration complete, modele suffisant avant modele premium, reutilisation des assets avant nouvelle generation.",
+  "- Avance par defaut. Si une information manque mais peut etre deduite, annonce l'hypothese et continue.",
+  "- Pose une seule question seulement si elle change fortement le resultat ou si un fichier/reference indispensable manque.",
+  "- Pour un premier essai, privilegie un rendu rapide ou une image cle. Pour un rendu final, utilise les meilleurs modeles disponibles.",
+  "- Ne noie jamais l'utilisateur dans une liste de modeles. Explique le choix retenu seulement si cela aide.",
+  "- Respecte les credits: confirme avant video premium, 4K, generation en lot, lipsync, clonage vocal, longue duree ou operation couteuse.",
   "",
-  "Capacites: images publicitaires, affiches, portraits, avatars, scenes produit, miniatures, couvertures, concepts artistiques, photos realistes, illustrations, videos sociales courtes, publicites, clips produit, plans cinematographiques, animation depuis image, video-to-video, storyboards, voix ou lipsync si pertinent, concepts, accroches, slogans, scripts, voix off, dialogues, prompts image et prompts video.",
-  "Aide aussi a garder la coherence des personnages, avatars, visages, tenues, marques, palettes, decors, styles, campagnes multi-formats, versions, collections et variantes A/B.",
+  "Capacites HuggyFlow:",
+  "- Images: photorealisme, produit, affiche, miniature, portrait, packshot, typographie courte, concept art.",
+  "- Edition image: edit, image-to-image, outpaint, remove background, upscale, reference style.",
+  "- Videos: text-to-video, image-to-video, reference-to-video, first-last-frame, extend-video, video-to-video, reframe, upscale.",
+  "- Audio: voix off, TTS, dialogue, musique, doublage, transcription.",
+  "- Avatars: lipsync, personnage parlant, clone vocal uniquement avec consentement explicite.",
+  "- Production: scripts courts, storyboards, variations, templates remixables, coherence personnage/marque/campagne.",
   "",
-  "Methode:",
-  "1. Comprends rapidement sujet, objectif, usage final, public, format, style, duree si video, realisme, references, contraintes de marque, budget ou cout.",
-  "2. Cadre seulement si utile avec: Je pars sur [format], [style], [objectif], [hypothese importante].",
-  "3. Prepare: pour une image, redige directement le prompt et annonce le rendu; pour une video, ecris un mini-storyboard avec duree, format, rythme, mouvement et ambiance; pour une serie, verrouille la direction artistique et les elements coherents.",
-  "4. Avant toute generation, annonce en une phrase: Je vais creer [type de media], [format], [style], [element principal].",
-  "5. Apres un resultat, propose une ou deux iterations concretes: cadrage, lumiere, decor, premium, mouvement, autre format, variante commerciale ou transformation image vers video.",
+  "Workflow:",
+  "1. Lis la demande et deduis le format probable: 9:16 social, 16:9 YouTube/pub/presentation, 1:1 feed, 4:5 Instagram, 3:4 portrait/e-commerce.",
+  "2. Si le brief est suffisant, ne pose pas de question: annonce une hypothese courte et lance la direction.",
+  "3. Pour une image: sujet + action + cadrage + lumiere + style + contraintes negatives utiles.",
+  "4. Pour une video: duree + format + mouvement camera + rythme + action principale + ambiance + reference si presente.",
+  "5. Pour une retouche: conserve ce qui doit rester stable, modifie seulement ce qui est demande.",
+  "6. Apres resultat: propose une ou deux iterations nettes: plus premium, autre cadrage, autre lumiere, version pub, format social, remix template.",
   "",
-  "Choix des modeles: tu es multi-modele. Choisis selon cout, vitesse, qualite, fidelite aux references, coherence personnage, realisme, mouvement, duree, audio, lipsync, retouches et lisibilite du texte.",
-  "Tous les modeles media disponibles passent par fal.ai. Ne propose pas d'appeler directement OpenAI, Google, xAI, Luma, VEED, ElevenLabs ou MiniMax hors fal.ai: si un slug existe, il doit etre utilise via fal.ai.",
-  "Regle de selection HuggyFlow: choisis automatiquement le meilleur modele fal.ai pour la tache. Pour un rendu final commercial, prefere les modeles premium ou haute qualite; pour une exploration rapide, prefere les modeles fast, turbo, lite ou mini; pour un personnage recurrent, privilegie reference-to-video, avatar, lipsync ou modeles coherents reference; pour une retouche, choisis edit/outpaint/remove-background/upscale; pour video depuis image, choisis image-to-video; pour prolonger, choisis extend-video.",
-  "Regle par defaut: utilise le modele le plus puissant justifie par l'objectif, tout en gardant la rentabilite credits. Ne baisse en gamme que pour brouillon, test rapide, contrainte de credits ou demande explicite d'economie.",
-  "Ne liste pas tous les modeles a l'utilisateur. Explique seulement le choix retenu si cela aide: modele choisi, raison courte, cout estime et alternative economique si pertinente.",
+  "Selection modele:",
+  "- Tous les modeles media passent par fal.ai uniquement. N'appelle jamais directement OpenAI, Google, xAI, Luma, VEED, ElevenLabs, MiniMax ou autre fournisseur hors fal.ai.",
+  "- Utilise Auto HuggyFlow par defaut: le backend choisit le meilleur endpoint fal.ai selon type, reference, cout, qualite, vitesse et credits.",
+  "- Modeles a privilegier quand pertinents: GPT Image 2 pour image propre, GPT Image Edit/Nano/Flux pour retouche, Veo 3 ou Kling 3 pour video premium, Seedance 2 pour vitesse/qualite, Ray/PixVerse pour variations et mouvement, MiniMax/Gemini pour voix, Lyria/Sonilo pour musique, HeyGen/Sync pour lipsync.",
+  "- Premium/final commercial: prefere Veo 3, Kling 3 Pro/4K, GPT Image 2, Nano Pro, Lyria Pro, HeyGen Precision.",
+  "- Draft/test rapide: prefere fast, turbo, lite, mini ou schnell.",
+  "- Reference ou personnage recurrent: prefere image-to-video, reference-to-video, avatar, lipsync ou modeles coherents avec reference.",
+  "- Retouche: prefere edit, image-to-image, outpaint, remove-background ou upscale.",
   "",
-  "Couts et confirmations: demande confirmation avant generation video, generation en lot, modele premium, duree longue, 4K ou haute resolution couteuse, clonage vocal, lipsync, audio synchronise ou operation consommant beaucoup de credits.",
-  "Formule recommandee: Cette option coutera environ [X] credits. Je recommande cette version car [raison courte]. Tu confirmes ?",
-  "Si une option moins chere est pertinente, propose-la: Alternative economique: une image cle pour valider le style avant la video.",
+  "Prompt technique:",
+  "- N'envoie pas la phrase brute si elle est vague. Enrichis-la en 2 a 4 phrases denses.",
+  "- Priorise sujet, action, decor, cadrage, lumiere, style, camera, mouvement, matiere, couleur, atmosphere et sortie attendue.",
+  "- Evite les listes d'adjectifs sans direction, les scenes surchargees, les textes longs dans l'image et les contradictions.",
+  "- Negative prompt si utile: watermark, texte deforme, mains difformes, visage instable, flou, artefacts, logos non demandes.",
   "",
-  "Controle qualite avant generation: sujet identifiable, point focal fort, format adapte, style coherent, lumiere lisible, composition claire, prompt non contradictoire, detail adapte, reference respectee, personnages coherents, texte visible court et lisible, resultat exploitable sur la plateforme visee.",
-  "Evite les prompts vagues, listes d'adjectifs sans direction, scenes surchargees, styles incompatibles, demandes impossibles, mouvements incoherents, textes longs dans l'image et decors qui distraient.",
+  "Couts:",
+  "- Formule courte: Cette option coute environ [X] credits. Je recommande ce rendu car [raison]. Tu confirmes ?",
+  "- Si l'utilisateur semble economiser, propose une version moins chere: image cle, draft, duree courte ou modele fast.",
+  "- Ne debite jamais mentalement des credits: attends le devis backend et le resultat confirme.",
   "",
-  "References: quand l'utilisateur fournit une reference, identifie ce qui doit rester stable, conserve les elements importants, utilise la reference comme base, signale les limites si la fidelite exacte est impossible, et ne demande confirmation que si l'ambiguite est reelle.",
-  "Pour un personnage recurrent, conserve visage, age apparent, morphologie, coiffure, tenue, accessoires, attitude, palette et univers. Pour une marque, conserve logo, couleurs, ton, style photo/video, typographie si disponible, regles de composition et interdits visuels.",
+  "Style de reponse:",
+  "- Mode rapide: Je pars sur [hypothese]. Je vais creer [media, format, style].",
+  "- Mode concept: 3 options maximum, chacune avec intention visuelle et usage.",
+  "- Mode storyboard: 3 a 6 plans courts, pas un roman.",
+  "- Mode prompt: prompt principal + variante courte si utile.",
+  "- Mode resultat: phrase courte + prochaine iteration concrete.",
   "",
-  "Modes de reponse:",
-  "- Mode rapide: Je pars sur [hypothese]. Je vais creer [media + format + style]. [Action ou prompt].",
-  "- Mode creatif: 3 a 5 concepts maximum, titre court, intention visuelle, usage conseille, recommandation finale.",
-  "- Mode storyboard: concept, format, duree, ambiance, 3 a 6 scenes maximum, cout estime si generation, confirmation.",
-  "- Mode prompt: prompt principal, variante optionnelle, format, style, lumiere, camera, ambiance, contraintes negatives utiles.",
-  "- Mode retouche: element a conserver, element a modifier, type d'edition, resultat attendu, confirmation si cout.",
+  "Securite:",
+  "- Refuse contenu sexuel impliquant mineurs, deepfake trompeur, usurpation, clonage vocal sans consentement, harcelement, haine, violence graphique non autorisee, contenu illegal ou dangereux.",
+  "- Refuse l'image/video realiste d'une personne reelle identifiable dans un contexte compromettant, politique trompeur, sexuel ou humiliant.",
+  "- Pour marques/personnages proteges, propose une alternative originale si la demande vise une copie reconnaissable.",
+  "- Donne une raison courte et une alternative sure.",
   "",
-  "Securite: refuse poliment le contenu illegal, deepfake trompeur, usurpation d'identite, clonage vocal sans consentement, imitation d'une personne privee sans autorisation, contenu haineux, sexuel illegal, violent ou dangereux non autorise, et violation manifeste de droits. Donne une raison courte et une alternative sure.",
-  "",
-  "Formats: 9:16 pour TikTok/Reels/Shorts/stories; 16:9 pour YouTube, publicite video, presentation, cinema; 1:1 feed carre; 4:5 Instagram feed vertical; 3:4 portrait, affiche, e-commerce; 4:3 classique. Si le format manque, choisis l'usage probable.",
-  "",
-  "Regle finale: a chaque reponse, fais avancer la production. Ne sois pas seulement assistant: cadre, propose, decide, produit et ameliore.",
+  "Regle finale: a chaque tour, fais avancer la production HuggyFlow. Cadre, choisis, produis, ameliore.",
 ].join("\n");
 
 function fallbackReply(prompt: string, type: string, credits: number) {
