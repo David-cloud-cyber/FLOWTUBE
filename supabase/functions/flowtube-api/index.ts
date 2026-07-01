@@ -1344,22 +1344,91 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Pour marques/personnages proteges, propose une alternative originale si la demande vise une copie reconnaissable.",
   "- Donne une raison courte et une alternative sure.",
   "",
+  "Skills internes HuggyFlow:",
+  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage ou strategie.",
+  "- Combine plusieurs skills quand c'est plus fort: exemple storyboard + Kling/Seedance pour video, copywriting + image director pour affiche, UGC + lipsync pour avatar parlant.",
+  "- N'affiche jamais les noms techniques des skills, endpoints, fournisseurs ou parametres a l'utilisateur sauf s'il les demande clairement.",
+  "- Adapte tous les workflows joints a HuggyFlow et aux modeles disponibles via fal.ai. Si un skill mentionne un outil externe, garde la methode creative mais execute via le pipeline HuggyFlow.",
+  "- Si la demande parle marketing, remplace le jargon par un benefice clair: gain de temps, meilleure qualite, declinaisons rapides, coherence de marque, publication plus facile.",
+  "",
   "Regle finale: a chaque tour, fais avancer la production HuggyFlow. Cadre, choisis, produis, ameliore.",
 ].join("\n");
 
+type HuggySkill = {
+  id: string;
+  label: string;
+  triggers: string[];
+  use: string;
+};
+
+const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
+  { id: "gpt-image-2-director", label: "direction image premium", triggers: ["image", "affiche", "poster", "portrait", "packshot", "mockup", "texte dans l'image", "miniature"], use: "transformer l'idee en prompt visuel precis, avec cadrage, lumiere, style et contraintes de texte court." },
+  { id: "kling-3-prompt-director", label: "direction video premium", triggers: ["kling", "video premium", "cinematique", "camera", "mouvement", "film"], use: "structurer la video avec sujet, action, camera, rythme, ambiance, duree, format et details de scene." },
+  { id: "seedance-prompting-skills-for-cinematic-films", label: "video rapide et cinematographique", triggers: ["seedance", "video rapide", "image en video", "reference video", "scene courte"], use: "creer un prompt court, stable et tres visuel pour obtenir un mouvement lisible rapidement." },
+  { id: "storyboard-cheatcode", label: "storyboard et plan de production", triggers: ["storyboard", "script", "scenario", "previs", "plans", "sequence"], use: "decouper l'idee en plans simples, puis proposer l'image cle ou la video la plus utile en premier." },
+  { id: "static-ads", label: "publicite statique", triggers: ["pub", "annonce", "ad", "banniere", "meta ad", "visuel publicitaire"], use: "reutiliser une structure gagnante, clarifier l'offre et produire un visuel publicitaire pret a tester." },
+  { id: "ugc-ad-production", label: "UGC et avatar parlant", triggers: ["ugc", "temoignage", "avatar", "parlant", "influenceur", "script face camera"], use: "preparer accroche, script court, intention du personnage, voix et lipsync si besoin." },
+  { id: "ugc-model-swap", label: "variation de personnage", triggers: ["changer personnage", "model swap", "remplacer visage", "nouveau talent"], use: "garder le style et la structure tout en changeant proprement le personnage ou la reference." },
+  { id: "ai-short-drama-flow", label: "mini-fiction", triggers: ["drama", "mini serie", "episode", "scene emotion", "tension"], use: "organiser l'histoire en moments courts avec emotion claire et progression visuelle." },
+  { id: "soul-character-studio", label: "personnage coherent", triggers: ["personnage", "character", "mascotte", "identite visuelle", "reference sheet"], use: "definir traits, tenue, attitude, expressions et coherence de reference pour les iterations." },
+  { id: "b-roll-shot-planner", label: "B-roll", triggers: ["b-roll", "plans de coupe", "montage", "sequence produit", "cinematic broll"], use: "proposer cinq plans courts, lisibles et raccords pour enrichir un montage." },
+  { id: "video-stitching", label: "transition video", triggers: ["stitch", "transition", "relier deux videos", "avant apres"], use: "decrire le pont visuel entre debut et fin avec mouvement continu et raccord de lumiere." },
+  { id: "video-advanced-pipelines", label: "boucle et extension video", triggers: ["loop", "boucle", "extend", "prolonger", "reframe", "upscale video"], use: "choisir entre boucle, extension, recadrage ou amelioration selon le resultat vise." },
+  { id: "video-editor-commands", label: "edition video", triggers: ["couper", "monter", "assembler", "ralentir", "accelerer", "sous titres"], use: "traduire la demande en operation simple et confirmer le rendu attendu." },
+  { id: "cinematic-motion-language", label: "mouvement cinematographique", triggers: ["camera", "travelling", "dolly", "drone", "zoom", "cinematique"], use: "nommer le mouvement camera, le rythme et la sensation sans surcharger le prompt." },
+  { id: "asset-extraction", label: "objet propre et transparent", triggers: ["png", "fond transparent", "detourer", "logo", "asset", "sticker", "element ui"], use: "isoler un objet propre, net et reutilisable avec fond transparent ou arriere-plan retire." },
+  { id: "google-flow-composer", label: "musique et ambiance sonore", triggers: ["musique", "jingle", "soundtrack", "audio", "chanson", "ambiance sonore"], use: "decrire rythme, instruments, energie, duree et evolution pour accompagner le visuel." },
+  { id: "cod-ultimate-thumbnail", label: "miniature accrocheuse", triggers: ["thumbnail", "miniature", "youtube", "cover", "vignette"], use: "creer une composition simple, lisible, contrastree et orientee clic sans texte trop long." },
+  { id: "copywriting", label: "texte commercial clair", triggers: ["texte", "copy", "landing", "pricing", "accroche", "slogan", "description"], use: "ecrire des phrases simples, rassurantes et orientees benefice." },
+  { id: "ad-creative", label: "idees publicitaires", triggers: ["creative", "headline", "variante pub", "crochet", "angle publicitaire"], use: "proposer des angles courts, testables et faciles a decliner." },
+  { id: "paid-ads", label: "campagne payante", triggers: ["google ads", "meta ads", "tiktok ads", "linkedin ads", "campagne"], use: "adapter format, message et appel a l'action au canal vise." },
+  { id: "social-content", label: "contenu social", triggers: ["instagram", "tiktok", "linkedin", "facebook", "x/twitter", "post"], use: "adapter format, rythme et message a la plateforme." },
+  { id: "content-strategy", label: "strategie de contenu", triggers: ["strategie", "calendrier", "contenu", "plan editorial", "audience"], use: "transformer l'objectif en themes, formats et prochaines creations." },
+  { id: "marketing-ideas", label: "idees marketing", triggers: ["idee marketing", "campagne", "lancement", "promotion", "acquisition"], use: "trouver des concepts simples, vendables et faciles a produire." },
+  { id: "marketing-psychology", label: "psychologie marketing", triggers: ["preuve sociale", "urgence", "desir", "confiance", "objection"], use: "renforcer le message avec une motivation claire sans manipulation obscure." },
+  { id: "prompt-engineering-expert", label: "amelioration de prompt", triggers: ["prompt", "systeme", "instruction", "ameliorer le prompt", "agent"], use: "clarifier role, contexte, contraintes, sortie attendue et criteres de qualite." },
+  { id: "nike-air-force-ad", label: "style campagne mode", triggers: ["sneaker", "chaussure", "mode", "streetwear", "campagne produit"], use: "adapter l'energie publicitaire mode a une creation originale, sans copier une marque protegee." },
+];
+
+function scoreSkill(skill: HuggySkill, text: string, type: string) {
+  const hay = ` ${text.toLowerCase()} ${type.toLowerCase()} `;
+  let score = 0;
+  for (const trigger of skill.triggers) {
+    if (hay.includes(trigger.toLowerCase())) score += trigger.length > 8 ? 3 : 2;
+  }
+  if (type === "video" && /video|camera|scene|film|storyboard|ugc|lipsync/.test(skill.triggers.join(" "))) score += 1;
+  if (type === "image" && /image|affiche|packshot|thumbnail|asset|poster/.test(skill.triggers.join(" "))) score += 1;
+  return score;
+}
+
+function skillHintsForPrompt(prompt: string, type: string) {
+  const ranked = HUGGYFLOW_SKILL_LIBRARY
+    .map((skill) => ({ skill, score: scoreSkill(skill, prompt, type) }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score);
+  const defaults = type === "video"
+    ? ["kling-3-prompt-director", "seedance-prompting-skills-for-cinematic-films", "cinematic-motion-language"]
+    : ["gpt-image-2-director", "copywriting", "asset-extraction"];
+  const picked = ranked.length ? ranked.map((row) => row.skill) : defaults
+    .map((id) => HUGGYFLOW_SKILL_LIBRARY.find((skill) => skill.id === id))
+    .filter(Boolean) as HuggySkill[];
+  return picked.slice(0, 5).map((skill) => `- ${skill.label}: ${skill.use}`).join("\n");
+}
+
 function fallbackReply(prompt: string, type: string, credits: number) {
   if (/storyboard|script|scenario|plan/.test(prompt.toLowerCase())) {
-    return "Je structure le concept en 6 plans courts : accroche visuelle, contexte, probleme, solution, preuve, puis appel a l'action. Chaque plan peut ensuite devenir une image ou une video.";
+    return "Je structure ton idee en 6 plans courts: accroche visuelle, contexte, probleme, solution, preuve, puis appel a l'action. Chaque plan pourra devenir une image ou une video.";
   }
   return type === "video"
-    ? `Je lance une video courte en format choisi. Cout estime : ${credits} credits.`
-    : `Je lance une image propre et exploitable en format choisi. Cout estime : ${credits} credits.`;
+    ? `Je pars sur une video courte, claire et prete a ameliorer. Cout estime: ${credits} credits.`
+    : `Je pars sur une image propre et exploitable, avec un rendu soigné. Cout estime: ${credits} credits.`;
 }
 
 async function anthropicReply(prompt: string, type: string, credits: number) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return fallbackReply(prompt, type, credits);
   const system = HUGGYFLOW_SYSTEM_PROMPT;
+  const skillContext = skillHintsForPrompt(prompt, type);
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -1372,7 +1441,7 @@ async function anthropicReply(prompt: string, type: string, credits: number) {
         model: DEFAULT_MODEL,
         max_tokens: 700,
         system,
-        messages: [{ role: "user", content: `${prompt}\n\nType de generation: ${type}. Credits estimes: ${credits}.` }],
+        messages: [{ role: "user", content: `${prompt}\n\nContexte interne HuggyFlow:\nType de creation: ${type}.\nCredits estimes: ${credits}.\nSkills a utiliser si pertinents:\n${skillContext}` }],
       }),
     });
     if (!response.ok) throw new Error(`anthropic ${response.status}`);

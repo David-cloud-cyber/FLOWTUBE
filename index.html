@@ -30,6 +30,20 @@ textarea{resize:none;font-family:inherit}
 @keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes pageFade{from{opacity:0}to{opacity:1}}
 @keyframes pulseDot{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+@media (max-width:640px){
+  [data-topbar]{padding:10px 10px!important;gap:8px}
+  [data-breadcrumb]{max-width:76px!important;overflow:hidden}
+  [data-header-actions]{gap:6px!important;min-width:0}
+  [data-header-actions] button{min-width:0}
+  [data-export-button], [data-export-label], [data-breadcrumb-extra], [data-actions-separator]{display:none!important}
+  [data-composer-outer]{justify-content:flex-start!important}
+  [data-composer-shell]{width:calc(100% - 52px)!important;max-width:calc(100% - 52px)!important}
+  [data-model-button]{max-width:100%!important;width:100%!important;flex:1 1 100%!important}
+  [data-empty-title]{font-size:29px!important;max-width:230px!important}
+  [data-empty-subtitle]{font-size:13.5px!important;max-width:220px!important}
+  [data-suggestions]{max-width:240px!important}
+  [data-notification-btn]{display:none!important}
+}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:#08080A;color:#F5F5F4;font-family:'Inter Tight',system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .32s ease both">
@@ -38,7 +52,7 @@ textarea{resize:none;font-family:inherit}
     <div style="display:flex;align-items:center;justify-content:space-between;min-height:34px">
       <div style="display:flex;align-items:center;gap:10px;min-width:0">
         <div style="{{ logoStyle }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0A0A06" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
-        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:16px;font-weight:700;letter-spacing:-.02em;white-space:nowrap">Huggyflow</span></sc-if>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:16px;font-weight:700;letter-spacing:-.02em;white-space:nowrap">HuggyFlow</span></sc-if>
       </div>
       <div onClick="{{ toggleSidebar }}" style="width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9A9C;transition:background .2s,color .2s" style-hover="background:rgba(255,255,255,.06);color:#F5F5F4">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="9" y1="4" x2="9" y2="20"></line></svg>
@@ -105,23 +119,23 @@ textarea{resize:none;font-family:inherit}
   </aside>
 
   <main style="flex:1;display:flex;flex-direction:column;position:relative;min-width:0">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.05);backdrop-filter:blur(8px);z-index:3">
-      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+    <div data-topbar style="display:flex;align-items:center;justify-content:space-between;padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.05);backdrop-filter:blur(8px);z-index:3">
+      <div data-breadcrumb style="display:flex;align-items:center;gap:10px;min-width:0">
         <span style="font-size:14px;color:#6b6b6e">Projet</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b6b6e" stroke-width="2" stroke-linecap="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        <svg data-breadcrumb-extra width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b6b6e" stroke-width="2" stroke-linecap="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
         <span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ activeTitle }}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:9px">
+      <div data-header-actions style="display:flex;align-items:center;gap:9px">
         <button onClick="{{ openPricing }}" style="{{ upgradeBtnStyle }}" style-hover="filter:brightness(1.15)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 7.1L22 12l-7.4 2.9L12 22l-2.6-7.1L2 12l7.4-2.9z"></path></svg>
-          Upgrade
+          {{ upgradeLabel }}
         </button>
-        <button onClick="{{ exportProject }}" style="display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:#C9C9CA;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s" style-hover="background:rgba(255,255,255,.09)">
+        <button data-export-button onClick="{{ exportProject }}" style="display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:#C9C9CA;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s" style-hover="background:rgba(255,255,255,.09)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-          Exporter
+          <span data-export-label>Exporter</span>
         </button>
-        <div style="width:1px;height:22px;background:rgba(255,255,255,.1);margin:0 3px"></div>
-        <button onClick="{{ openNotifications }}" style="width:36px;height:36px;flex:0 0 auto;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,.09);color:#C9C9CA;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
+        <div data-actions-separator style="width:1px;height:22px;background:rgba(255,255,255,.1);margin:0 3px"></div>
+        <button data-notification-btn onClick="{{ openNotifications }}" style="width:36px;height:36px;flex:0 0 auto;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,.09);color:#C9C9CA;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
         </button>
         <div onClick="{{ toggleAccountHeader }}" style="width:36px;height:36px;flex:0 0 auto;border-radius:50%;cursor:pointer;padding:2px;border:2px solid #D7F94B;box-shadow:0 0 8px -4px #D7F94B;transition:transform .2s" style-hover="transform:scale(1.04)">
@@ -135,9 +149,9 @@ textarea{resize:none;font-family:inherit}
         <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
           <div style="{{ emptyStateStyle }}">
             <div style="{{ emptyDotStyle }}"></div>
-            <h1 style="font-size:40px;font-weight:700;letter-spacing:-.035em;margin:0;line-height:1.08;max-width:560px">Que veux-tu créer aujourd’hui&nbsp;?</h1>
-            <p style="margin:0;color:#9A9A9C;font-size:15.5px">Décris une idée, ou choisis un point de départ.</p>
-            <div style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;max-width:540px;margin-top:6px">
+            <h1 data-empty-title style="font-size:40px;font-weight:700;letter-spacing:-.035em;margin:0;line-height:1.08;max-width:560px">Que veux-tu créer aujourd’hui&nbsp;?</h1>
+            <p data-empty-subtitle style="margin:0;color:#9A9A9C;font-size:15.5px">Décris une idée, ou choisis un point de départ.</p>
+            <div data-suggestions style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;max-width:540px;margin-top:6px">
               <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="4">
                 <div onClick="{{ s.onClick }}" style="padding:11px 17px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px;color:#E7E7E6;cursor:pointer;backdrop-filter:blur(8px);transition:all .2s" style-hover="background:rgba(255,255,255,.1);transform:translateY(-1px)">{{ s.label }}</div>
               </sc-for>
@@ -195,10 +209,10 @@ textarea{resize:none;font-family:inherit}
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Download
                                 </div>
                                 <div onClick="{{ m.onEdit }}" style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;background:rgba(16,16,18,.72);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);color:#F5F5F4;transition:all .2s" style-hover="background:rgba(40,40,44,.85)">
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Edit
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Modifier
                                 </div>
                                 <div onClick="{{ m.onRecreate }}" style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;background:rgba(16,16,18,.72);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);color:#F5F5F4;transition:all .2s" style-hover="background:rgba(40,40,44,.85)">
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>Recreate
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>Recréer
                                 </div>
                               </div>
                             </sc-if>
@@ -221,11 +235,11 @@ textarea{resize:none;font-family:inherit}
       </div>
     </div>
 
-    <div style="{{ composerOuterStyle }}">
-      <div style="position:relative;width:100%;max-width:780px;pointer-events:auto">
+    <div data-composer-outer style="{{ composerOuterStyle }}">
+      <div data-composer-shell style="position:relative;width:100%;max-width:780px;pointer-events:auto">
         <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
           <div style="position:absolute;z-index:40;bottom:72px;left:6px;width:min(390px,calc(100vw - 28px));max-height:326px;overflow-y:auto;background:#121214;border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:6px;box-shadow:0 22px 52px -18px rgba(0,0,0,.92);animation:fadeUp .16s both">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;gap:12px"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5f5f62;font-weight:700">Modèles fal.ai</div><div style="font-size:11.5px;color:#8a8a8c">{{ modelCountLabel }}</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;gap:12px"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5f5f62;font-weight:700">Modèles créatifs</div><div style="font-size:11.5px;color:#8a8a8c">{{ modelCountLabel }}</div></div>
             <sc-for list="{{ modelItems }}" as="it" hint-placeholder-count="8">
               <div onClick="{{ it.onClick }}" style="{{ it.rowStyle }}" style-hover="background:rgba(255,255,255,.06)"><span style="{{ it.dotStyle }}"></span><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span><span style="{{ it.tierStyle }}">{{ it.tier }}</span></div><div style="font-size:11.5px;color:#858589;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.meta }}</div></div><span style="{{ it.creditStyle }}">{{ it.creditsLabel }}</span><span style="{{ it.checkStyle }}">✓</span></div>
             </sc-for>
@@ -247,11 +261,11 @@ textarea{resize:none;font-family:inherit}
             <button onClick="{{ attachReference }}" style="width:36px;height:36px;flex:0 0 auto;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#C9C9CA;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" style-hover="background:rgba(255,255,255,.12);color:#F5F5F4">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
-            <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Décris ce que tu veux créer…" style="flex:1;background:transparent;border:none;outline:none;color:#F5F5F4;font-size:15px;line-height:1.5;padding:8px 0;min-height:24px;max-height:130px;overflow-y:auto"></textarea>
+            <textarea ref="{{ setComposerInputRef }}" value="{{ input }}" onChange="{{ onInput }}" onFocus="{{ onInputFocus }}" onBlur="{{ onInputBlur }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Décris ce que tu veux créer…" style="flex:1;width:100%;min-width:0;display:block;resize:none;background:transparent;border:none;outline:none;color:#F5F5F4;font-size:15px;line-height:1.5;padding:8px 0;min-height:24px;max-height:130px;overflow-y:auto"></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#E2E2E1;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .2s" style-hover="background:rgba(255,255,255,.09)">
-              <span style="{{ curModelDot }}"></span>{{ curModelName }}
+            <button data-model-button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:8px;min-width:0;max-width:min(450px,100%);padding:8px 13px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#E2E2E1;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .2s" style-hover="background:rgba(255,255,255,.09)">
+              <span style="{{ curModelDot }}"></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ curModelName }}</span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A9A9C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
             </button>
             <button onClick="{{ toggleRatioMenu }}" style="display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#E2E2E1;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .2s" style-hover="background:rgba(255,255,255,.09)">
@@ -279,8 +293,8 @@ textarea{resize:none;font-family:inherit}
         <div style="position:sticky;top:0;z-index:8;display:flex;align-items:center;justify-content:space-between;padding:16px 30px;background:linear-gradient(#0A0A0C 60%,rgba(10,10,12,.85));backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.05)">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#0A0A06;background:#D7F94B;box-shadow:0 0 10px -5px #D7F94B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A06" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
-            <span style="font-size:15px;font-weight:700;letter-spacing:-.02em">Huggyflow</span>
-            <span style="font-size:14px;color:#6b6b6e">· Pricing</span>
+            <span style="font-size:15px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
+            <span style="font-size:14px;color:#6b6b6e">· Tarifs</span>
           </div>
           <div onClick="{{ closePricing }}" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9A9C;transition:all .2s" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -289,31 +303,31 @@ textarea{resize:none;font-family:inherit}
 
         <div style="max-width:1180px;margin:0 auto;padding:26px 30px 72px">
           <div style="position:relative;overflow:hidden;border-radius:20px;padding:30px 34px;background:radial-gradient(130% 180% at 90% 10%, rgba(255,46,115,.55), transparent 55%),linear-gradient(105deg,#2a0a18,#3d0e22 50%,#170610);border:1px solid rgba(255,46,115,.28)">
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#FF2E73;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.04em">HUGGYFLOW PRICING</span>
-            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#FF2E73;line-height:1.1;margin-top:16px">Credits reels. Modeles premium.</div>
-            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#F5F5F4;line-height:1.1;margin-top:5px">Tu paies seulement les generations reussies.</div>
-            <p style="margin:14px 0 0;font-size:13.5px;color:rgba(255,255,255,.6)">Chaque plan garde une marge saine avec les couts fal.ai, et les jobs chers demandent confirmation avant lancement.</p>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#FF2E73;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.04em">OFFRES HUGGYFLOW</span>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#FF2E73;line-height:1.1;margin-top:16px">Des créations prêtes à publier.</div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-.01em;color:#F5F5F4;line-height:1.1;margin-top:5px">Tu paies seulement ce qui réussit.</div>
+            <p style="margin:14px 0 0;font-size:13.5px;color:rgba(255,255,255,.6)">Choisis un rythme adapté à tes projets. HuggyFlow te prévient avant les rendus les plus lourds.</p>
           </div>
 
           <div style="margin-top:40px">
             <h2 style="font-size:34px;font-weight:800;letter-spacing:-.03em;margin:0;color:#F5F5F4">Tarifs HuggyFlow</h2>
-            <p style="margin:10px 0 0;font-size:15px;color:#9a9a9c">Plans, credits, limites et meilleurs modeles viennent du backend production.</p>
+            <p style="margin:10px 0 0;font-size:15px;color:#9a9a9c">Des offres simples pour créer des images, vidéos, voix et contenus prêts à utiliser.</p>
           </div>
 
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:26px">
             <div style="display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
-              <div onClick="{{ setIndiv }}" style="{{ indivStyle }}">Individual plans</div>
-              <div onClick="{{ setBiz }}" style="{{ bizStyle }}">Business plans</div>
+              <div onClick="{{ setIndiv }}" style="{{ indivStyle }}">Solo</div>
+              <div onClick="{{ setBiz }}" style="{{ bizStyle }}">Équipes</div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
               <div onClick="{{ toggleCompare }}" style="{{ compareBtnStyle }}">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
-                Compare plans <span style="padding:2px 6px;border-radius:5px;background:#D7F94B;color:#08080A;font-size:9.5px;font-weight:800;letter-spacing:.03em">NEW</span>
+                Comparer <span style="padding:2px 6px;border-radius:5px;background:#D7F94B;color:#08080A;font-size:9.5px;font-weight:800;letter-spacing:.03em">NOUVEAU</span>
               </div>
               <div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
-                <span onClick="{{ setMonthly }}" style="{{ billMonthlyStyle }}">Monthly</span>
+                <span onClick="{{ setMonthly }}" style="{{ billMonthlyStyle }}">Mensuel</span>
                 <div onClick="{{ setAnnual }}" style="position:relative;width:38px;height:21px;border-radius:999px;cursor:pointer;transition:background .22s;background:{{ billTrackBg }}"><div style="{{ billKnobStyle }}"></div></div>
-                <span onClick="{{ setAnnual }}" style="{{ billAnnualStyle }}">Annual</span>
+                <span onClick="{{ setAnnual }}" style="{{ billAnnualStyle }}">Annuel</span>
               </div>
             </div>
           </div>
@@ -378,7 +392,7 @@ textarea{resize:none;font-family:inherit}
                 </div>
 
                 <div style="{{ pl.seedBoxStyle }}">
-                  <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#cfe0ff;margin-bottom:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="18" y1="20" x2="18" y2="14"></line></svg>BEST MODELS</div>
+                  <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#cfe0ff;margin-bottom:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="18" y1="20" x2="18" y2="14"></line></svg>CRÉATIONS PHARES</div>
                   <sc-for list="{{ pl.seedance }}" as="s" hint-placeholder-count="3">
                     <div style="display:flex;gap:9px;align-items:center;padding:5px 0;font-size:13px">
                       <span style="display:flex;flex:0 0 auto;color:{{ s.iconColor }}"><sc-if value="{{ s.ok }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if><sc-if value="{{ s.notOk }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></sc-if></span>
@@ -390,8 +404,8 @@ textarea{resize:none;font-family:inherit}
 
                 <div style="{{ pl.unlBoxStyle }}">
                   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-                    <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#bdbdbf"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>PRODUCTION LIMITS</div>
-                    <span style="font-size:11px;color:#9a9a9c">Live</span>
+                    <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#bdbdbf"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>RYTHME INCLUS</div>
+                    <span style="font-size:11px;color:#9a9a9c">Actif</span>
                   </div>
                   <sc-for list="{{ pl.unlimited }}" as="u" hint-placeholder-count="3">
                     <div style="display:flex;gap:9px;align-items:center;padding:5px 0;font-size:13px">
@@ -406,20 +420,20 @@ textarea{resize:none;font-family:inherit}
             </sc-for>
           </div>
 
-          <p style="text-align:center;max-width:820px;margin:26px auto 0;font-size:12px;line-height:1.7;color:#67676a">Prices exclude VAT and local taxes. Checkout is ready for Stripe and prepared for MoneyFusion once the provider variables are configured.</p>
+          <p style="text-align:center;max-width:820px;margin:26px auto 0;font-size:12px;line-height:1.7;color:#67676a">Les prix peuvent varier selon les taxes locales. Le paiement s'ouvre au moment de choisir une offre.</p>
 
           <sc-if value="{{ compareOpen }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:56px">
-              <h2 style="text-align:center;font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0 0 26px;color:#F5F5F4">COMPARE PLANS</h2>
+              <h2 style="text-align:center;font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0 0 26px;color:#F5F5F4">Comparer les offres</h2>
               <div style="border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:#0D0D0F">
                 <div style="{{ compareHeadStyle }}">
-                  <div><div style="display:inline-flex;align-items:center;gap:10px;padding:9px 13px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)"><span style="font-size:12px;font-weight:700;color:#F5F5F4">Annual <span style="color:#D7F94B">billing</span></span><div onClick="{{ setAnnual }}" style="position:relative;width:36px;height:20px;border-radius:999px;cursor:pointer;background:{{ billTrackBg }}"><div style="{{ billKnobStyle }}"></div></div></div></div>
+                  <div><div style="display:inline-flex;align-items:center;gap:10px;padding:9px 13px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)"><span style="font-size:12px;font-weight:700;color:#F5F5F4">Paiement <span style="color:#D7F94B">annuel</span></span><div onClick="{{ setAnnual }}" style="position:relative;width:36px;height:20px;border-radius:999px;cursor:pointer;background:{{ billTrackBg }}"><div style="{{ billKnobStyle }}"></div></div></div></div>
                   <sc-for list="{{ compareHeader }}" as="h" hint-placeholder-count="3">
                     <div style="padding:0 10px">
                       <div style="font-size:19px;font-weight:800;color:#F5F5F4">{{ h.name }}</div>
-                      <div style="font-size:13px;color:#9a9a9c;margin:7px 0 1px">{{ h.price }}/month</div>
+                      <div style="font-size:13px;color:#9a9a9c;margin:7px 0 1px">{{ h.price }}/mois</div>
                       <div style="font-size:12px;color:#67676a;margin-bottom:14px">{{ h.unit }}</div>
-                      <button onClick="{{ h.onClick }}" style="{{ h.ctaStyle }}" style-hover="background:rgba(255,255,255,.12)">Get Plan</button>
+                      <button onClick="{{ h.onClick }}" style="{{ h.ctaStyle }}" style-hover="background:rgba(255,255,255,.12)">Choisir</button>
                     </div>
                   </sc-for>
                 </div>
@@ -447,7 +461,7 @@ textarea{resize:none;font-family:inherit}
           </sc-if>
 
           <div style="margin:60px auto 0;max-width:760px">
-            <h2 style="text-align:center;font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0 0 26px;color:#F5F5F4">Frequently Asked Questions</h2>
+            <h2 style="text-align:center;font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0 0 26px;color:#F5F5F4">Questions utiles</h2>
             <div style="display:flex;flex-direction:column;gap:10px">
               <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="6">
                 <div onClick="{{ f.onClick }}" style="{{ f.rowStyle }}">
@@ -462,7 +476,7 @@ textarea{resize:none;font-family:inherit}
           </div>
 
           <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:56px 0 0">
-            <span style="font-size:15px;font-weight:600;color:#bdbdbf">Are you ready?</span>
+            <span style="font-size:15px;font-weight:600;color:#bdbdbf">Prêt à créer ?</span>
             <button onClick="{{ chooseRecommendedPlan }}" style="padding:13px 24px;border-radius:12px;border:none;background:#D7F94B;color:#08080A;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 0 14px -8px #D7F94B" style-hover="filter:brightness(1.04)">{{ pricingPrimaryLabel }}</button>
           </div>
         </div>
@@ -497,7 +511,7 @@ textarea{resize:none;font-family:inherit}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#D7F94B"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-1.6 11H4.6z"></path></svg>
             <span style="font-size:15px;font-weight:700;color:#F5F5F4">Go Premium</span>
           </div>
-          <button onClick="{{ onUpgrade }}" style="padding:9px 20px;border-radius:999px;border:none;background:#D7F94B;color:#08080A;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 0 10px -6px #D7F94B" style-hover="filter:brightness(1.04)">Upgrade</button>
+          <button onClick="{{ onUpgrade }}" style="padding:9px 20px;border-radius:999px;border:none;background:#D7F94B;color:#08080A;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 0 10px -6px #D7F94B" style-hover="filter:brightness(1.04)">Passer Pro</button>
         </div>
       </div>
 
@@ -536,7 +550,7 @@ textarea{resize:none;font-family:inherit}
           <p style="font-size:13.5px;line-height:1.6;color:#bdbdbf;margin:16px 0 0">{{ profileBio }}</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px">
             <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:14px"><div style="font-size:22px;font-weight:800;color:#F5F5F4">{{ projectCount }}</div><div style="font-size:11.5px;color:#8a8a8c;margin-top:2px">Projets</div></div>
-            <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:14px"><div style="font-size:22px;font-weight:800;color:#F5F5F4">{{ generationCount }}</div><div style="font-size:11.5px;color:#8a8a8c;margin-top:2px">Générations</div></div>
+            <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:14px"><div style="font-size:22px;font-weight:800;color:#F5F5F4">{{ generationCount }}</div><div style="font-size:11.5px;color:#8a8a8c;margin-top:2px">Créations</div></div>
             <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:14px"><div style="font-size:22px;font-weight:800;color:#D7F94B">{{ creditsLabel }}</div><div style="font-size:11.5px;color:#8a8a8c;margin-top:2px">Crédits</div></div>
           </div>
           <div style="display:flex;gap:10px;margin-top:22px">
@@ -624,7 +638,7 @@ textarea{resize:none;font-family:inherit}
         </div>
         <div style="padding:18px;overflow-y:auto;max-height:calc(88vh - 142px)">
           <sc-if value="{{ collectionEmpty }}" hint-placeholder-val="{{ false }}">
-            <div style="border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:14px;padding:22px;color:#9a9a9c;font-size:14px;line-height:1.5">Aucune création disponible dans cette collection. Lance une génération puis reviens ici pour la remixer.</div>
+            <div style="border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:14px;padding:22px;color:#9a9a9c;font-size:14px;line-height:1.5">Aucune création disponible dans cette collection. Lance une création puis reviens ici pour la remixer.</div>
           </sc-if>
           <sc-if value="{{ showCollectionHistory }}" hint-placeholder-val="{{ true }}">
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
@@ -662,8 +676,8 @@ textarea{resize:none;font-family:inherit}
           <div style="display:flex;align-items:center;gap:12px;min-width:0">
             <div style="{{ authLogoStyle }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A06" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <div style="min-width:0">
-              <div style="font-size:12px;color:#8a8a8c;font-weight:700;letter-spacing:.08em;text-transform:uppercase">HuggyFlow ID</div>
-              <h2 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:2px 0 0;color:#F5F5F4">Connexion securisee</h2>
+              <div style="font-size:12px;color:#8a8a8c;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Compte HuggyFlow</div>
+              <h2 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:2px 0 0;color:#F5F5F4">Connexion sécurisée</h2>
             </div>
           </div>
           <div onClick="{{ closeAuthModal }}" style="width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9A9C;transition:all .2s;flex:0 0 auto" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
@@ -684,11 +698,11 @@ textarea{resize:none;font-family:inherit}
         <div style="display:flex;flex-direction:column;gap:10px">
           <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" placeholder="Adresse e-mail" style="{{ authInputStyle }}"/>
           <input type="password" value="{{ authPassword }}" onChange="{{ onAuthPassword }}" placeholder="Mot de passe" style="{{ authInputStyle }}"/>
-          <input value="{{ authDisplayName }}" onChange="{{ onAuthDisplayName }}" placeholder="Nom affiche pour l'inscription" style="{{ authInputStyle }}"/>
+          <input value="{{ authDisplayName }}" onChange="{{ onAuthDisplayName }}" placeholder="Nom affiché pour l'inscription" style="{{ authInputStyle }}"/>
         </div>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
-          <button onClick="{{ onSignup }}" style="{{ authPrimaryStyle }}" style-hover="filter:brightness(1.04);transform:translateY(-1px)">Creer un compte</button>
+          <button onClick="{{ onSignup }}" style="{{ authPrimaryStyle }}" style-hover="filter:brightness(1.04);transform:translateY(-1px)">Créer un compte</button>
           <button onClick="{{ onLogin }}" style="{{ authSecondaryStyle }}" style-hover="background:rgba(255,255,255,.09);transform:translateY(-1px)">Se connecter</button>
         </div>
         <div style="min-height:18px;margin-top:12px;font-size:12.5px;color:#8f8f91">{{ authStatus }}</div>
@@ -704,9 +718,11 @@ class Component extends DCLogic {
     const p = props || {};
     this.state = {
       sidebarCollapsed: false,
+      isMobile: (typeof window !== 'undefined' && window.innerWidth < 720),
       collectionsOpen: true,
       activeId: 'welcome',
       input: '',
+      inputFocused: false,
       mode: p.startMode === 'Vidéo' ? 'video' : 'image',
       modelId: 'auto',
       ratio: '4:5',
@@ -755,11 +771,11 @@ class Component extends DCLogic {
     const palette = { image:'#D7F94B', image_edit:'#7CC7FF', video:'#C99BFF', video_edit:'#FF9B7C', audio:'#7CFFB0', lipsync:'#FF6FB1', voice_clone:'#E8D17A' };
     const source = this.state.pricingModels && this.state.pricingModels.length ? this.state.pricingModels : [
       { id:'gpt-image-2', name:'GPT Image 2', type:'image', credits:35, capabilities:['text-to-image'], qualityTier:'premium', recommended:true, badge:'TOP', rank:1 },
-      { id:'gpt-image-2-edit', name:'GPT Image Edit', type:'image_edit', credits:35, capabilities:['edit'], qualityTier:'premium', recommended:true, badge:'TOP', rank:2 },
+      { id:'gpt-image-2-edit', name:'GPT Retouche', type:'image_edit', credits:35, capabilities:['edit'], qualityTier:'premium', recommended:true, badge:'TOP', rank:2 },
       { id:'veoq', name:'Veo 3', type:'video', credits:438, capabilities:['text-to-video'], qualityTier:'premium', recommended:true, badge:'TOP', rank:3 },
       { id:'kling-video-v3-pro-text-to-video', name:'Kling 3 Pro', type:'video', credits:394, capabilities:['text-to-video'], qualityTier:'premium', recommended:true, badge:'TOP', rank:4 },
-      { id:'bytedance-seedance-2-0-text-to-video', name:'Seedance 2', type:'video', credits:263, capabilities:['text-to-video'], qualityTier:'standard', recommended:true, badge:'FAST', rank:5 },
-      { id:'minimax-tts', name:'MiniMax Voice', type:'audio', credits:22, capabilities:['tts'], qualityTier:'premium', recommended:true, badge:'TOP', rank:6 },
+      { id:'bytedance-seedance-2-0-text-to-video', name:'Seedance 2', type:'video', credits:263, capabilities:['text-to-video'], qualityTier:'standard', recommended:true, badge:'RAPIDE', rank:5 },
+      { id:'minimax-tts', name:'MiniMax Voix', type:'audio', credits:22, capabilities:['tts'], qualityTier:'premium', recommended:true, badge:'TOP', rank:6 },
     ];
     const normalized = source.map((m,i)=>({
       id:m.id,
@@ -770,25 +786,38 @@ class Component extends DCLogic {
       premium:!!m.premium,
       qualityTier:m.qualityTier || (m.premium?'premium':'standard'),
       capabilities:m.capabilities || [],
-      family:m.family || 'fal.ai',
+      family:m.family || 'Studio',
       endpoint:m.endpoint || '',
       recommended:!!m.recommended,
       badge:m.badge || '',
       rank:Number(m.rank || 999),
       dot:palette[m.type] || ['#D7F94B','#7CC7FF','#C99BFF','#FF9B7C','#7CFFB0'][i%5],
     })).sort((a,b)=>(Number(b.recommended)-Number(a.recommended)) || a.rank-b.rank || String(a.type).localeCompare(String(b.type)) || a.name.localeCompare(b.name));
-    return [{ id:'auto', name:'Auto HuggyFlow', type:'auto', credits:0, premium:true, qualityTier:'auto', capabilities:['best-model'], family:'fal.ai', endpoint:'', dot:'#D7F94B' }].concat(normalized);
+    return [{ id:'auto', name:'Auto HuggyFlow', type:'auto', credits:0, premium:true, qualityTier:'auto', capabilities:['best-model'], family:'Studio', endpoint:'', dot:'#D7F94B' }].concat(normalized);
   }
   get RATIOS(){ return ['16:9','9:16','1:1','4:3','3:4','4:5']; }
 
   accent(){ return this.props && this.props.accentColor ? this.props.accentColor : '#D7F94B'; }
   shortModelName(m){
     const aliases = {
-      'gpt-image-2':'GPT Image 2','gpt-image-2-edit':'GPT Image Edit','nano':'Nano Pro','nano2':'Nano 2','nano2-edit':'Nano Edit','flux':'Flux Fast','flux-2-pro':'Flux 2 Pro','flux-2-pro-edit':'Flux 2 Edit','seedream-lite':'Seedream Lite','veoq':'Veo 3','veol':'Veo Fast','kling-video-v3-pro-text-to-video':'Kling 3 Pro','kling-video-v3-pro-image-to-video':'Kling 3 Pro I2V','kling-video-v3-4k-text-to-video':'Kling 3 4K','kling-video-v3-standard-text-to-video':'Kling 3 Std','bytedance-seedance-2-0-text-to-video':'Seedance 2','bytedance-seedance-2-0-image-to-video':'Seedance 2 I2V','bytedance-seedance-2-0-fast-text-to-video':'Seedance Fast','bytedance-seedance-2-0-mini-text-to-video':'Seedance Mini','pixverse-v6-image-to-video':'PixVerse 6','luma-agent-ray-v3-2-text-to-video':'Ray 3.2','luma-agent-ray-v3-2-image-to-video':'Ray 3.2 I2V','luma-agent-ray-v3-2-video-to-video':'Ray Remix','minimax-tts':'MiniMax Voice','minimax-tts-turbo':'MiniMax Turbo','lyria3-pro':'Lyria Music','sonilo-music':'Sonilo Music','heygen-v3-lipsync-precision':'HeyGen Lipsync','sync-lipsync-v3':'Sync Lipsync','minimax-voice-clone':'Voice Clone'
+      'gpt-image-2':'GPT Image 2','gpt-image-2-edit':'GPT Retouche','nano':'Nano Pro','nano2':'Nano 2','nano2-edit':'Nano Retouche','flux':'Flux Rapide','flux-2-pro':'Flux 2 Pro','flux-2-pro-edit':'Flux 2 Retouche','seedream-lite':'Seedream Lite','veoq':'Veo 3','veol':'Veo Rapide','kling-video-v3-pro-text-to-video':'Kling 3 Pro','kling-video-v3-pro-image-to-video':'Kling 3 I2V','kling-video-v3-4k-text-to-video':'Kling 3 4K','kling-video-v3-standard-text-to-video':'Kling 3 Std','bytedance-seedance-2-0-text-to-video':'Seedance 2','bytedance-seedance-2-0-image-to-video':'Seedance I2V','bytedance-seedance-2-0-fast-text-to-video':'Seedance Rapide','bytedance-seedance-2-0-mini-text-to-video':'Seedance Mini','pixverse-v6-image-to-video':'PixVerse 6','luma-agent-ray-v3-2-text-to-video':'Ray 3.2','luma-agent-ray-v3-2-image-to-video':'Ray I2V','luma-agent-ray-v3-2-video-to-video':'Ray Remix','minimax-tts':'MiniMax Voix','minimax-tts-turbo':'MiniMax Turbo','lyria3-pro':'Lyria Musique','sonilo-music':'Sonilo Musique','heygen-v3-lipsync-precision':'HeyGen Lipsync','sync-lipsync-v3':'Sync Lipsync','minimax-voice-clone':'Voix Clone'
     };
     if(aliases[m.id]) return aliases[m.id];
-    const raw = String(m.shortName || m.name || m.id || 'Modele');
-    return raw.replace(/^Fal Ai\s+/i,'').replace(/Bytedance Seedance 2\.0/i,'Seedance 2').replace(/Kling Video V3/i,'Kling 3').replace(/Text To Video/i,'T2V').replace(/Image To Video/i,'I2V').replace(/Reference To Video/i,'Ref').replace(/\s+/g,' ').slice(0,28).trim();
+    const raw = String(m.shortName || m.name || m.id || 'Modèle');
+    const cleaned = raw
+      .replace(/^Fal Ai\s+/i,'')
+      .replace(/Bytedance Seedance 2\.0/i,'Seedance 2')
+      .replace(/Conversion rapide d['’]images en vidéos/i,'Fast I2V')
+      .replace(/Conversion d['’]images en vidéos/i,'I2V')
+      .replace(/Kling Video V3/i,'Kling 3')
+      .replace(/Text To Video/i,'T2V')
+      .replace(/Image To Video/i,'I2V')
+      .replace(/Reference To Video/i,'Ref')
+      .replace(/\btexte vers image\b/i,'T2I')
+      .replace(/\btexte vers vidéo\b/i,'T2V')
+      .replace(/\s+/g,' ')
+      .trim();
+    return cleaned.length > 22 ? cleaned.slice(0,21).trim()+'…' : cleaned;
   }
   modelDotFor(name){ const m = this.MODELS.find(x=>x.name===name); return m?m.dot:this.accent(); }
   modelName(){ const m = this.MODELS.find(x=>x.id===this.state.modelId); return m?m.name:this.MODELS[0].name; }
@@ -805,7 +834,22 @@ class Component extends DCLogic {
   sceneLabel(scene){ return ({ btp:'chantier · golden hour', product:'packshot · studio', character:'portrait · lumière douce', studio:'scène · cinématique' })[scene] || 'placeholder média'; }
   ratioBox(r){ const a=r.split(':').map(Number),w=a[0],h=a[1]; let mw=380; if(h>w)mw=326; else if(w>h)mw=536; else mw=392; return 'width:100%;max-width:'+mw+'px;aspect-ratio:'+w+'/'+h+';'; }
 
-  componentDidMount(){ this.bootstrap(); }
+  syncViewport(){
+    if(typeof window === 'undefined') return;
+    const isMobile = window.innerWidth < 720;
+    if(this.state.isMobile !== isMobile) this.setState({ isMobile });
+  }
+  componentDidMount(){
+    this.syncViewport();
+    if(typeof window !== 'undefined'){
+      this.onResize = ()=>this.syncViewport();
+      window.addEventListener('resize', this.onResize);
+    }
+    this.bootstrap();
+  }
+  componentWillUnmount(){
+    if(typeof window !== 'undefined' && this.onResize) window.removeEventListener('resize', this.onResize);
+  }
 
   apiBase(){ return (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3000' : ''; }
   apiFetch(path, options){
@@ -820,11 +864,11 @@ class Component extends DCLogic {
     if(this.state.authToken) return true;
     this.setState({
       authModalOpen:true,
-      authIntent:intent || 'Connecte-toi pour continuer sur Huggyflow.',
+      authIntent:intent || 'Connecte-toi pour continuer sur HuggyFlow.',
       pendingAuthAction: pendingAction || null,
       accountMenu:false,
       panel:null,
-      pricingNotice:'Connecte-toi ou cree un compte gratuit pour activer cette action.',
+      pricingNotice:'Connecte-toi ou crée un compte gratuit pour continuer.',
     });
     return false;
   }
@@ -836,7 +880,7 @@ class Component extends DCLogic {
       if(pending.type === 'send') this.send();
       if(pending.type === 'newProject') this.newProject();
       if(pending.type === 'checkout') this.startCheckout(pending.planId, pending.packId);
-      if(pending.type === 'generate') this.requestDirectGeneration(pending.payload, pending.messageId).catch(()=>this.addAgentText(this.state.activeId, 'Generation indisponible pour le moment.'));
+      if(pending.type === 'generate') this.requestDirectGeneration(pending.payload, pending.messageId).catch(()=>this.addAgentText(this.state.activeId, 'La création est indisponible pour le moment. Réessaie dans quelques instants.'));
     });
   }
 
@@ -916,11 +960,11 @@ class Component extends DCLogic {
   async send(){
     const text = this.state.input.trim();
     if(!text || this.state.sendLocked) return;
-    if(!this.requireAuth('Connecte-toi pour creer, sauvegarder et lancer tes generations Huggyflow.', { type:'send' })) return;
+    if(!this.requireAuth('Connecte-toi pour créer, sauvegarder et lancer tes créations HuggyFlow.', { type:'send' })) return;
     const cid = this.state.activeId;
     this.updateConv(cid, ms => ms.concat([{ id:'u'+Date.now(), role:'user', text }]));
     const payload = { message:text, projectId:cid, mode:this.state.mode, modelId:this.state.modelId, aspectRatio:this.state.ratio };
-    this.setState({ input:'', sendLocked:true });
+    this.setState({ input:'', sendLocked:true }, ()=>this.resizeComposerInput(this.composerInputEl));
     try{
       const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload) });
       if(!res.ok) throw new Error('chat '+res.status);
@@ -964,8 +1008,8 @@ class Component extends DCLogic {
   localFallback(cid, text){
     void text;
     this.addAgentText(cid, this.state.authToken
-      ? 'Le service de génération est indisponible pour le moment. Vérifie la configuration API puis réessaie.'
-      : 'Connecte-toi à Huggyflow pour créer et sauvegarder tes générations.');
+      ? 'La création est indisponible pour le moment. Réessaie dans quelques instants.'
+      : 'Connecte-toi à HuggyFlow pour créer et sauvegarder tes projets.');
   }
 
   async consumeChatStream(res, cid){
@@ -996,7 +1040,15 @@ class Component extends DCLogic {
     if(type === 'message') this.addAgentText(cid, payload.text || '');
     if(type === 'generation') this.addGenerationCard(cid, payload.generation || payload);
     if(type === 'credits') this.setState({ credits:Number(payload.credits || this.state.credits) });
-    if(type === 'error') this.addAgentText(cid, payload.message || 'La génération a échoué. Réessaie avec une consigne plus courte.');
+    if(type === 'error') this.addAgentText(cid, this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.'));
+  }
+
+  friendlyError(message, fallback){
+    const safe = fallback || 'Action indisponible pour le moment. Réessaie dans quelques instants.';
+    const raw = String(message || '').trim();
+    if(!raw) return safe;
+    if(/api|backend|supabase|fal\.ai|provider|endpoint|stripe|moneyfusion|configuration|configur|variable|price id|env/i.test(raw)) return safe;
+    return raw;
   }
 
   addAgentText(cid, text, id){
@@ -1065,16 +1117,16 @@ class Component extends DCLogic {
 
   async requestDirectGeneration(payload, existingMessageId){
     const cid = payload.projectId || this.state.activeId;
-    if(!this.requireAuth('Connecte-toi pour lancer cette generation et suivre sa progression.', { type:'generate', payload, messageId:existingMessageId })) return;
+    if(!this.requireAuth('Connecte-toi pour lancer cette création et suivre sa progression.', { type:'generate', payload, messageId:existingMessageId })) return;
     const res = await this.apiFetch('/api/generate', { method:'POST', body:JSON.stringify(payload) });
     if(!res.ok){
       let data = null; try{ data = await res.json(); }catch(e){}
       if(data && data.requiresConfirmation){
-        this.addAgentText(cid, data.error && data.error.message ? data.error.message : 'Confirme cette action pour lancer la génération.');
+        this.addAgentText(cid, this.friendlyError(data.error && data.error.message, 'Confirme cette action pour lancer la création.'));
         return;
       }
       if(data && data.error && data.error.message){
-        this.addAgentText(cid, data.error.message);
+        this.addAgentText(cid, this.friendlyError(data.error.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.'));
         return;
       }
       throw new Error('generate '+res.status);
@@ -1088,35 +1140,35 @@ class Component extends DCLogic {
     const cid = this.state.activeId;
     if(!this.state.authToken){
       const pendingPrompt = 'Anime cette creation en clip court, mouvement de camera doux, lumiere cinematographique, fin propre.';
-      this.requireAuth('Connecte-toi pour transformer ce visuel en video et suivre la progression.', { type:'generate', payload:{ projectId:cid, type:'video', prompt:pendingPrompt, aspectRatio:'9:16', modelId:'auto', scene:scene || 'studio', duration:5 } });
+      this.requireAuth('Connecte-toi pour transformer ce visuel en vidéo et suivre la progression.', { type:'generate', payload:{ projectId:cid, type:'video', prompt:pendingPrompt, aspectRatio:'9:16', modelId:'auto', scene:scene || 'studio', duration:5 } });
       return;
     }
     const prompt = 'Anime cette création en clip court, mouvement de caméra doux, lumière cinématique, fin propre.';
     this.addAgentText(cid, 'Je prépare une animation courte à partir de ce visuel.');
-    this.requestDirectGeneration({ projectId:cid, type:'video', prompt, aspectRatio:'9:16', modelId:'auto', scene:scene || 'studio', duration:5 }).catch(()=>this.addAgentText(cid, 'Animation indisponible pour le moment. Vérifie la configuration fal.ai puis réessaie.'));
+    this.requestDirectGeneration({ projectId:cid, type:'video', prompt, aspectRatio:'9:16', modelId:'auto', scene:scene || 'studio', duration:5 }).catch(()=>this.addAgentText(cid, 'Animation indisponible pour le moment. Réessaie dans quelques instants.'));
   }
   async startCheckout(planId, packId){
     const cid = this.state.activeId;
     if(!packId && planId === 'free'){
-      if(!this.requireAuth('Cree un compte gratuit pour activer le plan Free, sauvegarder tes projets et recevoir tes credits de depart.', { type:'checkout', planId, packId })) return;
-      this.setState({ pricingNotice:'Ton compte Free est actif. Tu peux lancer Huggyflow avec tes credits gratuits.', pricingOpen:false });
+      if(!this.requireAuth('Crée un compte gratuit pour sauvegarder tes projets et recevoir tes crédits de départ.', { type:'checkout', planId, packId })) return;
+      this.setState({ pricingNotice:'Ton compte gratuit est actif. Tu peux lancer HuggyFlow avec tes crédits de départ.', pricingOpen:false });
       return;
     }
-    if(!this.requireAuth('Connecte-toi pour ouvrir le checkout securise et associer le plan a ton compte.', { type:'checkout', planId, packId })) return;
+    if(!this.requireAuth('Connecte-toi pour choisir cette offre et l’associer à ton compte.', { type:'checkout', planId, packId })) return;
     try{
       const body = packId ? { type:'credits', creditPackId:packId } : { type:'subscription', planId, interval:this.state.billing || 'annual' };
       const res = await this.apiFetch('/api/billing/checkout', { method:'POST', body:JSON.stringify(body) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok){
-        const message = data && data.error && data.error.message ? data.error.message : 'Checkout indisponible pour le moment.';
+        const message = this.friendlyError(data && data.error && data.error.message, 'Le paiement est indisponible pour le moment.');
         this.setState({ pricingNotice: message });
         this.addAgentText(cid, message);
         return;
       }
       if(data.url) window.location.href = data.url;
     }catch(err){
-      this.setState({ pricingNotice:'Checkout indisponible pour le moment.' });
-      this.addAgentText(cid, 'Checkout indisponible pour le moment.');
+      this.setState({ pricingNotice:'Le paiement est indisponible pour le moment.' });
+      this.addAgentText(cid, 'Le paiement est indisponible pour le moment.');
     }
   }
 
@@ -1162,13 +1214,13 @@ class Component extends DCLogic {
       const pendingPayload = {
         projectId:cid,
         type:msg.media.type,
-        prompt:'Recree ce media avec une variation propre.',
+        prompt:'Recrée ce média avec une variation propre.',
         aspectRatio:msg.media.ratio || this.state.ratio,
         modelId:this.state.modelId,
         scene:msg.media.scene || 'studio',
         duration: msg.media.type === 'video' ? 5 : undefined,
       };
-      this.requireAuth('Connecte-toi pour recreer ce media et garder les versions dans ton projet.', { type:'generate', payload:pendingPayload, messageId:id });
+      this.requireAuth('Connecte-toi pour recréer ce média et garder les versions dans ton projet.', { type:'generate', payload:pendingPayload, messageId:id });
       return;
     }
     this.updateMedia(cid, id, { status:'loading', progress:0, resultUrl:'' });
@@ -1195,7 +1247,7 @@ class Component extends DCLogic {
     if(!this.requireAuth('Connecte-toi pour exporter un projet sauvegarde.', null)) return;
     const conv = this.state.conversations[this.state.activeId];
     if(!conv) return;
-    const payload = JSON.stringify({ product:'Huggyflow', exportedAt:new Date().toISOString(), project:conv }, null, 2);
+    const payload = JSON.stringify({ product:'HuggyFlow', exportedAt:new Date().toISOString(), project:conv }, null, 2);
     const blob = new Blob([payload], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1280,7 +1332,7 @@ class Component extends DCLogic {
       const md = item.media || {};
       return {
         title:(item.conv.title || (kind === 'video' ? 'Video' : 'Image')),
-        meta:[md.model || 'Modele', md.ratio || '', md.credits ? md.credits+' credits' : ''].filter(Boolean).join(' · '),
+        meta:[md.model || 'Modèle', md.ratio || '', md.credits ? md.credits+' crédits' : ''].filter(Boolean).join(' · '),
         remix:()=>this.remixFromMedia(item, tab === 'templates'),
       };
     });
@@ -1289,7 +1341,7 @@ class Component extends DCLogic {
   }
 
   async newProject(){
-    if(!this.requireAuth('Connecte-toi pour creer un projet sauvegarde et retrouver tes generations.', { type:'newProject' })) return;
+    if(!this.requireAuth('Connecte-toi pour créer un projet sauvegardé et retrouver tes créations.', { type:'newProject' })) return;
     const createLocal = (pid,title)=>{
       const convs = Object.assign({}, this.state.conversations);
       convs[pid] = { title:title || 'Nouveau projet', messages:[] };
@@ -1308,6 +1360,11 @@ class Component extends DCLogic {
   setMode(m){ this.setState({ mode:m, modelMenu:false, ratioMenu:false }); }
   pickModel(id){ this.setState({ modelId:id, modelMenu:false }); }
   pickRatio(r){ this.setState({ ratio:r, ratioMenu:false }); }
+  resizeComposerInput(el){
+    if(!el || !el.style) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(130, Math.max(24, el.scrollHeight || 24)) + 'px';
+  }
 
   componentDidUpdate(){
     const conv = this.state.conversations[this.state.activeId];
@@ -1329,7 +1386,7 @@ class Component extends DCLogic {
     const modelBox = 'background:rgba(91,155,245,.06);border:1px solid rgba(91,155,245,.16);border-radius:14px;padding:14px 15px;margin-top:14px;';
     const limitBox = 'background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 15px;margin-top:12px;';
     const fallbackPlans = [
-      { id:'free', displayName:'Free', includedCredits:100, monthlyPriceUsd:0, annualPriceUsd:0, monthlyMessageLimit:60, dailyVideoLimit:0, concurrentImageJobs:1, concurrentVideoJobs:0, allowedMediaTypes:['image'], watermarkRequired:true, mediaRetentionDays:7, storageGb:1, seatLimit:1, supportLevel:'community', priorityQueue:false },
+      { id:'free', displayName:'Gratuit', includedCredits:100, monthlyPriceUsd:0, annualPriceUsd:0, monthlyMessageLimit:60, dailyVideoLimit:0, concurrentImageJobs:1, concurrentVideoJobs:0, allowedMediaTypes:['image'], watermarkRequired:true, mediaRetentionDays:7, storageGb:1, seatLimit:1, supportLevel:'community', priorityQueue:false },
       { id:'basic', displayName:'Creator', includedCredits:1600, monthlyPriceUsd:19, annualPriceUsd:180, monthlyMessageLimit:500, dailyVideoLimit:2, concurrentImageJobs:2, concurrentVideoJobs:1, allowedMediaTypes:['image','video','image_edit'], watermarkRequired:false, mediaRetentionDays:30, storageGb:20, seatLimit:1, supportLevel:'standard', priorityQueue:false },
       { id:'pro', displayName:'Pro', includedCredits:5500, monthlyPriceUsd:59, annualPriceUsd:588, monthlyMessageLimit:1800, dailyVideoLimit:10, concurrentImageJobs:5, concurrentVideoJobs:2, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit'], watermarkRequired:false, mediaRetentionDays:90, storageGb:150, seatLimit:3, supportLevel:'priority', priorityQueue:false },
       { id:'max', displayName:'Max', includedCredits:15000, monthlyPriceUsd:149, annualPriceUsd:1428, monthlyMessageLimit:5000, dailyVideoLimit:26, concurrentImageJobs:9, concurrentVideoJobs:4, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:180, storageGb:600, seatLimit:8, supportLevel:'priority', priorityQueue:true },
@@ -1338,11 +1395,11 @@ class Component extends DCLogic {
     ];
     const fallbackModels = [
       { id:'gpt-image-2', name:'GPT Image 2', type:'image', credits:35 },
-      { id:'gpt-image-2-edit', name:'GPT Image Edit', type:'image_edit', credits:35 },
+      { id:'gpt-image-2-edit', name:'GPT Retouche', type:'image_edit', credits:35 },
       { id:'bytedance-seedance-2-0-text-to-video', name:'Seedance 2', type:'video', credits:263 },
       { id:'kling-video-v3-pro-text-to-video', name:'Kling 3 Pro', type:'video', credits:394 },
       { id:'veoq', name:'Veo 3', type:'video', credits:438 },
-      { id:'minimax-tts', name:'MiniMax Voice', type:'audio', credits:22 },
+      { id:'minimax-tts', name:'MiniMax Voix', type:'audio', credits:22 },
     ];
     const planIds = ['free','basic','pro','max','scale','enterprise'];
     const businessIds = ['max','scale','enterprise'];
@@ -1359,16 +1416,16 @@ class Component extends DCLogic {
       return allowed ? `${count} ${unit}` : 'Non inclus';
     };
     const workflowLabel = (types)=>{
-      const labels = { image:'image', video:'vidéo', audio:'audio', lipsync:'lipsync', image_edit:'édition image', video_edit:'édition vidéo', voice_clone:'clone vocal' };
+      const labels = { image:'images', video:'vidéos', audio:'voix et sons', lipsync:'visages parlants', image_edit:'retouches image', video_edit:'retouches vidéo', voice_clone:'voix personnalisée' };
       return (types || []).map(t=>labels[t] || t).join(', ');
     };
-    const unit = annual ? 'per month, billed annually' : 'per month';
+    const unit = annual ? 'par mois, payé à l’année' : 'par mois';
     const plans = raw.map(plan=>{
       const monthly = Number(plan.monthlyPriceUsd || 0);
       const annualMonthly = plan.annualPriceUsd ? Number((Number(plan.annualPriceUsd) / 12).toFixed(2)) : monthly;
       const price = annual && annualMonthly ? annualMonthly : monthly;
       const isFree = plan.id === 'free';
-      const badges = plan.id === 'basic' ? [tag('CREATOR','blue')] : plan.id === 'pro' ? [tag('POPULAR','lime')] : plan.id === 'max' ? [tag('BEST VALUE','magenta')] : plan.id === 'scale' ? [tag('SCALE','blue')] : plan.id === 'enterprise' ? [tag('DEDICATED','lime')] : isFree ? [tag('FREE','grey')] : [];
+      const badges = plan.id === 'basic' ? [tag('CRÉATEUR','blue')] : plan.id === 'pro' ? [tag('POPULAIRE','lime')] : plan.id === 'max' ? [tag('MEILLEUR CHOIX','magenta')] : plan.id === 'scale' ? [tag('AGENCE','blue')] : plan.id === 'enterprise' ? [tag('SUR MESURE','lime')] : isFree ? [tag('GRATUIT','grey')] : [];
       const accent = plan.id === 'pro' ? A : plan.id === 'max' ? M : plan.id === 'scale' ? BL : plan.id === 'enterprise' ? '#F5F5F4' : '#F5F5F4';
       const cardStyle = plan.id === 'pro'
         ? cardBase+'border-color:'+A+'32;background:linear-gradient(180deg,rgba(78,94,24,.20),#0f110d 52%);box-shadow:0 0 22px -18px '+A+';'
@@ -1381,26 +1438,26 @@ class Component extends DCLogic {
               : cardBase;
       return {
         id:plan.id, name:String(plan.displayName || plan.id).toUpperCase(),
-        sub: isFree ? 'Pour tester HuggyFlow' : plan.id === 'basic' ? 'Pour createurs solo' : plan.id === 'pro' ? 'Pour produire chaque semaine' : plan.id === 'max' ? 'Pour studio et petites equipes' : plan.id === 'scale' ? 'Pour agences multi-clients' : 'Pour production intensive',
+        sub: isFree ? 'Pour tester HuggyFlow' : plan.id === 'basic' ? 'Pour créateurs solo' : plan.id === 'pro' ? 'Pour produire chaque semaine' : plan.id === 'max' ? 'Pour studios et petites équipes' : plan.id === 'scale' ? 'Pour agences multi-clients' : 'Pour grosses productions',
         cardStyle, badges, hasBadges: badges.length>0,
-        creditsBig: pretty(plan.includedCredits)+' credits/mo.',
+        creditsBig: pretty(plan.includedCredits)+' crédits/mois',
         creditsSubs:[`= ${estimate(plan,'gpt-image-2')} GPT Image 2`,`= ${estimate(plan,'bytedance-seedance-2-0-text-to-video')} Seedance 2`,`= ${estimate(plan,'veoq')} Veo 3`],
-        showSlider:false, fixedText:`${pretty(plan.includedCredits)} credits included each cycle`, sliderMarks:[],
+        showSlider:false, fixedText:`${pretty(plan.includedCredits)} crédits inclus à chaque période`, sliderMarks:[],
         priceOrig: annual && monthly && annualMonthly && annualMonthly < monthly ? money(monthly) : '',
-        priceNow: money(price), priceUnit: isFree ? 'forever' : unit,
-        saveNote: annual && plan.annualPriceUsd ? `Billed ${money(plan.annualPriceUsd)}/year` : 'Monthly billing',
+        priceNow: money(price), priceUnit: isFree ? 'inclus' : unit,
+        saveNote: annual && plan.annualPriceUsd ? `Facturé ${money(plan.annualPriceUsd)}/an` : 'Paiement mensuel',
         showSave: !isFree, hasOrig: annual && monthly && annualMonthly && annualMonthly < monthly,
-        cta: isFree ? 'Create account' : 'Get '+(plan.displayName || plan.id),
+        cta: isFree ? 'Créer un compte' : 'Choisir '+(plan.displayName || plan.id),
         ctaStyle: ctaBase+'background:'+accent+';color:'+(plan.id === 'max' ? '#fff' : '#08080A')+';box-shadow:0 0 16px -10px '+accent+';',
         onClick: ()=>this.startCheckout(plan.id),
         features:[
-          feat('ok', `${plan.concurrentVideoJobs || 0} video / ${plan.concurrentImageJobs || 0} image jobs in parallel`),
-          feat((plan.dailyVideoLimit || 0) > 0 ? 'ok' : 'no', `${plan.dailyVideoLimit || 0} videos/day`),
-          feat('ok', `${pretty(plan.monthlyMessageLimit)} messages/month`),
-          feat('ok', `${plan.storageGb || 0} GB storage, ${plan.mediaRetentionDays || 0}-day retention`),
+          feat('ok', `${plan.concurrentVideoJobs || 0} vidéo / ${plan.concurrentImageJobs || 0} image en même temps`),
+          feat((plan.dailyVideoLimit || 0) > 0 ? 'ok' : 'no', `${plan.dailyVideoLimit || 0} vidéos par jour`),
+          feat('ok', `${pretty(plan.monthlyMessageLimit)} idées et demandes par mois`),
+          feat('ok', `${plan.storageGb || 0} Go d’espace, médias gardés ${plan.mediaRetentionDays || 0} jours`),
           feat('ok', workflowLabel(plan.allowedMediaTypes)),
-          feat(plan.priorityQueue ? 'ok' : 'no', 'Priority queue'),
-          feat((plan.seatLimit || 1) > 1 ? 'ok' : 'no', `${plan.seatLimit || 1} seat${(plan.seatLimit || 1)>1?'s':''}`),
+          feat(plan.priorityQueue ? 'ok' : 'no', 'Traitement prioritaire'),
+          feat((plan.seatLimit || 1) > 1 ? 'ok' : 'no', `${plan.seatLimit || 1} utilisateur${(plan.seatLimit || 1)>1?'s':''}`),
         ],
         seedance:[
           srow((plan.allowedMediaTypes || []).indexOf('image')>=0, modelById('gpt-image-2').name, [tag((modelById('gpt-image-2').credits || 0)+' cr.','grey'), tag(estimate(plan,'gpt-image-2'),'lime')]),
@@ -1410,10 +1467,10 @@ class Component extends DCLogic {
         ],
         unlimitedLocked:false,
         unlimited:[
-          srow(true, `${plan.storageGb || 0} GB media storage`, []),
-          srow(true, `${plan.mediaRetentionDays || 0} days retention`, []),
-          srow(!plan.watermarkRequired, plan.watermarkRequired ? 'Watermark on exports' : 'No watermark', []),
-          srow(plan.priorityQueue, plan.priorityQueue ? 'Priority queue active' : 'Standard queue', []),
+          srow(true, `${plan.storageGb || 0} Go pour tes médias`, []),
+          srow(true, `Médias gardés ${plan.mediaRetentionDays || 0} jours`, []),
+          srow(!plan.watermarkRequired, plan.watermarkRequired ? 'Marque HuggyFlow sur les exports' : 'Exports sans marque', []),
+          srow(plan.priorityQueue, plan.priorityQueue ? 'Rendus plus rapides' : 'Rythme standard', []),
         ],
         unlimitedPlus:'',
         hasPlus:false, boxStyle: box, seedBoxStyle: modelBox, unlBoxStyle: limitBox,
@@ -1425,28 +1482,28 @@ class Component extends DCLogic {
     const compareTemplate = '1.5fr repeat('+Math.max(1, comparePlans.length)+', minmax(0,1fr))';
     const crow = (label, sub, values)=>({ label, sub: sub||'', hasSub: !!sub, rowStyle:'display:grid;grid-template-columns:'+compareTemplate+';padding:14px 24px;border-top:1px solid rgba(255,255,255,.04);align-items:center', cells:values.map(cell) });
     const compareCats = [
-      { name:'Plan limits', rows:[
-        crow('Monthly credits','', comparePlans.map(p=>pretty(p.includedCredits))),
-        crow('Monthly price','', comparePlans.map(p=>money(p.monthlyPriceUsd))),
-        crow('Annual price','', comparePlans.map(p=>money(p.annualPriceUsd))),
-        crow('Concurrent jobs','video / image', comparePlans.map(p=>`${p.concurrentVideoJobs || 0} / ${p.concurrentImageJobs || 0}`)),
-        crow('Daily videos','', comparePlans.map(p=>String(p.dailyVideoLimit || 0))),
-        crow('Storage','', comparePlans.map(p=>`${p.storageGb || 0} GB`)),
-        crow('Retention','', comparePlans.map(p=>`${p.mediaRetentionDays || 0} days`)),
+      { name:'Ce qui est inclus', rows:[
+        crow('Crédits par mois','', comparePlans.map(p=>pretty(p.includedCredits))),
+        crow('Prix mensuel','', comparePlans.map(p=>money(p.monthlyPriceUsd))),
+        crow('Prix annuel','', comparePlans.map(p=>money(p.annualPriceUsd))),
+        crow('Rendus en même temps','vidéo / image', comparePlans.map(p=>`${p.concurrentVideoJobs || 0} / ${p.concurrentImageJobs || 0}`)),
+        crow('Vidéos par jour','', comparePlans.map(p=>String(p.dailyVideoLimit || 0))),
+        crow('Espace médias','', comparePlans.map(p=>`${p.storageGb || 0} Go`)),
+        crow('Durée de conservation','', comparePlans.map(p=>`${p.mediaRetentionDays || 0} jours`)),
       ]},
-      { name:'Model costs', rows:[
-        crow(modelById('gpt-image-2').name, `${modelById('gpt-image-2').credits || 0} credits/image`, comparePlans.map(p=>estimate(p,'gpt-image-2'))),
-        crow(modelById('gpt-image-2-edit').name, `${modelById('gpt-image-2-edit').credits || 0} credits/edit`, comparePlans.map(p=>estimate(p,'gpt-image-2-edit'))),
-        crow(modelById('bytedance-seedance-2-0-text-to-video').name, `${modelById('bytedance-seedance-2-0-text-to-video').credits || 0} credits/5s`, comparePlans.map(p=>estimate(p,'bytedance-seedance-2-0-text-to-video'))),
-        crow(modelById('veoq').name, `${modelById('veoq').credits || 0} credits/5s`, comparePlans.map(p=>estimate(p,'veoq'))),
+      { name:'Exemples de créations', rows:[
+        crow(modelById('gpt-image-2').name, `${modelById('gpt-image-2').credits || 0} crédits/image`, comparePlans.map(p=>estimate(p,'gpt-image-2'))),
+        crow(modelById('gpt-image-2-edit').name, `${modelById('gpt-image-2-edit').credits || 0} crédits/retouche`, comparePlans.map(p=>estimate(p,'gpt-image-2-edit'))),
+        crow(modelById('bytedance-seedance-2-0-text-to-video').name, `${modelById('bytedance-seedance-2-0-text-to-video').credits || 0} crédits/5s`, comparePlans.map(p=>estimate(p,'bytedance-seedance-2-0-text-to-video'))),
+        crow(modelById('veoq').name, `${modelById('veoq').credits || 0} crédits/5s`, comparePlans.map(p=>estimate(p,'veoq'))),
       ]},
     ];
     const faqs = [
-      { q:'How do credits work?', a:'Credits are the Huggyflow currency. Each model consumes the exact credit amount shown in the pricing table, and credits are debited only after a successful generation.' },
-      { q:'Is my subscription automatically renewed?', a:'Yes. Paid plans renew through Stripe according to the billing interval selected at checkout.' },
-      { q:'Can I buy extra credits?', a:'Yes. Credit packs are managed by the billing backend and appear once the Stripe price IDs are configured.' },
-      { q:'Why are videos priced higher?', a:'Video provider costs are higher. Huggyflow quotes video in credits before launch and asks confirmation for expensive jobs.' },
-      { q:'Can I change my subscription?', a:'Yes. Upgrades and downgrades are handled through Stripe billing once your Price IDs are connected.' },
+      { q:'Comment fonctionnent les crédits ?', a:'Les crédits servent à lancer tes créations. HuggyFlow indique le coût avant les rendus importants et ne retire les crédits qu’après une création réussie.' },
+      { q:'Est-ce que mon abonnement se renouvelle ?', a:'Oui, les offres payantes se renouvellent selon le rythme choisi. Tu peux changer d’offre depuis ton compte.' },
+      { q:'Puis-je ajouter des crédits ?', a:'Oui. Les packs de crédits seront proposés dans l’espace paiement dès qu’ils seront disponibles pour ton compte.' },
+      { q:'Pourquoi la vidéo coûte plus cher ?', a:'Une vidéo demande plus de calcul qu’une image. HuggyFlow te conseille le meilleur équilibre entre qualité, vitesse et crédits.' },
+      { q:'Puis-je changer de plan ?', a:'Oui. Tu peux passer à une offre supérieure quand tu produis plus, ou revenir à une offre plus simple.' },
     ];
     return { plans, comparePlans, faqs, compareCats };
   }
@@ -1514,18 +1571,17 @@ class Component extends DCLogic {
       return vm;
     });
 
-    const typeLabels = { image:'Image', image_edit:'Edit', video:'Video', video_edit:'Video edit', audio:'Audio', lipsync:'Lipsync', voice_clone:'Voice' };
-    const capLabels = { 'text-to-image':'T2I', 'image-to-image':'I2I', 'text-to-video':'T2V', 'image-to-video':'I2V', 'reference-to-video':'Ref', 'video-to-video':'V2V', 'remove-background':'BG', 'speech-to-text':'STT', 'voice-clone':'Clone', 'best-model':'Best' };
+    const typeLabels = { image:'Image', image_edit:'Retouche', video:'Vidéo', video_edit:'Montage', audio:'Audio', lipsync:'Visage parlant', voice_clone:'Voix' };
+    const capLabels = { 'text-to-image':'Depuis un texte', 'image-to-image':'Depuis une image', 'text-to-video':'Depuis un texte', 'image-to-video':'Depuis une image', 'reference-to-video':'Avec référence', 'video-to-video':'Remix vidéo', 'remove-background':'Fond retiré', 'speech-to-text':'Transcription', 'voice-clone':'Voix personnalisée', 'best-model':'Meilleur choix' };
     const modelItems = this.MODELS.map(m=>{
-      const caps = (m.capabilities || []).slice(0,3).join(' · ') || 'fal.ai';
-      const tier = String(m.badge || m.qualityTier || 'standard').toUpperCase();
+      const rawTier = String(m.badge || m.qualityTier || 'standard').toUpperCase();
+      const tier = ({ TOP:'TOP', FAST:'RAPIDE', PREMIUM:'PRO', STANDARD:'STANDARD', AUTO:'AUTO' })[rawTier] || rawTier;
       return {
         name:m.name,
         onClick:()=>this.pickModel(m.id),
-        meta:m.id === 'auto' ? 'L’agent choisit le meilleur modèle selon la tâche' : (m.type+' · '+caps+' · '+(m.family || 'fal.ai')),
-        meta:m.id === 'auto' ? 'Meilleur modele selon la tache' : ((typeLabels[m.type] || m.type)+' / '+((m.capabilities || []).slice(0,2).map(c=>capLabels[c] || String(c).replace(/-/g,' ')).join(' / ') || 'fal.ai')),
+        meta:m.id === 'auto' ? 'Meilleur choix selon ta demande' : ((typeLabels[m.type] || 'Création')+' / '+((m.capabilities || []).slice(0,2).map(c=>capLabels[c] || 'Option créative').join(' / ') || 'Création guidée')),
         tier:m.id === 'auto' ? 'AUTO' : tier,
-        creditsLabel:m.id === 'auto' ? 'auto' : ((m.credits || 0)+' cr.'),
+        creditsLabel:m.id === 'auto' ? 'Auto' : ((m.credits || 0)+' cr.'),
         dotStyle:'width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:'+m.dot+';box-shadow:0 0 4px '+m.dot+'80;',
         rowStyle:'display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;cursor:pointer;font-size:12.5px;transition:background .15s;'+(m.id===st.modelId?'background:rgba(255,255,255,.065);color:#F5F5F4;':'color:#C9C9CA;'),
         tierStyle:'font-size:9.5px;font-weight:850;letter-spacing:.04em;color:'+((m.badge==='TOP'||m.qualityTier==='premium')?A:'#8a8a8c')+';background:rgba(255,255,255,.052);border:1px solid rgba(255,255,255,.075);border-radius:999px;padding:1px 5px;flex:0 0 auto;',
@@ -1533,7 +1589,7 @@ class Component extends DCLogic {
         checkStyle:'font-size:12px;color:'+A+';opacity:'+(m.id===st.modelId?'1':'0')+';',
       };
     });
-    const modelCountLabel = Math.max(0, this.MODELS.length - 1)+' modeles';
+    const modelCountLabel = Math.max(0, this.MODELS.length - 1)+' modèles';
     const ratioItems = this.RATIOS.map(r=>({
       label:r, onClick:()=>this.pickRatio(r),
       style:'display:flex;align-items:center;justify-content:center;padding:10px 0;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;'+(r===st.ratio?'background:'+A+'1f;color:'+A+';border:1px solid '+A+'59;':'color:#C9C9CA;border:1px solid rgba(255,255,255,.08);'),
@@ -1551,7 +1607,7 @@ class Component extends DCLogic {
       chev: st.faqOpen===i ? 'rotate(180deg)' : 'rotate(0deg)',
       ansStyle:'overflow:hidden;transition:max-height .35s ease,opacity .3s,margin-top .3s;'+(st.faqOpen===i?'max-height:240px;opacity:1;margin-top:12px;':'max-height:0;opacity:0;margin-top:0;'),
     }));
-    const compareHeader = (pd.comparePlans || plans).map(p=>({ name:String(p.displayName || p.name || p.id).toUpperCase(), price:annual && p.annualPriceUsd ? '$'+Number(Number(p.annualPriceUsd)/12).toLocaleString('en-US', { maximumFractionDigits:2 }) : '$'+Number(p.monthlyPriceUsd || 0).toLocaleString('en-US', { maximumFractionDigits:2 }), unit: annual?'Billed annually':'Billed monthly', onClick:()=>this.startCheckout(p.id), ctaStyle:'width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#F5F5F4;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;' }));
+    const compareHeader = (pd.comparePlans || plans).map(p=>({ name:String(p.displayName || p.name || p.id).toUpperCase(), price:annual && p.annualPriceUsd ? '$'+Number(Number(p.annualPriceUsd)/12).toLocaleString('en-US', { maximumFractionDigits:2 }) : '$'+Number(p.monthlyPriceUsd || 0).toLocaleString('en-US', { maximumFractionDigits:2 }), unit: annual?'Payé à l’année':'Payé au mois', onClick:()=>this.startCheckout(p.id), ctaStyle:'width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#F5F5F4;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;' }));
     const compareHeadStyle = 'display:grid;grid-template-columns:1.5fr repeat('+Math.max(1, compareHeader.length)+',minmax(0,1fr));padding:22px 24px;align-items:start';
     const segBase2 = 'padding:8px 16px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;white-space:nowrap;';
 
@@ -1565,15 +1621,15 @@ class Component extends DCLogic {
       style:'width:7px;height:7px;border-radius:50%;flex:0 0 auto;'+(i<dotsFilled?'background:'+A+';box-shadow:0 0 4px '+A+'88;':'background:rgba(255,255,255,.13);')
     }));
     const user = st.user || {};
-    const accountName = user.name || (st.authToken ? 'Utilisateur Huggyflow' : 'Invité');
+    const accountName = user.name || (st.authToken ? 'Utilisateur HuggyFlow' : 'Invité');
     const accountEmail = user.email || (st.authToken ? 'Email non renseigné' : 'Non connecté');
-    const planName = user.plan ? String(user.plan).charAt(0).toUpperCase()+String(user.plan).slice(1) : 'Free';
+    const planName = user.plan ? String(user.plan).charAt(0).toUpperCase()+String(user.plan).slice(1) : 'Gratuit';
     const planLabel = st.authToken ? 'Forfait '+planName : 'Invité';
     const accountInitials = accountName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase() || 'HF';
     const creditsRemainingLabel = creditsLabel + ' crédits';
     const projectCount = Number(st.stats && st.stats.projects !== undefined ? st.stats.projects : Math.max(0, Object.keys(st.conversations || {}).filter(id=>id!=='welcome').length)).toLocaleString('fr-FR');
     const generationCount = Number(st.stats && st.stats.generations !== undefined ? st.stats.generations : 0).toLocaleString('fr-FR');
-    const profileBio = st.authToken ? 'Compte Huggyflow connecté. Les projets, générations et crédits affichés viennent de Supabase.' : 'Connecte-toi pour sauvegarder tes projets, lancer des générations et gérer ton forfait.';
+    const profileBio = st.authToken ? 'Compte HuggyFlow connecté. Tes projets, créations et crédits sont synchronisés.' : 'Connecte-toi pour sauvegarder tes projets, lancer des créations et gérer ton forfait.';
     const logoutLabel = st.authToken ? 'Se déconnecter' : 'Fermer';
     const acctItem = 'display:flex;align-items:center;gap:14px;padding:11px 12px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;color:#E7E7E6;transition:background .15s;';
     const toggleAcct = (a)=>this.setState(s=>({ accountMenu: !(s.accountMenu && s.accountAnchor===a), accountAnchor:a, modelMenu:false, ratioMenu:false }));
@@ -1603,9 +1659,9 @@ class Component extends DCLogic {
       authIntent: st.authIntent,
       authOverlayStyle, authCardStyle, authLogoStyle, authInputStyle, authPrimaryStyle, authSecondaryStyle,
       authBenefits: [
-        { k:'SYNC', v:'Projets et historiques sauvegardes' },
-        { k:'CREDITS', v:'Solde et plans relies au compte' },
-        { k:'PROD', v:'Generations suivies en temps reel' },
+        { k:'SAVE', v:'Projets et historiques sauvegardés' },
+        { k:'PLAN', v:'Crédits et offres liés au compte' },
+        { k:'LIVE', v:'Créations suivies en direct' },
       ],
       closeAuthModal: ()=>this.setState({ authModalOpen:false, pendingAuthAction:null }),
       accountOpen: st.accountMenu,
@@ -1631,9 +1687,9 @@ class Component extends DCLogic {
       openAccountSettings: ()=>this.setState({ accountMenu:false, panel:'account' }),
       closePanel: ()=>this.setState({ panel:null }),
       settings: [
-        { key:'emailNotif', title:'Notifications par e-mail', desc:'Recevoir un e-mail quand une génération est prête.', on: st.settings.emailNotif },
+        { key:'emailNotif', title:'Notifications par e-mail', desc:'Recevoir un e-mail quand une création est prête.', on: st.settings.emailNotif },
         { key:'autoRenew', title:'Renouvellement automatique', desc:'Renouveler mon forfait à la fin de chaque cycle.', on: st.settings.autoRenew },
-        { key:'newsletter', title:'Actus & nouveautés', desc:'Recevoir les annonces de nouveaux modèles.', on: st.settings.newsletter },
+        { key:'newsletter', title:'Actus & nouveautés', desc:'Recevoir les nouvelles options créatives.', on: st.settings.newsletter },
       ].map(s=>({
         title:s.title, desc:s.desc, on:s.on,
         onToggle: ()=>this.setState(p=>({ settings: Object.assign({}, p.settings, { [s.key]: !p.settings[s.key] }) })),
@@ -1643,7 +1699,7 @@ class Component extends DCLogic {
       billing: st.billing,
       pricingNotice: st.pricingNotice,
       hasPricingNotice: !!st.pricingNotice,
-      pricingPrimaryLabel: st.planTab === 'business' ? 'Get Scale' : 'Get Pro',
+      pricingPrimaryLabel: st.planTab === 'business' ? 'Choisir Scale' : 'Choisir Pro',
       chooseRecommendedPlan: ()=>this.startCheckout(recommendedPlanId),
       faqs: faqVM, compareCats: pd.compareCats, compareHeader, compareHeadStyle,
       compareOpen: st.compareOpen,
@@ -1660,20 +1716,19 @@ class Component extends DCLogic {
       planTab: st.planTab,
       indivStyle: segBase2 + (st.planTab==='individual'?'background:#262629;color:#F5F5F4;':'color:#8a8a8c;'),
       bizStyle: segBase2 + (st.planTab==='business'?'background:#262629;color:#F5F5F4;':'color:#8a8a8c;'),
-      sidebarW: st.sidebarCollapsed ? '76px' : '264px',
-      showLabels: !st.sidebarCollapsed,
+      sidebarW: (st.sidebarCollapsed || st.isMobile) ? '76px' : '264px',
+      showLabels: !(st.sidebarCollapsed || st.isMobile),
       collectionsOpen: st.collectionsOpen,
       chevC: st.collectionsOpen ? 'rotate(90deg)' : 'rotate(0deg)',
       toggleSidebar: ()=>this.setState({ sidebarCollapsed:!st.sidebarCollapsed }),
       toggleCollections: ()=>this.setState({ collectionsOpen:!st.collectionsOpen }),
-      collections: [ {icon:'🖼', name:'Images'}, {icon:'🎬', name:'Vidéos'}, {icon:'👤', name:'Personnages'} ],
       collections: [
-        {icon:'IMG', name:'Images', onClick:()=>this.openCollection('image')},
-        {icon:'VID', name:'VidÃ©os', onClick:()=>this.openCollection('video')},
-        {icon:'PRS', name:'Personnages', onClick:()=>this.openCollection('image')},
+        {icon:'', name:'Images', onClick:()=>this.openCollection('image')},
+        {icon:'', name:'Vidéos', onClick:()=>this.openCollection('video')},
+        {icon:'', name:'Personnages', onClick:()=>this.openCollection('image')},
       ],
       showCollectionPanel: st.collectionPanelOpen,
-      collectionTitle: collectionKind === 'video' ? 'VidÃ©os' : 'Images',
+      collectionTitle: collectionKind === 'video' ? 'Vidéos' : 'Images',
       showCollectionHistory: st.collectionTab !== 'templates',
       showCollectionTemplates: st.collectionTab === 'templates',
       collectionItems, collectionTemplates,
@@ -1684,6 +1739,7 @@ class Component extends DCLogic {
       closeCollectionPanel:()=>this.setState({ collectionPanelOpen:false }),
       logoStyle:'width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;letter-spacing:-.02em;color:#0A0A06;background:'+A+';box-shadow:0 0 10px -5px '+A+';',
       newProjStyle:'display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 14px;border-radius:13px;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:700;color:#0A0A06;background:'+A+';box-shadow:0 0 0 1px '+A+'33,0 8px 18px -14px '+A+';transition:transform .2s;',
+      upgradeLabel: st.isMobile ? 'Pro' : 'Passer Pro',
       creditsFillStyle:'height:100%;width:'+creditPct+'%;border-radius:4px;background:'+A+';box-shadow:0 0 6px '+A+'99;',
       composerOuterStyle,
       emptyStateStyle,
@@ -1693,13 +1749,16 @@ class Component extends DCLogic {
       empty: conv.messages.length===0, notEmpty: conv.messages.length>0,
       activeTitle: conv.title, messagesGap: dens==='Compact' ? '20px' : '30px',
       input: st.input,
-      onInput:(e)=>this.setState({ input:e.target.value }),
+      onInput:(e)=>{ this.resizeComposerInput(e.target); this.setState({ input:e.target.value }); },
+      onInputFocus:(e)=>{ this.resizeComposerInput(e.target); this.setState({ inputFocused:true, modelMenu:false, ratioMenu:false }); },
+      onInputBlur:()=>this.setState({ inputFocused:false }),
       onKey:(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.send(); } },
       send:()=>this.send(),
       exportProject:()=>this.exportProject(),
       openNotifications:()=>this.openNotifications(),
       attachReference:()=>this.attachReference(),
       recordVoice:()=>this.recordVoice(),
+      setComposerInputRef:(el)=>{ this.composerInputEl = el; },
       setScrollRef:(el)=>{ this.scrollEl = el; },
       newProject:()=>this.newProject(),
       plans,
