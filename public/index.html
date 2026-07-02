@@ -892,9 +892,11 @@ class Component extends DCLogic {
       const data = await res.json();
       const conversations = this.normalizeConversations(data.projects);
       const keys = Object.keys(conversations);
+      const savedId = this.readActiveId();
+      const restoredId = (savedId && conversations[savedId]) ? savedId : (keys[0] || this.state.activeId);
       this.setState({
         conversations,
-        activeId: keys[0] || this.state.activeId,
+        activeId: restoredId,
         credits: Number(data.credits !== undefined ? data.credits : this.state.credits),
         creditsMax: Number(data.creditsMax || this.state.creditsMax),
         user: data.user || null,
@@ -1204,6 +1206,7 @@ class Component extends DCLogic {
 
   logout(){
     if(typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem('huggyflow_access_token');
+    this.persistActiveId('welcome');
     this.setState({ authToken:'', user:null, credits:0, creditsMax:100, conversations:this.seed(), activeId:'welcome', accountMenu:false, panel:null, authModalOpen:false, pendingAuthAction:null, authStatus:'Déconnecté.' }, ()=>this.bootstrap());
   }
 
@@ -1367,9 +1370,22 @@ class Component extends DCLogic {
     el.style.height = Math.min(130, Math.max(24, el.scrollHeight || 24)) + 'px';
   }
 
-  componentDidUpdate(){
+  componentDidUpdate(prevProps, prevState){
     const conv = this.state.conversations[this.state.activeId];
     if(this.scrollEl && conv && conv.messages && conv.messages.length) this.scrollEl.scrollTop = this.scrollEl.scrollHeight;
+    if((!prevState || prevState.activeId !== this.state.activeId) && this.state.activeId) this.persistActiveId(this.state.activeId);
+  }
+
+  persistActiveId(id){
+    if(typeof window === 'undefined' || !window.localStorage) return;
+    try{
+      if(id && id !== 'welcome') window.localStorage.setItem('huggyflow_active_project', id);
+      else window.localStorage.removeItem('huggyflow_active_project');
+    }catch(e){}
+  }
+  readActiveId(){
+    if(typeof window === 'undefined' || !window.localStorage) return '';
+    try{ return window.localStorage.getItem('huggyflow_active_project') || ''; }catch(e){ return ''; }
   }
 
   pricingData(A, billing){
