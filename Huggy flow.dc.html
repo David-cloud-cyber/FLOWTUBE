@@ -317,7 +317,8 @@ textarea{resize:none;font-family:inherit}
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:26px">
             <div style="display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
               <div onClick="{{ setIndiv }}" style="{{ indivStyle }}">Solo</div>
-              <div onClick="{{ setBiz }}" style="{{ bizStyle }}">Équipes</div>
+              <div onClick="{{ setTeam }}" style="{{ teamStyle }}">Équipe</div>
+              <div onClick="{{ setBiz }}" style="{{ bizStyle }}">Business Plan</div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
               <div onClick="{{ toggleCompare }}" style="{{ compareBtnStyle }}">
@@ -336,7 +337,7 @@ textarea{resize:none;font-family:inherit}
             <div style="margin-top:18px;padding:12px 15px;border-radius:12px;border:1px solid rgba(215,249,75,.22);background:rgba(215,249,75,.07);color:#D6D6D5;font-size:13px;line-height:1.5">{{ pricingNotice }}</div>
           </sc-if>
 
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start;margin-top:28px">
+          <div style="{{ pricingGridStyle }}">
             <sc-for list="{{ plans }}" as="pl" hint-placeholder-count="3">
               <div style="{{ pl.cardStyle }}">
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1372,7 +1373,7 @@ class Component extends DCLogic {
   }
 
   pricingData(A, billing){
-    const M = '#FF2E73', BL = '#5B9BF5', annual = billing === 'annual';
+    const M = '#FF2E73', BL = '#5B9BF5', T = '#2DD4BF', annual = billing === 'annual';
     const tagBase = 'display:inline-flex;align-items:center;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap;line-height:1.3;';
     const styles = { lime:'background:'+A+';color:#08080A;', blue:'background:'+BL+';color:#06121f;', magenta:'background:'+M+';color:#fff;', grey:'background:rgba(255,255,255,.08);color:#8a8a8c;' };
     const tag = (t,k)=>({ text:t, style: tagBase + (styles[k]||styles.grey) });
@@ -1389,6 +1390,8 @@ class Component extends DCLogic {
       { id:'free', displayName:'Gratuit', includedCredits:100, monthlyPriceUsd:0, annualPriceUsd:0, monthlyMessageLimit:60, dailyVideoLimit:0, concurrentImageJobs:1, concurrentVideoJobs:0, allowedMediaTypes:['image'], watermarkRequired:true, mediaRetentionDays:7, storageGb:1, seatLimit:1, supportLevel:'community', priorityQueue:false },
       { id:'basic', displayName:'Creator', includedCredits:1600, monthlyPriceUsd:19, annualPriceUsd:180, monthlyMessageLimit:500, dailyVideoLimit:2, concurrentImageJobs:2, concurrentVideoJobs:1, allowedMediaTypes:['image','video','image_edit'], watermarkRequired:false, mediaRetentionDays:30, storageGb:20, seatLimit:1, supportLevel:'standard', priorityQueue:false },
       { id:'pro', displayName:'Pro', includedCredits:5500, monthlyPriceUsd:59, annualPriceUsd:588, monthlyMessageLimit:1800, dailyVideoLimit:10, concurrentImageJobs:5, concurrentVideoJobs:2, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit'], watermarkRequired:false, mediaRetentionDays:90, storageGb:150, seatLimit:3, supportLevel:'priority', priorityQueue:false },
+      { id:'crew', displayName:'Crew', includedCredits:8000, monthlyPriceUsd:89, annualPriceUsd:852, monthlyMessageLimit:2600, dailyVideoLimit:14, concurrentImageJobs:3, concurrentVideoJobs:2, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit'], watermarkRequired:false, mediaRetentionDays:120, storageGb:300, seatLimit:5, supportLevel:'standard', priorityQueue:false },
+      { id:'squad', displayName:'Squad', includedCredits:12000, monthlyPriceUsd:129, annualPriceUsd:1236, monthlyMessageLimit:4200, dailyVideoLimit:20, concurrentImageJobs:6, concurrentVideoJobs:3, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit'], watermarkRequired:false, mediaRetentionDays:150, storageGb:450, seatLimit:10, supportLevel:'priority', priorityQueue:true },
       { id:'max', displayName:'Max', includedCredits:15000, monthlyPriceUsd:149, annualPriceUsd:1428, monthlyMessageLimit:5000, dailyVideoLimit:26, concurrentImageJobs:9, concurrentVideoJobs:4, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:180, storageGb:600, seatLimit:8, supportLevel:'priority', priorityQueue:true },
       { id:'scale', displayName:'Scale', includedCredits:30000, monthlyPriceUsd:299, annualPriceUsd:2868, monthlyMessageLimit:12000, dailyVideoLimit:60, concurrentImageJobs:14, concurrentVideoJobs:8, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:365, storageGb:1500, seatLimit:20, supportLevel:'priority', priorityQueue:true },
       { id:'enterprise', displayName:'Enterprise', includedCredits:60000, monthlyPriceUsd:599, annualPriceUsd:5988, monthlyMessageLimit:30000, dailyVideoLimit:130, concurrentImageJobs:28, concurrentVideoJobs:14, allowedMediaTypes:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], watermarkRequired:false, mediaRetentionDays:730, storageGb:5000, seatLimit:60, supportLevel:'dedicated', priorityQueue:true },
@@ -1401,11 +1404,12 @@ class Component extends DCLogic {
       { id:'veoq', name:'Veo 3', type:'video', credits:438 },
       { id:'minimax-tts', name:'MiniMax Voix', type:'audio', credits:22 },
     ];
-    const planIds = ['free','basic','pro','max','scale','enterprise'];
+    const planIds = ['free','basic','pro','crew','squad','max','scale','enterprise'];
     const businessIds = ['max','scale','enterprise'];
+    const teamIds = ['crew','squad'];
     const allPlans = (this.state.pricingPlans && this.state.pricingPlans.length ? this.state.pricingPlans : fallbackPlans)
       .filter(p=>planIds.indexOf(p.id) >= 0);
-    const raw = allPlans.filter(p=>this.state.planTab === 'business' ? businessIds.indexOf(p.id) >= 0 : businessIds.indexOf(p.id) < 0);
+    const raw = allPlans.filter(p=>this.state.planTab === 'business' ? businessIds.indexOf(p.id) >= 0 : this.state.planTab === 'team' ? teamIds.indexOf(p.id) >= 0 : (businessIds.indexOf(p.id) < 0 && teamIds.indexOf(p.id) < 0));
     const models = this.state.pricingModels && this.state.pricingModels.length ? this.state.pricingModels : fallbackModels;
     const modelById = (id)=>models.find(m=>m.id===id) || fallbackModels.find(m=>m.id===id) || models[0];
     const estimate = (plan, modelId)=>{
@@ -1425,20 +1429,24 @@ class Component extends DCLogic {
       const annualMonthly = plan.annualPriceUsd ? Number((Number(plan.annualPriceUsd) / 12).toFixed(2)) : monthly;
       const price = annual && annualMonthly ? annualMonthly : monthly;
       const isFree = plan.id === 'free';
-      const badges = plan.id === 'basic' ? [tag('CRÉATEUR','blue')] : plan.id === 'pro' ? [tag('POPULAIRE','lime')] : plan.id === 'max' ? [tag('MEILLEUR CHOIX','magenta')] : plan.id === 'scale' ? [tag('AGENCE','blue')] : plan.id === 'enterprise' ? [tag('SUR MESURE','lime')] : isFree ? [tag('GRATUIT','grey')] : [];
-      const accent = plan.id === 'pro' ? A : plan.id === 'max' ? M : plan.id === 'scale' ? BL : plan.id === 'enterprise' ? '#F5F5F4' : '#F5F5F4';
+      const badges = plan.id === 'basic' ? [tag('CRÉATEUR','blue')] : plan.id === 'pro' ? [tag('POPULAIRE','lime')] : plan.id === 'crew' ? [tag('ÉQUIPE','blue')] : plan.id === 'squad' ? [tag('EN CROISSANCE','magenta')] : plan.id === 'max' ? [tag('MEILLEUR CHOIX','magenta')] : plan.id === 'scale' ? [tag('AGENCE','blue')] : plan.id === 'enterprise' ? [tag('SUR MESURE','lime')] : isFree ? [tag('GRATUIT','grey')] : [];
+      const accent = plan.id === 'pro' ? A : plan.id === 'crew' || plan.id === 'squad' ? T : plan.id === 'max' ? M : plan.id === 'scale' ? BL : plan.id === 'enterprise' ? '#F5F5F4' : '#F5F5F4';
       const cardStyle = plan.id === 'pro'
         ? cardBase+'border-color:'+A+'32;background:linear-gradient(180deg,rgba(78,94,24,.20),#0f110d 52%);box-shadow:0 0 22px -18px '+A+';'
-        : plan.id === 'max'
-          ? cardBase+'border-color:'+M+'3d;background:linear-gradient(180deg,rgba(128,20,60,.24),#140d11 52%);box-shadow:0 0 22px -18px '+M+';'
-          : plan.id === 'scale'
-            ? cardBase+'border-color:'+BL+'38;background:linear-gradient(180deg,rgba(49,94,150,.18),#0f1115 52%);box-shadow:0 0 22px -18px '+BL+';'
-            : plan.id === 'enterprise'
-              ? cardBase+'border-color:rgba(255,255,255,.18);background:linear-gradient(180deg,rgba(255,255,255,.08),#101012 54%);box-shadow:0 0 30px -25px rgba(255,255,255,.7);'
-              : cardBase;
+        : plan.id === 'crew'
+          ? cardBase+'border-color:'+T+'30;background:linear-gradient(180deg,rgba(20,120,105,.16),#0d1210 52%);box-shadow:0 0 22px -18px '+T+';'
+          : plan.id === 'squad'
+            ? cardBase+'border-color:'+T+'45;background:linear-gradient(180deg,rgba(20,120,105,.26),#0d1210 52%);box-shadow:0 0 24px -16px '+T+';'
+            : plan.id === 'max'
+              ? cardBase+'border-color:'+M+'3d;background:linear-gradient(180deg,rgba(128,20,60,.24),#140d11 52%);box-shadow:0 0 22px -18px '+M+';'
+              : plan.id === 'scale'
+                ? cardBase+'border-color:'+BL+'38;background:linear-gradient(180deg,rgba(49,94,150,.18),#0f1115 52%);box-shadow:0 0 22px -18px '+BL+';'
+                : plan.id === 'enterprise'
+                  ? cardBase+'border-color:rgba(255,255,255,.18);background:linear-gradient(180deg,rgba(255,255,255,.08),#101012 54%);box-shadow:0 0 30px -25px rgba(255,255,255,.7);'
+                  : cardBase;
       return {
         id:plan.id, name:String(plan.displayName || plan.id).toUpperCase(),
-        sub: isFree ? 'Pour tester HuggyFlow' : plan.id === 'basic' ? 'Pour créateurs solo' : plan.id === 'pro' ? 'Pour produire chaque semaine' : plan.id === 'max' ? 'Pour studios et petites équipes' : plan.id === 'scale' ? 'Pour agences multi-clients' : 'Pour grosses productions',
+        sub: isFree ? 'Pour tester HuggyFlow' : plan.id === 'basic' ? 'Pour créateurs solo' : plan.id === 'pro' ? 'Pour produire chaque semaine' : plan.id === 'crew' ? 'Pour petites équipes qui démarrent' : plan.id === 'squad' ? 'Pour équipes en pleine croissance' : plan.id === 'max' ? 'Pour studios et petites équipes' : plan.id === 'scale' ? 'Pour agences multi-clients' : 'Pour grosses productions',
         cardStyle, badges, hasBadges: badges.length>0,
         creditsBig: pretty(plan.includedCredits)+' crédits/mois',
         creditsSubs:[`= ${estimate(plan,'gpt-image-2')} GPT Image 2`,`= ${estimate(plan,'bytedance-seedance-2-0-text-to-video')} Seedance 2`,`= ${estimate(plan,'veoq')} Veo 3`],
@@ -1638,7 +1646,8 @@ class Component extends DCLogic {
       ? 'position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:center;padding:0 26px;pointer-events:none;background:transparent;z-index:4;'
       : 'position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 26px 26px;pointer-events:none;background:linear-gradient(transparent,#08080A 55%);z-index:4;';
     const emptyStateStyle = 'min-height:calc(100vh - 70px);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:18px;padding:15vh 0 330px;';
-    const recommendedPlanId = st.planTab === 'business' ? 'scale' : 'pro';
+    const recommendedPlanId = st.planTab === 'business' ? 'scale' : st.planTab === 'team' ? 'squad' : 'pro';
+    const pricingGridStyle = 'display:grid;grid-template-columns:repeat('+Math.min(3, Math.max(1, plans.length))+',minmax(0,1fr));gap:18px;align-items:start;margin-top:28px';
     const authOverlayStyle = 'position:absolute;inset:0;z-index:170;display:flex;align-items:center;justify-content:center;padding:28px;background:rgba(3,3,5,.70);backdrop-filter:blur(12px);animation:pageFade .18s ease both;';
     const authCardStyle = 'width:100%;max-width:520px;background:linear-gradient(180deg,rgba(18,18,20,.96),rgba(12,12,14,.98));border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:24px;box-shadow:0 28px 80px -34px rgba(0,0,0,.95),0 0 0 1px rgba(215,249,75,.045);position:relative;overflow:hidden;animation:modalIn .22s cubic-bezier(.2,.7,.2,1) both;';
     const authLogoStyle = 'width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:'+A+';box-shadow:0 0 12px -7px '+A+';';
@@ -1699,7 +1708,8 @@ class Component extends DCLogic {
       billing: st.billing,
       pricingNotice: st.pricingNotice,
       hasPricingNotice: !!st.pricingNotice,
-      pricingPrimaryLabel: st.planTab === 'business' ? 'Choisir Scale' : 'Choisir Pro',
+      pricingPrimaryLabel: st.planTab === 'business' ? 'Choisir Scale' : st.planTab === 'team' ? 'Choisir Squad' : 'Choisir Pro',
+      pricingGridStyle,
       chooseRecommendedPlan: ()=>this.startCheckout(recommendedPlanId),
       faqs: faqVM, compareCats: pd.compareCats, compareHeader, compareHeadStyle,
       compareOpen: st.compareOpen,
@@ -1712,9 +1722,11 @@ class Component extends DCLogic {
       billTrackBg: annual?'#D7F94B':'rgba(255,255,255,.18)',
       billKnobStyle:'position:absolute;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:left .22s;left:'+(annual?'19px':'2px')+';',
       setIndiv: ()=>this.setState({ planTab:'individual' }),
+      setTeam: ()=>this.setState({ planTab:'team' }),
       setBiz: ()=>this.setState({ planTab:'business' }),
       planTab: st.planTab,
       indivStyle: segBase2 + (st.planTab==='individual'?'background:#262629;color:#F5F5F4;':'color:#8a8a8c;'),
+      teamStyle: segBase2 + (st.planTab==='team'?'background:#262629;color:#F5F5F4;':'color:#8a8a8c;'),
       bizStyle: segBase2 + (st.planTab==='business'?'background:#262629;color:#F5F5F4;':'color:#8a8a8c;'),
       sidebarW: (st.sidebarCollapsed || st.isMobile) ? '76px' : '264px',
       showLabels: !(st.sidebarCollapsed || st.isMobile),
