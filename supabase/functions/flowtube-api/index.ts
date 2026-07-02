@@ -1344,6 +1344,12 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Pour marques/personnages proteges, propose une alternative originale si la demande vise une copie reconnaissable.",
   "- Donne une raison courte et une alternative sure.",
   "",
+  "Continuite de conversation:",
+  "- Tu recois l'historique recent de la conversation: appuie-toi dessus et ne redemande jamais une information deja donnee.",
+  "- Ne te presente pas et ne salue pas a chaque tour: continue le fil comme un partenaire de production deja engage.",
+  "- Si l'utilisateur dit \"pareil\", \"refais\", \"la meme mais...\", retrouve la derniere creation evoquee et applique la variation demandee.",
+  "- Si l'utilisateur change de sujet, suis-le sans commenter le changement.",
+  "",
   "Skills internes HuggyFlow:",
   "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage ou strategie.",
   "- Combine plusieurs skills quand c'est plus fort: exemple storyboard + Kling/Seedance pour video, copywriting + image director pour affiche, UGC + lipsync pour avatar parlant.",
@@ -1421,14 +1427,53 @@ function fallbackReply(prompt: string, type: string, credits: number) {
   }
   return type === "video"
     ? `Je pars sur une video courte, claire et prete a ameliorer. Cout estime: ${credits} credits.`
-    : `Je pars sur une image propre et exploitable, avec un rendu soigné. Cout estime: ${credits} credits.`;
+    : `Je pars sur une image propre et exploitable, avec un rendu soigne. Cout estime: ${credits} credits.`;
 }
 
-async function anthropicReply(prompt: string, type: string, credits: number) {
+type ChatTurn = { role: "user" | "assistant"; content: string };
+
+async function conversationHistory(supabase: ReturnType<typeof adminClient>, conversationId: string, limit = 20): Promise<ChatTurn[]> {
+  const { data } = await supabase.from("messages")
+    .select("role,content,created_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  const turns: ChatTurn[] = [];
+  for (const row of (data || []).reverse()) {
+    const role = row.role === "assistant" ? "assistant" : "user";
+    const content = String(row.content || "").trim();
+    if (!content) continue;
+    const last = turns[turns.length - 1];
+    if (last && last.role === role) last.content += `\n\n${content}`;
+    else turns.push({ role, content });
+  }
+  while (turns.length && turns[0].role === "assistant") turns.shift();
+  return turns;
+}
+
+async function anthropicReply(
+  prompt: string,
+  type: string,
+  credits: number,
+  history: ChatTurn[] = [],
+  onDelta?: (delta: string) => void,
+) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return fallbackReply(prompt, type, credits);
-  const system = HUGGYFLOW_SYSTEM_PROMPT;
+  const emit = (text: string) => { if (onDelta && text) onDelta(text); };
+  if (!apiKey) {
+    const text = fallbackReply(prompt, type, credits);
+    emit(text);
+    return text;
+  }
   const skillContext = skillHintsForPrompt(prompt, type);
+  const userTurn = `${prompt}\n\nContexte interne HuggyFlow:\nType de creation: ${type}.\nCredits estimes: ${credits}.\nSkills a utiliser si pertinents:\n${skillContext}`;
+  const messages: ChatTurn[] = [];
+  for (const turn of [...history, { role: "user" as const, content: userTurn }]) {
+    const last = messages[messages.length - 1];
+    if (last && last.role === turn.role) last.content += `\n\n${turn.content}`;
+    else messages.push({ role: turn.role, content: turn.content });
+  }
+  let full = "";
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -1440,16 +1485,43 @@ async function anthropicReply(prompt: string, type: string, credits: number) {
       body: JSON.stringify({
         model: DEFAULT_MODEL,
         max_tokens: 700,
-        system,
-        messages: [{ role: "user", content: `${prompt}\n\nContexte interne HuggyFlow:\nType de creation: ${type}.\nCredits estimes: ${credits}.\nSkills a utiliser si pertinents:\n${skillContext}` }],
+        stream: true,
+        system: HUGGYFLOW_SYSTEM_PROMPT,
+        messages,
       }),
     });
-    if (!response.ok) throw new Error(`anthropic ${response.status}`);
-    const data = await response.json();
-    const text = (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
-    return text || fallbackReply(prompt, type, credits);
+    if (!response.ok || !response.body) throw new Error(`anthropic ${response.status}`);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() || "";
+      for (const block of blocks) {
+        for (const line of block.split("\n")) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+          if (!raw) continue;
+          try {
+            const event = JSON.parse(raw);
+            if (event?.type === "content_block_delta" && typeof event?.delta?.text === "string" && event.delta.text) {
+              full += event.delta.text;
+              emit(event.delta.text);
+            }
+          } catch (_err) { /* frame partiel ou ping: ignorer */ }
+        }
+      }
+    }
+    if (full.trim()) return full.trim();
+    throw new Error("anthropic empty stream");
   } catch (_err) {
-    return fallbackReply(prompt, type, credits);
+    if (full.trim()) return full.trim();
+    const text = fallbackReply(prompt, type, credits);
+    emit(text);
+    return text;
   }
 }
 
@@ -1814,6 +1886,7 @@ async function chat(req: Request) {
         await enforceMessageLimits(supabase, userId, plan);
         const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
         await enforcePromptPolicy(supabase, profile, prompt, project.id);
+        const history = await conversationHistory(supabase, conversation.id);
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -1821,6 +1894,16 @@ async function chat(req: Request) {
           role: "user",
           content: prompt,
         });
+        const saveAssistant = async (content: string) => {
+          if (!content || !content.trim()) return;
+          await supabase.from("messages").insert({
+            user_id: userId,
+            project_id: project.id,
+            conversation_id: conversation.id,
+            role: "assistant",
+            content: content.trim(),
+          });
+        };
 
         const metadata = cleanMetadata(profile.metadata);
         const pending = metadata.pending_generation as Record<string, unknown> | undefined;
@@ -1829,7 +1912,9 @@ async function chat(req: Request) {
 
         if (pending && !pendingExpired && isCancelText(prompt)) {
           await clearPendingGeneration(supabase, profile);
-          send("text", { delta: "Generation annulee. Aucun credit n'a ete debite." });
+          const cancelReply = "Generation annulee. Aucun credit n'a ete debite.";
+          send("text", { delta: cancelReply });
+          await saveAssistant(cancelReply);
           send("done", { ok: true });
           return;
         }
@@ -1880,18 +1965,17 @@ async function chat(req: Request) {
             model: { id: model.id, name: model.name, type: model.type },
             quote,
           });
-          send("text", { delta: confirmationMessage(model, quote) });
+          const confirmReply = confirmationMessage(model, quote);
+          send("text", { delta: confirmReply });
+          await saveAssistant(confirmReply);
           send("done", { ok: true, requiresConfirmation: true });
           return;
         }
 
         if (willGenerate) ensureProviderReady(model);
         const credits = quote.credits;
-        const reply = await anthropicReply(prompt, type, credits);
-        for (const word of reply.split(/(\s+)/)) {
-          if (word) send("text", { delta: word });
-          await new Promise((resolve) => setTimeout(resolve, 8));
-        }
+        const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }));
+        if (!willGenerate) await saveAssistant(reply);
 
         if (willGenerate) {
           const result = await createGeneration(req, {

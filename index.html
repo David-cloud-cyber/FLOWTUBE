@@ -970,42 +970,26 @@ class Component extends DCLogic {
     this.setState({ input:'', sendLocked:true }, ()=>this.resizeComposerInput(this.composerInputEl));
     try{
       const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload) });
-      if(!res.ok) throw new Error('chat '+res.status);
-      if(res.body) await this.consumeChatStream(res, cid);
+      if(!res.ok){
+        let data = null; try{ data = await res.json(); }catch(e){}
+        this.addAgentText(cid, this.friendlyError(data && data.error && data.error.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.'));
+        return;
+      }
+      if(res.body){
+        const gotSomething = await this.consumeChatStream(res, cid);
+        if(!gotSomething) this.localFallback(cid, text);
+      }
       else {
         const data = await res.json();
         if(data.generation) this.addGenerationCard(cid, data.generation);
         if(data.message) this.addAgentText(cid, data.message);
       }
     }catch(err){
-      this.localFallback(cid, text);
+      if(!this.streamDeliveredFor || this.streamDeliveredFor !== cid) this.localFallback(cid, text);
     }finally{
+      this.streamDeliveredFor = null;
       this.setState({ sendLocked:false });
     }
-  }
-
-  addMedia(cid, opt){
-    const id = 'a'+Date.now()+Math.floor(Math.random()*9999);
-    this.updateConv(cid, ms => ms.concat([{ id, role:'agent', text:opt.text, media:{ type:opt.type, status:'loading', progress:0, model:opt.model, ratio:opt.ratio, scene:opt.scene, dur:opt.dur } }]));
-    setTimeout(()=>this.tick(cid, id), 360);
-  }
-
-  tick(cid, id){
-    this.setState(prev=>{
-      const c = Object.assign({}, prev.conversations);
-      const conv = c[cid]; if(!conv) return {};
-      const messages = conv.messages.map(m=>{
-        if(m.id!==id) return m;
-        const np = Math.min(100, (m.media.progress||0) + (8+Math.random()*12));
-        return Object.assign({}, m, { media: Object.assign({}, m.media, { progress:np, status: np>=100?'done':'loading' }) });
-      });
-      c[cid] = Object.assign({}, conv, { messages });
-      return { conversations:c };
-    }, ()=>{
-      const conv = this.state.conversations[cid];
-      const m = conv && conv.messages.find(x=>x.id===id);
-      if(m && m.media.status!=='done') setTimeout(()=>this.tick(cid, id), 185);
-    });
   }
 
   localFallback(cid, text){
@@ -1019,16 +1003,18 @@ class Component extends DCLogic {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     const textId = 't'+Date.now()+Math.floor(Math.random()*999);
-    let buffer = '';
+    let buffer = '', delivered = false;
+    const handle = (block)=>{ if(this.handleSseBlock(block, cid, textId)) delivered = true; if(delivered) this.streamDeliveredFor = cid; };
     while(true){
       const chunk = await reader.read();
       if(chunk.done) break;
       buffer += decoder.decode(chunk.value, { stream:true });
       const parts = buffer.split(/\n\n/);
       buffer = parts.pop() || '';
-      parts.forEach(block=>this.handleSseBlock(block, cid, textId));
+      parts.forEach(handle);
     }
-    if(buffer.trim()) this.handleSseBlock(buffer, cid, textId);
+    if(buffer.trim()) handle(buffer);
+    return delivered;
   }
   handleSseBlock(block, cid, textId){
     const lines = block.split(/\r?\n/);
@@ -1037,13 +1023,14 @@ class Component extends DCLogic {
       if(line.indexOf('event:') === 0) type = line.slice(6).trim();
       if(line.indexOf('data:') === 0) data += line.slice(5).trim();
     });
-    if(!data) return;
-    let payload; try{ payload = JSON.parse(data); }catch(e){ return; }
+    if(!data) return false;
+    let payload; try{ payload = JSON.parse(data); }catch(e){ return false; }
     if(type === 'text') this.appendAgentText(cid, textId, payload.delta || payload.text || '');
     if(type === 'message') this.addAgentText(cid, payload.text || '');
     if(type === 'generation') this.addGenerationCard(cid, payload.generation || payload);
     if(type === 'credits') this.setState({ credits:Number(payload.credits || this.state.credits) });
     if(type === 'error') this.addAgentText(cid, this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.'));
+    return type === 'text' || type === 'message' || type === 'generation' || type === 'error';
   }
 
   friendlyError(message, fallback){
@@ -1098,10 +1085,17 @@ class Component extends DCLogic {
     this.polls = this.polls || {};
     if(this.polls[generationId]) return;
     this.polls[generationId] = true;
+    let failures = 0;
     const run = async ()=>{
       try{
         const res = await this.apiFetch('/api/generations/'+encodeURIComponent(generationId));
+        if(res.status === 404 || res.status === 401 || res.status === 403){
+          delete this.polls[generationId];
+          this.updateMedia(cid, msgId, { status:'failed', progress:0 });
+          return;
+        }
         if(!res.ok) throw new Error('generation '+res.status);
+        failures = 0;
         const data = await res.json();
         const generation = data.generation || data;
         const media = this.normalizeMedia(generation);
@@ -1112,6 +1106,13 @@ class Component extends DCLogic {
         if(media.status === 'loading') this.polls[generationId] = setTimeout(run, 2400);
         else delete this.polls[generationId];
       }catch(err){
+        failures += 1;
+        if(failures >= 8){
+          delete this.polls[generationId];
+          this.updateMedia(cid, msgId, { status:'failed' });
+          this.addAgentText(cid, 'Le suivi de cette création a été interrompu. Recharge la page pour vérifier son état.');
+          return;
+        }
         this.polls[generationId] = setTimeout(run, 4200);
       }
     };
