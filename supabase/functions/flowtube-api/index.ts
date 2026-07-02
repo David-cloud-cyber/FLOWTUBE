@@ -1067,17 +1067,35 @@ async function enforcePromptPolicy(supabase: ReturnType<typeof adminClient>, pro
   return decision;
 }
 
+function stripAccents(text: string) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function sceneFromPrompt(prompt: string) {
-  const text = prompt.toLowerCase();
+  const text = stripAccents(prompt.toLowerCase());
   if (/btp|chantier|devis|artisan|ouvrier|macon/.test(text)) return "btp";
   if (/parfum|produit|packshot|flacon|montre|cosme/.test(text)) return "product";
   if (/personnage|portrait|avatar|character|visage/.test(text)) return "character";
   return "studio";
 }
 
+const CREATION_INTENT = /\b(genere|generes|cree|crees|fais|faire|produis|dessine|realise|lance|montre|construis|concois|imagine|anime|remixe?|retouche|transforme|decline|upscale|ameliore)\b|image|video|affiche|visuel|poster|photo|packshot|logo|animation|miniature|thumbnail|banniere|clip|ugc|storyboard|variante|declinaison|mockup|avatar|lipsync|voix|musique|jingle/;
+const CONVERSATIONAL_ONLY = /^(salut|bonjour|bonsoir|coucou|hello|hey|merci|thanks|super|parfait|genial|top|cool|d'accord|dac|ca marche|bien recu|compris|je vois|ah ok|haha|lol)\b[\s!.,]*$/;
+const QUESTION_OPENERS = /^(comment|pourquoi|combien|quand|qui|quel(le)?s?\b|est[- ]ce|c'est quoi|qu'est[- ]ce|peux[- ]tu m'expliquer|explique|dis[- ]moi)/;
+
 function shouldGenerateMedia(prompt: string, mode: string) {
-  if (mode === "image" || mode === "video") return true;
-  return /image|video|affiche|visuel|poster|photo|packshot|logo|anime|animation|genere|cree/.test(prompt.toLowerCase());
+  void mode;
+  const text = stripAccents(prompt.toLowerCase().trim());
+  if (!text) return false;
+  // Politesses et acquiescements: on discute, on ne genere pas.
+  if (CONVERSATIONAL_ONLY.test(text)) return false;
+  // Question sans intention de creation ("combien coute une video ?"): on repond, on ne genere pas.
+  if (QUESTION_OPENERS.test(text) && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre)\b/.test(text)) return false;
+  if (text.endsWith("?") && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre|peux[- ]tu)\b/.test(text)) return false;
+  // Description visuelle ou verbe de creation: on produit.
+  if (CREATION_INTENT.test(text)) return true;
+  // Prompt descriptif type "un chat astronaute, lumiere neon": assez long et sans tournure de question.
+  return text.split(/\s+/).length >= 4;
 }
 
 async function ensureProfile(supabase: ReturnType<typeof adminClient>, userId: string) {
@@ -1358,6 +1376,8 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Ne te presente pas et ne salue pas a chaque tour: continue le fil comme un partenaire de production deja engage.",
   "- Si l'utilisateur dit \"pareil\", \"refais\", \"la meme mais...\", retrouve la derniere creation evoquee et applique la variation demandee.",
   "- Si l'utilisateur change de sujet, suis-le sans commenter le changement.",
+  "- Tu recois en contexte interne le plan, le solde de credits, le projet et les dernieres creations: utilise-les pour recommander juste, sans jamais les reciter mecaniquement.",
+  "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
   "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage ou strategie.",
@@ -1460,12 +1480,22 @@ async function conversationHistory(supabase: ReturnType<typeof adminClient>, con
   return turns;
 }
 
+type ReplyContext = {
+  planName?: string;
+  creditsBalance?: number;
+  projectTitle?: string;
+  recentCreations?: string[];
+  willGenerate?: boolean;
+  batchCount?: number;
+};
+
 async function anthropicReply(
   prompt: string,
   type: string,
   credits: number,
   history: ChatTurn[] = [],
   onDelta?: (delta: string) => void,
+  context: ReplyContext = {},
 ) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   const emit = (text: string) => { if (onDelta && text) onDelta(text); };
@@ -1474,8 +1504,20 @@ async function anthropicReply(
     emit(text);
     return text;
   }
-  const skillContext = skillHintsForPrompt(prompt, type);
-  const userTurn = `${prompt}\n\nContexte interne HuggyFlow:\nType de creation: ${type}.\nCredits estimes: ${credits}.\nSkills a utiliser si pertinents:\n${skillContext}`;
+  const historyTail = history.slice(-4).filter((turn) => turn.role === "user").map((turn) => turn.content).join(" ");
+  const skillContext = skillHintsForPrompt(`${prompt} ${historyTail}`.slice(0, 2000), type);
+  const contextLines = [
+    `Type de creation: ${type}.`,
+    `Credits estimes pour ce rendu: ${credits}.`,
+    context.planName ? `Plan de l'utilisateur: ${context.planName}.` : "",
+    context.creditsBalance !== undefined ? `Solde de credits: ${context.creditsBalance}.` : "",
+    context.projectTitle ? `Projet en cours: ${context.projectTitle}.` : "",
+    context.recentCreations && context.recentCreations.length ? `Dernieres creations du projet:\n${context.recentCreations.map((line) => `  - ${line}`).join("\n")}` : "",
+    context.willGenerate ? "Une generation va etre lancee apres ta reponse: annonce la direction creative, pas de question inutile." : "Aucune generation ne sera lancee pour ce message: reponds a la question ou fais avancer le brief.",
+    context.batchCount && context.batchCount >= 2 ? `Lot demande: ${context.batchCount} creations.` : "",
+    `Skills a utiliser si pertinents:\n${skillContext}`,
+  ].filter(Boolean).join("\n");
+  const userTurn = `${prompt}\n\nContexte interne HuggyFlow:\n${contextLines}`;
   const messages: ChatTurn[] = [];
   for (const turn of [...history, { role: "user" as const, content: userTurn }]) {
     const last = messages[messages.length - 1];
@@ -1493,7 +1535,7 @@ async function anthropicReply(
       },
       body: JSON.stringify({
         model: DEFAULT_MODEL,
-        max_tokens: 700,
+        max_tokens: 1024,
         stream: true,
         system: HUGGYFLOW_SYSTEM_PROMPT,
         messages,
@@ -1881,9 +1923,9 @@ async function directGenerate(req: Request) {
 const MAX_BATCH_SIZE = 50;
 
 function batchCountFromPrompt(prompt: string) {
-  const text = prompt.toLowerCase();
+  const text = stripAccents(prompt.toLowerCase());
   const patterns = [
-    /\b(?:lot|serie|série|batch|pack|rafale)\s+de\s+(\d{1,3})\b/,
+    /\b(?:lot|serie|batch|pack|rafale)\s+de\s+(\d{1,3})\b/,
     /(?:^|[^\d.:])(\d{1,3})\s*(?:videos?|vidéos?|images?|visuels?|variantes?|variations?|versions?|declinaisons?|déclinaisons?|clips?|ugc|creations?|créations?|miniatures?|affiches?|posts?)\b/,
     /(?:^|\s)x\s?(\d{1,3})(?:\s|$)/,
   ];
@@ -2287,7 +2329,20 @@ async function chat(req: Request) {
 
         if (willGenerate) ensureProviderReady(model);
         const credits = quote.credits;
-        const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }));
+        const { data: recentGens } = await supabase.from("generations")
+          .select("type,prompt,status")
+          .eq("conversation_id", conversation.id)
+          .order("created_at", { ascending: false })
+          .limit(3);
+        const replyContext: ReplyContext = {
+          planName: plan.displayName,
+          creditsBalance: Number(profile.credits || 0),
+          projectTitle: String(project.title || ""),
+          recentCreations: (recentGens || []).map((generation) =>
+            `${generation.type} (${generation.status}): ${String(generation.prompt || "").slice(0, 110)}`),
+          willGenerate,
+        };
+        const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext);
         if (!willGenerate) await saveAssistant(reply);
 
         if (willGenerate) {

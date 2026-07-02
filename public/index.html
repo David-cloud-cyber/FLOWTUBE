@@ -30,6 +30,14 @@ textarea{resize:none;font-family:inherit}
 @keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes pageFade{from{opacity:0}to{opacity:1}}
 @keyframes pulseDot{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+@keyframes caretBlink{0%,100%{opacity:1}50%{opacity:.12}}
+@keyframes sendBusy{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes recPulse{0%{box-shadow:0 0 0 0 rgba(255,77,90,.45)}70%{box-shadow:0 0 0 9px rgba(255,77,90,0)}100%{box-shadow:0 0 0 0 rgba(255,77,90,0)}}
+@keyframes typingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+[data-chat-scroll]::-webkit-scrollbar{width:8px}
+[data-chat-scroll]::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:9px;border:2px solid transparent;background-clip:content-box}
+[data-chat-scroll]::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.16);background-clip:content-box;border:2px solid transparent}
+[data-auth-card] input:focus{border-color:rgba(215,249,75,.45)!important;box-shadow:0 0 0 3px rgba(215,249,75,.08);background:rgba(255,255,255,.06)!important}
 @media (max-width:640px){
   [data-topbar]{padding:10px 10px!important;gap:8px}
   [data-breadcrumb]{max-width:76px!important;overflow:hidden}
@@ -144,7 +152,7 @@ textarea{resize:none;font-family:inherit}
       </div>
     </div>
 
-    <div ref="{{ setScrollRef }}" style="flex:1;overflow-y:auto;display:flex;justify-content:center">
+    <div ref="{{ setScrollRef }}" onScroll="{{ onChatScroll }}" data-chat-scroll style="flex:1;overflow-y:auto;display:flex;justify-content:center">
       <div style="width:100%;max-width:780px;padding:0 26px">
         <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
           <div style="{{ emptyStateStyle }}">
@@ -168,9 +176,31 @@ textarea{resize:none;font-family:inherit}
                 </sc-if>
                 <sc-if value="{{ m.isAgent }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;gap:13px;align-items:flex-start;width:100%">
-                    <div style="{{ avatarStyle }}"></div>
+                    <sc-if value="{{ m.showAvatar }}" hint-placeholder-val="{{ true }}"><div style="{{ avatarStyle }}"></div></sc-if>
+                    <sc-if value="{{ m.hideAvatar }}" hint-placeholder-val="{{ false }}"><div style="width:30px;flex:0 0 auto"></div></sc-if>
                     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:15px;padding-top:3px">
-                      <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}"><div style="font-size:15px;line-height:1.62;color:#E2E2E1;max-width:600px">{{ m.text }}</div></sc-if>
+                      <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:inline-flex;align-items:center;gap:5px;padding:10px 2px">
+                          <span style="width:7px;height:7px;border-radius:50%;background:#9a9a9c;animation:typingDot 1.2s ease infinite"></span>
+                          <span style="width:7px;height:7px;border-radius:50%;background:#9a9a9c;animation:typingDot 1.2s ease .18s infinite"></span>
+                          <span style="width:7px;height:7px;border-radius:50%;background:#9a9a9c;animation:typingDot 1.2s ease .36s infinite"></span>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}">
+                        <div onMouseEnter="{{ m.onTextEnter }}" onMouseLeave="{{ m.onTextLeave }}" style="position:relative">
+                          <div style="font-size:15px;line-height:1.62;color:#E2E2E1;max-width:600px">{{ m.text }}<sc-if value="{{ m.showCaret }}" hint-placeholder-val="{{ false }}"><span style="{{ m.caretStyle }}"></span></sc-if></div>
+                          <sc-if value="{{ m.showActions }}" hint-placeholder-val="{{ false }}">
+                            <div style="position:absolute;left:0;bottom:-26px;z-index:6;display:flex;gap:6px;animation:pageFade .18s both">
+                              <div onClick="{{ m.onCopy }}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;background:rgba(22,22,24,.92);border:1px solid rgba(255,255,255,.12);color:#C9C9CA;transition:all .15s" style-hover="color:#F5F5F4;background:rgba(38,38,42,.95)">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>{{ m.copyLabel }}
+                              </div>
+                              <div onClick="{{ m.onReuse }}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;background:rgba(22,22,24,.92);border:1px solid rgba(255,255,255,.12);color:#C9C9CA;transition:all .15s" style-hover="color:#F5F5F4;background:rgba(38,38,42,.95)">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg>Réutiliser
+                              </div>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-if>
                       <sc-if value="{{ m.hasMedia }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:11px;align-items:flex-start">
                           <div onMouseEnter="{{ m.onEnter }}" onMouseLeave="{{ m.onLeave }}" style="{{ m.cardWrapStyle }}">
@@ -259,6 +289,11 @@ textarea{resize:none;font-family:inherit}
 
     <div data-composer-outer style="{{ composerOuterStyle }}">
       <div data-composer-shell style="position:relative;width:100%;max-width:780px;pointer-events:auto">
+        <sc-if value="{{ showJumpDown }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ jumpToBottom }}" style="position:absolute;top:-52px;right:6px;z-index:30;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(22,22,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);color:#E2E2E1;box-shadow:0 10px 28px -10px rgba(0,0,0,.8);animation:fadeUp .18s both;transition:all .2s" style-hover="background:rgba(40,40,44,.95);transform:translateY(-1px)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="18 13 12 19 6 13"></polyline></svg>
+          </div>
+        </sc-if>
         <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
           <div style="position:absolute;z-index:40;bottom:72px;left:6px;width:min(390px,calc(100vw - 28px));max-height:326px;overflow-y:auto;background:#121214;border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:6px;box-shadow:0 22px 52px -18px rgba(0,0,0,.92);animation:fadeUp .16s both">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;gap:12px"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5f5f62;font-weight:700">Modèles créatifs</div><div style="font-size:11.5px;color:#8a8a8c">{{ modelCountLabel }}</div></div>
@@ -278,12 +313,12 @@ textarea{resize:none;font-family:inherit}
           </div>
         </sc-if>
 
-        <div style="position:relative;z-index:1;background:rgba(16,16,18,.7);backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:12px;box-shadow:0 26px 70px -24px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05)">
+        <div style="{{ composerBoxStyle }}">
           <div style="display:flex;align-items:flex-start;gap:11px;padding:3px 6px 9px">
             <button onClick="{{ attachReference }}" style="width:36px;height:36px;flex:0 0 auto;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#C9C9CA;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" style-hover="background:rgba(255,255,255,.12);color:#F5F5F4">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
-            <textarea ref="{{ setComposerInputRef }}" value="{{ input }}" onChange="{{ onInput }}" onFocus="{{ onInputFocus }}" onBlur="{{ onInputBlur }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Décris ce que tu veux créer…" style="flex:1;width:100%;min-width:0;display:block;resize:none;background:transparent;border:none;outline:none;color:#F5F5F4;font-size:15px;line-height:1.5;padding:8px 0;min-height:24px;max-height:130px;overflow-y:auto"></textarea>
+            <textarea ref="{{ setComposerInputRef }}" value="{{ input }}" onChange="{{ onInput }}" onFocus="{{ onInputFocus }}" onBlur="{{ onInputBlur }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ composerPlaceholder }}" style="flex:1;width:100%;min-width:0;display:block;resize:none;background:transparent;border:none;outline:none;color:#F5F5F4;font-size:15px;line-height:1.5;padding:8px 0;min-height:24px;max-height:130px;overflow-y:auto"></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <button data-model-button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:8px;min-width:0;max-width:min(450px,100%);padding:8px 13px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#E2E2E1;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .2s" style-hover="background:rgba(255,255,255,.09)">
@@ -294,18 +329,30 @@ textarea{resize:none;font-family:inherit}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>{{ curRatio }}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A9A9C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
             </button>
-            <div style="display:flex;gap:3px;padding:3px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+            <div style="position:relative;display:flex;gap:0;padding:3px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+              <div style="{{ modeThumbStyle }}"></div>
               <div onClick="{{ setImage }}" style="{{ imgSegStyle }}">Image</div>
               <div onClick="{{ setVideo }}" style="{{ vidSegStyle }}">Vidéo</div>
             </div>
             <div style="flex:1"></div>
-            <button onClick="{{ recordVoice }}" style="width:38px;height:38px;flex:0 0 auto;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#C9C9CA;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s" style-hover="background:rgba(255,255,255,.12);color:#F5F5F4">
+            <button onClick="{{ recordVoice }}" style="{{ micStyle }}" style-hover="background:rgba(255,255,255,.12);color:#F5F5F4">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0"></path><line x1="12" y1="18" x2="12" y2="21"></line></svg>
             </button>
             <button onClick="{{ send }}" style="{{ sendStyle }}" style-hover="transform:translateY(-1px)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg>
             </button>
           </div>
+          <sc-if value="{{ showComposerMeta }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 0;animation:pageFade .2s both">
+              <sc-if value="{{ hasBatchHint }}" hint-placeholder-val="{{ false }}">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(215,249,75,.1);border:1px solid rgba(215,249,75,.25);font-size:11px;font-weight:700;color:#D7F94B">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>{{ batchHintLabel }}
+                </span>
+              </sc-if>
+              <sc-if value="{{ noBatchHint }}" hint-placeholder-val="{{ true }}"><span></span></sc-if>
+              <span style="font-size:11px;color:#6b6b6e;white-space:nowrap">↵ envoyer · Maj+↵ saut de ligne</span>
+            </div>
+          </sc-if>
         </div>
       </div>
     </div>
@@ -694,41 +741,50 @@ textarea{resize:none;font-family:inherit}
 
   <sc-if value="{{ authModalOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeAuthModal }}" style="{{ authOverlayStyle }}">
-      <div onClick="{{ stop }}" style="{{ authCardStyle }}">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px">
-          <div style="display:flex;align-items:center;gap:12px;min-width:0">
-            <div style="{{ authLogoStyle }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A06" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
-            <div style="min-width:0">
-              <div style="font-size:12px;color:#8a8a8c;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Compte HuggyFlow</div>
-              <h2 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:2px 0 0;color:#F5F5F4">Connexion sécurisée</h2>
-            </div>
-          </div>
-          <div onClick="{{ closeAuthModal }}" style="width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9A9C;transition:all .2s;flex:0 0 auto" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
+      <div onClick="{{ stop }}" data-auth-card style="{{ authCardStyle }}">
+        <div style="position:absolute;top:-90px;left:50%;transform:translateX(-50%);width:320px;height:160px;border-radius:50%;background:radial-gradient(closest-side, rgba(215,249,75,.14), transparent);pointer-events:none"></div>
+        <div onClick="{{ closeAuthModal }}" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9A9C;transition:all .2s;z-index:2" style-hover="background:rgba(255,255,255,.07);color:#F5F5F4">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:6px">
+          <div style="{{ authLogoStyle }}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0A0A06" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+          <h2 style="font-size:24px;font-weight:800;letter-spacing:-.025em;margin:14px 0 0;color:#F5F5F4">{{ authTitle }}</h2>
+          <p style="font-size:13.5px;line-height:1.55;color:#9a9a9c;margin:8px auto 0;max-width:360px">{{ authIntent }}</p>
+        </div>
+
+        <div style="display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);margin:20px 0 18px">
+          <div onClick="{{ setAuthLogin }}" style="{{ authTabLoginStyle }}">Connexion</div>
+          <div onClick="{{ setAuthSignup }}" style="{{ authTabSignupStyle }}">Créer un compte</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <sc-if value="{{ authIsSignup }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size:11.5px;font-weight:700;color:#8a8a8c;letter-spacing:.03em;margin:0 2px 6px">NOM AFFICHÉ</div>
+              <input value="{{ authDisplayName }}" onChange="{{ onAuthDisplayName }}" placeholder="Studio Nova" style="{{ authInputStyle }}"/>
+            </div>
+          </sc-if>
+          <div>
+            <div style="font-size:11.5px;font-weight:700;color:#8a8a8c;letter-spacing:.03em;margin:0 2px 6px">E-MAIL</div>
+            <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" placeholder="toi@exemple.com" style="{{ authInputStyle }}"/>
+          </div>
+          <div>
+            <div style="font-size:11.5px;font-weight:700;color:#8a8a8c;letter-spacing:.03em;margin:0 2px 6px">MOT DE PASSE</div>
+            <input type="password" value="{{ authPassword }}" onChange="{{ onAuthPassword }}" placeholder="8 caractères minimum" style="{{ authInputStyle }}"/>
           </div>
         </div>
 
-        <p style="font-size:14px;line-height:1.55;color:#a7a7a9;margin:20px 0 18px">{{ authIntent }}</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+        <button onClick="{{ onAuthSubmit }}" style="{{ authPrimaryStyle }};width:100%;margin-top:18px" style-hover="filter:brightness(1.05);transform:translateY(-1px)">{{ authCtaLabel }}</button>
+        <div style="min-height:20px;margin-top:12px;text-align:center;font-size:12.5px;font-weight:600;color:{{ authStatusColor }}">{{ authStatus }}</div>
+
+        <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)">
           <sc-for list="{{ authBenefits }}" as="b" hint-placeholder-count="3">
-            <div style="border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:12px;padding:10px">
-              <div style="font-size:11px;color:#D7F94B;font-weight:800;letter-spacing:.04em">{{ b.k }}</div>
-              <div style="font-size:12px;color:#bdbdbf;margin-top:3px;line-height:1.35">{{ b.v }}</div>
+            <div style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#9a9a9c">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D7F94B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ b.v }}
             </div>
           </sc-for>
         </div>
-
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" placeholder="Adresse e-mail" style="{{ authInputStyle }}"/>
-          <input type="password" value="{{ authPassword }}" onChange="{{ onAuthPassword }}" placeholder="Mot de passe" style="{{ authInputStyle }}"/>
-          <input value="{{ authDisplayName }}" onChange="{{ onAuthDisplayName }}" placeholder="Nom affiché pour l'inscription" style="{{ authInputStyle }}"/>
-        </div>
-
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
-          <button onClick="{{ onSignup }}" style="{{ authPrimaryStyle }}" style-hover="filter:brightness(1.04);transform:translateY(-1px)">Créer un compte</button>
-          <button onClick="{{ onLogin }}" style="{{ authSecondaryStyle }}" style-hover="background:rgba(255,255,255,.09);transform:translateY(-1px)">Se connecter</button>
-        </div>
-        <div style="min-height:18px;margin-top:12px;font-size:12.5px;color:#8f8f91">{{ authStatus }}</div>
       </div>
     </div>
   </sc-if>
@@ -754,6 +810,14 @@ class Component extends DCLogic {
       hovered: null,
       backendReady: false,
       sendLocked: false,
+      awaitingReply: false,
+      streamingId: null,
+      hoveredMsg: null,
+      copiedMsg: null,
+      showJumpDown: false,
+      recording: false,
+      placeholderTick: 0,
+      authMode: 'login',
       credits: 0,
       creditsMax: 100,
       user: null,
@@ -864,14 +928,19 @@ class Component extends DCLogic {
   }
   componentDidMount(){
     this.syncViewport();
+    this.stickToBottom = true;
     if(typeof window !== 'undefined'){
       this.onResize = ()=>this.syncViewport();
       window.addEventListener('resize', this.onResize);
+      this.placeholderTimer = setInterval(()=>{
+        if(!this.state.input && !this.state.inputFocused) this.setState(s=>({ placeholderTick: s.placeholderTick + 1 }));
+      }, 6000);
     }
     this.bootstrap();
   }
   componentWillUnmount(){
     if(typeof window !== 'undefined' && this.onResize) window.removeEventListener('resize', this.onResize);
+    if(this.placeholderTimer) clearInterval(this.placeholderTimer);
   }
 
   apiBase(){ return (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3000' : ''; }
@@ -998,9 +1067,10 @@ class Component extends DCLogic {
     if(!text || this.state.sendLocked) return;
     if(!this.requireAuth('Connecte-toi pour créer, sauvegarder et lancer tes créations HuggyFlow.', { type:'send' })) return;
     const cid = this.state.activeId;
+    this.stickToBottom = true;
     this.updateConv(cid, ms => ms.concat([{ id:'u'+Date.now(), role:'user', text }]));
     const payload = { message:text, projectId:cid, mode:this.state.mode, modelId:this.state.modelId, aspectRatio:this.state.ratio };
-    this.setState({ input:'', sendLocked:true }, ()=>this.resizeComposerInput(this.composerInputEl));
+    this.setState({ input:'', sendLocked:true, awaitingReply:true, showJumpDown:false }, ()=>this.resizeComposerInput(this.composerInputEl));
     try{
       const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload) });
       if(!res.ok){
@@ -1021,7 +1091,7 @@ class Component extends DCLogic {
       if(!this.streamDeliveredFor || this.streamDeliveredFor !== cid) this.localFallback(cid, text);
     }finally{
       this.streamDeliveredFor = null;
-      this.setState({ sendLocked:false });
+      this.setState({ sendLocked:false, awaitingReply:false, streamingId:null });
     }
   }
 
@@ -1036,8 +1106,15 @@ class Component extends DCLogic {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     const textId = 't'+Date.now()+Math.floor(Math.random()*999);
+    this.setState({ streamingId:textId });
     let buffer = '', delivered = false;
-    const handle = (block)=>{ if(this.handleSseBlock(block, cid, textId)) delivered = true; if(delivered) this.streamDeliveredFor = cid; };
+    const handle = (block)=>{
+      if(this.handleSseBlock(block, cid, textId)){
+        delivered = true;
+        if(this.state.awaitingReply) this.setState({ awaitingReply:false });
+      }
+      if(delivered) this.streamDeliveredFor = cid;
+    };
     while(true){
       const chunk = await reader.read();
       if(chunk.done) break;
@@ -1369,6 +1446,7 @@ class Component extends DCLogic {
 
   recordVoice(){
     if(!this.requireAuth('Connecte-toi pour utiliser la dictee dans le composer.', null)) return;
+    if(this.state.recording) return;
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!Speech){
       this.addAgentText(this.state.activeId, 'Dictee vocale non disponible dans ce navigateur.');
@@ -1381,7 +1459,24 @@ class Component extends DCLogic {
       const text = Array.from(event.results).map(r=>r[0] && r[0].transcript ? r[0].transcript : '').join(' ').trim();
       if(text) this.setState({ input:(this.state.input ? this.state.input + ' ' : '') + text });
     };
+    rec.onend = ()=>this.setState({ recording:false });
+    rec.onerror = ()=>this.setState({ recording:false });
+    this.setState({ recording:true });
     rec.start();
+  }
+
+  batchCountFromText(text){
+    const t = String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const patterns = [
+      /\b(?:lot|serie|batch|pack|rafale)\s+de\s+(\d{1,3})\b/,
+      /(?:^|[^\d.:])(\d{1,3})\s*(?:videos?|images?|visuels?|variantes?|variations?|versions?|declinaisons?|clips?|ugc|creations?|miniatures?|affiches?|posts?)\b/,
+      /(?:^|\s)x\s?(\d{1,3})(?:\s|$)/,
+    ];
+    for(const pattern of patterns){
+      const match = t.match(pattern);
+      if(match){ const count = parseInt(match[1], 10); return count >= 2 ? Math.min(count, 50) : 1; }
+    }
+    return 1;
   }
 
   openCollection(kind){
@@ -1452,8 +1547,12 @@ class Component extends DCLogic {
 
   componentDidUpdate(prevProps, prevState){
     const conv = this.state.conversations[this.state.activeId];
-    if(this.scrollEl && conv && conv.messages && conv.messages.length) this.scrollEl.scrollTop = this.scrollEl.scrollHeight;
-    if((!prevState || prevState.activeId !== this.state.activeId) && this.state.activeId) this.persistActiveId(this.state.activeId);
+    const switched = !prevState || prevState.activeId !== this.state.activeId;
+    if(switched) this.stickToBottom = true;
+    if(this.scrollEl && conv && conv.messages && conv.messages.length && this.stickToBottom !== false){
+      this.scrollEl.scrollTop = this.scrollEl.scrollHeight;
+    }
+    if(switched && this.state.activeId) this.persistActiveId(this.state.activeId);
   }
 
   persistActiveId(id){
@@ -1640,12 +1739,29 @@ class Component extends DCLogic {
     ].map(s=>({ label:s.label, onClick:()=>this.setState({ input:s.text }) }));
 
     const hov = st.hovered;
-    const messages = conv.messages.map(m=>{
+    const messages = conv.messages.map((m, mi, arr)=>{
       const isUser = m.role==='user';
+      const prev = mi > 0 ? arr[mi-1] : null;
+      const grouped = !!prev && ((prev.role==='user') === isUser);
+      const isStreamingMsg = !isUser && st.streamingId === m.id && st.sendLocked;
       const vm = {
         id:m.id, isUser, isAgent:!isUser, text:m.text, showText:!!m.text,
-        rowStyle:'display:flex;flex-direction:column;animation:fadeUp .45s cubic-bezier(.2,.7,.2,1) both;'+(isUser?'align-items:flex-end;':'align-items:flex-start;'),
+        rowStyle:'display:flex;flex-direction:column;animation:fadeUp .45s cubic-bezier(.2,.7,.2,1) both;'+(isUser?'align-items:flex-end;':'align-items:flex-start;')+(grouped?'margin-top:-16px;':''),
         hasMedia:false,
+        isTyping:false,
+        showAvatar:!isUser && !grouped,
+        hideAvatar:!isUser && grouped,
+        showCaret:isStreamingMsg,
+        caretStyle:'display:inline-block;width:2px;height:15px;margin-left:3px;vertical-align:-2px;border-radius:1px;background:'+A+';box-shadow:0 0 8px '+A+';animation:caretBlink .85s ease infinite;',
+        showActions:!isUser && !!m.text && !isStreamingMsg && st.hoveredMsg===m.id,
+        copyLabel: st.copiedMsg===m.id ? 'Copié !' : 'Copier',
+        onTextEnter:()=>{ if(!isUser && m.text) this.setState({ hoveredMsg:m.id }); },
+        onTextLeave:()=>{ if(st.hoveredMsg===m.id || this.state.hoveredMsg===m.id) this.setState({ hoveredMsg:null, copiedMsg:null }); },
+        onCopy:()=>{
+          if(typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(m.text || '').catch(()=>{});
+          this.setState({ copiedMsg:m.id });
+        },
+        onReuse:()=>this.setState({ input:m.text || '' }, ()=>this.resizeComposerInput(this.composerInputEl)),
       };
       if(m.media){
         const md = m.media, hovered = hov===m.id;
@@ -1704,6 +1820,13 @@ class Component extends DCLogic {
       }
       return vm;
     });
+    if(st.awaitingReply){
+      messages.push({
+        id:'typing', isUser:false, isAgent:true, isTyping:true, showText:false, hasMedia:false, hasBatch:false,
+        showAvatar:true, hideAvatar:false, showCaret:false, showActions:false,
+        rowStyle:'display:flex;flex-direction:column;align-items:flex-start;animation:fadeUp .3s both;',
+      });
+    }
 
     const typeLabels = { image:'Image', image_edit:'Retouche', video:'Vidéo', video_edit:'Montage', audio:'Audio', lipsync:'Visage parlant', voice_clone:'Voix' };
     const capLabels = { 'text-to-image':'Depuis un texte', 'image-to-image':'Depuis une image', 'text-to-video':'Depuis un texte', 'image-to-video':'Depuis une image', 'reference-to-video':'Avec référence', 'video-to-video':'Remix vidéo', 'remove-background':'Fond retiré', 'speech-to-text':'Transcription', 'voice-clone':'Voix personnalisée', 'best-model':'Meilleur choix' };
@@ -1789,14 +1912,47 @@ class Component extends DCLogic {
     const collectionHistoryStyle = collectionSegBase + (st.collectionTab === 'history' ? 'background:'+A+';color:#08080A;border-color:'+A+';' : 'background:rgba(255,255,255,.05);color:#C9C9CA;');
     const collectionTemplatesStyle = collectionSegBase + (st.collectionTab === 'templates' ? 'background:'+A+';color:#08080A;border-color:'+A+';' : 'background:rgba(255,255,255,.05);color:#C9C9CA;');
 
+    const placeholderSets = {
+      image: [
+        'Décris ce que tu veux créer…',
+        'Un packshot parfum, lumière studio, fond crème…',
+        'Une affiche rétro-futuriste pour un festival…',
+        'Un portrait editorial, lumière douce, 4:5…',
+      ],
+      video: [
+        'Décris la vidéo à créer…',
+        'Une pub UGC énergique pour ma marque…',
+        'Un clip produit 9:16, caméra orbitale lente…',
+        'Un B-roll cinématique de café le matin…',
+      ],
+    };
+    const phList = placeholderSets[st.mode] || placeholderSets.image;
+    const composerPlaceholder = phList[st.placeholderTick % phList.length];
+    const composerBatchCount = st.input ? this.batchCountFromText(st.input) : 1;
+    const authIsLogin = st.authMode !== 'signup';
+    const authTabBase = 'flex:1;text-align:center;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;';
+    const authStatusText = String(st.authStatus || '');
+    const authStatusColor = /impossible|invalide|requis|erreur|incorrect|failed|manquant/i.test(authStatusText)
+      ? '#FF6B7A'
+      : /connecté|créé|vérifie/i.test(authStatusText) ? A : '#8f8f91';
+
     return {
       authModalOpen: st.authModalOpen,
       authIntent: st.authIntent,
       authOverlayStyle, authCardStyle, authLogoStyle, authInputStyle, authPrimaryStyle, authSecondaryStyle,
+      authTitle: authIsLogin ? 'Bon retour sur HuggyFlow' : 'Crée ton studio HuggyFlow',
+      authIsLogin, authIsSignup: !authIsLogin,
+      setAuthLogin: ()=>this.setState({ authMode:'login', authStatus:'' }),
+      setAuthSignup: ()=>this.setState({ authMode:'signup', authStatus:'' }),
+      authTabLoginStyle: authTabBase + (authIsLogin ? 'background:#262629;color:#F5F5F4;' : 'color:#8a8a8c;'),
+      authTabSignupStyle: authTabBase + (!authIsLogin ? 'background:#262629;color:#F5F5F4;' : 'color:#8a8a8c;'),
+      onAuthSubmit: ()=>this.authSubmit(authIsLogin ? 'login' : 'signup'),
+      authCtaLabel: authIsLogin ? 'Se connecter' : 'Créer mon compte',
+      authStatusColor,
       authBenefits: [
-        { k:'SAVE', v:'Projets et historiques sauvegardés' },
-        { k:'PLAN', v:'Crédits et offres liés au compte' },
-        { k:'LIVE', v:'Créations suivies en direct' },
+        { k:'SAVE', v:'Projets sauvegardés' },
+        { k:'PLAN', v:'Crédits liés au compte' },
+        { k:'LIVE', v:'Créations en direct' },
       ],
       closeAuthModal: ()=>this.setState({ authModalOpen:false, pendingAuthAction:null }),
       accountOpen: st.accountMenu,
@@ -1908,8 +2064,9 @@ class Component extends DCLogic {
       upgradeBtnStyle:'display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:10px;background:'+A+'1f;border:1px solid '+A+'59;color:'+A+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;',
       mode: st.mode,
       setImage:()=>this.setMode('image'), setVideo:()=>this.setMode('video'),
-      imgSegStyle: seg + (st.mode==='image' ? 'background:#F5F5F4;color:#08080A;' : 'color:#9A9A9C;'),
-      vidSegStyle: seg + (st.mode==='video' ? 'background:#F5F5F4;color:#08080A;' : 'color:#9A9A9C;'),
+      imgSegStyle: seg + 'position:relative;z-index:1;min-width:58px;text-align:center;background:transparent;transition:color .25s;' + (st.mode==='image' ? 'color:#08080A;font-weight:700;' : 'color:#9A9A9C;'),
+      vidSegStyle: seg + 'position:relative;z-index:1;min-width:58px;text-align:center;background:transparent;transition:color .25s;' + (st.mode==='video' ? 'color:#08080A;font-weight:700;' : 'color:#9A9A9C;'),
+      modeThumbStyle:'position:absolute;top:3px;bottom:3px;width:calc(50% - 3px);border-radius:9px;background:#F5F5F4;box-shadow:0 2px 8px rgba(0,0,0,.35);transition:left .25s cubic-bezier(.2,.7,.2,1);left:'+(st.mode==='image' ? '3px' : 'calc(50%)')+';',
       curModelName: cur.name,
       curModelDot:'width:8px;height:8px;border-radius:50%;background:'+cur.dot+';box-shadow:0 0 5px '+cur.dot+'99;',
       curRatio: st.ratio,
@@ -1917,7 +2074,31 @@ class Component extends DCLogic {
       toggleModelMenu:()=>this.setState({ modelMenu:!st.modelMenu, ratioMenu:false }),
       toggleRatioMenu:()=>this.setState({ ratioMenu:!st.ratioMenu, modelMenu:false }),
       modelItems, modelCountLabel, ratioItems,
-      sendStyle:'width:38px;height:38px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;font-family:inherit;transition:all .2s;'+(st.input.trim()?'cursor:pointer;color:#0A0A06;background:'+A+';box-shadow:0 0 12px -7px '+A+';':'cursor:default;color:#6b6b6e;background:rgba(255,255,255,.08);'),
+      sendStyle:'width:38px;height:38px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;font-family:inherit;transition:all .2s;'+(st.sendLocked
+        ? 'cursor:progress;color:#0A0A06;background:'+A+';animation:sendBusy 1.1s ease infinite;'
+        : st.input.trim()
+          ? 'cursor:pointer;color:#0A0A06;background:'+A+';box-shadow:0 0 12px -7px '+A+';'
+          : 'cursor:default;color:#6b6b6e;background:rgba(255,255,255,.08);'),
+      micStyle:'width:38px;height:38px;flex:0 0 auto;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;'+(st.recording
+        ? 'background:rgba(255,77,90,.16);border:1px solid rgba(255,77,90,.45);color:#FF4D5A;animation:recPulse 1.4s ease infinite;'
+        : 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#C9C9CA;'),
+      composerBoxStyle:'position:relative;z-index:1;background:rgba(16,16,18,.7);backdrop-filter:blur(24px) saturate(1.5);border-radius:24px;padding:12px;transition:border-color .25s,box-shadow .25s;'+(st.inputFocused
+        ? 'border:1px solid '+A+'52;box-shadow:0 26px 70px -24px rgba(0,0,0,.9),0 0 0 3px '+A+'14,inset 0 1px 0 rgba(255,255,255,.05);'
+        : 'border:1px solid rgba(255,255,255,.12);box-shadow:0 26px 70px -24px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);'),
+      composerPlaceholder: composerPlaceholder,
+      showComposerMeta: st.inputFocused || composerBatchCount >= 2,
+      hasBatchHint: composerBatchCount >= 2,
+      noBatchHint: composerBatchCount < 2,
+      batchHintLabel: 'Lot de '+composerBatchCount+' créations · confirmation avant lancement',
+      showJumpDown: st.showJumpDown,
+      jumpToBottom:()=>{ this.stickToBottom = true; if(this.scrollEl) this.scrollEl.scrollTop = this.scrollEl.scrollHeight; this.setState({ showJumpDown:false }); },
+      onChatScroll:(e)=>{
+        const el = e && e.target ? e.target : this.scrollEl;
+        if(!el) return;
+        const nearBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < 120;
+        this.stickToBottom = nearBottom;
+        if(this.state.showJumpDown === nearBottom) this.setState({ showJumpDown: !nearBottom });
+      },
     };
   }
 }
