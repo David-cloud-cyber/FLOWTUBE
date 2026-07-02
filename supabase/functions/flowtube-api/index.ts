@@ -487,6 +487,8 @@ const fallbackPlans: Record<string, PlanLimits> = {
   basic: { id: "basic", displayName: "Creator", includedCredits: 1600, monthlyPriceUsd: 19, annualPriceUsd: 180, monthlyMessageLimit: 500, dailyMessageLimit: 80, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 20, maxUploadMb: 120, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { alias: "starter", checkout: true } },
   starter: { id: "starter", displayName: "Creator", includedCredits: 1600, monthlyPriceUsd: 19, annualPriceUsd: 180, monthlyMessageLimit: 500, dailyMessageLimit: 80, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 20, maxUploadMb: 120, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { canonical: "basic", checkout: true } },
   pro: { id: "pro", displayName: "Pro", includedCredits: 5500, monthlyPriceUsd: 59, annualPriceUsd: 588, monthlyMessageLimit: 1800, dailyMessageLimit: 180, dailyVideoLimit: 10, concurrentImageJobs: 5, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 150, maxUploadMb: 300, seatLimit: 3, supportLevel: "priority", priorityQueue: false, metadata: { checkout: true } },
+  crew: { id: "crew", displayName: "Crew", includedCredits: 8000, monthlyPriceUsd: 89, annualPriceUsd: 852, monthlyMessageLimit: 2600, dailyMessageLimit: 220, dailyVideoLimit: 14, concurrentImageJobs: 3, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 120, storageGb: 300, maxUploadMb: 450, seatLimit: 5, supportLevel: "standard", priorityQueue: false, metadata: { checkout: true, team: true, audience: "Petites equipes qui demarrent" } },
+  squad: { id: "squad", displayName: "Squad", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1236, monthlyMessageLimit: 4200, dailyMessageLimit: 320, dailyVideoLimit: 20, concurrentImageJobs: 6, concurrentVideoJobs: 3, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 150, storageGb: 450, maxUploadMb: 600, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, team: true, audience: "Equipes en pleine croissance" } },
   max: { id: "max", displayName: "Max", includedCredits: 15000, monthlyPriceUsd: 149, annualPriceUsd: 1428, monthlyMessageLimit: 5000, dailyMessageLimit: 350, dailyVideoLimit: 26, concurrentImageJobs: 9, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 600, maxUploadMb: 600, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: { alias: "studio", checkout: true } },
   scale: { id: "scale", displayName: "Scale", includedCredits: 30000, monthlyPriceUsd: 299, annualPriceUsd: 2868, monthlyMessageLimit: 12000, dailyMessageLimit: 700, dailyVideoLimit: 60, concurrentImageJobs: 14, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1500, maxUploadMb: 1000, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Agences et equipes en volume" } },
   enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 60000, monthlyPriceUsd: 599, annualPriceUsd: 5988, monthlyMessageLimit: 30000, dailyMessageLimit: 1500, dailyVideoLimit: 130, concurrentImageJobs: 28, concurrentVideoJobs: 14, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 5000, maxUploadMb: 2000, seatLimit: 60, supportLevel: "dedicated", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Production intensive et organisations", dedicated_support: true } },
@@ -1182,7 +1184,8 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
         id: message.id,
         role: message.role === "assistant" ? "agent" : message.role,
         text: message.content,
-        media: genByMessage.has(message.id)
+        batch: message.metadata?.batch || undefined,
+        media: !message.metadata?.batch && genByMessage.has(message.id)
           ? mediaFromGeneration(genByMessage.get(message.id)!)
           : (message.metadata?.media || undefined),
       })),
@@ -1343,6 +1346,12 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Refuse l'image/video realiste d'une personne reelle identifiable dans un contexte compromettant, politique trompeur, sexuel ou humiliant.",
   "- Pour marques/personnages proteges, propose une alternative originale si la demande vise une copie reconnaissable.",
   "- Donne une raison courte et une alternative sure.",
+  "",
+  "Production en lot:",
+  "- Si l'utilisateur demande plusieurs creations d'un coup (ex: 20 variantes, 50 UGC, une serie de visuels), HuggyFlow sait produire jusqu'a 50 medias en continu dans un meme lot.",
+  "- Annonce le nombre, le cout total estime et demande une confirmation avant de lancer le lot.",
+  "- Le lot avance par vagues selon le plan de l'utilisateur: les rendus s'enchainent automatiquement jusqu'a la fin, il n'a rien a relancer.",
+  "- Pour un lot, propose une direction creative declinable: meme structure, variations de personnage, d'accroche, de decor ou d'angle.",
   "",
   "Continuite de conversation:",
   "- Tu recois l'historique recent de la conversation: appuie-toi dessus et ne redemande jamais une information deja donnee.",
@@ -1869,6 +1878,267 @@ async function directGenerate(req: Request) {
   return json(result);
 }
 
+const MAX_BATCH_SIZE = 50;
+
+function batchCountFromPrompt(prompt: string) {
+  const text = prompt.toLowerCase();
+  const patterns = [
+    /\b(?:lot|serie|série|batch|pack|rafale)\s+de\s+(\d{1,3})\b/,
+    /(?:^|[^\d.:])(\d{1,3})\s*(?:videos?|vidéos?|images?|visuels?|variantes?|variations?|versions?|declinaisons?|déclinaisons?|clips?|ugc|creations?|créations?|miniatures?|affiches?|posts?)\b/,
+    /(?:^|\s)x\s?(\d{1,3})(?:\s|$)/,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const count = parseInt(match[1], 10);
+      return count >= 2 ? Math.min(count, MAX_BATCH_SIZE) : 1;
+    }
+  }
+  return 1;
+}
+
+function batchLimitForPlan(plan: PlanLimits) {
+  const metaLimit = Number((plan.metadata || {}).batch_limit || 0);
+  if (metaLimit > 0) return Math.min(metaLimit, MAX_BATCH_SIZE);
+  const defaults: Record<string, number> = { free: 2, basic: 8, pro: 16, crew: 20, squad: 30, max: 40, scale: 50, enterprise: 50 };
+  return defaults[plan.id] ?? 8;
+}
+
+function batchInfoOf(generation: Record<string, unknown>) {
+  const params = cleanMetadata(generation.params);
+  const batch = cleanMetadata(params.batch);
+  return batch.id ? { id: String(batch.id), index: Number(batch.index || 0), total: Number(batch.total || 0) } : null;
+}
+
+function concurrencyForType(plan: PlanLimits, type: string) {
+  const isVideo = type === "video" || type === "video_edit" || type === "lipsync";
+  return Math.max(1, isVideo ? plan.concurrentVideoJobs : plan.concurrentImageJobs);
+}
+
+function batchConfirmationMessage(model: PricingModel, quote: PricingQuote, count: number, type: string) {
+  const totalCredits = quote.credits * count;
+  const label = type === "video" ? "videos" : "creations";
+  return `Lot de ${count} ${label} (${model.name}) : environ ${totalCredits} credits au total (${quote.credits} par rendu). Les rendus s'enchaineront automatiquement par vagues selon ton plan. Confirme avec "oui" pour lancer le lot, ou "annule" pour ignorer.`;
+}
+
+async function enforceBatchGuards(
+  supabase: ReturnType<typeof adminClient>,
+  profile: Record<string, unknown>,
+  plan: PlanLimits,
+  model: PricingModel,
+  quote: PricingQuote,
+  count: number,
+) {
+  if (!plan.allowedMediaTypes.includes(model.type)) {
+    throw new FlowtubeError(403, `Le plan ${plan.displayName} ne permet pas encore ce type de generation.`, { code: "MEDIA_TYPE_NOT_ALLOWED" });
+  }
+  const planLimit = batchLimitForPlan(plan);
+  if (count > planLimit) {
+    throw new FlowtubeError(403, `Le plan ${plan.displayName} permet des lots de ${planLimit} creations maximum. Reduis le lot ou passe au plan superieur.`, { code: "BATCH_LIMIT" });
+  }
+  const totalCredits = quote.credits * count;
+  if (Number(profile.credits || 0) < totalCredits) {
+    throw new FlowtubeError(402, `Solde insuffisant pour ce lot : ${totalCredits} credits requis, ${Number(profile.credits || 0)} disponibles.`, {
+      code: "INSUFFICIENT_CREDITS",
+      requiredCredits: totalCredits,
+      availableCredits: Number(profile.credits || 0),
+    });
+  }
+  if (model.type === "video") {
+    const { count: dailyVideos } = await supabase.from("generations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", String(profile.id))
+      .eq("type", "video")
+      .gte("created_at", dayStartIso())
+      .not("status", "in", "(failed,cancelled)");
+    if ((dailyVideos || 0) + count > plan.dailyVideoLimit) {
+      throw new FlowtubeError(429, `Ce lot depasse le plafond video journalier du plan ${plan.displayName} (${plan.dailyVideoLimit}/jour).`, { code: "DAILY_VIDEO_LIMIT" });
+    }
+  }
+}
+
+async function launchBatchWave(supabase: ReturnType<typeof adminClient>, userId: string, batchId: string) {
+  const { data: queued } = await supabase.from("generations")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .is("fal_job_id", null)
+    .contains("params", { batch: { id: batchId } })
+    .order("created_at", { ascending: true });
+  if (!queued || !queued.length) return 0;
+
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  if (!profile) return 0;
+  const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+  const catalog = await pricingCatalog(supabase);
+  const type = String(queued[0].type || "image");
+  const runningType = type === "video" ? "video" : "image";
+  const maxConcurrent = concurrencyForType(plan, type);
+  const { count: runningJobs } = await supabase.from("generations")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("type", runningType)
+    .eq("status", "running");
+  const freeSlots = Math.max(0, maxConcurrent - (runningJobs || 0));
+  if (!freeSlots) return 0;
+
+  let launched = 0;
+  for (const generation of queued.slice(0, freeSlots)) {
+    if (Number(profile.credits || 0) < Number(generation.credits || 0)) {
+      await supabase.from("generations").update({
+        status: "failed",
+        error_message: "Credits insuffisants pour poursuivre le lot.",
+      }).eq("id", generation.id);
+      continue;
+    }
+    const model = resolveModelFromCatalog(catalog, String(generation.model_id), String(generation.type));
+    await startFalGeneration(generation, model);
+    launched += 1;
+  }
+  return launched;
+}
+
+async function advanceBatch(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
+  const batch = batchInfoOf(generation);
+  if (!batch) return;
+  try {
+    await launchBatchWave(supabase, String(generation.user_id), batch.id);
+  } catch (_err) {
+    // La prochaine vague repartira au prochain poll du lot.
+  }
+}
+
+async function createGenerationBatch(req: Request, body: Record<string, unknown>, count: number, assistantText?: string) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const profile = await ensureProfile(supabase, userId);
+
+  const prompt = String(body.prompt || body.message || "");
+  const type = requestTypeFromBody(body, prompt);
+  const catalog = await pricingCatalog(supabase);
+  const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body);
+  const requestedUnits = model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits) : Number(body.units || model.defaultUnits);
+  const quote = quoteFor(model, requestedUnits);
+  const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+  await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
+  const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(body.projectId || ""));
+  await enforceBatchGuards(supabase, profile, plan, model, quote, count);
+  ensureProviderReady(model);
+
+  const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
+  const batchId = crypto.randomUUID();
+  const totalCredits = quote.credits * count;
+
+  const { data: assistantMessage, error: messageError } = await supabase.from("messages")
+    .insert({
+      user_id: userId,
+      project_id: project.id,
+      conversation_id: conversation.id,
+      role: "assistant",
+      content: assistantText || `Lot de ${count} creations lance. Les rendus s'enchainent automatiquement.`,
+      metadata: { batch: { id: batchId, total: count, type, model: model.name, credits: totalCredits } },
+    })
+    .select("*")
+    .single();
+  if (messageError) throw messageError;
+
+  const rows = Array.from({ length: count }, (_, index) => ({
+    user_id: userId,
+    project_id: project.id,
+    conversation_id: conversation.id,
+    message_id: assistantMessage.id,
+    type,
+    status: "pending",
+    model_id: model.id,
+    model_label: model.name,
+    pricing_model_id: model.id,
+    prompt,
+    aspect_ratio: String(body.aspectRatio || "4:5"),
+    duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
+    progress: 1,
+    credits: quote.credits,
+    cost_usd: quote.providerCostUsd,
+    credit_floor_usd: model.creditFloorUsd,
+    retail_credit_usd: model.retailCreditUsd,
+    margin_multiplier: model.marginMultiplier,
+    revenue_floor_usd: quote.revenueFloorUsd,
+    gross_margin_floor_usd: quote.grossMarginFloorUsd,
+    requires_confirmation: true,
+    confirmed_at: new Date().toISOString(),
+    moderation_status: moderation.decision,
+    params: {
+      batch: { id: batchId, index: index + 1, total: count },
+      scene: String(body.scene || sceneFromPrompt(prompt)),
+      pricing: quote,
+      pricing_unit: model.pricingUnit,
+      selected_capability: requestedCapability(type, prompt, body),
+      imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url || null,
+      videoUrl: body.videoUrl || body.video_url || null,
+      audioUrl: body.audioUrl || body.audio_url || null,
+      referenceUrls: body.referenceUrls || body.reference_urls || [],
+      firstFrameUrl: body.firstFrameUrl || body.first_frame_url || null,
+      lastFrameUrl: body.lastFrameUrl || body.last_frame_url || null,
+      watermark_required: plan.watermarkRequired,
+      media_retention_days: plan.mediaRetentionDays,
+    },
+  }));
+  const { error: insertError } = await supabase.from("generations").insert(rows);
+  if (insertError) throw insertError;
+
+  const waitUntil = (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime?.waitUntil;
+  const firstWave = launchBatchWave(supabase, userId, batchId);
+  if (waitUntil) waitUntil(firstWave);
+  else await firstWave;
+
+  return {
+    batch: { id: batchId, total: count, type, model: model.name, credits: totalCredits, messageId: assistantMessage.id },
+    projectId: project.id,
+    conversationId: conversation.id,
+  };
+}
+
+async function batchStatus(req: Request, batchId: string) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const { data: items, error } = await supabase.from("generations")
+    .select("*")
+    .eq("user_id", userId)
+    .contains("params", { batch: { id: batchId } })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  if (!items || !items.length) return json({ error: { message: "Batch not found" } }, 404);
+
+  // Synchronise quelques rendus en cours (borne pour rester leger), puis relance une vague si besoin.
+  const running = items.filter((generation) => generation.status === "running");
+  const synced = new Map<string, Record<string, unknown>>();
+  for (const generation of running.slice(0, 5)) {
+    synced.set(String(generation.id), await syncGeneration(supabase, generation));
+  }
+  await launchBatchWave(supabase, userId, batchId);
+
+  const { data: fresh } = await supabase.from("generations")
+    .select("*")
+    .eq("user_id", userId)
+    .contains("params", { batch: { id: batchId } })
+    .order("created_at", { ascending: true });
+  const finalItems = (fresh && fresh.length ? fresh : items).map((generation) => synced.get(String(generation.id)) || generation);
+  const completed = finalItems.filter((generation) => generation.status === "completed").length;
+  const failed = finalItems.filter((generation) => generation.status === "failed" || generation.status === "cancelled").length;
+  const { data: profile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
+  return json({
+    batch: {
+      id: batchId,
+      total: finalItems.length,
+      completed,
+      failed,
+      done: completed + failed >= finalItems.length,
+      items: finalItems.map((generation) => mediaFromGeneration(generation)),
+    },
+    credits: profile?.credits,
+    creditsMax: profile?.credits_max,
+  });
+}
+
 async function chat(req: Request) {
   const body = await bodyJson(req);
   const prompt = String(body.message || "");
@@ -1922,14 +2192,25 @@ async function chat(req: Request) {
         if (pending && !pendingExpired && isConfirmationText(prompt)) {
           await clearPendingGeneration(supabase, profile);
           const pendingBody = (pending.body || {}) as Record<string, unknown>;
-          const reply = "Confirmation recue. Je lance la generation maintenant.";
-          send("text", { delta: reply });
-          const result = await createGeneration(req, {
-            ...pendingBody,
-            projectId: pendingBody.projectId || project.id,
-            confirmed: true,
-          }, reply);
-          send("generation", result.generation);
+          const pendingBatch = Number(pendingBody.batch || 1);
+          if (pendingBatch >= 2) {
+            const reply = `Confirmation recue. Je lance le lot de ${pendingBatch} creations : les rendus vont s'enchainer automatiquement.`;
+            send("text", { delta: reply });
+            const result = await createGenerationBatch(req, {
+              ...pendingBody,
+              projectId: pendingBody.projectId || project.id,
+            }, pendingBatch, reply);
+            send("batch", result.batch);
+          } else {
+            const reply = "Confirmation recue. Je lance la generation maintenant.";
+            send("text", { delta: reply });
+            const result = await createGeneration(req, {
+              ...pendingBody,
+              projectId: pendingBody.projectId || project.id,
+              confirmed: true,
+            }, reply);
+            send("generation", result.generation);
+          }
           const { data: freshProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
           send("credits", { credits: freshProfile?.credits ?? 0 });
           send("done", { ok: true });
@@ -1942,6 +2223,38 @@ async function chat(req: Request) {
         const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body as Record<string, unknown>);
         const quote = quoteFor(model, model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits || 5) : undefined);
         const willGenerate = shouldGenerateMedia(prompt, mode);
+        const batchCount = willGenerate ? batchCountFromPrompt(prompt) : 1;
+
+        if (willGenerate && batchCount >= 2) {
+          await enforceBatchGuards(supabase, profile, plan, model, quote, batchCount);
+          ensureProviderReady(model);
+          await savePendingGeneration(supabase, profile, {
+            body: {
+              projectId: project.id,
+              prompt,
+              type,
+              modelId: model.id,
+              aspectRatio: body.aspectRatio || "4:5",
+              scene: sceneFromPrompt(prompt),
+              duration: type === "video" ? quote.units : undefined,
+              batch: batchCount,
+              imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url,
+              videoUrl: body.videoUrl || body.video_url,
+              audioUrl: body.audioUrl || body.audio_url,
+              referenceUrls: body.referenceUrls || body.reference_urls,
+              firstFrameUrl: body.firstFrameUrl || body.first_frame_url,
+              lastFrameUrl: body.lastFrameUrl || body.last_frame_url,
+            },
+            model: { id: model.id, name: model.name, type: model.type },
+            quote,
+            batch: batchCount,
+          });
+          const batchReply = batchConfirmationMessage(model, quote, batchCount, type);
+          send("text", { delta: batchReply });
+          await saveAssistant(batchReply);
+          send("done", { ok: true, requiresConfirmation: true });
+          return;
+        }
 
         if (willGenerate && quote.requiresConfirmation && body.confirmed !== true) {
           await enforceGenerationGuards(supabase, profile, plan, model, quote);
@@ -2185,6 +2498,8 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
 
 async function syncGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
   if (generation.status === "completed" || generation.status === "failed") return generation;
+  // Item de lot en file d'attente : il attend un slot, la vague suivante le lancera.
+  if (generation.status === "pending" && !generation.fal_job_id && batchInfoOf(generation)) return generation;
   const key = Deno.env.get("FAL_KEY");
   if (key && generation.fal_job_id) {
     try {
@@ -2205,6 +2520,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
           completed_at: new Date().toISOString(),
         }).eq("id", generation.id).select("*").single();
         await debitCredits(supabase, data);
+        await advanceBatch(supabase, data);
         return data;
       }
       const progress = Math.min(95, Math.max(Number(generation.progress || 5), Number(generation.progress || 5) + 8));
@@ -2216,6 +2532,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
         error_message: err instanceof Error ? err.message : "fal.ai status failed",
       }).eq("id", generation.id).select("*").single();
       await refundFailedGeneration(supabase, data);
+      await advanceBatch(supabase, data);
       return data;
     }
   }
@@ -2774,6 +3091,7 @@ async function falWebhook(req: Request) {
       provider_payload: body,
     }).eq("id", generation.id).select("*").single();
     await refundFailedGeneration(supabase, data);
+    await advanceBatch(supabase, data);
     return json({ ok: true });
   }
   if (status === "COMPLETED" || body.output || body.result) {
@@ -2786,6 +3104,7 @@ async function falWebhook(req: Request) {
       completed_at: new Date().toISOString(),
     }).eq("id", generation.id).select("*").single();
     await debitCredits(supabase, data);
+    await advanceBatch(supabase, data);
     return json({ ok: true });
   }
   await supabase.from("generations").update({ status: "running", provider_payload: body }).eq("id", generation.id);
@@ -2807,6 +3126,7 @@ Deno.serve(async (req: Request) => {
     if (first === "bootstrap" && req.method === "GET") return await bootstrap(req);
     if (first === "chat" && req.method === "POST") return await chat(req);
     if (first === "generate" && req.method === "POST") return await directGenerate(req);
+    if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
     if (first === "auth" && route[1]) return await authRoute(req, route[1]);

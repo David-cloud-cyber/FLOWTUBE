@@ -225,6 +225,28 @@ textarea{resize:none;font-family:inherit}
                           </div>
                         </div>
                       </sc-if>
+                      <sc-if value="{{ m.hasBatch }}" hint-placeholder-val="{{ false }}">
+                        <div style="width:100%;max-width:600px;border-radius:18px;padding:16px 18px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09)">
+                          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                            <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#F5F5F4">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D7F94B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>{{ m.batchTitle }}
+                            </div>
+                            <div style="font-size:12px;color:#9a9a9c">{{ m.batchStatus }}</div>
+                          </div>
+                          <div style="margin-top:11px;height:4px;border-radius:3px;background:rgba(255,255,255,.09);overflow:hidden"><div style="{{ m.batchBarStyle }}"></div></div>
+                          <div style="{{ m.batchGridStyle }}">
+                            <sc-for list="{{ m.batchItems }}" as="bi" hint-placeholder-count="0">
+                              <div onClick="{{ bi.onOpen }}" style="{{ bi.cellStyle }}">
+                                <sc-if value="{{ bi.hasResult }}" hint-placeholder-val="{{ false }}">
+                                  <sc-if value="{{ bi.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ bi.url }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
+                                  <sc-if value="{{ bi.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ bi.url }}" muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if>
+                                </sc-if>
+                                <sc-if value="{{ bi.showLabel }}" hint-placeholder-val="{{ true }}"><span style="{{ bi.labelStyle }}">{{ bi.label }}</span></sc-if>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
                     </div>
                   </div>
                 </sc-if>
@@ -927,7 +949,18 @@ class Component extends DCLogic {
     const role = m.role === 'assistant' ? 'agent' : (m.role || 'agent');
     const msg = { id:m.id || ('m'+Date.now()), role, text:m.text || m.content || '' };
     if(m.media) msg.media = this.normalizeMedia(m.media);
+    if(m.batch && m.batch.id) msg.batch = this.normalizeBatch(m.batch);
     return msg;
+  }
+  normalizeBatch(b){
+    return {
+      id: b.id,
+      total: Number(b.total || 0),
+      completed: Number(b.completed || 0),
+      failed: Number(b.failed || 0),
+      done: !!b.done,
+      items: (b.items || []).map(x=>this.normalizeMedia(x)),
+    };
   }
   normalizeMedia(md){
     return {
@@ -1028,9 +1061,10 @@ class Component extends DCLogic {
     if(type === 'text') this.appendAgentText(cid, textId, payload.delta || payload.text || '');
     if(type === 'message') this.addAgentText(cid, payload.text || '');
     if(type === 'generation') this.addGenerationCard(cid, payload.generation || payload);
+    if(type === 'batch') this.addBatchCard(cid, payload.batch || payload);
     if(type === 'credits') this.setState({ credits:Number(payload.credits || this.state.credits) });
     if(type === 'error') this.addAgentText(cid, this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.'));
-    return type === 'text' || type === 'message' || type === 'generation' || type === 'error';
+    return type === 'text' || type === 'message' || type === 'generation' || type === 'batch' || type === 'error';
   }
 
   friendlyError(message, fallback){
@@ -1074,10 +1108,55 @@ class Component extends DCLogic {
   updateMedia(cid, msgId, patch){
     this.updateConv(cid, ms=>ms.map(m=>m.id===msgId ? Object.assign({}, m, { media:Object.assign({}, m.media || {}, patch) }) : m));
   }
+
+  addBatchCard(cid, batch){
+    if(!batch || !batch.id) return;
+    const msgId = batch.messageId || ('b'+batch.id);
+    const data = { id:batch.id, total:Number(batch.total || 0), completed:0, failed:0, done:false, items:[] };
+    this.updateConv(cid, ms=>{
+      const idx = ms.findIndex(m=>m.id===msgId);
+      const next = { id:msgId, role:'agent', text:'', batch:data };
+      if(idx < 0) return ms.concat([next]);
+      return ms.map(m=>m.id===msgId ? Object.assign({}, m, { batch:Object.assign({}, m.batch || {}, data) }) : m);
+    }, ()=>this.pollBatch(cid, msgId, batch.id));
+  }
+  updateBatch(cid, msgId, patch){
+    this.updateConv(cid, ms=>ms.map(m=>m.id===msgId ? Object.assign({}, m, { batch:Object.assign({}, m.batch || {}, patch) }) : m));
+  }
+  pollBatch(cid, msgId, batchId){
+    this.batchPolls = this.batchPolls || {};
+    if(this.batchPolls[batchId]) return;
+    this.batchPolls[batchId] = true;
+    let failures = 0;
+    const run = async ()=>{
+      try{
+        const res = await this.apiFetch('/api/generations/batch/'+encodeURIComponent(batchId));
+        if(res.status === 404 || res.status === 401 || res.status === 403){ delete this.batchPolls[batchId]; return; }
+        if(!res.ok) throw new Error('batch '+res.status);
+        failures = 0;
+        const data = await res.json();
+        const batch = data.batch || {};
+        this.updateBatch(cid, msgId, this.normalizeBatch(Object.assign({ id:batchId }, batch)));
+        if(data.credits !== undefined) this.setState({ credits:Number(data.credits) });
+        if(batch.done){ delete this.batchPolls[batchId]; return; }
+        this.batchPolls[batchId] = setTimeout(run, 3200);
+      }catch(err){
+        failures += 1;
+        if(failures >= 8){
+          delete this.batchPolls[batchId];
+          this.addAgentText(cid, 'Le suivi du lot a été interrompu. Recharge la page pour reprendre la progression.');
+          return;
+        }
+        this.batchPolls[batchId] = setTimeout(run, 5200);
+      }
+    };
+    run();
+  }
   resumeGenerationPolling(conversations){
     Object.keys(conversations || {}).forEach(cid=>{
       (conversations[cid].messages || []).forEach(m=>{
         if(m.media && m.media.generationId && m.media.status === 'loading') this.pollGeneration(cid, m.id, m.media.generationId);
+        if(m.batch && m.batch.id && !m.batch.done) this.pollBatch(cid, m.id, m.batch.id);
       });
     });
   }
@@ -1595,6 +1674,33 @@ class Component extends DCLogic {
         vm.onDownload = ()=>{ if(md.resultUrl && typeof window !== 'undefined') window.open(md.resultUrl, '_blank'); };
         vm.onEdit = ()=>this.setState({ input:'Édite ce média : ', modelMenu:false, ratioMenu:false });
         vm.onNoop = ()=>{};
+      }
+      vm.hasBatch = false;
+      if(m.batch && m.batch.id){
+        const b = m.batch;
+        const totalN = Math.max(1, Number(b.total || 0));
+        const doneN = Number(b.completed || 0), failN = Number(b.failed || 0);
+        const pct = Math.min(100, Math.round(((doneN + failN) / totalN) * 100));
+        vm.hasBatch = true;
+        vm.batchTitle = 'Lot de '+totalN+' créations';
+        vm.batchStatus = b.done
+          ? (failN ? doneN+' réussies · '+failN+' échouées' : 'Terminé · '+doneN+' créations prêtes')
+          : (doneN + failN)+' / '+totalN+' terminées';
+        vm.batchBarStyle = 'height:100%;border-radius:3px;transition:width .4s;background:'+A+';box-shadow:0 0 6px '+A+'99;width:'+pct+'%;';
+        vm.batchGridStyle = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:12px;';
+        vm.batchItems = (b.items || []).map(it=>{
+          const ok = (it.status === 'done') && !!it.resultUrl;
+          const failedItem = it.status === 'failed';
+          return {
+            hasResult: ok, url: it.resultUrl || '',
+            isVideo: it.type === 'video', isImage: it.type !== 'video',
+            showLabel: !ok,
+            label: failedItem ? '✕' : Math.round(it.progress || 0)+'%',
+            labelStyle: 'position:relative;z-index:1;font-size:10px;font-weight:700;color:'+(failedItem ? '#FF2E73' : '#8a8a8c')+';',
+            cellStyle: 'position:relative;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,'+(ok ? '.16' : '.07')+');display:flex;align-items:center;justify-content:center;'+(ok ? 'cursor:pointer;' : ''),
+            onOpen: ()=>{ if(ok && typeof window !== 'undefined') window.open(it.resultUrl, '_blank'); },
+          };
+        });
       }
       return vm;
     });
