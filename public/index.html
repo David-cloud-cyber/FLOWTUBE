@@ -1407,8 +1407,11 @@ class Component extends DCLogic {
     const planIds = ['free','basic','pro','crew','squad','max','scale','enterprise'];
     const businessIds = ['max','scale','enterprise'];
     const teamIds = ['crew','squad'];
-    const allPlans = (this.state.pricingPlans && this.state.pricingPlans.length ? this.state.pricingPlans : fallbackPlans)
+    const apiPlans = (this.state.pricingPlans && this.state.pricingPlans.length ? this.state.pricingPlans : [])
       .filter(p=>planIds.indexOf(p.id) >= 0);
+    const apiIds = apiPlans.map(p=>p.id);
+    const allPlans = apiPlans.slice();
+    fallbackPlans.forEach(fp=>{ if(planIds.indexOf(fp.id) >= 0 && apiIds.indexOf(fp.id) < 0) allPlans.push(fp); });
     const raw = allPlans.filter(p=>this.state.planTab === 'business' ? businessIds.indexOf(p.id) >= 0 : this.state.planTab === 'team' ? teamIds.indexOf(p.id) >= 0 : (businessIds.indexOf(p.id) < 0 && teamIds.indexOf(p.id) < 0));
     const models = this.state.pricingModels && this.state.pricingModels.length ? this.state.pricingModels : fallbackModels;
     const modelById = (id)=>models.find(m=>m.id===id) || fallbackModels.find(m=>m.id===id) || models[0];
