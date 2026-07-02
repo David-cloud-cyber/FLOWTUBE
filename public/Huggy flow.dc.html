@@ -47,9 +47,6 @@ textarea{resize:none;font-family:inherit}
   [data-composer-outer]{justify-content:flex-start!important}
   [data-composer-shell]{width:calc(100% - 52px)!important;max-width:calc(100% - 52px)!important}
   [data-model-button]{max-width:100%!important;width:100%!important;flex:1 1 100%!important}
-  [data-empty-title]{font-size:29px!important;max-width:230px!important}
-  [data-empty-subtitle]{font-size:13.5px!important;max-width:220px!important}
-  [data-suggestions]{max-width:240px!important}
   [data-notification-btn]{display:none!important}
 }
 </style>
@@ -154,19 +151,6 @@ textarea{resize:none;font-family:inherit}
 
     <div ref="{{ setScrollRef }}" onScroll="{{ onChatScroll }}" data-chat-scroll style="flex:1;overflow-y:auto;display:flex;justify-content:center">
       <div style="width:100%;max-width:780px;padding:0 26px">
-        <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
-          <div style="{{ emptyStateStyle }}">
-            <div style="{{ emptyDotStyle }}"></div>
-            <h1 data-empty-title style="font-size:40px;font-weight:700;letter-spacing:-.035em;margin:0;line-height:1.08;max-width:560px">Que veux-tu créer aujourd’hui&nbsp;?</h1>
-            <p data-empty-subtitle style="margin:0;color:#9A9A9C;font-size:15.5px">Décris une idée, ou choisis un point de départ.</p>
-            <div data-suggestions style="display:flex;flex-wrap:wrap;gap:11px;justify-content:center;max-width:540px;margin-top:6px">
-              <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="4">
-                <div onClick="{{ s.onClick }}" style="padding:11px 17px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px;color:#E7E7E6;cursor:pointer;backdrop-filter:blur(8px);transition:all .2s" style-hover="background:rgba(255,255,255,.1);transform:translateY(-1px)">{{ s.label }}</div>
-              </sc-for>
-            </div>
-          </div>
-        </sc-if>
-
         <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex;flex-direction:column;gap:{{ messagesGap }};padding:34px 0 168px">
             <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
@@ -1731,13 +1715,6 @@ class Component extends DCLogic {
       };
     });
 
-    const sugg = [
-      { label:'🖼️  Crée une affiche promo', text:'Crée une affiche promo percutante pour un service local, format réseaux sociaux.' },
-      { label:'🎬  Génère une vidéo produit', text:'Génère une courte vidéo produit cinématique, fond sombre élégant.' },
-      { label:'✍️  Écris-moi un storyboard', text:'Écris-moi un storyboard en 6 plans pour une publicité de 15 secondes.' },
-      { label:'👤  Crée un personnage cohérent', text:'Crée un personnage cohérent que je pourrai réutiliser sur plusieurs plans.' },
-    ].map(s=>({ label:s.label, onClick:()=>this.setState({ input:s.text }) }));
-
     const hov = st.hovered;
     const messages = conv.messages.map((m, mi, arr)=>{
       const isUser = m.role==='user';
@@ -1894,7 +1871,6 @@ class Component extends DCLogic {
     const composerOuterStyle = isBlankProject
       ? 'position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:center;padding:0 26px;pointer-events:none;background:transparent;z-index:4;'
       : 'position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 26px 26px;pointer-events:none;background:linear-gradient(transparent,#08080A 55%);z-index:4;';
-    const emptyStateStyle = 'min-height:calc(100vh - 70px);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:18px;padding:15vh 0 330px;';
     const recommendedPlanId = st.planTab === 'business' ? 'scale' : st.planTab === 'team' ? 'squad' : 'pro';
     const pricingGridStyle = 'display:grid;grid-template-columns:repeat('+Math.min(3, Math.max(1, plans.length))+',minmax(0,1fr));gap:18px;align-items:start;margin-top:28px';
     const authOverlayStyle = 'position:absolute;inset:0;z-index:170;display:flex;align-items:center;justify-content:center;padding:28px;background:rgba(3,3,5,.70);backdrop-filter:blur(12px);animation:pageFade .18s ease both;';
@@ -2036,11 +2012,9 @@ class Component extends DCLogic {
       upgradeLabel: st.isMobile ? 'Pro' : 'Passer Pro',
       creditsFillStyle:'height:100%;width:'+creditPct+'%;border-radius:4px;background:'+A+';box-shadow:0 0 6px '+A+'99;',
       composerOuterStyle,
-      emptyStateStyle,
-      emptyDotStyle:'width:11px;height:11px;border-radius:50%;background:'+A+';box-shadow:0 0 11px '+A+'99;animation:pulseDot 2.4s ease-in-out infinite;',
       avatarStyle:'width:30px;height:30px;flex:0 0 auto;border-radius:50%;margin-top:1px;background:radial-gradient(circle at 34% 30%, '+A+', '+A+'55 42%, #15311f 100%);box-shadow:0 0 9px -5px '+A+', inset 0 0 0 1px rgba(255,255,255,.18);',
-      projects, suggestions:sugg, messages,
-      empty: conv.messages.length===0, notEmpty: conv.messages.length>0,
+      projects, messages,
+      notEmpty: conv.messages.length>0,
       activeTitle: conv.title, messagesGap: dens==='Compact' ? '20px' : '30px',
       input: st.input,
       onInput:(e)=>{ this.resizeComposerInput(e.target); this.setState({ input:e.target.value }); },
@@ -2082,9 +2056,7 @@ class Component extends DCLogic {
       micStyle:'width:38px;height:38px;flex:0 0 auto;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;'+(st.recording
         ? 'background:rgba(255,77,90,.16);border:1px solid rgba(255,77,90,.45);color:#FF4D5A;animation:recPulse 1.4s ease infinite;'
         : 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#C9C9CA;'),
-      composerBoxStyle:'position:relative;z-index:1;background:rgba(16,16,18,.7);backdrop-filter:blur(24px) saturate(1.5);border-radius:24px;padding:12px;transition:border-color .25s,box-shadow .25s;'+(st.inputFocused
-        ? 'border:1px solid '+A+'52;box-shadow:0 26px 70px -24px rgba(0,0,0,.9),0 0 0 3px '+A+'14,inset 0 1px 0 rgba(255,255,255,.05);'
-        : 'border:1px solid rgba(255,255,255,.12);box-shadow:0 26px 70px -24px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);'),
+      composerBoxStyle:'position:relative;z-index:1;background:rgba(16,16,18,.7);backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:12px;box-shadow:0 26px 70px -24px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);',
       composerPlaceholder: composerPlaceholder,
       showComposerMeta: st.inputFocused || composerBatchCount >= 2,
       hasBatchHint: composerBatchCount >= 2,
