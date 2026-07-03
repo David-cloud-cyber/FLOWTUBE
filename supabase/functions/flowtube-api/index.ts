@@ -1663,6 +1663,246 @@ async function anthropicReply(
   }
 }
 
+// ===== Boucle agentique (clone de l'architecture "supercomputer") =====
+// Active via AGENT_LOOP_ENABLED=true. L'agent raisonne, appelle des outils, observe, itere.
+function agentLoopEnabled() {
+  return (Deno.env.get("AGENT_LOOP_ENABLED") || "").toLowerCase() === "true";
+}
+
+const AGENT_LOOP_MAX_ITERATIONS = 4;
+
+const AGENT_TOOLS = [
+  {
+    name: "generate_media",
+    description: "Lance la creation d'un media (image ou video) avec un prompt visuel dense et complet. Si le cout est eleve, une confirmation sera demandee a l'utilisateur — dans ce cas relaie le message de confirmation et arrete-toi.",
+    input_schema: {
+      type: "object",
+      properties: {
+        prompt: { type: "string", description: "Prompt visuel dense: sujet, action, cadrage, lumiere, style" },
+        type: { type: "string", enum: ["image", "video", "image_edit", "audio"] },
+        aspect_ratio: { type: "string", description: "Ex: 9:16, 16:9, 1:1, 4:5" },
+        model_id: { type: "string", description: "Optionnel, laisser vide pour l'orchestrateur auto" },
+      },
+      required: ["prompt", "type"],
+    },
+  },
+  {
+    name: "create_batch",
+    description: "Prepare un lot de 2 a 50 creations declinees automatiquement en formats varies (content plan). Retourne un devis: l'utilisateur devra confirmer avec 'oui' avant le lancement. Relaie le devis et arrete-toi.",
+    input_schema: {
+      type: "object",
+      properties: {
+        prompt: { type: "string", description: "Brief de campagne commun a tout le lot" },
+        count: { type: "integer", minimum: 2, maximum: 50 },
+        type: { type: "string", enum: ["image", "video"] },
+        aspect_ratio: { type: "string" },
+      },
+      required: ["prompt", "count", "type"],
+    },
+  },
+  {
+    name: "remember",
+    description: "Sauvegarde une information durable dans la memoire (marque, preference, fait, style). A utiliser quand l'utilisateur partage une info reutilisable.",
+    input_schema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["brand", "fact", "preference", "style"] },
+        label: { type: "string", description: "Cle courte, ex: 'nom de marque'" },
+        content: { type: "string" },
+      },
+      required: ["kind", "label", "content"],
+    },
+  },
+  {
+    name: "estimate_cost",
+    description: "Estime le cout en credits d'une creation ou d'un lot sans rien lancer.",
+    input_schema: {
+      type: "object",
+      properties: {
+        prompt: { type: "string" },
+        type: { type: "string", enum: ["image", "video", "image_edit", "audio"] },
+        count: { type: "integer", minimum: 1, maximum: 50 },
+      },
+      required: ["type"],
+    },
+  },
+  {
+    name: "list_recent_creations",
+    description: "Liste les dernieres creations du projet (type, statut, prompt, url du resultat) pour t'y referer ou proposer des variations.",
+    input_schema: {
+      type: "object",
+      properties: { limit: { type: "integer", minimum: 1, maximum: 12 } },
+    },
+  },
+];
+
+const AGENT_LOOP_SYSTEM_EXTRA = [
+  "",
+  "Mode agent outille:",
+  "- Tu disposes d'outils reels. Utilise-les au lieu de decrire ce que tu ferais: generate_media pour creer, create_batch pour un lot, remember pour memoriser, estimate_cost pour un devis, list_recent_creations pour retrouver les creations passees.",
+  "- Enchaîne plusieurs outils si la tache le demande (ex: estimer puis generer; memoriser puis creer).",
+  "- Quand un outil renvoie une demande de confirmation de cout, transmets-la clairement a l'utilisateur et arrete-toi la: c'est lui qui confirme.",
+  "- Reste bref entre les appels d'outils: une phrase d'intention avant, une phrase de resultat apres.",
+].join("\n");
+
+type AgentLoopCtx = {
+  req: Request;
+  supabase: ReturnType<typeof adminClient>;
+  userId: string;
+  project: Record<string, unknown>;
+  conversation: Record<string, unknown>;
+  profile: Record<string, unknown>;
+  plan: PlanLimits;
+  body: Record<string, unknown>;
+  send: (event: string, payload: unknown) => void;
+};
+
+async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<string, unknown>): Promise<string> {
+  const { req, supabase, userId, project, plan } = ctx;
+  try {
+    if (name === "generate_media") {
+      const result = await createGeneration(req, {
+        projectId: project.id,
+        prompt: String(input.prompt || ""),
+        type: String(input.type || "image"),
+        modelId: String(input.model_id || "auto"),
+        aspectRatio: String(input.aspect_ratio || ctx.body.aspectRatio || "4:5"),
+        confirmed: false,
+      });
+      ctx.send("generation", result.generation);
+      return `Generation lancee (id ${result.generation.id}, statut ${result.generation.status}). L'utilisateur voit la carte de progression.`;
+    }
+    if (name === "create_batch") {
+      const count = Math.max(2, Math.min(50, Number(input.count || 2)));
+      const prompt = String(input.prompt || "");
+      const type = String(input.type || "video");
+      const catalog = await pricingCatalog(supabase);
+      const model = resolveBestModelFromCatalog(catalog, "auto", type, prompt, {});
+      const quote = quoteFor(model, model.pricingUnit === "second" ? Number(model.defaultUnits || 5) : undefined);
+      await enforceBatchGuards(supabase, ctx.profile, plan, model, quote, count);
+      ensureProviderReady(model);
+      await savePendingGeneration(supabase, ctx.profile, {
+        body: {
+          projectId: project.id,
+          prompt,
+          type,
+          modelId: model.id,
+          aspectRatio: String(input.aspect_ratio || "4:5"),
+          scene: sceneFromPrompt(prompt),
+          duration: type === "video" ? quote.units : undefined,
+          batch: count,
+        },
+        model: { id: model.id, name: model.name, type: model.type },
+        quote,
+        batch: count,
+      });
+      return `Devis pret: ${batchConfirmationMessage(model, quote, count, type)}`;
+    }
+    if (name === "remember") {
+      const kind = ["brand", "fact", "preference", "style"].includes(String(input.kind)) ? String(input.kind) as MemoryDirective["kind"] : "fact";
+      await saveAgentMemory(supabase, userId, String(project.id), [{ kind, label: String(input.label || "note"), content: String(input.content || "") }]);
+      return "Information memorisee durablement.";
+    }
+    if (name === "estimate_cost") {
+      const type = String(input.type || "image");
+      const prompt = String(input.prompt || "");
+      const count = Math.max(1, Math.min(50, Number(input.count || 1)));
+      const catalog = await pricingCatalog(supabase);
+      const model = resolveBestModelFromCatalog(catalog, "auto", type, prompt, {});
+      const quote = quoteFor(model, model.pricingUnit === "second" ? Number(model.defaultUnits || 5) : undefined);
+      return `Modele recommande: ${model.name}. Cout: ${quote.credits} credits par rendu${count > 1 ? `, soit ~${quote.credits * count} credits pour ${count}` : ""}. Solde utilisateur: ${Number(ctx.profile.credits || 0)} credits.`;
+    }
+    if (name === "list_recent_creations") {
+      const limit = Math.max(1, Math.min(12, Number(input.limit || 6)));
+      const { data } = await supabase.from("generations")
+        .select("type,status,prompt,result_url,created_at")
+        .eq("project_id", project.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (!data || !data.length) return "Aucune creation dans ce projet pour le moment.";
+      return data.map((g, i) => `#${data.length - i} [${g.type}/${g.status}] ${String(g.prompt || "").slice(0, 90)}${g.result_url ? ` -> ${g.result_url}` : ""}`).join("\n");
+    }
+    return `Outil inconnu: ${name}.`;
+  } catch (err) {
+    if (err instanceof FlowtubeError) return `Action impossible: ${err.message}`;
+    return `Erreur outil ${name}: ${err instanceof Error ? err.message : "inconnue"}`;
+  }
+}
+
+async function runAgentLoop(
+  ctx: AgentLoopCtx,
+  prompt: string,
+  history: ChatTurn[],
+  context: ReplyContext,
+): Promise<string> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) {
+    const text = fallbackReply(prompt, "image", 0);
+    ctx.send("text", { delta: text });
+    return text;
+  }
+  const contextLines = [
+    context.planName ? `Plan: ${context.planName}.` : "",
+    context.creditsBalance !== undefined ? `Solde: ${context.creditsBalance} credits.` : "",
+    context.projectTitle ? `Projet: ${context.projectTitle}.` : "",
+    context.memory && context.memory.length ? `Memoire durable:\n${context.memory.map((l) => `  - ${l}`).join("\n")}` : "",
+  ].filter(Boolean).join("\n");
+  type ApiContent = Record<string, unknown>;
+  const messages: { role: "user" | "assistant"; content: string | ApiContent[] }[] = [
+    ...history.map((t) => ({ role: t.role, content: t.content as string | ApiContent[] })),
+  ];
+  const firstUser = `${prompt}\n\nContexte interne HuggyFlow:\n${contextLines}`;
+  if (messages.length && messages[messages.length - 1].role === "user") {
+    messages[messages.length - 1].content = `${messages[messages.length - 1].content}\n\n${firstUser}`;
+  } else {
+    messages.push({ role: "user", content: firstUser });
+  }
+
+  let emitted = "";
+  const emit = (text: string) => {
+    if (!text) return;
+    ctx.send("text", { delta: (emitted ? "\n\n" : "") + text });
+    emitted += (emitted ? "\n\n" : "") + text;
+  };
+
+  for (let iteration = 0; iteration < AGENT_LOOP_MAX_ITERATIONS; iteration++) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        max_tokens: 1024,
+        system: HUGGYFLOW_SYSTEM_PROMPT + AGENT_LOOP_SYSTEM_EXTRA,
+        tools: AGENT_TOOLS,
+        messages,
+      }),
+    });
+    if (!response.ok) throw new Error(`anthropic ${response.status}`);
+    const data = await response.json();
+    const content: ApiContent[] = Array.isArray(data.content) ? data.content : [];
+    for (const block of content) {
+      if (block.type === "text" && typeof block.text === "string") emit(block.text.trim());
+    }
+    const toolUses = content.filter((block) => block.type === "tool_use");
+    if (data.stop_reason !== "tool_use" || !toolUses.length) break;
+
+    messages.push({ role: "assistant", content });
+    const results: ApiContent[] = [];
+    for (const toolUse of toolUses) {
+      const output = await executeAgentTool(ctx, String(toolUse.name), cleanMetadata(toolUse.input));
+      results.push({ type: "tool_result", tool_use_id: toolUse.id, content: output });
+    }
+    messages.push({ role: "user", content: results });
+  }
+
+  if (!emitted.trim()) {
+    const text = "C'est note. Dis-moi ce que tu veux produire et je m'en occupe.";
+    ctx.send("text", { delta: text });
+    emitted = text;
+  }
+  return emitted.trim();
+}
+
 function firstString(value: unknown) {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (Array.isArray(value)) {
@@ -2405,6 +2645,23 @@ async function chat(req: Request) {
           }
           const { data: freshProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
           send("credits", { credits: freshProfile?.credits ?? 0 });
+          send("done", { ok: true });
+          return;
+        }
+
+        // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
+        if (agentLoopEnabled()) {
+          const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, send };
+          const loopContext: ReplyContext = {
+            planName: plan.displayName,
+            creditsBalance: Number(profile.credits || 0),
+            projectTitle: String(project.title || ""),
+            memory,
+          };
+          const reply = await runAgentLoop(loopCtx, prompt, history, loopContext);
+          await saveAssistant(reply);
+          const { data: loopProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
+          send("credits", { credits: loopProfile?.credits ?? 0 });
           send("done", { ok: true });
           return;
         }
