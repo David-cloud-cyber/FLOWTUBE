@@ -1618,6 +1618,35 @@ function extractElementDirective(prompt: string): { name: string; kind: string }
   return { name, kind };
 }
 
+// Stage "rapport de cout": bilan credits du projet vs equivalent production traditionnelle.
+function isCostReportRequest(prompt: string) {
+  const t = stripAccents(prompt.toLowerCase());
+  return /\b(rapport de cout|bilan (?:de )?(?:credits|couts?)|combien (?:j'?ai|on a) (?:depense|consomme)|cout total|cost report|resume des couts)\b/.test(t);
+}
+
+function buildCostReport(gens: { type: string; status: string; credits: number }[], creditsBalance: number) {
+  const done = gens.filter((g) => g.status === "completed");
+  const failed = gens.filter((g) => g.status === "failed" || g.status === "cancelled").length;
+  const running = gens.filter((g) => g.status === "pending" || g.status === "running").length;
+  const totalCredits = done.reduce((sum, g) => sum + Number(g.credits || 0), 0);
+  const videos = done.filter((g) => g.type === "video" || g.type === "video_edit" || g.type === "lipsync").length;
+  const images = done.length - videos;
+  // Equivalent traditionnel (fourchettes agence/createurs): ~250-900$/video produite, ~40-120$/visuel.
+  const tradLow = videos * 250 + images * 40;
+  const tradHigh = videos * 900 + images * 120;
+  const lines = [
+    `Bilan de production du projet :`,
+    `- ${done.length} creation${done.length > 1 ? "s" : ""} terminee${done.length > 1 ? "s" : ""} (${videos} video${videos > 1 ? "s" : ""}, ${images} image${images > 1 ? "s" : ""})${running ? `, ${running} en cours` : ""}${failed ? `, ${failed} echouee${failed > 1 ? "s" : ""} (remboursees)` : ""}.`,
+    `- Credits consommes : ${totalCredits}. Solde restant : ${creditsBalance}.`,
+  ];
+  if (done.length) {
+    lines.push(`- Equivalent production traditionnelle (createurs/agence) : environ $${tradLow.toLocaleString("en-US")} a $${tradHigh.toLocaleString("en-US")}.`);
+  } else {
+    lines.push(`- Aucune creation terminee pour l'instant : lance ta premiere production et je tiendrai les comptes.`);
+  }
+  return lines.join("\n");
+}
+
 // Resout une reference ordinale ("le 3e", "la derniere", "le premier", "la meme") vers une creation recente.
 function resolveReferencedIndex(prompt: string, count: number): number | null {
   if (count <= 0) return null;
@@ -2750,6 +2779,18 @@ async function chat(req: Request) {
           }
           const { data: freshProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
           send("credits", { credits: freshProfile?.credits ?? 0 });
+          send("done", { ok: true });
+          return;
+        }
+
+        // Commande "rapport de cout": bilan credits du projet vs equivalent traditionnel.
+        if (isCostReportRequest(prompt)) {
+          const { data: projGens } = await supabase.from("generations")
+            .select("type,status,credits")
+            .eq("project_id", project.id);
+          const costReply = buildCostReport((projGens || []) as { type: string; status: string; credits: number }[], Number(profile.credits || 0));
+          send("text", { delta: costReply });
+          await saveAssistant(costReply);
           send("done", { ok: true });
           return;
         }
