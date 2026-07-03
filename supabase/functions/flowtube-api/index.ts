@@ -2047,7 +2047,66 @@ function concurrencyForType(plan: PlanLimits, type: string) {
 function batchConfirmationMessage(model: PricingModel, quote: PricingQuote, count: number, type: string) {
   const totalCredits = quote.credits * count;
   const label = type === "video" ? "videos" : "creations";
-  return `Lot de ${count} ${label} (${model.name}) : environ ${totalCredits} credits au total (${quote.credits} par rendu). Les rendus s'enchaineront automatiquement par vagues selon ton plan. Confirme avec "oui" pour lancer le lot, ou "annule" pour ignorer.`;
+  const plan = buildContentPlan("", count, type, "");
+  const formats = [...new Set(plan.map((p) => p.format))];
+  const spread = formats.length > 1 ? ` reparties sur ${formats.length} formats (${formats.join(", ")})` : "";
+  return `Lot de ${count} ${label}${spread} (${model.name}) : environ ${totalCredits} credits au total (${quote.credits} par rendu). Les rendus s'enchaineront automatiquement par vagues selon ton plan. Confirme avec "oui" pour lancer le lot, ou "annule" pour ignorer.`;
+}
+
+// Content plan facon "Stage 2": decline un lot en formats varies avec un prompt distinct par item,
+// au lieu de N prompts identiques. Detecte le type de campagne (UGC, ads, photos produit) depuis la demande.
+type PlanItem = { prompt: string; format: string };
+function detectCampaignKind(prompt: string, type: string): "ugc" | "ads" | "product_photo" | "generic" {
+  const t = stripAccents(prompt.toLowerCase());
+  if (/\bugc\b|temoignage|face ?cam|creator|influenceu|avis client|unboxing|review|test produit/.test(t)) return "ugc";
+  if (/\b(pub|pubs|ad|ads|publicit|annonce|meta ads?|tiktok ads?|campagne|creative|hook)\b/.test(t)) return "ads";
+  if (/photo ?produit|packshot|product ?photo|photo(?:s)? de produit|packshots|listing|shopify|e-?commerce/.test(t)) return "product_photo";
+  if (type === "video") return "ugc";
+  return "generic";
+}
+function buildContentPlan(prompt: string, count: number, type: string, scene = ""): PlanItem[] {
+  const base = prompt.trim();
+  const kind = detectCampaignKind(base, type);
+  const decks: Record<string, { format: string; add: string }[]> = {
+    ugc: [
+      { format: "street interview", add: "format micro-trottoir spontane, une personne reagit face camera, cadrage vertical, lumiere naturelle" },
+      { format: "unboxing", add: "format unboxing, mains qui ouvrent le produit, gros plans, rythme satisfaisant" },
+      { format: "product review", add: "format avis produit sincere face camera, hook d'accroche, plans coupes du produit" },
+      { format: "entertainment", add: "format divertissant/challenge, energie haute, situation inattendue, tres partageable" },
+      { format: "asmr", add: "format ASMR, sons du produit mis en avant, gros plans lents et texture" },
+    ],
+    ads: [
+      { format: "hook sensoriel", add: "ouverture sur une sensation forte (son, texture, gros plan), promesse claire, CTA final" },
+      { format: "hook origine", add: "raconte l'origine/la fabrication, plan matiere premiere puis produit fini, storytelling court" },
+      { format: "hook probleme-solution", add: "montre le probleme puis le produit comme solution evidente, avant/apres" },
+      { format: "preuve sociale", add: "temoignage/reactions, chiffres ou avis, ton rassurant et credible" },
+      { format: "hook cadeau/desir", add: "angle desir ou cadeau, mise en scene lifestyle aspirationnelle, fin memorable" },
+    ],
+    product_photo: [
+      { format: "hero fond neutre", add: "packshot studio fond neutre, produit centre, lumiere douce, ombre propre" },
+      { format: "lifestyle", add: "mise en situation lifestyle, decor coherent, produit en usage" },
+      { format: "macro texture", add: "macro sur la matiere et les details, mise au point serree" },
+      { format: "mise a l'echelle", add: "produit en contexte pour montrer la taille et l'usage reel" },
+      { format: "flatlay", add: "vue du dessus type flatlay, composition ordonnee avec accessoires" },
+    ],
+    generic: [
+      { format: "variation 1", add: "premiere direction creative" },
+      { format: "variation 2", add: "cadrage et lumiere alternatifs" },
+      { format: "variation 3", add: "ambiance et palette differentes" },
+      { format: "variation 4", add: "angle et composition nouveaux" },
+    ],
+  };
+  const deck = decks[kind];
+  const sceneHint = scene ? ` Scene: ${scene}.` : "";
+  return Array.from({ length: count }, (_, i) => {
+    const slot = deck[i % deck.length];
+    const n = Math.floor(i / deck.length) + 1;
+    const variant = count > deck.length ? ` (variante ${n})` : "";
+    const prompt = base
+      ? `${base}. Decline en ${slot.format}${variant}: ${slot.add}.${sceneHint}`
+      : `${slot.format}: ${slot.add}.`;
+    return { prompt, format: slot.format };
+  });
 }
 
 async function enforceBatchGuards(
@@ -2171,6 +2230,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     .single();
   if (messageError) throw messageError;
 
+  const contentPlan = buildContentPlan(prompt, count, type, String(body.scene || sceneFromPrompt(prompt)));
   const rows = Array.from({ length: count }, (_, index) => ({
     user_id: userId,
     project_id: project.id,
@@ -2181,7 +2241,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     model_id: model.id,
     model_label: model.name,
     pricing_model_id: model.id,
-    prompt,
+    prompt: contentPlan[index].prompt,
     aspect_ratio: String(body.aspectRatio || "4:5"),
     duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
     progress: 1,
@@ -2196,7 +2256,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     confirmed_at: new Date().toISOString(),
     moderation_status: moderation.decision,
     params: {
-      batch: { id: batchId, index: index + 1, total: count },
+      batch: { id: batchId, index: index + 1, total: count, format: contentPlan[index].format },
       scene: String(body.scene || sceneFromPrompt(prompt)),
       pricing: quote,
       pricing_unit: model.pricingUnit,
