@@ -1379,6 +1379,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Tu recois en contexte interne le plan, le solde de credits, le projet et les dernieres creations: utilise-les pour recommander juste, sans jamais les reciter mecaniquement.",
   "- Tu disposes d'une memoire durable (marque, couleurs, audience, voix, preferences). Applique-la spontanement a chaque creation sans la reafficher. Si l'utilisateur dit \"retiens...\", \"ma marque s'appelle...\", \"mes couleurs sont...\", confirme en une phrase que c'est memorise.",
   "- Si l'utilisateur reference une creation passee (\"refais le 3e\", \"la meme mais...\", \"comme le dernier\"), tu retrouves la creation visee et tu appliques la variation demandee en gardant la coherence.",
+  "- Les elements epingles (@nom) sont des references visuelles reutilisables (personnage, produit, logo, decor). Quand l'utilisateur mentionne @nom, la reference est jointe automatiquement: appuie-toi dessus pour la coherence. Il peut epingler une creation avec \"epingle ca comme @nom\".",
   "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
@@ -1490,6 +1491,7 @@ type ReplyContext = {
   willGenerate?: boolean;
   batchCount?: number;
   memory?: string[];
+  elements?: AgentElement[];
 };
 
 type MemoryDirective = { kind: "brand" | "fact" | "preference" | "style"; label: string; content: string };
@@ -1556,6 +1558,66 @@ async function saveAgentMemory(
   }
 }
 
+// ===== Elements: references nommees reutilisables (@nom) pour la coherence visuelle =====
+type AgentElement = { name: string; kind: string; media_url: string };
+
+async function loadElements(supabase: ReturnType<typeof adminClient>, userId: string): Promise<AgentElement[]> {
+  const { data } = await supabase.from("agent_elements")
+    .select("name,kind,media_url")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(30);
+  return (data || []) as AgentElement[];
+}
+
+async function saveElement(
+  supabase: ReturnType<typeof adminClient>,
+  userId: string,
+  projectId: string | null,
+  name: string,
+  kind: string,
+  mediaUrl: string,
+  sourceGenerationId?: string,
+) {
+  const safeKind = ["character", "product", "logo", "environment", "style", "reference"].includes(kind) ? kind : "reference";
+  const { data: existing } = await supabase.from("agent_elements")
+    .select("id").eq("user_id", userId).ilike("name", name).maybeSingle();
+  if (existing?.id) {
+    await supabase.from("agent_elements").update({ kind: safeKind, media_url: mediaUrl, source_generation_id: sourceGenerationId || null }).eq("id", existing.id);
+  } else {
+    await supabase.from("agent_elements").insert({
+      user_id: userId, project_id: projectId, name, kind: safeKind, media_url: mediaUrl, source_generation_id: sourceGenerationId || null,
+    });
+  }
+}
+
+// Trouve les @mentions du prompt qui correspondent a un element enregistre.
+function resolveElementMentions(prompt: string, elements: AgentElement[]): AgentElement[] {
+  if (!elements.length) return [];
+  const found: AgentElement[] = [];
+  const mentions = [...prompt.matchAll(/@([\p{L}0-9_-]{2,40})/gu)].map((m) => stripAccents(m[1].toLowerCase()));
+  for (const mention of mentions) {
+    const hit = elements.find((el) => stripAccents(el.name.toLowerCase()) === mention);
+    if (hit && !found.includes(hit)) found.push(hit);
+  }
+  return found;
+}
+
+// Detecte "epingle/enregistre/sauvegarde (ca|la derniere|le 2e) comme (element) @nom [type personnage]".
+function extractElementDirective(prompt: string): { name: string; kind: string } | null {
+  const text = stripAccents(prompt.toLowerCase());
+  const m = text.match(/(?:epingle|enregistre|sauvegarde|garde|pin)\b[^\n]{0,60}?\bcomme\s+(?:element\s+)?@?([\p{L}0-9_-]{2,40})/u);
+  if (!m) return null;
+  const name = m[1];
+  const kind = /personnage|character|avatar|visage/.test(text) ? "character"
+    : /produit|product|packshot/.test(text) ? "product"
+    : /logo/.test(text) ? "logo"
+    : /decor|environnement|lieu|scene/.test(text) ? "environment"
+    : /style/.test(text) ? "style"
+    : "reference";
+  return { name, kind };
+}
+
 // Resout une reference ordinale ("le 3e", "la derniere", "le premier", "la meme") vers une creation recente.
 function resolveReferencedIndex(prompt: string, count: number): number | null {
   if (count <= 0) return null;
@@ -1599,6 +1661,7 @@ async function anthropicReply(
     context.creditsBalance !== undefined ? `Solde de credits: ${context.creditsBalance}.` : "",
     context.projectTitle ? `Projet en cours: ${context.projectTitle}.` : "",
     context.memory && context.memory.length ? `Memoire durable (marque, preferences, faits a respecter sans les reciter):\n${context.memory.map((line) => `  - ${line}`).join("\n")}` : "",
+    context.elements && context.elements.length ? `Elements epingles (references reutilisables via @nom): ${context.elements.map((el) => `@${el.name} (${el.kind})`).join(", ")}.` : "",
     context.recentCreations && context.recentCreations.length ? `Dernieres creations du projet:\n${context.recentCreations.map((line) => `  - ${line}`).join("\n")}` : "",
     context.willGenerate ? "Une generation va etre lancee apres ta reponse: annonce la direction creative, pas de question inutile." : "Aucune generation ne sera lancee pour ce message: reponds a la question ou fais avancer le brief.",
     context.batchCount && context.batchCount >= 2 ? `Lot demande: ${context.batchCount} creations.` : "",
@@ -1682,8 +1745,22 @@ const AGENT_TOOLS = [
         type: { type: "string", enum: ["image", "video", "image_edit", "audio"] },
         aspect_ratio: { type: "string", description: "Ex: 9:16, 16:9, 1:1, 4:5" },
         model_id: { type: "string", description: "Optionnel, laisser vide pour l'orchestrateur auto" },
+        reference_element: { type: "string", description: "Nom d'un element epingle a utiliser comme reference visuelle (coherence personnage/produit)" },
       },
       required: ["prompt", "type"],
+    },
+  },
+  {
+    name: "save_element",
+    description: "Epingle une creation terminee comme element nomme reutilisable (@nom) pour garder la coherence visuelle sur les prochains rendus.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Nom court sans espaces, ex: hero, logo-nova" },
+        kind: { type: "string", enum: ["character", "product", "logo", "environment", "style", "reference"] },
+        media_url: { type: "string", description: "URL du media a epingler. Laisser vide pour epingler la derniere creation terminee du projet." },
+      },
+      required: ["name", "kind"],
     },
   },
   {
@@ -1761,16 +1838,42 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
   const { req, supabase, userId, project, plan } = ctx;
   try {
     if (name === "generate_media") {
+      let referenceUrl: string | undefined;
+      if (input.reference_element) {
+        const elements = await loadElements(supabase, userId);
+        const hit = elements.find((el) => stripAccents(el.name.toLowerCase()) === stripAccents(String(input.reference_element).toLowerCase()));
+        if (hit) referenceUrl = hit.media_url;
+      }
       const result = await createGeneration(req, {
         projectId: project.id,
         prompt: String(input.prompt || ""),
         type: String(input.type || "image"),
         modelId: String(input.model_id || "auto"),
         aspectRatio: String(input.aspect_ratio || ctx.body.aspectRatio || "4:5"),
+        imageUrl: referenceUrl,
         confirmed: false,
       });
       ctx.send("generation", result.generation);
-      return `Generation lancee (id ${result.generation.id}, statut ${result.generation.status}). L'utilisateur voit la carte de progression.`;
+      return `Generation lancee (id ${result.generation.id}, statut ${result.generation.status}${referenceUrl ? ", avec reference visuelle" : ""}). L'utilisateur voit la carte de progression.`;
+    }
+    if (name === "save_element") {
+      let mediaUrl = String(input.media_url || "");
+      let sourceId: string | undefined;
+      if (!mediaUrl) {
+        const { data: last } = await supabase.from("generations")
+          .select("id,result_url")
+          .eq("project_id", project.id)
+          .eq("status", "completed")
+          .not("result_url", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!last?.result_url) return "Aucune creation terminee a epingler dans ce projet.";
+        mediaUrl = String(last.result_url);
+        sourceId = String(last.id);
+      }
+      await saveElement(supabase, userId, String(project.id), String(input.name || "reference"), String(input.kind || "reference"), mediaUrl, sourceId);
+      return `Element @${input.name} epingle (${input.kind}). Reutilisable via reference_element ou @${input.name} dans un prompt.`;
     }
     if (name === "create_batch") {
       const count = Math.max(2, Math.min(50, Number(input.count || 2)));
@@ -1846,6 +1949,7 @@ async function runAgentLoop(
     context.creditsBalance !== undefined ? `Solde: ${context.creditsBalance} credits.` : "",
     context.projectTitle ? `Projet: ${context.projectTitle}.` : "",
     context.memory && context.memory.length ? `Memoire durable:\n${context.memory.map((l) => `  - ${l}`).join("\n")}` : "",
+    context.elements && context.elements.length ? `Elements epingles: ${context.elements.map((el) => `@${el.name} (${el.kind})`).join(", ")}.` : "",
   ].filter(Boolean).join("\n");
   type ApiContent = Record<string, unknown>;
   const messages: { role: "user" | "assistant"; content: string | ApiContent[] }[] = [
@@ -2589,6 +2693,7 @@ async function chat(req: Request) {
         const memoryDirectives = extractMemoryDirectives(prompt);
         if (memoryDirectives.length) await saveAgentMemory(supabase, userId, project.id, memoryDirectives);
         const memory = await loadAgentMemory(supabase, userId, project.id);
+        const elements = await loadElements(supabase, userId);
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -2649,6 +2754,31 @@ async function chat(req: Request) {
           return;
         }
 
+        // Commande "epingle ... comme @nom": sauvegarde la creation visee comme element reutilisable.
+        const elementDirective = extractElementDirective(prompt);
+        if (elementDirective) {
+          const { data: convGens } = await supabase.from("generations")
+            .select("id,result_url,created_at")
+            .eq("conversation_id", conversation.id)
+            .eq("status", "completed")
+            .not("result_url", "is", null)
+            .order("created_at", { ascending: true });
+          const list = convGens || [];
+          const idx = resolveReferencedIndex(prompt, list.length);
+          const target = idx !== null && list[idx] ? list[idx] : list[list.length - 1];
+          let elementReply: string;
+          if (!target || !target.result_url) {
+            elementReply = "Je n'ai pas trouve de creation terminee a epingler dans ce projet. Genere d'abord un visuel, puis demande-moi de l'epingler comme element.";
+          } else {
+            await saveElement(supabase, userId, String(project.id), elementDirective.name, elementDirective.kind, String(target.result_url), String(target.id));
+            elementReply = `Element @${elementDirective.name} epingle (${elementDirective.kind}). Mentionne @${elementDirective.name} dans n'importe quel prompt pour le reutiliser comme reference visuelle.`;
+          }
+          send("text", { delta: elementReply });
+          await saveAssistant(elementReply);
+          send("done", { ok: true });
+          return;
+        }
+
         // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
         if (agentLoopEnabled()) {
           const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, send };
@@ -2657,6 +2787,7 @@ async function chat(req: Request) {
             creditsBalance: Number(profile.credits || 0),
             projectTitle: String(project.title || ""),
             memory,
+            elements,
           };
           const reply = await runAgentLoop(loopCtx, prompt, history, loopContext);
           await saveAssistant(reply);
@@ -2749,6 +2880,7 @@ async function chat(req: Request) {
             `${generation.type} (${generation.status}): ${String(generation.prompt || "").slice(0, 110)}`),
           willGenerate,
           memory,
+          elements,
         };
         const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext);
         if (!willGenerate) await saveAssistant(reply);
@@ -2757,6 +2889,14 @@ async function chat(req: Request) {
           // Reference "refais le #N / la meme": on retrouve la creation visee et on reutilise son prompt + resultat.
           let basePrompt = prompt;
           let referencedImage = body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url;
+          // @mentions d'elements epingles: la reference visuelle est jointe et le nom explicite dans le prompt.
+          const mentionedElements = resolveElementMentions(prompt, elements);
+          if (mentionedElements.length) {
+            if (!referencedImage) referencedImage = mentionedElements[0].media_url;
+            for (const el of mentionedElements) {
+              basePrompt = basePrompt.replace(new RegExp(`@${el.name}\\b`, "gi"), `${el.name} (reference ${el.kind} fournie en image)`);
+            }
+          }
           if (/\b(refais|meme|pareil|comme|derniere?|premier|deuxieme|troisieme|precedent|encore|another|same)\b/i.test(stripAccents(prompt.toLowerCase()))) {
             const { data: convGens } = await supabase.from("generations")
               .select("prompt,result_url,type,created_at")
