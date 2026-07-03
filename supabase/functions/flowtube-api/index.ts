@@ -1377,6 +1377,8 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Si l'utilisateur dit \"pareil\", \"refais\", \"la meme mais...\", retrouve la derniere creation evoquee et applique la variation demandee.",
   "- Si l'utilisateur change de sujet, suis-le sans commenter le changement.",
   "- Tu recois en contexte interne le plan, le solde de credits, le projet et les dernieres creations: utilise-les pour recommander juste, sans jamais les reciter mecaniquement.",
+  "- Tu disposes d'une memoire durable (marque, couleurs, audience, voix, preferences). Applique-la spontanement a chaque creation sans la reafficher. Si l'utilisateur dit \"retiens...\", \"ma marque s'appelle...\", \"mes couleurs sont...\", confirme en une phrase que c'est memorise.",
+  "- Si l'utilisateur reference une creation passee (\"refais le 3e\", \"la meme mais...\", \"comme le dernier\"), tu retrouves la creation visee et tu appliques la variation demandee en gardant la coherence.",
   "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
@@ -1487,7 +1489,91 @@ type ReplyContext = {
   recentCreations?: string[];
   willGenerate?: boolean;
   batchCount?: number;
+  memory?: string[];
 };
+
+type MemoryDirective = { kind: "brand" | "fact" | "preference" | "style"; label: string; content: string };
+
+// Detecte une consigne memoire dans le message ("retiens X", "ma marque s'appelle Y", "mes couleurs sont Z").
+function extractMemoryDirectives(prompt: string): MemoryDirective[] {
+  const out: MemoryDirective[] = [];
+  const raw = prompt.trim();
+  const text = stripAccents(raw.toLowerCase());
+  const push = (kind: MemoryDirective["kind"], label: string, content: string) => {
+    const c = content.trim().replace(/^["'«»]+|["'«».]+$/g, "").trim();
+    if (c) out.push({ kind, label, content: c });
+  };
+  // Marque
+  let m = raw.match(/(?:ma marque s['\s]?appelle|le nom de (?:ma|la) marque est|brand name is)\s+([^.,\n]{1,80})/i);
+  if (m) push("brand", "nom de marque", m[1]);
+  m = raw.match(/(?:mes? couleurs?(?: de marque)? (?:sont|est|:)|couleurs? principales?(?: sont| :)?|primary colors? (?:are|:))\s+([^.\n]{1,120})/i);
+  if (m) push("brand", "couleurs de marque", m[1]);
+  m = raw.match(/(?:ma cible|mon audience|mon public(?: cible)?|target audience is)(?:\s+est)?\s*:?\s+([^.\n]{1,140})/i);
+  if (m) push("brand", "audience cible", m[1]);
+  m = raw.match(/(?:ma tagline est|slogan\s*:|tagline is)\s+([^.\n]{1,120})/i);
+  if (m) push("brand", "tagline", m[1]);
+  m = raw.match(/(?:ma voix(?: de marque)? est|brand voice is|ton de voix\s*:?)\s+([^.\n]{1,140})/i);
+  if (m) push("brand", "voix de marque", m[1]);
+  // Consigne explicite generique: "retiens / souviens-toi / note / remember (that) ..."
+  if (/\b(retiens|souviens[- ]toi|note (?:que|bien)|remember(?: that| this)?|garde en memoire)\b/.test(text)) {
+    m = raw.match(/(?:retiens(?:\s+que|\s+bien|\s+ceci\s*:)?|souviens[- ]toi(?:\s+que)?|note (?:que|bien)|remember(?: that| this)?(?:\s*:)?|garde en memoire(?:\s+que)?)\s+([^\n]{2,240})/i);
+    if (m && !out.length) push("fact", "note", m[1]);
+    else if (m) push("fact", "note", m[1]);
+  }
+  return out;
+}
+
+async function loadAgentMemory(
+  supabase: ReturnType<typeof adminClient>,
+  userId: string,
+  projectId?: string,
+): Promise<string[]> {
+  let query = supabase.from("agent_memory").select("kind,label,content,project_id,updated_at").eq("user_id", userId);
+  if (projectId) query = query.or(`project_id.is.null,project_id.eq.${projectId}`);
+  else query = query.is("project_id", null);
+  const { data } = await query.order("updated_at", { ascending: false }).limit(40);
+  return (data || []).map((row) => `${row.label}: ${row.content}`);
+}
+
+async function saveAgentMemory(
+  supabase: ReturnType<typeof adminClient>,
+  userId: string,
+  projectId: string | null,
+  directives: MemoryDirective[],
+) {
+  for (const d of directives) {
+    const scope = d.kind === "brand" ? null : projectId; // la marque est globale (couche 1)
+    let query = supabase.from("agent_memory").select("id").eq("user_id", userId).ilike("label", d.label);
+    query = scope ? query.eq("project_id", scope) : query.is("project_id", null);
+    const { data: existing } = await query.maybeSingle();
+    if (existing?.id) {
+      await supabase.from("agent_memory").update({ content: d.content, kind: d.kind }).eq("id", existing.id);
+    } else {
+      await supabase.from("agent_memory").insert({
+        user_id: userId, project_id: scope, kind: d.kind, label: d.label, content: d.content,
+      });
+    }
+  }
+}
+
+// Resout une reference ordinale ("le 3e", "la derniere", "le premier", "la meme") vers une creation recente.
+function resolveReferencedIndex(prompt: string, count: number): number | null {
+  if (count <= 0) return null;
+  const text = stripAccents(prompt.toLowerCase());
+  if (/\b(la|le)?\s*(derniere?|dernier|precedent(?:e)?|last|previous)\b/.test(text)) return count - 1;
+  if (/\b(le|la)?\s*(premier(?:e)?|first)\b/.test(text)) return 0;
+  const ord = text.match(/\b(\d{1,2})\s*(?:e|er|eme|ere|nd|rd|th)?\b/);
+  if (ord) {
+    const n = parseInt(ord[1], 10);
+    if (n >= 1 && n <= count) return n - 1;
+  }
+  const words: Record<string, number> = { premier: 1, premiere: 1, deuxieme: 2, second: 2, seconde: 2, troisieme: 3, quatrieme: 4, cinquieme: 5 };
+  for (const [w, n] of Object.entries(words)) {
+    if (new RegExp(`\\b${w}\\b`).test(text) && n <= count) return n - 1;
+  }
+  if (/\b(la meme|le meme|pareil|comme (?:ca|avant|celle|celui)|same (?:one|thing))\b/.test(text)) return count - 1;
+  return null;
+}
 
 async function anthropicReply(
   prompt: string,
@@ -1512,6 +1598,7 @@ async function anthropicReply(
     context.planName ? `Plan de l'utilisateur: ${context.planName}.` : "",
     context.creditsBalance !== undefined ? `Solde de credits: ${context.creditsBalance}.` : "",
     context.projectTitle ? `Projet en cours: ${context.projectTitle}.` : "",
+    context.memory && context.memory.length ? `Memoire durable (marque, preferences, faits a respecter sans les reciter):\n${context.memory.map((line) => `  - ${line}`).join("\n")}` : "",
     context.recentCreations && context.recentCreations.length ? `Dernieres creations du projet:\n${context.recentCreations.map((line) => `  - ${line}`).join("\n")}` : "",
     context.willGenerate ? "Une generation va etre lancee apres ta reponse: annonce la direction creative, pas de question inutile." : "Aucune generation ne sera lancee pour ce message: reponds a la question ou fais avancer le brief.",
     context.batchCount && context.batchCount >= 2 ? `Lot demande: ${context.batchCount} creations.` : "",
@@ -2199,6 +2286,9 @@ async function chat(req: Request) {
         const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
         await enforcePromptPolicy(supabase, profile, prompt, project.id);
         const history = await conversationHistory(supabase, conversation.id);
+        const memoryDirectives = extractMemoryDirectives(prompt);
+        if (memoryDirectives.length) await saveAgentMemory(supabase, userId, project.id, memoryDirectives);
+        const memory = await loadAgentMemory(supabase, userId, project.id);
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -2341,21 +2431,39 @@ async function chat(req: Request) {
           recentCreations: (recentGens || []).map((generation) =>
             `${generation.type} (${generation.status}): ${String(generation.prompt || "").slice(0, 110)}`),
           willGenerate,
+          memory,
         };
         const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext);
         if (!willGenerate) await saveAssistant(reply);
 
         if (willGenerate) {
+          // Reference "refais le #N / la meme": on retrouve la creation visee et on reutilise son prompt + resultat.
+          let basePrompt = prompt;
+          let referencedImage = body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url;
+          if (/\b(refais|meme|pareil|comme|derniere?|premier|deuxieme|troisieme|precedent|encore|another|same)\b/i.test(stripAccents(prompt.toLowerCase()))) {
+            const { data: convGens } = await supabase.from("generations")
+              .select("prompt,result_url,type,created_at")
+              .eq("conversation_id", conversation.id)
+              .order("created_at", { ascending: true });
+            const list = convGens || [];
+            const idx = resolveReferencedIndex(prompt, list.length);
+            if (idx !== null && list[idx]) {
+              const ref = list[idx];
+              // Si le message est court/vague, on herite du prompt de reference (variation demandee en plus).
+              if (prompt.trim().split(/\s+/).length <= 8 && ref.prompt) basePrompt = `${ref.prompt}. Variation demandee: ${prompt}`;
+              if (!referencedImage && ref.result_url) referencedImage = ref.result_url;
+            }
+          }
           const result = await createGeneration(req, {
             projectId: project.id,
-            prompt,
+            prompt: basePrompt,
             type,
             modelId: model.id,
             aspectRatio: body.aspectRatio,
-            scene: sceneFromPrompt(prompt),
+            scene: sceneFromPrompt(basePrompt),
             duration: model.pricingUnit === "second" ? quote.units : undefined,
             confirmed: body.confirmed === true || !quote.requiresConfirmation,
-            imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url,
+            imageUrl: referencedImage,
             videoUrl: body.videoUrl || body.video_url,
             audioUrl: body.audioUrl || body.audio_url,
             referenceUrls: body.referenceUrls || body.reference_urls,
