@@ -1380,6 +1380,8 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Tu disposes d'une memoire durable (marque, couleurs, audience, voix, preferences). Applique-la spontanement a chaque creation sans la reafficher. Si l'utilisateur dit \"retiens...\", \"ma marque s'appelle...\", \"mes couleurs sont...\", confirme en une phrase que c'est memorise.",
   "- Si l'utilisateur reference une creation passee (\"refais le 3e\", \"la meme mais...\", \"comme le dernier\"), tu retrouves la creation visee et tu appliques la variation demandee en gardant la coherence.",
   "- Les elements epingles (@nom) sont des references visuelles reutilisables (personnage, produit, logo, decor). Quand l'utilisateur mentionne @nom, la reference est jointe automatiquement: appuie-toi dessus pour la coherence. Il peut epingler une creation avec \"epingle ca comme @nom\".",
+  "- Tu apprends des skills: quand un enchainement gagnant se repete, tu peux l'enregistrer comme playbook reutilisable (\"cree un skill X pour...\"). Quand un skill appris correspond a la demande, tu recois son playbook en contexte: applique-le. L'utilisateur peut aussi le lancer avec /nom.",
+  "- Tu peux analyser un visuel de reference (hook, composition, angle) et lire une page web (produit/marque/concurrent) pour en tirer un brief avant de creer. Fais la recherche AVANT de generer quand c'est pertinent.",
   "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
@@ -1492,6 +1494,7 @@ type ReplyContext = {
   batchCount?: number;
   memory?: string[];
   elements?: AgentElement[];
+  learnedSkill?: string;
 };
 
 type MemoryDirective = { kind: "brand" | "fact" | "preference" | "style"; label: string; content: string };
@@ -1618,6 +1621,200 @@ function extractElementDirective(prompt: string): { name: string; kind: string }
   return { name, kind };
 }
 
+// ===== Skills auto-appris: playbooks reutilisables (couche "ceiling" de la memoire) =====
+type AgentSkill = { name: string; triggers: string[]; playbook: string };
+
+async function loadLearnedSkills(supabase: ReturnType<typeof adminClient>, userId: string): Promise<AgentSkill[]> {
+  const { data } = await supabase.from("agent_skills")
+    .select("name,triggers,playbook")
+    .eq("user_id", userId)
+    .order("uses", { ascending: false })
+    .limit(30);
+  return (data || []).map((row) => ({
+    name: String(row.name),
+    triggers: Array.isArray(row.triggers) ? row.triggers.map(String) : [],
+    playbook: String(row.playbook || ""),
+  }));
+}
+
+async function saveLearnedSkill(
+  supabase: ReturnType<typeof adminClient>,
+  userId: string,
+  projectId: string | null,
+  name: string,
+  triggers: string[],
+  playbook: string,
+  autoLearned: boolean,
+) {
+  const { data: existing } = await supabase.from("agent_skills")
+    .select("id").eq("user_id", userId).ilike("name", name).maybeSingle();
+  if (existing?.id) {
+    await supabase.from("agent_skills").update({ triggers, playbook, auto_learned: autoLearned }).eq("id", existing.id);
+  } else {
+    await supabase.from("agent_skills").insert({ user_id: userId, project_id: projectId, name, triggers, playbook, auto_learned: autoLearned });
+  }
+}
+
+// Selectionne le meilleur skill appris selon les mots-cles de la demande (ou une invocation /nom).
+function matchLearnedSkill(prompt: string, skills: AgentSkill[]): AgentSkill | null {
+  if (!skills.length) return null;
+  const text = stripAccents(prompt.toLowerCase());
+  const slash = text.match(/(?:^|\s)\/([\p{L}0-9_-]{2,40})/u);
+  if (slash) {
+    const invoked = skills.find((s) => stripAccents(s.name.toLowerCase()) === slash[1]);
+    if (invoked) return invoked;
+  }
+  let best: AgentSkill | null = null;
+  let bestScore = 0;
+  for (const skill of skills) {
+    let score = 0;
+    for (const trigger of skill.triggers) {
+      const t = stripAccents(String(trigger).toLowerCase()).trim();
+      if (t && text.includes(t)) score += t.length > 6 ? 2 : 1;
+    }
+    if (stripAccents(skill.name.toLowerCase()) && text.includes(stripAccents(skill.name.toLowerCase()))) score += 2;
+    if (score > bestScore) { bestScore = score; best = skill; }
+  }
+  return bestScore >= 2 ? best : null;
+}
+
+// Detecte "cree/enregistre un skill (nomme) X [pour ...]" ou "retiens ce workflow comme skill X".
+function extractSkillDirective(prompt: string): { name: string; triggers: string[] } | null {
+  const text = stripAccents(prompt.toLowerCase());
+  const m = text.match(/(?:cree|enregistre|sauvegarde|retiens)\b[^\n]{0,40}?\bskill\s+(?:nomme\s+|appele\s+|:\s*)?@?([\p{L}0-9_-]{2,40})/u);
+  if (!m) return null;
+  const name = m[1];
+  // Triggers = mots significatifs apres "pour"/"quand", sinon le nom.
+  const after = text.split(new RegExp(`skill\\s+(?:nomme\\s+|appele\\s+|:\\s*)?@?${name}`, "u"))[1] || "";
+  const triggers = [...new Set(after.replace(/[^\p{L}0-9\s-]/gu, " ").split(/\s+/).filter((w) => w.length >= 4 && !/pour|quand|avec|dans|cette|comme|workflow/.test(w)))].slice(0, 6);
+  return { name, triggers: triggers.length ? triggers : [name] };
+}
+
+// ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
+async function anthropicVision(imageUrl: string, question: string): Promise<string> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return "";
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: DEFAULT_MODEL,
+      max_tokens: 900,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "url", url: imageUrl } },
+          { type: "text", text: question },
+        ],
+      }],
+    }),
+  });
+  if (!response.ok) throw new Error(`anthropic vision ${response.status}`);
+  const data = await response.json();
+  return (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
+}
+
+const VISION_ANALYSIS_QUESTION = [
+  "Tu es directeur creatif. Analyse ce visuel/creative comme un pro de la performance, pas en resume descriptif.",
+  "Donne un breakdown actionnable: 1) le hook (ce qui capte l'oeil en premier et pourquoi), 2) la composition et le cadrage,",
+  "3) la lumiere/palette, 4) le message et l'angle, 5) ce qui le rend efficace ou faible, 6) comment m'en inspirer pour ma propre creation.",
+  "Sois concret et court, en francais.",
+].join(" ");
+
+function isVisualAnalysisRequest(prompt: string) {
+  const t = stripAccents(prompt.toLowerCase());
+  return /\b(analyse|analyze|decortique|breakdown|regarde|etudie|inspire[- ]toi de)\b/.test(t) &&
+    /\b(image|visuel|photo|pub|publicite|creative|ad|affiche|video|clip|reference|concurrent|hook)\b/.test(t);
+}
+
+async function runVisualAnalysis(url: string, isVideo: boolean): Promise<string> {
+  try {
+    if (!isVideo) {
+      const out = await anthropicVision(url, VISION_ANALYSIS_QUESTION);
+      if (out) return out;
+    }
+  } catch (_err) { /* degrade ci-dessous */ }
+  // Video (Anthropic ne lit pas la video) ou echec: degrade honnete.
+  return isVideo
+    ? "Je peux analyser les images directement (hook, composition, lumiere, angle). Pour une video, envoie-moi une capture d'un plan cle et je te fais le breakdown complet du hook et du pacing."
+    : "Je n'ai pas pu lire ce visuel. Verifie que l'URL de l'image est publique et reessaie.";
+}
+
+// ===== Recherche web: lit une page (produit/marque/concurrent) et en tire un brief =====
+function htmlToText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 6000);
+}
+
+async function fetchPageText(url: string): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 HuggyFlowBot", Accept: "text/html" }, signal: controller.signal });
+    if (!res.ok) throw new Error(`fetch ${res.status}`);
+    const html = await res.text();
+    return htmlToText(html);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractFirstUrl(prompt: string): string | null {
+  const m = prompt.match(/https?:\/\/[^\s<>"']+/i);
+  return m ? m[0] : null;
+}
+
+function isResearchRequest(prompt: string) {
+  const t = stripAccents(prompt.toLowerCase());
+  return /\b(etudie|analyse|recherche|research|apprends|learn|brief|tendance|trend|scrape|lis|inspire[- ]toi|concurrent|marche)\b/.test(t);
+}
+
+const RESEARCH_BRIEF_INSTRUCTION = [
+  "A partir du contenu de page ci-dessous, produis un brief de recherche exploitable en francais:",
+  "1) Ce que fait la marque/produit (positionnement, offre, audience deduite),",
+  "2) Angles et messages cles reperables, 3) 3 a 5 idees de creations (format, hook, scene) alignees sur ce qui est vu,",
+  "4) Ce qui manque / opportunites. Sois concret et court. N'invente pas ce qui n'est pas dans la page.",
+].join(" ");
+
+async function runWebResearch(url: string, userPrompt: string): Promise<string> {
+  let pageText = "";
+  try {
+    pageText = await fetchPageText(url);
+  } catch (_err) {
+    return `Je n'ai pas pu ouvrir ${url} (page privee, bloquee ou indisponible). Colle le texte de la page ou une autre URL et je te fais le brief.`;
+  }
+  if (!pageText || pageText.length < 40) {
+    return `La page ${url} n'expose pas de texte lisible (souvent une SPA/JS). Donne-moi une URL avec du contenu HTML ou colle le texte.`;
+  }
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        max_tokens: 1000,
+        system: HUGGYFLOW_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: `${RESEARCH_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nContenu de ${url}:\n${pageText}` }],
+      }),
+    });
+    if (!response.ok) throw new Error(`anthropic ${response.status}`);
+    const data = await response.json();
+    const brief = (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
+    return brief || `Contenu recupere de ${url}.`;
+  } catch (_err) {
+    return `J'ai lu ${url} mais l'analyse est indisponible pour le moment. Reessaie dans un instant.`;
+  }
+}
+
 // Stage "rapport de cout": bilan credits du projet vs equivalent production traditionnelle.
 function isCostReportRequest(prompt: string) {
   const t = stripAccents(prompt.toLowerCase());
@@ -1691,6 +1888,7 @@ async function anthropicReply(
     context.projectTitle ? `Projet en cours: ${context.projectTitle}.` : "",
     context.memory && context.memory.length ? `Memoire durable (marque, preferences, faits a respecter sans les reciter):\n${context.memory.map((line) => `  - ${line}`).join("\n")}` : "",
     context.elements && context.elements.length ? `Elements epingles (references reutilisables via @nom): ${context.elements.map((el) => `@${el.name} (${el.kind})`).join(", ")}.` : "",
+    context.learnedSkill ? `Skill appris a appliquer pour cette demande:\n${context.learnedSkill}` : "",
     context.recentCreations && context.recentCreations.length ? `Dernieres creations du projet:\n${context.recentCreations.map((line) => `  - ${line}`).join("\n")}` : "",
     context.willGenerate ? "Une generation va etre lancee apres ta reponse: annonce la direction creative, pas de question inutile." : "Aucune generation ne sera lancee pour ce message: reponds a la question ou fais avancer le brief.",
     context.batchCount && context.batchCount >= 2 ? `Lot demande: ${context.batchCount} creations.` : "",
@@ -1840,6 +2038,40 @@ const AGENT_TOOLS = [
       properties: { limit: { type: "integer", minimum: 1, maximum: 12 } },
     },
   },
+  {
+    name: "analyze_reference",
+    description: "Analyse une image/pub de reference (URL) et renvoie un breakdown creatif: hook, composition, lumiere, angle, ce qui marche. Utilise pour etudier une creative concurrente.",
+    input_schema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "URL publique de l'image a analyser" },
+        is_video: { type: "boolean" },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "research_url",
+    description: "Lit une page web (produit, marque, concurrent) et en tire un brief de recherche exploitable. Utilise pour etudier une marque a partir de son URL avant de creer.",
+    input_schema: {
+      type: "object",
+      properties: { url: { type: "string" } },
+      required: ["url"],
+    },
+  },
+  {
+    name: "save_skill",
+    description: "Enregistre un workflow reutilisable comme skill nomme (playbook + declencheurs). A utiliser quand un enchainement gagnant merite d'etre rejoue plus tard.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        triggers: { type: "array", items: { type: "string" } },
+        playbook: { type: "string", description: "La methode etape par etape a rejouer" },
+      },
+      required: ["name", "playbook"],
+    },
+  },
 ];
 
 const AGENT_LOOP_SYSTEM_EXTRA = [
@@ -1954,6 +2186,21 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
       if (!data || !data.length) return "Aucune creation dans ce projet pour le moment.";
       return data.map((g, i) => `#${data.length - i} [${g.type}/${g.status}] ${String(g.prompt || "").slice(0, 90)}${g.result_url ? ` -> ${g.result_url}` : ""}`).join("\n");
     }
+    if (name === "analyze_reference") {
+      const url = String(input.url || "");
+      if (!url) return "Aucune URL fournie a analyser.";
+      return await runVisualAnalysis(url, Boolean(input.is_video) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url));
+    }
+    if (name === "research_url") {
+      const url = String(input.url || "");
+      if (!/^https?:\/\//i.test(url)) return "URL invalide pour la recherche.";
+      return await runWebResearch(url, String(ctx.body.message || ""));
+    }
+    if (name === "save_skill") {
+      const triggers = Array.isArray(input.triggers) ? input.triggers.map(String).slice(0, 8) : [String(input.name)];
+      await saveLearnedSkill(supabase, userId, String(project.id), String(input.name || "skill"), triggers, String(input.playbook || ""), true);
+      return `Skill "${input.name}" enregistre et reutilisable (declencheurs: ${triggers.join(", ")}).`;
+    }
     return `Outil inconnu: ${name}.`;
   } catch (err) {
     if (err instanceof FlowtubeError) return `Action impossible: ${err.message}`;
@@ -1979,6 +2226,7 @@ async function runAgentLoop(
     context.projectTitle ? `Projet: ${context.projectTitle}.` : "",
     context.memory && context.memory.length ? `Memoire durable:\n${context.memory.map((l) => `  - ${l}`).join("\n")}` : "",
     context.elements && context.elements.length ? `Elements epingles: ${context.elements.map((el) => `@${el.name} (${el.kind})`).join(", ")}.` : "",
+    context.learnedSkill ? `Skill appris a appliquer:\n${context.learnedSkill}` : "",
   ].filter(Boolean).join("\n");
   type ApiContent = Record<string, unknown>;
   const messages: { role: "user" | "assistant"; content: string | ApiContent[] }[] = [
@@ -2723,6 +2971,7 @@ async function chat(req: Request) {
         if (memoryDirectives.length) await saveAgentMemory(supabase, userId, project.id, memoryDirectives);
         const memory = await loadAgentMemory(supabase, userId, project.id);
         const elements = await loadElements(supabase, userId);
+        const learnedSkills = await loadLearnedSkills(supabase, userId);
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -2783,6 +3032,56 @@ async function chat(req: Request) {
           return;
         }
 
+        // Commande "cree un skill ...": l'utilisateur enregistre un workflow reutilisable.
+        const skillDirective = extractSkillDirective(prompt);
+        if (skillDirective) {
+          const playbook = prompt.trim();
+          await saveLearnedSkill(supabase, userId, String(project.id), skillDirective.name, skillDirective.triggers, playbook, false);
+          const skillReply = `Skill "${skillDirective.name}" enregistre (declencheurs: ${skillDirective.triggers.join(", ")}). Je l'appliquerai quand le sujet reviendra, ou lance-le avec /${skillDirective.name}.`;
+          send("text", { delta: skillReply });
+          await saveAssistant(skillReply);
+          send("done", { ok: true });
+          return;
+        }
+
+        // Analyse visuelle: breakdown d'une image/pub de reference (attachee, @element, ou derniere creation).
+        if (isVisualAnalysisRequest(prompt)) {
+          const attached = String(body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url || body.videoUrl || body.video_url || "");
+          const mentioned = resolveElementMentions(prompt, elements);
+          let target = attached || (mentioned[0] && mentioned[0].media_url) || "";
+          let isVideo = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(target) || !!(body.videoUrl || body.video_url);
+          if (!target) {
+            const { data: last } = await supabase.from("generations")
+              .select("result_url,type").eq("project_id", project.id).eq("status", "completed")
+              .not("result_url", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
+            if (last?.result_url) { target = String(last.result_url); isVideo = String(last.type) === "video"; }
+          }
+          if (!target) {
+            const noRef = "Envoie-moi l'image ou la pub a analyser (piece jointe, @element epingle, ou reference une creation du projet) et je te fais le breakdown du hook, de la compo et de l'angle.";
+            send("text", { delta: noRef });
+            await saveAssistant(noRef);
+            send("done", { ok: true });
+            return;
+          }
+          send("text", { delta: "J'analyse le visuel..." });
+          const analysis = await runVisualAnalysis(target, isVideo);
+          send("text", { delta: analysis });
+          await saveAssistant(analysis);
+          send("done", { ok: true });
+          return;
+        }
+
+        // Recherche web: lit une page (produit/marque/concurrent) et en tire un brief.
+        const researchUrl = extractFirstUrl(prompt);
+        if (researchUrl && isResearchRequest(prompt)) {
+          send("text", { delta: `Je lis ${researchUrl}...` });
+          const brief = await runWebResearch(researchUrl, prompt);
+          send("text", { delta: brief });
+          await saveAssistant(brief);
+          send("done", { ok: true });
+          return;
+        }
+
         // Commande "rapport de cout": bilan credits du projet vs equivalent traditionnel.
         if (isCostReportRequest(prompt)) {
           const { data: projGens } = await supabase.from("generations")
@@ -2823,12 +3122,14 @@ async function chat(req: Request) {
         // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
         if (agentLoopEnabled()) {
           const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, send };
+          const loopMatched = matchLearnedSkill(prompt, learnedSkills);
           const loopContext: ReplyContext = {
             planName: plan.displayName,
             creditsBalance: Number(profile.credits || 0),
             projectTitle: String(project.title || ""),
             memory,
             elements,
+            learnedSkill: loopMatched ? `${loopMatched.name}: ${loopMatched.playbook}`.slice(0, 800) : undefined,
           };
           const reply = await runAgentLoop(loopCtx, prompt, history, loopContext);
           await saveAssistant(reply);
@@ -2922,6 +3223,7 @@ async function chat(req: Request) {
           willGenerate,
           memory,
           elements,
+          learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
         const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext);
         if (!willGenerate) await saveAssistant(reply);
