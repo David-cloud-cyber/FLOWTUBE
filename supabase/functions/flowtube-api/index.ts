@@ -3535,6 +3535,48 @@ async function createProjectRoute(req: Request) {
   return json({ project: { id: result.project.id, title: result.project.title, conversationId: result.conversation.id } });
 }
 
+async function memoryListRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const { data, error } = await supabase.from("agent_memory")
+    .select("id,kind,label,content,project_id,updated_at")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return json({
+    memory: (data || []).map((row) => ({
+      id: row.id, kind: row.kind, label: row.label, content: row.content,
+      scope: row.project_id ? "project" : "brand", updatedAt: row.updated_at,
+    })),
+  });
+}
+
+async function memoryDeleteRoute(req: Request, memoryId: string) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const { error } = await supabase.from("agent_memory").delete().eq("id", memoryId).eq("user_id", userId);
+  if (error) throw error;
+  return json({ ok: true });
+}
+
+async function skillsListRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const built_in = HUGGYFLOW_SKILL_LIBRARY.map((skill) => ({
+    id: skill.id, label: skill.label, use: skill.use, autoLearned: false,
+  }));
+  const { data } = await supabase.from("agent_skills")
+    .select("id,name,playbook,auto_learned,uses,updated_at")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(50);
+  const learned = (data || []).map((row) => ({
+    id: row.id, label: row.name, use: row.playbook, autoLearned: row.auto_learned, uses: row.uses,
+  }));
+  return json({ builtIn: built_in, learned });
+}
+
 async function authRoute(req: Request, action: string) {
   const body = await bodyJson(req);
   const supabase = adminClient();
@@ -4092,6 +4134,9 @@ Deno.serve(async (req: Request) => {
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
+    if (first === "memory" && route[1] && req.method === "DELETE") return await memoryDeleteRoute(req, route[1]);
+    if (first === "memory" && !route[1] && req.method === "GET") return await memoryListRoute(req);
+    if (first === "skills" && req.method === "GET") return await skillsListRoute(req);
     if (first === "auth" && route[1]) return await authRoute(req, route[1]);
     if (first === "billing" && route[1] === "checkout" && req.method === "POST") return await createCheckout(req);
     if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);
