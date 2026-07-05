@@ -3897,7 +3897,9 @@ async function createCheckout(req: Request) {
   const type = String(body.type || (body.creditPackId ? "credits" : "subscription"));
   const successUrl = String(body.successUrl || `${APP_BASE_URL}/?checkout=success`);
   const cancelUrl = String(body.cancelUrl || `${APP_BASE_URL}/?checkout=cancelled`);
-  const provider = String(body.provider || Deno.env.get("BILLING_PROVIDER") || "stripe").toLowerCase();
+  const provider = String(
+    body.provider || Deno.env.get("BILLING_PROVIDER") || (moneyFusionCheckoutUrl() ? "moneyfusion" : "stripe"),
+  ).toLowerCase();
 
   if (provider === "moneyfusion" || provider === "fusionpay") {
     return await createMoneyFusionCheckout(supabase, profile, body as Record<string, unknown>, type, interval, successUrl, cancelUrl);
