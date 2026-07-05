@@ -1050,7 +1050,7 @@ input:focus,textarea:focus{outline:none}
           </div>
           <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#CCCED2;white-space:pre-wrap;word-break:break-word">curl https://api.huggyflow.com/v1/generate \
   -H "Authorization: Bearer $HF_API_KEY" \
-  -d model="gpt-image-2" \
+  -d agent_model="auto" \
   -d prompt="Packshot sur fond crème, lumière douce"</pre>
         </div>
 
@@ -1537,7 +1537,7 @@ class Component extends DCLogic {
     input: '',
     messages: [],
     modelMenu: false,
-    modelId: 'gpt-image-2',
+    modelId: 'auto',
     mode: 'image',
     placeholderIdx: 0,
     suggestionSet: 0,
@@ -1567,12 +1567,14 @@ class Component extends DCLogic {
   };
 
   MODELS = [
-    { id:'gpt-image-2', name:'GPT Image 2', group:'Images', desc:"Génération d'images", creditsLabel:'35 cr / image', dot:'#D6F94E' },
-    { id:'gpt-image-2-edit', name:'GPT Image Edit', group:'Images', desc:'Retouche et variantes', creditsLabel:'35 cr / image', dot:'#9BD1E8' },
-    { id:'veoq', name:'Veo 3', group:'Vidéos', desc:'Cinématique, avec audio', creditsLabel:'438 cr / 5s', dot:'#C9A8E8' },
-    { id:'kling-3-pro', name:'Kling 3 Pro', group:'Vidéos', desc:'Réalisme et mouvement', creditsLabel:'394 cr / 5s', dot:'#E8B29B' },
-    { id:'seedance-2', name:'Seedance 2', group:'Vidéos', desc:'Rapide et abordable', creditsLabel:'263 cr / 5s', dot:'#E8D79B' },
-    { id:'minimax-tts', name:'MiniMax Voix', group:'Voix', desc:'Voix off naturelle', creditsLabel:'22 cr / 1k car.', dot:'#A8E8C0' }
+    { id:'auto', name:'Auto HuggyFlow', group:'Agent IA', desc:'Choisit le meilleur cerveau pour ta demande', creditsLabel:'Recommandé', dot:'#D6F94E' },
+    { id:'claude-fable-5', name:'Fable 5', group:'Agent IA', desc:'Création ambitieuse, stratégie et production complexe', creditsLabel:'Max', dot:'#C9A8E8' },
+    { id:'claude-opus-4-8', name:'Opus 4.8', group:'Agent IA', desc:'Agent très puissant pour les briefs longs et exigeants', creditsLabel:'Pro', dot:'#BCA7FF' },
+    { id:'claude-opus-4-7', name:'Opus 4.7', group:'Agent IA', desc:'Raisonnement premium avec repli automatique si indisponible', creditsLabel:'Pro', dot:'#9BD1E8' },
+    { id:'claude-opus-4-6', name:'Opus 4.6', group:'Agent IA', desc:'Direction créative premium avec repli automatique', creditsLabel:'Pro', dot:'#E8B29B' },
+    { id:'claude-sonnet-5', name:'Sonnet 5', group:'Agent IA', desc:'Équilibre fort entre vitesse et qualité', creditsLabel:'Rapide', dot:'#E8D79B' },
+    { id:'claude-sonnet-4-6', name:'Sonnet 4.6', group:'Agent IA', desc:'Agent fiable pour les demandes quotidiennes', creditsLabel:'Stable', dot:'#A8E8C0' },
+    { id:'claude-haiku-4-5-20251001', name:'Haiku 4.5', group:'Agent IA', desc:'Réponses rapides et tâches simples', creditsLabel:'Éco', dot:'#C4C7CC' }
   ];
 
   PLACEHOLDERS = [
@@ -1657,9 +1659,9 @@ class Component extends DCLogic {
         name: d.name, tag: d.tag, tagStyle: tagStyles[d.tagKind], tagline: d.tagline,
         creditsTitle: fmt(d.credits) + ' crédits/mois',
         equivalences: [
-          fmt(img) + ' images GPT Image 2',
-          hasVid ? (sd + ' clips 5s Seedance 2') : 'Non inclus Seedance 2',
-          hasVid ? (veo + ' clips 5s Veo 3') : 'Non inclus Veo 3'
+          fmt(img) + ' images studio',
+          hasVid ? (sd + ' clips rapides 5s') : 'Vidéo rapide non incluse',
+          hasVid ? (veo + ' clips premium 5s') : 'Vidéo premium non incluse'
         ],
         creditsNote: fmt(d.credits) + ' crédits inclus à chaque période',
         hasOldPrice: annual && !free,
@@ -1678,10 +1680,10 @@ class Component extends DCLogic {
           feat(d.seats > 1, d.seats + (d.seats > 1 ? ' utilisateurs' : ' utilisateur'))
         ],
         models: [
-          { name:'GPT Image 2', cost:'35 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(img) + ' images', allocStyle: allocOn },
-          { name:'GPT Image Edit', cost:'35 cr.', ok:hasEdit, no:!hasEdit, color: hasEdit ? T.inkSoft : T.text4, alloc: hasEdit ? fmt(img) + ' images' : 'Non inclus', allocStyle: hasEdit ? allocOn : allocOff },
-          { name:'Seedance 2', cost:'263 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? sd + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff },
-          { name:'Veo 3', cost:'438 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? veo + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff }
+          { name:'Images studio', cost:'35 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(img) + ' images', allocStyle: allocOn },
+          { name:'Retouches et variantes', cost:'35 cr.', ok:hasEdit, no:!hasEdit, color: hasEdit ? T.inkSoft : T.text4, alloc: hasEdit ? fmt(img) + ' images' : 'Non inclus', allocStyle: hasEdit ? allocOn : allocOff },
+          { name:'Vidéos rapides', cost:'263 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? sd + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff },
+          { name:'Vidéos premium', cost:'438 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? veo + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff }
         ],
         rhythm: [
           feat(true, fmt(d.gb) + ' Go pour tes médias'),
@@ -1787,20 +1789,14 @@ class Component extends DCLogic {
     return fetch(this.apiBase()+path, init);
   }
 
-  modelApiId(id){
-    return ({
-      'kling-3-pro':'kling-video-v3-pro-text-to-video',
-      'seedance-2':'bytedance-seedance-2-0-text-to-video'
-    })[id] || id || 'auto';
-  }
+  agentModelApiId(id){ return id || 'auto'; }
   typeForModel(model){
     if(!model) return 'image';
     if(model.group === 'Videos' || model.group === 'Vidéos' || model.group === 'VidÃ©os') return 'video';
     if(model.group === 'Voix') return 'audio';
-    if(model.id === 'gpt-image-2-edit') return 'image_edit';
     return 'image';
   }
-  aspectRatioForModel(model){ return this.typeForModel(model) === 'video' ? '16:9' : '1:1'; }
+  aspectRatioForMode(mode){ return mode === 'video' ? '16:9' : '1:1'; }
   friendlyError(message, fallback){
     const safe = fallback || 'Action indisponible pour le moment. Reessaie dans quelques instants.';
     const raw = String(message || '').trim();
@@ -2073,9 +2069,8 @@ class Component extends DCLogic {
     const t = (text || '').trim();
     if(!t || this.state.sendLocked) return;
     if(!this.requireAuth('Connecte-toi pour creer, sauvegarder et suivre tes creations HuggyFlow.', { type:'send', text:t })) return;
-    const model = this.curModel();
-    const type = this.typeForModel(model);
-    const kind = type === 'video' ? 'video' : type === 'audio' ? 'voice' : 'image';
+    const mode = this.state.mode || 'image';
+    const kind = mode === 'video' ? 'video' : mode === 'audio' ? 'voice' : 'image';
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:t };
     const agentMsg = { id:agentId, role:'agent', typing:true, kind };
@@ -2088,12 +2083,14 @@ class Component extends DCLogic {
   }
   async sendPromptToApi(text, agentId){
     const model = this.curModel();
+    const mode = this.state.mode || 'image';
     const payload = {
       message:text,
       projectId:this.state.activeProjectId,
-      mode:this.typeForModel(model),
-      modelId:this.modelApiId(model.id),
-      aspectRatio:this.aspectRatioForModel(model)
+      mode,
+      modelId:'auto',
+      agentModelId:this.agentModelApiId(model.id),
+      aspectRatio:this.aspectRatioForMode(mode)
     };
     try{
       const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload) });
@@ -2263,12 +2260,12 @@ class Component extends DCLogic {
   }
 
   GALLERY = [
-    { id:'g1', type:'image', title:'Packshot fond crème', model:'GPT Image 2', date:'Aujourd\'hui', placeholder:'Dépose ton packshot' },
-    { id:'g2', type:'video', title:'Teaser lancement juillet', model:'Veo 3', date:'Hier', duration:'0:05', placeholder:'Dépose une frame du teaser' },
-    { id:'g3', type:'voice', title:'Voix off — tutoriel n°3', model:'MiniMax Voix', date:'Hier', duration:'0:38' },
-    { id:'g4', type:'image', title:'Portrait éditorial fondatrice', model:'GPT Image 2', date:'2 juil.', placeholder:'Dépose ton portrait' },
-    { id:'g5', type:'video', title:'Boucle d\'ambiance accueil', model:'Seedance 2', date:'30 juin', duration:'0:08', placeholder:'Dépose une frame de la boucle' },
-    { id:'g6', type:'image', title:'Visuel Instagram — promo', model:'GPT Image Edit', date:'28 juin', placeholder:'Dépose ton visuel' }
+    { id:'g1', type:'image', title:'Packshot fond crème', model:'Image studio', date:'Aujourd\'hui', placeholder:'Dépose ton packshot' },
+    { id:'g2', type:'video', title:'Teaser lancement juillet', model:'Vidéo premium', date:'Hier', duration:'0:05', placeholder:'Dépose une frame du teaser' },
+    { id:'g3', type:'voice', title:'Voix off — tutoriel n°3', model:'Voix naturelle', date:'Hier', duration:'0:38' },
+    { id:'g4', type:'image', title:'Portrait éditorial fondatrice', model:'Image studio', date:'2 juil.', placeholder:'Dépose ton portrait' },
+    { id:'g5', type:'video', title:'Boucle d\'ambiance accueil', model:'Vidéo rapide', date:'30 juin', duration:'0:08', placeholder:'Dépose une frame de la boucle' },
+    { id:'g6', type:'image', title:'Visuel Instagram — promo', model:'Retouche image', date:'28 juin', placeholder:'Dépose ton visuel' }
   ];
 
   galleryItems(){
@@ -2364,7 +2361,7 @@ class Component extends DCLogic {
     const modeDefs = [
       { id:'image', label:'Image' },
       { id:'video', label:'Vidéo' },
-      { id:'voice', label:'Voix' },
+      { id:'audio', label:'Voix' },
       { id:'marketing', label:'Marketing' },
       { id:'design', label:'Créer un design' }
     ];
@@ -2418,10 +2415,10 @@ class Component extends DCLogic {
         prevTitle: 'Mois dernier : ' + Math.round(b.p * 4) + ' crédits'
       })),
       modelUsage: [
-        { name:'Veo 3', credits:'438 cr', pct:'37%', dot:'#C9A8E8' },
-        { name:'GPT Image 2', credits:'420 cr', pct:'35%', dot:'#D6F94E' },
-        { name:'Seedance 2', credits:'263 cr', pct:'22%', dot:'#E8D79B' },
-        { name:'MiniMax Voix', credits:'63 cr', pct:'6%', dot:'#A8E8C0' }
+        { name:'Vidéos premium', credits:'438 cr', pct:'37%', dot:'#C9A8E8' },
+        { name:'Images studio', credits:'420 cr', pct:'35%', dot:'#D6F94E' },
+        { name:'Vidéos rapides', credits:'263 cr', pct:'22%', dot:'#E8D79B' },
+        { name:'Voix et audio', credits:'63 cr', pct:'6%', dot:'#A8E8C0' }
       ],
       highlights: [
         'Ta création la plus coûteuse : « Teaser lancement juillet » (438 cr).',
@@ -2668,7 +2665,7 @@ class Component extends DCLogic {
         const off = (st.modelsOff || {})[m.id];
         return {
           name:m.name, group:m.group, creditsLabel:m.creditsLabel, dot:m.dot,
-          usage: ({ 'gpt-image-2':'41 220', 'gpt-image-2-edit':'12 830', 'veoq':'8 940', 'kling-3-pro':'6 115', 'seedance-2':'9 671', 'minimax-tts':'15 402' })[m.id],
+          usage: ({ auto:'41 220', 'claude-fable-5':'8 940', 'claude-opus-4-8':'12 830', 'claude-opus-4-7':'6 115', 'claude-opus-4-6':'4 210', 'claude-sonnet-5':'15 402', 'claude-sonnet-4-6':'9 671', 'claude-haiku-4-5-20251001':'3 104' })[m.id],
           trackStyle: this.switchTrack(!off), knobStyle: this.switchKnob(!off),
           onToggle: ()=> this.setState(s=>{
             const mo = Object.assign({}, s.modelsOff);
@@ -2733,7 +2730,7 @@ class Component extends DCLogic {
       modelMenu: st.modelMenu,
       curModelName: this.curModel().name,
       curModelDot: this.curModel().dot,
-      modelGroups: ['Images','Vidéos','Voix'].map((g,gi)=>({
+      modelGroups: ['Agent IA'].map((g,gi)=>({
         label: g,
         headStyle: 'padding:' + (gi === 0 ? '7px' : '11px') + ' 11px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
         items: this.MODELS.filter(m=>m.group===g).map(m=>({

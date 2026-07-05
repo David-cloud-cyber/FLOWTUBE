@@ -5,6 +5,7 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const APP_NAME = "HuggyFlow";
 const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
+const ANTHROPIC_VERSION = "2023-06-01";
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
 const CREDIT_FLOOR_USD = 0.008;
@@ -14,6 +15,83 @@ const EXPENSIVE_CREDIT_THRESHOLD = 200;
 const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
+
+const AGENT_MODELS = [
+  { id: "auto", name: "Auto HuggyFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended" },
+  { id: "claude-fable-5", name: "Fable 5", description: "Creation ambitieuse, strategie et production complexe.", tier: "max" },
+  { id: "claude-mythos-5", name: "Mythos 5", description: "Raisonnement profond avec repli automatique si indisponible.", tier: "max" },
+  { id: "claude-opus-4-8", name: "Opus 4.8", description: "Agent premium pour les briefs longs et exigeants.", tier: "pro" },
+  { id: "claude-opus-4-7", name: "Opus 4.7", description: "Agent premium avec repli automatique si indisponible.", tier: "pro" },
+  { id: "claude-opus-4-6", name: "Opus 4.6", description: "Direction creative premium avec repli automatique.", tier: "pro" },
+  { id: "claude-sonnet-5", name: "Sonnet 5", description: "Equilibre fort entre vitesse, qualite et cout.", tier: "balanced" },
+  { id: "claude-sonnet-4-6", name: "Sonnet 4.6", description: "Agent fiable pour les demandes quotidiennes.", tier: "balanced" },
+  { id: "claude-haiku-4-5-20251001", name: "Haiku 4.5", description: "Reponses rapides et taches simples.", tier: "fast" },
+] as const;
+
+const AGENT_MODEL_FALLBACKS = [
+  DEFAULT_MODEL,
+  "claude-fable-5",
+  "claude-opus-4-8",
+  "claude-sonnet-5",
+  "claude-sonnet-4-6",
+  "claude-haiku-4-5-20251001",
+];
+
+function publicAgentModels() {
+  return AGENT_MODELS.map((model) => ({
+    ...model,
+    current: model.id !== "auto" && model.id === DEFAULT_MODEL,
+  }));
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function resolveAgentModelId(value: unknown) {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "auto" || raw === "huggy-auto") return DEFAULT_MODEL;
+  if (/^claude-[a-z0-9][a-z0-9._-]*$/i.test(raw)) return raw;
+  return DEFAULT_MODEL;
+}
+
+function agentModelFromBody(body: Record<string, unknown>) {
+  return resolveAgentModelId(body.agentModelId || body.agent_model_id || body.anthropicModel || body.anthropic_model);
+}
+
+function agentModelFallbacks(preferred?: string) {
+  return uniqueStrings([resolveAgentModelId(preferred), ...AGENT_MODEL_FALLBACKS]);
+}
+
+function shouldFallbackAnthropic(status: number) {
+  // Certains modeles peuvent etre indisponibles selon workspace/data-retention.
+  // On tente alors un modele de repli sans exposer l'erreur technique a l'utilisateur.
+  return [400, 403, 404, 429, 529].includes(status);
+}
+
+async function anthropicMessages(payload: Record<string, unknown>, preferredModel?: string) {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+  let lastStatus = 0;
+  let lastText = "";
+  const models = agentModelFallbacks(preferredModel);
+  for (const model of models) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({ ...payload, model }),
+    });
+    if (response.ok) return { response, model };
+    lastStatus = response.status;
+    lastText = await response.text().catch(() => "");
+    if (!shouldFallbackAnthropic(response.status)) break;
+  }
+  throw new Error(`anthropic ${lastStatus}${lastText ? `: ${lastText.slice(0, 300)}` : ""}`);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1081,7 +1159,8 @@ function sceneFromPrompt(prompt: string) {
 
 const CREATION_INTENT = /\b(genere|generes|cree|crees|fais|faire|produis|dessine|realise|lance|montre|construis|concois|imagine|anime|remixe?|retouche|transforme|decline|upscale|ameliore)\b|image|video|affiche|visuel|poster|photo|packshot|logo|animation|miniature|thumbnail|banniere|clip|ugc|storyboard|variante|declinaison|mockup|avatar|lipsync|voix|musique|jingle/;
 const CONVERSATIONAL_ONLY = /^(salut|bonjour|bonsoir|coucou|hello|hey|merci|thanks|super|parfait|genial|top|cool|d'accord|dac|ca marche|bien recu|compris|je vois|ah ok|haha|lol)\b[\s!.,]*$/;
-const QUESTION_OPENERS = /^(comment|pourquoi|combien|quand|qui|quel(le)?s?\b|est[- ]ce|c'est quoi|qu'est[- ]ce|peux[- ]tu m'expliquer|explique|dis[- ]moi)/;
+const QUESTION_OPENERS = /^(comment|pourquoi|combien|quand|qui|que\b|quoi\b|quel(le)?s?\b|est[- ]ce|c'est quoi|qu'est[- ]ce|peux[- ]tu|tu peux|sais[- ]tu|explique|dis[- ]moi)/;
+const CAPABILITY_QUESTION = /\b(que sais[- ]tu faire|tu sais faire quoi|que peux[- ]tu faire|tu peux faire quoi|qu[' ]?est[- ]ce que tu peux faire|tes capacites|tes competences|aide[- ]moi|comment ca marche|comment fonctionne huggyflow|on cree quoi|on cree quoi aujourd'hui)\b/;
 
 function shouldGenerateMedia(prompt: string, mode: string) {
   void mode;
@@ -1089,6 +1168,8 @@ function shouldGenerateMedia(prompt: string, mode: string) {
   if (!text) return false;
   // Politesses et acquiescements: on discute, on ne genere pas.
   if (CONVERSATIONAL_ONLY.test(text)) return false;
+  // Questions sur l'agent ou l'interface: on explique, on ne lance pas de rendu.
+  if (CAPABILITY_QUESTION.test(text)) return false;
   // Question sans intention de creation ("combien coute une video ?"): on repond, on ne genere pas.
   if (QUESTION_OPENERS.test(text) && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre)\b/.test(text)) return false;
   if (text.endsWith("?") && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre|peux[- ]tu)\b/.test(text)) return false;
@@ -1239,30 +1320,9 @@ async function bootstrap(req: Request) {
       marginMultiplier: MEDIA_MARGIN_MULTIPLIER,
       expensiveCreditThreshold: EXPENSIVE_CREDIT_THRESHOLD,
     },
-    models: catalog.map((model) => {
-      const quote = quoteFor(model);
-      return {
-        id: model.id,
-        name: compactModelName(model),
-        fullName: model.name,
-        type: model.type,
-        endpoint: model.endpoint,
-        pricingUnit: model.pricingUnit,
-        defaultUnits: model.defaultUnits,
-        maximumUnits: model.maximumUnits,
-        premium: model.premium,
-        capabilities: modelCapabilities(model),
-        qualityTier: String((model.metadata || {}).quality_tier || "standard"),
-        inputProfile: String((model.metadata || {}).input_profile || "text_prompt"),
-        family: String((model.metadata || {}).family || "fal.ai"),
-        badge: modelUiBadge(model),
-        recommended: FEATURED_MODEL_IDS.includes(model.id),
-        rank: modelUiRank(model),
-        credits: quote.credits,
-        providerCostUsd: quote.providerCostUsd,
-        requiresConfirmation: quote.requiresConfirmation,
-      };
-    }),
+    agentModels: publicAgentModels(),
+    // Les moteurs media fal.ai restent backend-only. Le frontend affiche seulement les modeles agent.
+    models: [],
     plans: (plans || []).filter((plan) => !["starter", "studio"].includes(String(plan.id))).map((plan) => planPublic(normalizePlan(plan))),
     creditPacks: (creditPacks || []).map((pack) => ({
       id: pack.id,
@@ -1289,6 +1349,7 @@ async function bootstrap(req: Request) {
       auth: true,
       aiAssistant: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
       aiModel: DEFAULT_MODEL,
+      aiModels: publicAgentModels(),
       billing: true,
       storage: true,
       providerWebhooks: true,
@@ -1699,25 +1760,19 @@ function extractSkillDirective(prompt: string): { name: string; triggers: string
 }
 
 // ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
-async function anthropicVision(imageUrl: string, question: string): Promise<string> {
+async function anthropicVision(imageUrl: string, question: string, preferredModel?: string): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return "";
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      max_tokens: 900,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "image", source: { type: "url", url: imageUrl } },
-          { type: "text", text: question },
-        ],
-      }],
-    }),
-  });
-  if (!response.ok) throw new Error(`anthropic vision ${response.status}`);
+  const { response } = await anthropicMessages({
+    max_tokens: 900,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "url", url: imageUrl } },
+        { type: "text", text: question },
+      ],
+    }],
+  }, preferredModel);
   const data = await response.json();
   return (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
 }
@@ -1735,10 +1790,10 @@ function isVisualAnalysisRequest(prompt: string) {
     /\b(image|visuel|photo|pub|publicite|creative|ad|affiche|video|clip|reference|concurrent|hook)\b/.test(t);
 }
 
-async function runVisualAnalysis(url: string, isVideo: boolean): Promise<string> {
+async function runVisualAnalysis(url: string, isVideo: boolean, preferredModel?: string): Promise<string> {
   try {
     if (!isVideo) {
-      const out = await anthropicVision(url, VISION_ANALYSIS_QUESTION);
+      const out = await anthropicVision(url, VISION_ANALYSIS_QUESTION, preferredModel);
       if (out) return out;
     }
   } catch (_err) { /* degrade ci-dessous */ }
@@ -1791,7 +1846,7 @@ const RESEARCH_BRIEF_INSTRUCTION = [
   "4) Ce qui manque / opportunites. Sois concret et court. N'invente pas ce qui n'est pas dans la page.",
 ].join(" ");
 
-async function runWebResearch(url: string, userPrompt: string): Promise<string> {
+async function runWebResearch(url: string, userPrompt: string, preferredModel?: string): Promise<string> {
   let pageText = "";
   try {
     pageText = await fetchPageText(url);
@@ -1804,17 +1859,11 @@ async function runWebResearch(url: string, userPrompt: string): Promise<string> 
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        max_tokens: 1000,
-        system: huggyflowSystemPromptText(),
-        messages: [{ role: "user", content: `${RESEARCH_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nContenu de ${url}:\n${pageText}` }],
-      }),
-    });
-    if (!response.ok) throw new Error(`anthropic ${response.status}`);
+    const { response } = await anthropicMessages({
+      max_tokens: 1000,
+      system: huggyflowSystemPromptText(),
+      messages: [{ role: "user", content: `${RESEARCH_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nContenu de ${url}:\n${pageText}` }],
+    }, preferredModel);
     const data = await response.json();
     const brief = (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
     return brief || `Contenu recupere de ${url}.`;
@@ -1878,6 +1927,7 @@ async function anthropicReply(
   history: ChatTurn[] = [],
   onDelta?: (delta: string) => void,
   context: ReplyContext = {},
+  preferredModel?: string,
 ) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   const emit = (text: string) => { if (onDelta && text) onDelta(text); };
@@ -1911,22 +1961,13 @@ async function anthropicReply(
   }
   let full = "";
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        max_tokens: 1024,
-        stream: true,
-        system: huggyflowSystemPromptText(),
-        messages,
-      }),
-    });
-    if (!response.ok || !response.body) throw new Error(`anthropic ${response.status}`);
+    const { response } = await anthropicMessages({
+      max_tokens: 1024,
+      stream: true,
+      system: huggyflowSystemPromptText(),
+      messages,
+    }, preferredModel);
+    if (!response.body) throw new Error("anthropic empty stream");
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -2100,6 +2141,7 @@ type AgentLoopCtx = {
   profile: Record<string, unknown>;
   plan: PlanLimits;
   body: Record<string, unknown>;
+  agentModelId: string;
   send: (event: string, payload: unknown) => void;
 };
 
@@ -2197,12 +2239,12 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
     if (name === "analyze_reference") {
       const url = String(input.url || "");
       if (!url) return "Aucune URL fournie a analyser.";
-      return await runVisualAnalysis(url, Boolean(input.is_video) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url));
+      return await runVisualAnalysis(url, Boolean(input.is_video) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url), ctx.agentModelId);
     }
     if (name === "research_url") {
       const url = String(input.url || "");
       if (!/^https?:\/\//i.test(url)) return "URL invalide pour la recherche.";
-      return await runWebResearch(url, String(ctx.body.message || ""));
+      return await runWebResearch(url, String(ctx.body.message || ""), ctx.agentModelId);
     }
     if (name === "save_skill") {
       const triggers = Array.isArray(input.triggers) ? input.triggers.map(String).slice(0, 8) : [String(input.name)];
@@ -2255,18 +2297,12 @@ async function runAgentLoop(
   };
 
   for (let iteration = 0; iteration < AGENT_LOOP_MAX_ITERATIONS; iteration++) {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        max_tokens: 1024,
-        system: huggyflowSystemPromptText() + AGENT_LOOP_SYSTEM_EXTRA,
-        tools: AGENT_TOOLS,
-        messages,
-      }),
-    });
-    if (!response.ok) throw new Error(`anthropic ${response.status}`);
+    const { response } = await anthropicMessages({
+      max_tokens: 1024,
+      system: huggyflowSystemPromptText() + AGENT_LOOP_SYSTEM_EXTRA,
+      tools: AGENT_TOOLS,
+      messages,
+    }, ctx.agentModelId);
     const data = await response.json();
     const content: ApiContent[] = Array.isArray(data.content) ? data.content : [];
     for (const block of content) {
@@ -2960,6 +2996,7 @@ async function batchStatus(req: Request, batchId: string) {
 async function chat(req: Request) {
   const body = await bodyJson(req);
   const prompt = String(body.message || "");
+  const agentModelId = agentModelFromBody(body as Record<string, unknown>);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -3072,7 +3109,7 @@ async function chat(req: Request) {
             return;
           }
           send("text", { delta: "J'analyse le visuel..." });
-          const analysis = await runVisualAnalysis(target, isVideo);
+          const analysis = await runVisualAnalysis(target, isVideo, agentModelId);
           send("text", { delta: analysis });
           await saveAssistant(analysis);
           send("done", { ok: true });
@@ -3083,7 +3120,7 @@ async function chat(req: Request) {
         const researchUrl = extractFirstUrl(prompt);
         if (researchUrl && isResearchRequest(prompt)) {
           send("text", { delta: `Je lis ${researchUrl}...` });
-          const brief = await runWebResearch(researchUrl, prompt);
+          const brief = await runWebResearch(researchUrl, prompt, agentModelId);
           send("text", { delta: brief });
           await saveAssistant(brief);
           send("done", { ok: true });
@@ -3129,7 +3166,7 @@ async function chat(req: Request) {
 
         // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
         if (agentLoopEnabled()) {
-          const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, send };
+          const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, agentModelId, send };
           const loopMatched = matchLearnedSkill(prompt, learnedSkills);
           const loopContext: ReplyContext = {
             planName: plan.displayName,
@@ -3233,7 +3270,7 @@ async function chat(req: Request) {
           elements,
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
-        const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext);
+        const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext, agentModelId);
         if (!willGenerate) await saveAssistant(reply);
 
         if (willGenerate) {
