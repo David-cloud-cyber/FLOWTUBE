@@ -665,6 +665,12 @@ async function hmacSha256Hex(secret: string, payload: string) {
   return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function randomToken(bytes = 24) {
+  const data = new Uint8Array(bytes);
+  crypto.getRandomValues(data);
+  return Array.from(data).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 function safeEqual(a: string, b: string) {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -695,11 +701,32 @@ async function enforceRateLimit(req: Request, supabase: ReturnType<typeof adminC
 async function optionalUserIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
   const auth = req.headers.get("authorization") || "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
-  if (token) {
+  if (token && !token.startsWith("hf_")) {
     const { data } = await supabase.auth.getUser(token);
     if (data.user?.id) return data.user.id;
   }
+  const apiUserId = await userIdFromApiKey(req, supabase, token);
+  if (apiUserId) return apiUserId;
   return null;
+}
+
+async function userIdFromApiKey(req: Request, supabase: ReturnType<typeof adminClient>, bearerToken = "") {
+  const raw = String(req.headers.get("x-huggyflow-api-key") || req.headers.get("x-api-key") || bearerToken || "").trim();
+  if (!raw || !raw.startsWith("hf_")) return null;
+  const keyHash = await sha256Hex(raw);
+  const { data } = await supabase.from("api_keys")
+    .select("id,user_id,scopes")
+    .eq("key_hash", keyHash)
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (!data?.user_id) return null;
+  await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id);
+  await supabase.from("app_events").insert({
+    user_id: data.user_id,
+    event_name: "api_key_used",
+    metadata: { route: new URL(req.url).pathname, method: req.method, key_id: data.id },
+  });
+  return String(data.user_id);
 }
 
 async function userIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
@@ -3962,6 +3989,240 @@ async function billingStatus(req: Request) {
   });
 }
 
+function normalizeTeamRole(value: unknown) {
+  const role = String(value || "editor").toLowerCase();
+  if (role === "admin") return "admin";
+  if (role === "viewer" || role === "lecteur") return "viewer";
+  return "editor";
+}
+
+function initialsFromName(name: string, email = "") {
+  const source = (name || email || "HF").replace(/@.*/, "").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  return (parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : source.slice(0, 2)).toUpperCase();
+}
+
+async function ensureOwnerTeamMember(supabase: ReturnType<typeof adminClient>, profile: Record<string, unknown>) {
+  const email = String(profile.email || profile.billing_email || `user-${profile.id}@huggyflow.fun`).toLowerCase();
+  const payload = {
+    owner_id: profile.id,
+    member_user_id: profile.id,
+    email,
+    display_name: String(profile.display_name || "Utilisateur HuggyFlow"),
+    role: "owner",
+    status: "active",
+  };
+  const { data: existing } = await supabase.from("team_members")
+    .select("id")
+    .eq("owner_id", profile.id)
+    .ilike("email", email)
+    .maybeSingle();
+  if (existing?.id) await supabase.from("team_members").update(payload).eq("id", existing.id);
+  else await supabase.from("team_members").insert(payload);
+}
+
+async function teamRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const profile = await ensureProfile(supabase, userId);
+  await ensureOwnerTeamMember(supabase, profile);
+
+  if (req.method === "POST") {
+    const body = await bodyJson(req);
+    const action = String(body.action || "invite");
+    if (action === "invite") {
+      const email = String(body.email || "").trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new FlowtubeError(400, "Entre un e-mail valide.", { code: "INVALID_INVITE_EMAIL" });
+      const role = normalizeTeamRole(body.role);
+      await supabase.from("team_invites").insert({ owner_id: userId, email, role, status: "pending", metadata: { source: "dashboard" } });
+    }
+    if (action === "revoke") {
+      const inviteId = String(body.inviteId || body.id || "");
+      if (inviteId) await supabase.from("team_invites").update({ status: "revoked" }).eq("id", inviteId).eq("owner_id", userId);
+    }
+    if (action === "role") {
+      const memberId = String(body.memberId || body.id || "");
+      const role = normalizeTeamRole(body.role);
+      if (memberId) await supabase.from("team_members").update({ role }).eq("id", memberId).eq("owner_id", userId).neq("role", "owner");
+    }
+  }
+
+  const { data: members } = await supabase.from("team_members").select("*").eq("owner_id", userId).order("created_at", { ascending: true });
+  const { data: invites } = await supabase.from("team_invites").select("*").eq("owner_id", userId).eq("status", "pending").order("created_at", { ascending: false });
+  const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+  return json({
+    seatLimit: plan.seatLimit,
+    members: (members || []).map((member) => ({
+      id: member.id,
+      name: member.display_name || member.email,
+      email: member.email,
+      initials: initialsFromName(String(member.display_name || ""), String(member.email || "")),
+      role: member.role,
+      status: member.status,
+      isYou: String(member.member_user_id || "") === userId,
+      createdAt: member.created_at,
+    })),
+    invites: (invites || []).map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      role: invite.role,
+      status: invite.status,
+      createdAt: invite.created_at,
+      expiresAt: invite.expires_at,
+    })),
+  });
+}
+
+async function apiKeysRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  await ensureProfile(supabase, userId);
+  let createdKey = "";
+
+  if (req.method === "POST") {
+    const body = await bodyJson(req);
+    const action = String(body.action || "create");
+    if (action === "create") {
+      createdKey = `hf_${randomToken(28)}`;
+      const keyHash = await sha256Hex(createdKey);
+      const name = String(body.name || "Cle API HuggyFlow").replace(/\s+/g, " ").trim().slice(0, 80) || "Cle API HuggyFlow";
+      await supabase.from("api_keys").insert({
+        user_id: userId,
+        name,
+        key_hash: keyHash,
+        key_prefix: `${createdKey.slice(0, 10)}...`,
+        scopes: ["chat", "generate"],
+      });
+    }
+    if (action === "revoke") {
+      const keyId = String(body.keyId || body.id || "");
+      if (keyId) await supabase.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", keyId).eq("user_id", userId);
+    }
+  }
+
+  const { data: keys } = await supabase.from("api_keys")
+    .select("id,name,key_prefix,scopes,last_used_at,revoked_at,created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  return json({
+    createdKey: createdKey || undefined,
+    keys: (keys || []).map((key) => ({
+      id: key.id,
+      name: key.name,
+      masked: key.key_prefix,
+      scopes: key.scopes || [],
+      createdAt: key.created_at,
+      lastUsedAt: key.last_used_at,
+      revoked: Boolean(key.revoked_at),
+    })),
+  });
+}
+
+function affiliateCode(profile: Record<string, unknown>) {
+  const base = String(profile.display_name || profile.email || "huggyflow").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 14) || "huggyflow";
+  return `${base}${String(profile.id || "").replace(/-/g, "").slice(0, 6)}`;
+}
+
+async function affiliateRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const profile = await ensureProfile(supabase, userId);
+
+  if (req.method === "POST") {
+    const body = await bodyJson(req);
+    const payoutEmail = String(body.payoutEmail || body.email || "").trim().toLowerCase();
+    if (payoutEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payoutEmail)) throw new FlowtubeError(400, "Entre un e-mail de paiement valide.", { code: "INVALID_PAYOUT_EMAIL" });
+    await supabase.from("affiliate_accounts").upsert({
+      user_id: userId,
+      code: affiliateCode(profile),
+      payout_email: payoutEmail || profile.billing_email || profile.email || null,
+      status: "active",
+    }, { onConflict: "user_id" });
+  }
+
+  const { data: account } = await supabase.from("affiliate_accounts").upsert({
+    user_id: userId,
+    code: affiliateCode(profile),
+    payout_email: profile.billing_email || profile.email || null,
+    status: "active",
+  }, { onConflict: "user_id" }).select("*").single();
+  const { data: referrals } = await supabase.from("affiliate_referrals").select("*").eq("affiliate_user_id", userId).order("created_at", { ascending: false });
+  const rows = referrals || [];
+  const active = rows.filter((row) => ["active", "paid"].includes(String(row.status))).length;
+  const earnings = rows.reduce((sum, row) => sum + Number(row.amount_usd || 0), 0);
+  return json({
+    account,
+    link: `${APP_BASE_URL}/?ref=${account.code}`,
+    stats: {
+      clicks: Number((account.metadata || {}).clicks || 0),
+      activeSubscribers: active,
+      earningsUsd: earnings,
+    },
+    referrals: rows.map((row) => ({
+      id: row.id,
+      name: row.email || "Invitation",
+      status: row.status,
+      amountUsd: Number(row.amount_usd || 0),
+      createdAt: row.created_at,
+    })),
+  });
+}
+
+async function statsRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const days = Math.max(7, Math.min(90, Number(new URL(req.url).searchParams.get("period") || 30)));
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { data: generations } = await supabase.from("generations").select("type,status,credits,created_at,model_label").eq("user_id", userId).gte("created_at", since);
+  const { count: projects } = await supabase.from("projects").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("archived", false);
+  const rows = generations || [];
+  const credits = rows.reduce((sum, row) => sum + Number(row.credits || 0), 0);
+  const byType = (type: string) => rows.filter((row) => String(row.type || "") === type).length;
+  const buckets = Array.from({ length: Math.min(days, 30) }, (_, index) => {
+    const d = new Date(Date.now() - (Math.min(days, 30) - index - 1) * 24 * 60 * 60 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    const total = rows.filter((row) => String(row.created_at || "").slice(0, 10) === key).reduce((sum, row) => sum + Number(row.credits || 0), 0);
+    return { label: d.toLocaleDateString("fr-FR", { weekday: "short" }), credits: total };
+  });
+  const maxCredits = Math.max(1, ...buckets.map((b) => b.credits));
+  const modelTotals = new Map<string, number>();
+  for (const row of rows) modelTotals.set(String(row.model_label || "HuggyFlow"), (modelTotals.get(String(row.model_label || "HuggyFlow")) || 0) + Number(row.credits || 0));
+  return json({
+    summary: {
+      credits,
+      images: byType("image") + byType("image_edit"),
+      videos: byType("video") + byType("video_edit") + byType("lipsync"),
+      voices: byType("audio") + byType("voice") + byType("music"),
+      projects: projects || 0,
+      completed: rows.filter((row) => String(row.status) === "completed").length,
+    },
+    chart: buckets.map((bucket) => ({ label: bucket.label, currentPct: Math.round((bucket.credits / maxCredits) * 100), previousPct: 0, credits: bucket.credits })),
+    models: [...modelTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, value]) => ({ name, credits: value })),
+    highlights: rows.length
+      ? ["Tes donnees sont synchronisees avec tes creations sauvegardees.", `${rows.length} creation(s) sur la periode selectionnee.`, `${credits} credits utilises sur cette periode.`]
+      : ["Aucune creation sur cette periode pour le moment.", "Lance une creation pour remplir tes statistiques.", "Tes donnees apparaitront ici automatiquement."],
+  });
+}
+
+async function pricingRoute() {
+  const supabase = adminClient();
+  const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("sort_order", { ascending: true });
+  const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
+  return json({
+    plans: (plans || []).map((plan) => planPublic(normalizePlan(plan))),
+    creditPacks: creditPacks || [],
+    billing: {
+      stripeConfigured: Boolean(stripeSecret()),
+      moneyFusionConfigured: Boolean(moneyFusionCheckoutUrl()),
+      moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
+      siteUrl: APP_BASE_URL,
+    },
+  });
+}
+
 function requireAdmin(req: Request) {
   const secret = Deno.env.get("FLOWTUBE_ADMIN_SECRET") || "";
   if (!secret) throw new FlowtubeError(503, "Admin secret missing.", { code: "ADMIN_NOT_CONFIGURED" });
@@ -4284,6 +4545,11 @@ Deno.serve(async (req: Request) => {
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
     if (first === "profile" && (req.method === "GET" || req.method === "POST")) return await profileRoute(req);
+    if (first === "team" && (req.method === "GET" || req.method === "POST")) return await teamRoute(req);
+    if (((first === "api" && route[1] === "keys") || first === "keys") && (req.method === "GET" || req.method === "POST")) return await apiKeysRoute(req);
+    if (first === "affiliate" && (req.method === "GET" || req.method === "POST")) return await affiliateRoute(req);
+    if (first === "stats" && req.method === "GET") return await statsRoute(req);
+    if (first === "pricing" && req.method === "GET") return await pricingRoute();
     if (first === "auth" && route[1]) return await authRoute(req, route[1]);
     if (first === "billing" && route[1] === "checkout" && req.method === "POST") return await createCheckout(req);
     if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);

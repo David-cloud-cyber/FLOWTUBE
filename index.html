@@ -729,7 +729,7 @@ input:focus,textarea:focus{outline:none}
           <div style="display:flex;gap:9px;flex-wrap:wrap">
             <div style="flex:1;min-width:240px;display:flex;align-items:center;gap:10px;padding:12px 15px;border-radius:12px;background:rgba({{ tLineRGB }},.04);border:1px solid rgba({{ tLineRGB }},.10)">
               <svg width="14" height="14" style="flex:0 0 auto;color:{{ tText4 }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{{ tText2 }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">huggyflow.com/r/david-n</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{{ tText2 }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ affiliateLink }}</span>
             </div>
             <button onClick="{{ copyRefLink }}" style="padding:12px 22px;border-radius:12px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="filter:brightness(.96)">{{ refCopyLabel }}</button>
           </div>
@@ -1032,7 +1032,7 @@ input:focus,textarea:focus{outline:none}
               <span style="font-size:11.5px;color:{{ tText4 }}">{{ k.created }}</span>
               <div style="display:flex;gap:6px">
                 <button onClick="{{ k.onCopy }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">{{ k.copyLabel }}</button>
-                <button style="padding:7px 13px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Révoquer</button>
+                <button onClick="{{ k.onRevoke }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Révoquer</button>
               </div>
             </div>
           </sc-for>
@@ -1648,7 +1648,24 @@ class Component extends DCLogic {
       blue: 'padding:3px 9px;border-radius:999px;background:#DCE6F0;color:#3E5A78;font-size:10px;font-weight:700;letter-spacing:.06em',
       lime: 'padding:3px 9px;border-radius:999px;background:#D6F94E;color:#191813;font-size:10px;font-weight:700;letter-spacing:.06em'
     };
-    return (this.PLAN_DATA[this.state.segment] || this.PLAN_DATA.solo).map(d=>{
+    const apiPlans = (this.state.pricingPlans || []).filter(p=>{
+      const id = String(p.id || '');
+      const seg = (['free','basic','creator','pro'].indexOf(id) >= 0) ? 'solo' : ((['crew','squad'].indexOf(id) >= 0) ? 'team' : 'business');
+      return seg === this.state.segment;
+    }).map(p=>{
+      const meta = p.metadata || {};
+      const name = String(p.displayName || p.id || 'Plan');
+      return {
+        id:p.id, name:name.toUpperCase(), tag:meta.badge || (p.priorityQueue ? 'POPULAIRE' : 'OFFRE'), tagKind:p.priorityQueue ? 'lime' : 'muted',
+        popular:!!p.priorityQueue, tagline:meta.tagline || meta.description || 'Pour creer avec HuggyFlow',
+        credits:Number(p.includedCredits || 0), m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
+        cta:Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte',
+        vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
+        gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
+      };
+    });
+    const planList = apiPlans.length ? apiPlans : (this.PLAN_DATA[this.state.segment] || this.PLAN_DATA.solo);
+    return planList.map(d=>{
       const img = Math.floor(d.credits/35);
       const sd = Math.floor(d.credits/263);
       const veo = Math.floor(d.credits/438);
@@ -2205,6 +2222,107 @@ class Component extends DCLogic {
       this.setState({ billingLoading:false });
     }
   }
+  async loadTeam(){
+    if(!this.state.authToken) return;
+    this.setState({ teamLoading:true });
+    try{
+      const res = await this.apiFetch('/api/team');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Team failed');
+      this.setState({ teamData:data, teamLoading:false });
+    }catch(err){
+      this.setState({ teamLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger l equipe pour le moment.') });
+    }
+  }
+  async sendTeamInvite(){
+    if(!this.requireAuth('Connecte-toi pour inviter ton equipe.', null)) return;
+    const email = String(this.state.inviteEmail || '').trim();
+    if(!email) return;
+    this.setState({ inviteSending:true, inviteSent:false });
+    try{
+      const res = await this.apiFetch('/api/team', { method:'POST', body:JSON.stringify({ action:'invite', email, role:this.roleApiValue(this.state.inviteRole) }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Invite failed');
+      this.setState({ inviteSending:false, inviteSent:true, inviteEmail:'', teamData:data });
+    }catch(err){
+      this.setState({ inviteSending:false, pricingNotice:this.friendlyError(err && err.message, 'Invitation impossible pour le moment.') });
+    }
+  }
+  async revokeInvite(id){
+    if(!id) return;
+    try{
+      const res = await this.apiFetch('/api/team', { method:'POST', body:JSON.stringify({ action:'revoke', inviteId:id }) });
+      const data = await res.json().catch(()=>({}));
+      if(res.ok) this.setState({ teamData:data });
+    }catch(err){}
+  }
+  roleApiValue(role){
+    const raw = String(role || '').toLowerCase();
+    if(raw.indexOf('admin') >= 0) return 'admin';
+    if(raw.indexOf('lect') >= 0 || raw.indexOf('view') >= 0) return 'viewer';
+    return 'editor';
+  }
+  roleLabel(role){
+    return ({ owner:'Proprietaire', admin:'Admin', editor:'Editeur', viewer:'Lecteur' })[role] || 'Editeur';
+  }
+  async loadApiKeys(){
+    if(!this.state.authToken) return;
+    this.setState({ apiLoading:true });
+    try{
+      const res = await this.apiFetch('/api/keys');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'API keys failed');
+      this.setState({ apiData:data, apiLoading:false });
+    }catch(err){
+      this.setState({ apiLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les cles API.') });
+    }
+  }
+  async createApiKey(){
+    if(!this.requireAuth('Connecte-toi pour creer une cle API.', null)) return;
+    this.setState({ apiLoading:true, apiCreatedKey:'' });
+    try{
+      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({ action:'create', name:'Cle API HuggyFlow' }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'API key failed');
+      this.setState({ apiData:data, apiCreatedKey:data.createdKey || '', apiLoading:false });
+      if(data.createdKey && navigator.clipboard) navigator.clipboard.writeText(data.createdKey).catch(()=>{});
+    }catch(err){
+      this.setState({ apiLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Creation de cle impossible.') });
+    }
+  }
+  async revokeApiKey(id){
+    if(!id) return;
+    try{
+      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({ action:'revoke', keyId:id }) });
+      const data = await res.json().catch(()=>({}));
+      if(res.ok) this.setState({ apiData:data });
+    }catch(err){}
+  }
+  async loadStats(period){
+    if(!this.state.authToken) return;
+    const p = period || this.state.statsPeriod || '30';
+    this.setState({ statsLoading:true });
+    try{
+      const res = await this.apiFetch('/api/stats?period='+encodeURIComponent(p));
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Stats failed');
+      this.setState({ statsData:data, statsPeriod:p, statsLoading:false });
+    }catch(err){
+      this.setState({ statsLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les statistiques.') });
+    }
+  }
+  async loadAffiliate(){
+    if(!this.state.authToken) return;
+    this.setState({ affiliateLoading:true });
+    try{
+      const res = await this.apiFetch('/api/affiliate');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Affiliate failed');
+      this.setState({ affiliateData:data, affiliateLoading:false });
+    }catch(err){
+      this.setState({ affiliateLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger l affiliation.') });
+    }
+  }
   async saveSettings(){
     if(!this.requireAuth('Connecte-toi pour enregistrer tes reglages.', null)) return;
     this.setState({ settingsSaving:true, settingsSaved:false });
@@ -2426,17 +2544,22 @@ class Component extends DCLogic {
       settingsNav: [['settings','Profil'],['billing','Facturation'],['team','Équipe'],['api','API'],['stats','Statistiques']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.page === p[0]) + ';flex:0 0 auto;white-space:nowrap',
-        onClick: ()=> this.setState({ page: p[0], modelMenu:false, settingsHop:true })
+        onClick: ()=> this.setState({ page: p[0], modelMenu:false, settingsHop:true }, ()=>{
+          if(p[0] === 'billing') this.loadBillingStatus();
+          if(p[0] === 'team') this.loadTeam();
+          if(p[0] === 'api') this.loadApiKeys();
+          if(p[0] === 'stats') this.loadStats();
+        })
       })),
       settingsAnim: st.settingsHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
       showTeam: st.page === 'team',
       showApi: st.page === 'api',
       showStats: st.page === 'stats',
-      openStats: ()=> this.setState({ page:'stats', modelMenu:false }),
+      openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label: p[1],
         style: this.tabStyle((st.statsPeriod || '30') === p[0]),
-        onClick: ()=> this.setState({ statsPeriod: p[0] })
+        onClick: ()=> this.setState({ statsPeriod: p[0] }, ()=>this.loadStats(p[0]))
       })),
       statsPeriodLabel: ({ '7':'7 derniers jours', '30':'30 derniers jours', '90':'90 derniers jours' })[st.statsPeriod || '30'],
       statCards: [
@@ -2916,6 +3039,56 @@ class Component extends DCLogic {
           ((String(inv.status || 'paid').toLowerCase() === 'paid' || String(inv.status || '').toLowerCase() === 'payée')
             ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
+      })),
+      plansGridCols: 'repeat(' + this.buildPlans().length + ',1fr)',
+      openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
+      statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
+        label:p[1],
+        style:this.tabStyle((st.statsPeriod || '30') === p[0]),
+        onClick:()=>this.setState({ statsPeriod:p[0] }, ()=>this.loadStats(p[0]))
+      })),
+      statCards: [
+        { label:'Credits utilises', value:String((st.statsData && st.statsData.summary && st.statsData.summary.credits) || 0), delta:'sur la periode', up:true },
+        { label:'Images', value:String((st.statsData && st.statsData.summary && st.statsData.summary.images) || 0), delta:'creations sauvegardees', up:true },
+        { label:'Videos', value:String((st.statsData && st.statsData.summary && st.statsData.summary.videos) || 0), delta:'creations sauvegardees', up:null },
+        { label:'Voix', value:String((st.statsData && st.statsData.summary && st.statsData.summary.voices) || 0), delta:'creations sauvegardees', up:null }
+      ].map(c=>({ label:c.label, value:c.value, delta:c.delta, deltaColor:c.up === true ? T.green : (c.up === false ? '#C45840' : T.text4) })),
+      chartBars: (((st.statsData && st.statsData.chart) || []).length ? st.statsData.chart : [{ label:'-', currentPct:0, previousPct:0, credits:0 }]).map(b=>({
+        label:b.label, cur:(b.currentPct || 0) + '%', prev:(b.previousPct || 0) + '%', curTitle:(b.credits || 0) + ' credits', prevTitle:'Reference'
+      })),
+      modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D6F94E','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
+      highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
+      openApi: ()=> this.setState({ page:'api', modelMenu:false }, ()=>this.loadApiKeys()),
+      apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
+        name:k.name, masked:k.masked, created:k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : 'recente',
+        copyLabel:st.copiedKey === i ? 'Copiee' : 'Copier',
+        onCopy:()=>{ if(st.apiCreatedKey && navigator.clipboard) navigator.clipboard.writeText(st.apiCreatedKey).catch(()=>{}); this.setState({ copiedKey:i }); setTimeout(()=>this.setState({ copiedKey:null }), 1600); },
+        onRevoke:()=>this.revokeApiKey(k.id)
+      })),
+      createKey: ()=> this.createApiKey(),
+      openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }, ()=>this.loadTeam()),
+      seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
+      seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
+      sendInvite: ()=> this.sendTeamInvite(),
+      teamMembers: (((st.teamData && st.teamData.members) || [])).map((m,i)=>({
+        name:m.name, email:m.email, initials:m.initials, avatarBg:['#D6F94E','#E8D79B','#C9E8D5','#E8C9B8'][i % 4],
+        isYou:!!m.isYou, role:this.roleLabel(m.role), activity:m.status === 'active' ? 'Actif' : 'En attente',
+        roleStyle:'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' + ((m.role === 'owner' || m.role === 'admin') ? 'background:#D6F94E;color:#1B1C1E' : (m.role === 'editor' ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4))
+      })),
+      pendingInvites: (((st.teamData && st.teamData.invites) || [])).map(p=>({ email:p.email, sent:p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : 'recent', onRevoke:()=>this.revokeInvite(p.id) })),
+      noPending: !((st.teamData && st.teamData.invites && st.teamData.invites.length) || 0),
+      openAffiliate: ()=> this.setState({ page:'affiliate', modelMenu:false }, ()=>this.loadAffiliate()),
+      copyRefLink: ()=>{ const link = st.affiliateData && st.affiliateData.link; if(link && navigator.clipboard) navigator.clipboard.writeText(link).catch(()=>{}); this.setState({ refCopied:true }); setTimeout(()=>this.setState({ refCopied:false }), 1600); },
+      affiliateLink: (st.affiliateData && st.affiliateData.link) || 'Connecte-toi pour generer ton lien',
+      refCopyLabel: st.refCopied ? 'Copie' : 'Copier le lien',
+      affStats: [
+        { label:'Clics ce mois', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.clicks) || 0), hint:'via ton lien' },
+        { label:'Abonnes actifs', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.activeSubscribers) || 0), hint:'filleuls avec abonnement' },
+        { label:'Gains cumules', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.earningsUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'suivi affiliation' }
+      ],
+      referrals: (((st.affiliateData && st.affiliateData.referrals) || [])).map(r=>({
+        name:r.name, amount:Number(r.amountUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), status:r.status,
+        statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       messages: st.messages.map((m,i)=>{
         const media = (m.media && typeof m.media === 'object') ? m.media : null;
