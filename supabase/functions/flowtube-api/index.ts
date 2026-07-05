@@ -1396,6 +1396,12 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "Regle finale: a chaque tour, fais avancer la production HuggyFlow. Cadre, choisis, produis, ameliore.",
 ].join("\n");
 
+function huggyflowSystemPromptText() {
+  return Array.isArray(HUGGYFLOW_SYSTEM_PROMPT)
+    ? HUGGYFLOW_SYSTEM_PROMPT.join("\n")
+    : String(HUGGYFLOW_SYSTEM_PROMPT || "");
+}
+
 type HuggySkill = {
   id: string;
   label: string;
@@ -1804,7 +1810,7 @@ async function runWebResearch(url: string, userPrompt: string): Promise<string> 
       body: JSON.stringify({
         model: DEFAULT_MODEL,
         max_tokens: 1000,
-        system: HUGGYFLOW_SYSTEM_PROMPT.join("\n"),
+        system: huggyflowSystemPromptText(),
         messages: [{ role: "user", content: `${RESEARCH_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nContenu de ${url}:\n${pageText}` }],
       }),
     });
@@ -1916,7 +1922,7 @@ async function anthropicReply(
         model: DEFAULT_MODEL,
         max_tokens: 1024,
         stream: true,
-        system: HUGGYFLOW_SYSTEM_PROMPT.join("\n"),
+        system: huggyflowSystemPromptText(),
         messages,
       }),
     });
@@ -2255,7 +2261,7 @@ async function runAgentLoop(
       body: JSON.stringify({
         model: DEFAULT_MODEL,
         max_tokens: 1024,
-        system: HUGGYFLOW_SYSTEM_PROMPT.join("\n") + AGENT_LOOP_SYSTEM_EXTRA,
+        system: huggyflowSystemPromptText() + AGENT_LOOP_SYSTEM_EXTRA,
         tools: AGENT_TOOLS,
         messages,
       }),
