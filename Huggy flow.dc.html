@@ -1963,6 +1963,7 @@ class Component extends DCLogic {
     return (projects || []).map(p=>({
       id: p.id,
       title: p.title || 'Nouveau projet',
+      conversationId: p.conversationId || p.conversation_id || '',
       messages: (p.messages || []).map(m=>this.normalizeMessage(m))
     }));
   }
@@ -1985,6 +1986,7 @@ class Component extends DCLogic {
         credits: Number(data.credits !== undefined ? data.credits : this.state.credits),
         creditsMax: Number(data.creditsMax || this.state.creditsMax || 100),
         user: data.user || null,
+        prefs: data.user && data.user.preferences ? Object.assign({ notif:true, autoplay:true, sounds:false }, data.user.preferences) : this.state.prefs,
         pricingPlans: data.plans || [],
         pricingModels: data.models || [],
         creditPacks: data.creditPacks || [],
@@ -2081,6 +2083,28 @@ class Component extends DCLogic {
       sendLocked:true
     }), ()=>this.sendPromptToApi(t, agentId));
   }
+  bindProjectFromApi(payload){
+    const projectId = payload && (payload.projectId || payload.project_id);
+    if(!projectId) return;
+    const title = (payload.projectTitle || payload.title || this.state.activeTitle || 'Nouveau projet');
+    const conversationId = payload.conversationId || payload.conversation_id || '';
+    this.setState(s=>{
+      let found = false;
+      const projects = (s.projectsData || []).map(p=>{
+        if(p.id !== projectId) return p;
+        found = true;
+        return Object.assign({}, p, {
+          title: title || p.title,
+          conversationId: conversationId || p.conversationId,
+          messages: s.messages
+        });
+      });
+      if(!found){
+        projects.unshift({ id:projectId, title:title || 'Nouveau projet', conversationId, messages:s.messages });
+      }
+      return { projectsData:projects, activeProjectId:projectId, activeTitle:title || 'Nouveau projet' };
+    });
+  }
   async sendPromptToApi(text, agentId){
     const model = this.curModel();
     const mode = this.state.mode || 'image';
@@ -2102,6 +2126,7 @@ class Component extends DCLogic {
       if(res.body) delivered = await this.consumeChatStream(res, agentId);
       else {
         const data = await res.json().catch(()=>({}));
+        this.bindProjectFromApi(data);
         if(data.generation){ this.addGenerationCard(data.generation, agentId); delivered = true; }
         if(data.message){ this.updateAgentMessage(agentId, { typing:false, text:data.message }); delivered = true; }
       }
@@ -2129,6 +2154,7 @@ class Component extends DCLogic {
       if(type === 'text'){ this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true; }
       if(type === 'message'){ this.appendAgentText(agentId, payload.text || ''); delivered = true; }
       if(type === 'generation'){ this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
+      if(type === 'done'){ this.bindProjectFromApi(payload); delivered = true; }
       if(type === 'credits') this.setState({ credits:Number(payload.credits || this.state.credits) });
       if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, text:this.friendlyError(payload.message, 'La creation a echoue. Reessaie avec une consigne plus courte.') }); delivered = true; }
     };
@@ -2177,6 +2203,33 @@ class Component extends DCLogic {
       this.setState({ pricingNotice:'Impossible de charger la facturation pour le moment.' });
     }finally{
       this.setState({ billingLoading:false });
+    }
+  }
+  async saveSettings(){
+    if(!this.requireAuth('Connecte-toi pour enregistrer tes reglages.', null)) return;
+    this.setState({ settingsSaving:true, settingsSaved:false });
+    try{
+      const prefs = Object.assign({ notif:true, autoplay:true, sounds:false }, this.state.prefs || {});
+      const res = await this.apiFetch('/api/profile', {
+        method:'POST',
+        body:JSON.stringify({
+          displayName:this.state.settingsName || (this.state.user && this.state.user.name) || '',
+          billingEmail:this.state.settingsEmail || (this.state.user && (this.state.user.billingEmail || this.state.user.email)) || '',
+          preferences:prefs
+        })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Settings failed');
+      this.setState({
+        settingsSaving:false,
+        settingsSaved:true,
+        user:data.user || this.state.user,
+        prefs:data.preferences || prefs,
+        settingsName:(data.user && data.user.name) || this.state.settingsName,
+        settingsEmail:(data.user && (data.user.billingEmail || data.user.email)) || this.state.settingsEmail
+      });
+    }catch(err){
+      this.setState({ settingsSaving:false, settingsSaved:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer les reglages pour le moment.') });
     }
   }
   async newProject(){
@@ -2242,21 +2295,7 @@ class Component extends DCLogic {
       });
     });
     if(items.length) return items.reverse();
-    return this.GALLERY.filter(g => f === 'all' || g.type === f).map(g => ({
-      slotId:'gallery-'+g.id,
-      title:g.title, model:g.model, date:g.date,
-      duration:g.duration || '',
-      placeholder:g.placeholder || '',
-      resultUrl:'',
-      hasImageResult:false,
-      hasVideoResult:false,
-      showSlot:true,
-      isVisual:g.type !== 'voice',
-      isVideo:g.type === 'video',
-      isVoice:g.type === 'voice',
-      onDownload:()=>{},
-      onRecreate:()=>{ this.setState({ page:'app' }); this.sendPrompt('Recree une variante de '+g.title); }
-    }));
+    return [];
   }
 
   GALLERY = [
@@ -2268,7 +2307,7 @@ class Component extends DCLogic {
     { id:'g6', type:'image', title:'Visuel Instagram — promo', model:'Retouche image', date:'28 juin', placeholder:'Dépose ton visuel' }
   ];
 
-  galleryItems(){
+  gallerySeedItems(){
     const f = this.state.galleryFilter || 'all';
     return this.GALLERY.filter(g => f === 'all' || g.type === f).map(g => ({
       slotId: 'gallery-' + g.id,
@@ -2499,14 +2538,12 @@ class Component extends DCLogic {
       noPending: (st.pending || this.PENDING_DEFAULT).length === 0,
       openSettings: ()=> this.setState({ page:'settings', modelMenu:false, settingsSaved:false, settingsHop:false }),
       settingsName: st.settingsName ?? (st.user ? st.user.name : ''),
-      settingsEmail: st.settingsEmail ?? '',
+      settingsEmail: st.settingsEmail ?? (st.user ? (st.user.billingEmail || st.user.email || '') : ''),
       onSettingsName: (e)=> this.setState({ settingsName: e.target.value, settingsSaved:false }),
       onSettingsEmail: (e)=> this.setState({ settingsEmail: e.target.value, settingsSaved:false }),
-      saveSettings: ()=>{
-        const name = this.state.settingsName;
-        this.setState({ settingsSaved:true, user: name ? { name } : this.state.user });
-      },
+      saveSettings: ()=> this.saveSettings(),
       settingsSaved: !!st.settingsSaved,
+      settingsSaving: !!st.settingsSaving,
       prefItems: [
         { key:'notif', label:'Notifications par e-mail', hint:'Rendus terminés et nouveautés produit' },
         { key:'autoplay', label:'Lecture automatique des vidéos', hint:'Lance les aperçus dès qu\'ils sont prêts' },
@@ -2519,7 +2556,7 @@ class Component extends DCLogic {
           onToggle: ()=> this.setState(s=>{
             const prefs = Object.assign({ notif:true, autoplay:true, sounds:false }, s.prefs);
             prefs[p.key] = !prefs[p.key];
-            return { prefs };
+            return { prefs, settingsSaved:false };
           })
         };
       }),
@@ -2719,7 +2756,7 @@ class Component extends DCLogic {
         { name:'Vidéos', filter:'video', isNew:false, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8},React.createElement('rect',{x:2,y:5,width:14,height:14,rx:3}),React.createElement('path',{d:'M22 8l-6 4 6 4z'})) },
         { name:'Voix', filter:'voice', isNew:false, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round'},React.createElement('rect',{x:9,y:3,width:6,height:11,rx:3}),React.createElement('path',{d:'M5 11a7 7 0 0 0 14 0'}),React.createElement('line',{x1:12,y1:18,x2:12,y2:21})) }
       ].map(c=>Object.assign({}, c, { onOpen: ()=> this.setState({ page:'gallery', galleryFilter: c.filter, modelMenu:false }) })),
-      newProject: ()=> this.setState({ messages: [], input:'', activeTitle:'Nouveau projet' }),
+      newProject: ()=> this.newProject(),
       openPricing: ()=> this.setState({ page:'pricing', modelMenu:false }),
       openAuth: ()=> this.setState({ page:'auth', modelMenu:false }),
       backToApp: ()=> this.setState({ page:'app' }),
@@ -2785,7 +2822,7 @@ class Component extends DCLogic {
       onAuthPassword: (e)=> this.setState({ authPassword: e.target.value }),
       onAuthKey: (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); this.authSubmit(st.authMode === 'signup' ? 'signup' : 'login'); } },
       recoverAuth: ()=> this.authRecover(),
-      submitAuth: ()=>{
+      submitAuthLegacy: ()=>{
         const name = this.state.authName || (this.state.authEmail ? this.state.authEmail.split('@')[0] : 'Créateur');
         if(this.state.authMode === 'signup'){
           this.setState({ user:{ name }, page:'onboarding', obStep:0, obName:name });

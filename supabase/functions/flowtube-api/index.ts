@@ -1254,7 +1254,7 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
     .select("id,title,created_at")
     .eq("user_id", userId)
     .eq("archived", false)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
   if (error) throw error;
 
   return await Promise.all((projects || []).map(async (project) => {
@@ -1307,7 +1307,16 @@ async function bootstrap(req: Request) {
     ? await supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)
     : { count: 0 };
   return json({
-    user: profile ? { id: profile.id, name: profile.display_name, email: profile.email, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end } : null,
+    user: profile ? {
+      id: profile.id,
+      name: profile.display_name,
+      email: profile.email,
+      billingEmail: profile.billing_email,
+      plan: profile.plan,
+      billingStatus: profile.billing_status,
+      currentPeriodEnd: profile.current_period_end,
+      preferences: cleanMetadata(cleanMetadata(profile.metadata).preferences),
+    } : null,
     credits: profile?.credits || 0,
     creditsMax: profile?.credits_max || 100,
     stats: {
@@ -2424,20 +2433,42 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
   }
 }
 
-async function resolveProjectAndConversation(supabase: ReturnType<typeof adminClient>, userId: string, projectId?: string) {
-  const uuidish = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function projectTitleFromPrompt(prompt: string) {
+  const clean = String(prompt || "")
+    .replace(/\s+/g, " ")
+    .replace(/^["'`]+|["'`]+$/g, "")
+    .trim();
+  if (!clean) return "Nouveau projet";
+  return clean.length > 44 ? `${clean.slice(0, 44).trim()}...` : clean;
+}
+
+function isUntitledProject(title: unknown) {
+  return !String(title || "").trim() || /^nouveau projet$/i.test(String(title || "").trim());
+}
+
+function projectDonePayload(project: Record<string, unknown>, conversation: Record<string, unknown>, extra: Record<string, unknown> = {}) {
+  return {
+    ok: true,
+    projectId: String(project.id),
+    conversationId: String(conversation.id),
+    projectTitle: String(project.title || "Nouveau projet"),
+    ...extra,
+  };
+}
+
+async function resolveProjectAndConversation(supabase: ReturnType<typeof adminClient>, userId: string, projectId?: string, titleHint = "Nouveau projet") {
+  const requested = String(projectId || "").trim();
   let project = null;
-  if (projectId && uuidish.test(projectId)) {
-    const { data } = await supabase.from("projects").select("*").eq("id", projectId).eq("user_id", userId).maybeSingle();
+  if (requested && isUuid(requested)) {
+    const { data } = await supabase.from("projects").select("*").eq("id", requested).eq("user_id", userId).maybeSingle();
     project = data;
   }
   if (!project) {
-    const { data } = await supabase.from("projects").select("*").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
-    project = data;
-  }
-  if (!project) {
-    const created = await createProject(supabase, userId, "Nouveau projet");
-    project = created.project;
+    return await createProject(supabase, userId, titleHint || "Nouveau projet");
   }
   let { data: conversation } = await supabase.from("conversations").select("*").eq("project_id", project.id).eq("user_id", userId).limit(1).maybeSingle();
   if (!conversation) {
@@ -2446,6 +2477,28 @@ async function resolveProjectAndConversation(supabase: ReturnType<typeof adminCl
     conversation = data;
   }
   return { project, conversation };
+}
+
+async function renameUntitledProject(supabase: ReturnType<typeof adminClient>, userId: string, project: Record<string, unknown>, conversation: Record<string, unknown>, prompt: string, previousMessages = 0) {
+  if (previousMessages > 0 || !isUntitledProject(project.title)) return { project, conversation };
+  const title = projectTitleFromPrompt(prompt);
+  if (!title || isUntitledProject(title)) return { project, conversation };
+  const { data: updatedProject } = await supabase.from("projects")
+    .update({ title })
+    .eq("id", project.id)
+    .eq("user_id", userId)
+    .select("*")
+    .maybeSingle();
+  const { data: updatedConversation } = await supabase.from("conversations")
+    .update({ title })
+    .eq("id", conversation.id)
+    .eq("user_id", userId)
+    .select("*")
+    .maybeSingle();
+  return {
+    project: updatedProject || { ...project, title },
+    conversation: updatedConversation || { ...conversation, title },
+  };
 }
 
 function monthStartIso() {
@@ -2567,13 +2620,19 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   const credits = quote.credits;
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
   await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
-  const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(body.projectId || ""));
+  let { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""), projectTitleFromPrompt(prompt));
+  const { count: previousMessages } = await supabase.from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", project.id)
+    .eq("user_id", userId);
+  ({ project, conversation } = await renameUntitledProject(supabase, userId, project, conversation, prompt, previousMessages || 0));
+  const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(project.id));
   await enforceGenerationGuards(supabase, profile, plan, model, quote);
   ensureProviderReady(model);
 
   if (quote.requiresConfirmation && body.confirmed !== true) {
     const pendingBody = {
-      projectId: body.projectId,
+      projectId: project.id,
       prompt,
       type,
       modelId: model.id,
@@ -2600,8 +2659,6 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       model: { id: model.id, name: model.name, type: model.type },
     });
   }
-
-  const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
 
   const { data: assistantMessage, error: messageError } = await supabase.from("messages")
     .insert({
@@ -2874,11 +2931,16 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
   const quote = quoteFor(model, requestedUnits);
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
   await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
-  const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(body.projectId || ""));
+  let { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""), projectTitleFromPrompt(prompt));
+  const { count: previousMessages } = await supabase.from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", project.id)
+    .eq("user_id", userId);
+  ({ project, conversation } = await renameUntitledProject(supabase, userId, project, conversation, prompt, previousMessages || 0));
+  const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(project.id));
   await enforceBatchGuards(supabase, profile, plan, model, quote, count);
   ensureProviderReady(model);
 
-  const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
   const batchId = crypto.randomUUID();
   const totalCredits = quote.credits * count;
 
@@ -3009,9 +3071,10 @@ async function chat(req: Request) {
         await enforceRateLimit(req, supabase, "chat", userId, DEFAULT_RATE_LIMIT);
         const plan = await resolvePlan(supabase, String(profile.plan || "free"));
         await enforceMessageLimits(supabase, userId, plan);
-        const { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""));
+        let { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""), projectTitleFromPrompt(prompt));
         await enforcePromptPolicy(supabase, profile, prompt, project.id);
         const history = await conversationHistory(supabase, conversation.id);
+        ({ project, conversation } = await renameUntitledProject(supabase, userId, project, conversation, prompt, history.length));
         const memoryDirectives = extractMemoryDirectives(prompt);
         if (memoryDirectives.length) await saveAgentMemory(supabase, userId, project.id, memoryDirectives);
         const memory = await loadAgentMemory(supabase, userId, project.id);
@@ -3045,20 +3108,21 @@ async function chat(req: Request) {
           const cancelReply = "Generation annulee. Aucun credit n'a ete debite.";
           send("text", { delta: cancelReply });
           await saveAssistant(cancelReply);
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
         if (pending && !pendingExpired && isConfirmationText(prompt)) {
           await clearPendingGeneration(supabase, profile);
           const pendingBody = (pending.body || {}) as Record<string, unknown>;
+          const pendingProjectId = isUuid(String(pendingBody.projectId || "")) ? String(pendingBody.projectId) : String(project.id);
           const pendingBatch = Number(pendingBody.batch || 1);
           if (pendingBatch >= 2) {
             const reply = `Confirmation recue. Je lance le lot de ${pendingBatch} creations : les rendus vont s'enchainer automatiquement.`;
             send("text", { delta: reply });
             const result = await createGenerationBatch(req, {
               ...pendingBody,
-              projectId: pendingBody.projectId || project.id,
+              projectId: pendingProjectId,
             }, pendingBatch, reply);
             send("batch", result.batch);
           } else {
@@ -3066,14 +3130,14 @@ async function chat(req: Request) {
             send("text", { delta: reply });
             const result = await createGeneration(req, {
               ...pendingBody,
-              projectId: pendingBody.projectId || project.id,
+              projectId: pendingProjectId,
               confirmed: true,
             }, reply);
             send("generation", result.generation);
           }
           const { data: freshProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
           send("credits", { credits: freshProfile?.credits ?? 0 });
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3085,7 +3149,7 @@ async function chat(req: Request) {
           const skillReply = `Skill "${skillDirective.name}" enregistre (declencheurs: ${skillDirective.triggers.join(", ")}). Je l'appliquerai quand le sujet reviendra, ou lance-le avec /${skillDirective.name}.`;
           send("text", { delta: skillReply });
           await saveAssistant(skillReply);
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3105,14 +3169,14 @@ async function chat(req: Request) {
             const noRef = "Envoie-moi l'image ou la pub a analyser (piece jointe, @element epingle, ou reference une creation du projet) et je te fais le breakdown du hook, de la compo et de l'angle.";
             send("text", { delta: noRef });
             await saveAssistant(noRef);
-            send("done", { ok: true });
+            send("done", projectDonePayload(project, conversation));
             return;
           }
           send("text", { delta: "J'analyse le visuel..." });
           const analysis = await runVisualAnalysis(target, isVideo, agentModelId);
           send("text", { delta: analysis });
           await saveAssistant(analysis);
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3123,7 +3187,7 @@ async function chat(req: Request) {
           const brief = await runWebResearch(researchUrl, prompt, agentModelId);
           send("text", { delta: brief });
           await saveAssistant(brief);
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3135,7 +3199,7 @@ async function chat(req: Request) {
           const costReply = buildCostReport((projGens || []) as { type: string; status: string; credits: number }[], Number(profile.credits || 0));
           send("text", { delta: costReply });
           await saveAssistant(costReply);
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3160,7 +3224,7 @@ async function chat(req: Request) {
           }
           send("text", { delta: elementReply });
           await saveAssistant(elementReply);
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3180,7 +3244,7 @@ async function chat(req: Request) {
           await saveAssistant(reply);
           const { data: loopProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
           send("credits", { credits: loopProfile?.credits ?? 0 });
-          send("done", { ok: true });
+          send("done", projectDonePayload(project, conversation));
           return;
         }
 
@@ -3219,7 +3283,7 @@ async function chat(req: Request) {
           const batchReply = batchConfirmationMessage(model, quote, batchCount, type);
           send("text", { delta: batchReply });
           await saveAssistant(batchReply);
-          send("done", { ok: true, requiresConfirmation: true });
+          send("done", projectDonePayload(project, conversation, { requiresConfirmation: true }));
           return;
         }
 
@@ -3248,7 +3312,7 @@ async function chat(req: Request) {
           const confirmReply = confirmationMessage(model, quote);
           send("text", { delta: confirmReply });
           await saveAssistant(confirmReply);
-          send("done", { ok: true, requiresConfirmation: true });
+          send("done", projectDonePayload(project, conversation, { requiresConfirmation: true }));
           return;
         }
 
@@ -3319,7 +3383,7 @@ async function chat(req: Request) {
         }
         const { data: finalProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
         send("credits", { credits: finalProfile?.credits ?? 0 });
-        send("done", { ok: true });
+        send("done", projectDonePayload(project, conversation));
       } catch (err) {
         if (err instanceof FlowtubeError) send("error", { message: err.message, ...err.payload });
         else send("error", { message: err instanceof Error ? err.message : "Chat failed" });
@@ -3578,6 +3642,63 @@ async function createProjectRoute(req: Request) {
   await ensureProfile(supabase, userId);
   const result = await createProject(supabase, userId, String(body.title || "Nouveau projet"));
   return json({ project: { id: result.project.id, title: result.project.title, conversationId: result.conversation.id } });
+}
+
+async function profileRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const profile = await ensureProfile(supabase, userId);
+
+  if (req.method === "GET") {
+    return json({
+      user: {
+        id: profile.id,
+        email: profile.email,
+        billingEmail: profile.billing_email,
+        name: profile.display_name,
+        plan: profile.plan,
+        preferences: cleanMetadata(cleanMetadata(profile.metadata).preferences),
+      },
+      credits: profile.credits,
+      creditsMax: profile.credits_max,
+    });
+  }
+
+  if (req.method !== "POST") return json({ error: { message: "Profile route not found" } }, 404);
+
+  const body = await bodyJson(req);
+  const metadata = cleanMetadata(profile.metadata);
+  const incomingPreferences = cleanMetadata(body.preferences || body.prefs);
+  const preferences = {
+    ...cleanMetadata(metadata.preferences),
+    ...incomingPreferences,
+  };
+  const patch: Record<string, unknown> = { metadata: { ...metadata, preferences } };
+  const displayName = String(body.displayName || body.name || "").replace(/\s+/g, " ").trim();
+  if (displayName) patch.display_name = displayName.slice(0, 80);
+  const billingEmail = String(body.billingEmail || body.email || "").trim().toLowerCase();
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(billingEmail)) patch.billing_email = billingEmail;
+
+  const { data: updated, error } = await supabase.from("profiles")
+    .update(patch)
+    .eq("id", userId)
+    .select("*")
+    .single();
+  if (error) throw error;
+
+  return json({
+    user: {
+      id: updated.id,
+      email: updated.email,
+      billingEmail: updated.billing_email,
+      name: updated.display_name,
+      plan: updated.plan,
+      preferences: cleanMetadata(cleanMetadata(updated.metadata).preferences),
+    },
+    credits: updated.credits,
+    creditsMax: updated.credits_max,
+    preferences: cleanMetadata(cleanMetadata(updated.metadata).preferences),
+  });
 }
 
 async function authRoute(req: Request, action: string) {
@@ -4162,6 +4283,7 @@ Deno.serve(async (req: Request) => {
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
+    if (first === "profile" && (req.method === "GET" || req.method === "POST")) return await profileRoute(req);
     if (first === "auth" && route[1]) return await authRoute(req, route[1]);
     if (first === "billing" && route[1] === "checkout" && req.method === "POST") return await createCheckout(req);
     if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);
