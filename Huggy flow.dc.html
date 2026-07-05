@@ -1483,15 +1483,15 @@ input:focus,textarea:focus{outline:none}
             <div style="display:flex;flex-direction:column;gap:13px">
               <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
                 <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:{{ tText2 }}">Nom
-                  <input value="{{ authName }}" onChange="{{ onAuthName }}" placeholder="Ton nom" style="padding:11px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
+                  <input value="{{ authName }}" onChange="{{ onAuthName }}" onKeyDown="{{ onAuthKey }}" placeholder="Ton nom" style="padding:11px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
                 </label>
               </sc-if>
               <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:{{ tText2 }}">E-mail
-                <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" type="email" placeholder="toi@exemple.com" style="padding:11px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
+                <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" onKeyDown="{{ onAuthKey }}" type="email" placeholder="toi@exemple.com" style="padding:11px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
               </label>
               <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:{{ tText2 }}">
-                <span style="display:flex;justify-content:space-between"><span>Mot de passe</span><sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}"><span style="font-weight:500;color:{{ tText3 }};cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba({{ tLineRGB }},.25)">Oublié ?</span></sc-if></span>
-                <input value="{{ authPassword }}" onChange="{{ onAuthPassword }}" type="password" placeholder="••••••••" style="padding:11px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
+                <span style="display:flex;justify-content:space-between"><span>Mot de passe</span><sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}"><span onClick="{{ recoverAuth }}" style="font-weight:500;color:{{ tText3 }};cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba({{ tLineRGB }},.25)">Oublié ?</span></sc-if></span>
+                <input value="{{ authPassword }}" onChange="{{ onAuthPassword }}" onKeyDown="{{ onAuthKey }}" type="password" placeholder="••••••••" style="padding:11px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
               </label>
               <button onClick="{{ submitAuth }}" style="margin-top:4px;width:100%;padding:12px;border-radius:12px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:14px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="background:{{ tInkSoft }}">{{ authCta }}</button>
               <sc-if value="{{ hasAuthStatus }}" hint-placeholder-val="{{ false }}">
@@ -1514,6 +1514,23 @@ input:focus,textarea:focus{outline:none}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;showSuggestions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Accueil&quot;}}">
 class Component extends DCLogic {
+  storedAuthSession(){
+    const empty = { access_token:'', refresh_token:'', expires_at:0 };
+    if(typeof window === 'undefined' || !window.localStorage) return empty;
+    try{
+      const session = JSON.parse(window.localStorage.getItem('huggyflow_session') || '{}') || {};
+      return {
+        access_token: session.access_token || window.localStorage.getItem('huggyflow_access_token') || '',
+        refresh_token: session.refresh_token || '',
+        expires_at: Number(session.expires_at || 0)
+      };
+    }catch(e){
+      return { access_token: window.localStorage.getItem('huggyflow_access_token') || '', refresh_token:'', expires_at:0 };
+    }
+  }
+
+  initialAuthSession = this.storedAuthSession();
+
   state = {
     theme: 'dark',
     page: 'app',
@@ -1530,7 +1547,9 @@ class Component extends DCLogic {
     authMode: 'login',
     authName: '', authEmail: '', authPassword: '',
     authStatus: '',
-    authToken: (typeof window !== 'undefined' && window.localStorage) ? (window.localStorage.getItem('huggyflow_access_token') || '') : '',
+    authToken: this.initialAuthSession.access_token,
+    authRefreshToken: this.initialAuthSession.refresh_token,
+    authExpiresAt: this.initialAuthSession.expires_at,
     pendingAuthAction: null,
     user: null,
     credits: 0, creditsMax: 100,
@@ -1742,11 +1761,29 @@ class Component extends DCLogic {
   }
 
   apiBase(){ return (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3000' : ''; }
-  apiFetch(path, options){
+  isAuthExpired(bufferSeconds){
+    if(!this.state.authToken) return false;
+    const expiresAt = Number(this.state.authExpiresAt || 0);
+    if(!expiresAt) return false;
+    return Math.floor(Date.now() / 1000) >= (expiresAt - (bufferSeconds || 90));
+  }
+  async restoreAuthSession(){
+    if(this.state.authToken && this.isAuthExpired(90) && this.state.authRefreshToken){
+      const refreshed = await this.refreshSession(true);
+      if(refreshed) return;
+    }
+    this.bootstrap();
+  }
+  async apiFetch(path, options){
+    let token = this.state.authToken;
+    if(token && this.isAuthExpired(60) && this.state.authRefreshToken && path.indexOf('/api/auth/refresh') !== 0){
+      const refreshed = await this.refreshSession(true);
+      token = typeof refreshed === 'string' ? refreshed : (refreshed ? this.state.authToken : '');
+    }
     const init = Object.assign({}, options || {});
     init.headers = Object.assign({ Accept:'application/json' }, init.headers || {});
     if(init.body && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
-    if(this.state.authToken) init.headers.Authorization = 'Bearer ' + this.state.authToken;
+    if(token) init.headers.Authorization = 'Bearer ' + token;
     return fetch(this.apiBase()+path, init);
   }
 
@@ -1771,6 +1808,15 @@ class Component extends DCLogic {
     if(/api|backend|supabase|fal\.ai|provider|endpoint|stripe|moneyfusion|configuration|variable|price id|env/i.test(raw)) return safe;
     return raw;
   }
+  friendlyAuthError(message){
+    const raw = String(message || '').trim();
+    if(/invalid login credentials/i.test(raw)) return 'E-mail ou mot de passe incorrect.';
+    if(/email not confirmed/i.test(raw)) return 'Confirme ton e-mail avant de te connecter.';
+    if(/user already registered|already been registered|already exists/i.test(raw)) return 'Un compte existe deja avec cet e-mail. Connecte-toi plutot.';
+    if(/password/i.test(raw) && /weak|short|minimum|least/i.test(raw)) return 'Choisis un mot de passe plus long, 8 caracteres minimum.';
+    if(/rate limit|too many|over request rate/i.test(raw)) return 'Trop de tentatives. Patiente un instant puis reessaie.';
+    return this.friendlyError(raw, 'Connexion impossible pour le moment. Reessaie dans quelques instants.');
+  }
   requireAuth(intent, pendingAction){
     if(this.state.authToken) return true;
     this.setState({
@@ -1792,18 +1838,50 @@ class Component extends DCLogic {
     });
   }
   saveSession(data, action){
-    const token = data && data.session && data.session.access_token ? data.session.access_token : '';
-    if(token && typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem('huggyflow_access_token', token);
+    const session = data && data.session ? data.session : {};
+    const token = session.access_token || '';
+    const refreshToken = session.refresh_token || '';
+    const expiresAt = Number(session.expires_at || (session.expires_in ? Math.floor(Date.now()/1000) + Number(session.expires_in) : 0));
+    if(token && typeof window !== 'undefined' && window.localStorage){
+      window.localStorage.setItem('huggyflow_access_token', token);
+      window.localStorage.setItem('huggyflow_session', JSON.stringify({ access_token:token, refresh_token:refreshToken, expires_at:expiresAt }));
+    }
     const hasPending = !!this.state.pendingAuthAction;
     const nextPage = action === 'signup' && !hasPending ? 'onboarding' : 'app';
     this.setState({
       authToken: token,
+      authRefreshToken: refreshToken,
+      authExpiresAt: expiresAt,
       user: data.user || this.state.user,
       authPassword:'',
       authStatus:'Connecte.',
       page: nextPage,
       modelMenu:false
     }, ()=>{ this.bootstrap().then(()=>this.runPendingAuthAction()); });
+  }
+  clearSession(status){
+    if(typeof window !== 'undefined' && window.localStorage){
+      window.localStorage.removeItem('huggyflow_access_token');
+      window.localStorage.removeItem('huggyflow_session');
+    }
+    this.setState({ authToken:'', authRefreshToken:'', authExpiresAt:0, user:null, credits:0, creditsMax:100, authStatus:status || 'Deconnecte.' });
+  }
+  async refreshSession(silent){
+    if(!this.state.authRefreshToken) return false;
+    try{
+      const res = await fetch(this.apiBase()+'/api/auth/refresh', {
+        method:'POST',
+        headers:{ Accept:'application/json', 'Content-Type':'application/json' },
+        body:JSON.stringify({ refreshToken:this.state.authRefreshToken }),
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.session) throw new Error(data && data.error && data.error.message ? data.error.message : 'Session expiree.');
+      this.saveSession(data);
+      return data.session.access_token || true;
+    }catch(err){
+      this.clearSession(silent ? 'Session expiree. Reconnecte-toi pour continuer.' : (err && err.message ? err.message : 'Session expiree.'));
+      return false;
+    }
   }
   async authSubmit(action){
     const email = String(this.state.authEmail || '').trim().toLowerCase();
@@ -1812,7 +1890,7 @@ class Component extends DCLogic {
       this.setState({ authStatus:'Email requis et mot de passe de 8 caracteres minimum.' });
       return;
     }
-    this.setState({ authStatus:'Connexion en cours...' });
+    this.setState({ authStatus: action === 'signup' ? 'Creation du compte...' : 'Connexion en cours...' });
     try{
       const body = { email, password, displayName: this.state.authName || email.split('@')[0] };
       const res = await this.apiFetch('/api/auth/'+action, { method:'POST', body:JSON.stringify(body) });
@@ -1821,22 +1899,34 @@ class Component extends DCLogic {
       if(data.session) this.saveSession(data, action);
       else this.setState({ authStatus:'Compte cree. Verifie ton e-mail si la confirmation est activee.' });
     }catch(err){
-      this.setState({ authStatus:this.friendlyError(err && err.message, 'Authentification impossible.') });
+      this.setState({ authStatus:this.friendlyAuthError(err && err.message) });
+    }
+  }
+  async authRecover(){
+    const email = String(this.state.authEmail || '').trim().toLowerCase();
+    if(!email){
+      this.setState({ authStatus:'Entre ton e-mail pour recevoir le lien de reinitialisation.' });
+      return;
+    }
+    this.setState({ authStatus:'Envoi du lien...' });
+    try{
+      const res = await this.apiFetch('/api/auth/recover', { method:'POST', body:JSON.stringify({ email }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Envoi impossible.');
+      this.setState({ authStatus:'Lien envoye. Verifie ta boite e-mail.' });
+    }catch(err){
+      this.setState({ authStatus:this.friendlyAuthError(err && err.message ? err.message : 'Envoi impossible.') });
     }
   }
   logout(){
-    if(typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem('huggyflow_access_token');
+    if(this.state.authToken) this.apiFetch('/api/auth/logout', { method:'POST', body:JSON.stringify({}) }).catch(()=>{});
+    this.clearSession('Deconnecte.');
     this.setState({
-      authToken:'',
-      user:null,
-      credits:0,
-      creditsMax:100,
       projectsData:[],
       activeProjectId:'welcome',
       messages:[],
       activeTitle:'Nouveau projet',
-      page:'app',
-      authStatus:'Deconnecte.'
+      page:'app'
     }, ()=>this.bootstrap());
   }
   normalizeMedia(md){
@@ -1884,6 +1974,9 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/bootstrap');
       if(!res.ok) throw new Error('bootstrap '+res.status);
       const data = await res.json();
+      if(this.state.authToken && !data.user){
+        this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
+      }
       const projects = this.normalizeProjects(data.projects || []);
       const currentId = this.state.activeProjectId;
       const active = projects.find(p=>p.id === currentId) || projects[0] || null;
@@ -1913,7 +2006,7 @@ class Component extends DCLogic {
       if(storedTheme === 'light') this.setState({ theme:'light' });
     }catch(e){}
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
-    this.bootstrap();
+    this.restoreAuthSession();
   }
   componentWillUnmount(){
     clearInterval(this._ph);
@@ -2692,6 +2785,8 @@ class Component extends DCLogic {
       onAuthName: (e)=> this.setState({ authName: e.target.value }),
       onAuthEmail: (e)=> this.setState({ authEmail: e.target.value }),
       onAuthPassword: (e)=> this.setState({ authPassword: e.target.value }),
+      onAuthKey: (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); this.authSubmit(st.authMode === 'signup' ? 'signup' : 'login'); } },
+      recoverAuth: ()=> this.authRecover(),
       submitAuth: ()=>{
         const name = this.state.authName || (this.state.authEmail ? this.state.authEmail.split('@')[0] : 'Créateur');
         if(this.state.authMode === 'signup'){

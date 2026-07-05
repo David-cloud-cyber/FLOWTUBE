@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { fal } from "npm:@fal-ai/client@1.10.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
-const APP_NAME = "Huggyflow";
+const APP_NAME = "HuggyFlow";
 const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
@@ -1287,6 +1287,8 @@ async function bootstrap(req: Request) {
     },
     production: {
       auth: true,
+      aiAssistant: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
+      aiModel: DEFAULT_MODEL,
       billing: true,
       storage: true,
       providerWebhooks: true,
@@ -1802,7 +1804,7 @@ async function runWebResearch(url: string, userPrompt: string): Promise<string> 
       body: JSON.stringify({
         model: DEFAULT_MODEL,
         max_tokens: 1000,
-        system: HUGGYFLOW_SYSTEM_PROMPT,
+        system: HUGGYFLOW_SYSTEM_PROMPT.join("\n"),
         messages: [{ role: "user", content: `${RESEARCH_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nContenu de ${url}:\n${pageText}` }],
       }),
     });
@@ -1914,7 +1916,7 @@ async function anthropicReply(
         model: DEFAULT_MODEL,
         max_tokens: 1024,
         stream: true,
-        system: HUGGYFLOW_SYSTEM_PROMPT,
+        system: HUGGYFLOW_SYSTEM_PROMPT.join("\n"),
         messages,
       }),
     });
@@ -2253,7 +2255,7 @@ async function runAgentLoop(
       body: JSON.stringify({
         model: DEFAULT_MODEL,
         max_tokens: 1024,
-        system: HUGGYFLOW_SYSTEM_PROMPT + AGENT_LOOP_SYSTEM_EXTRA,
+        system: HUGGYFLOW_SYSTEM_PROMPT.join("\n") + AGENT_LOOP_SYSTEM_EXTRA,
         tools: AGENT_TOOLS,
         messages,
       }),
@@ -3546,7 +3548,10 @@ async function authRoute(req: Request, action: string) {
     const { data, error } = await authClient.auth.signUp({
       email,
       password,
-      options: { data: { display_name: body.displayName || body.name || "Utilisateur" } },
+      options: {
+        emailRedirectTo: `${APP_BASE_URL}/`,
+        data: { display_name: body.displayName || body.name || "Utilisateur" },
+      },
     });
     if (error) throw new FlowtubeError(400, error.message, { code: "SIGNUP_FAILED" });
     if (data.user?.id) {
@@ -3561,6 +3566,15 @@ async function authRoute(req: Request, action: string) {
       }, { onConflict: "id" });
     }
     return json({ user: data.user, session: data.session, needsEmailConfirmation: !data.session });
+  }
+
+  if (action === "refresh" && req.method === "POST") {
+    const refreshToken = String(body.refreshToken || body.refresh_token || "").trim();
+    if (!refreshToken) throw new FlowtubeError(400, "Session a renouveler introuvable.", { code: "REFRESH_TOKEN_REQUIRED" });
+    const { data, error } = await authClient.auth.refreshSession({ refresh_token: refreshToken });
+    if (error || !data.session) throw new FlowtubeError(401, error?.message || "Session expiree. Reconnecte-toi.", { code: "REFRESH_FAILED" });
+    if (data.user?.id) await ensureProfile(supabase, data.user.id);
+    return json({ user: data.user, session: data.session });
   }
 
   if (action === "login" && req.method === "POST") {
@@ -3590,6 +3604,19 @@ async function authRoute(req: Request, action: string) {
     const userId = await authenticatedUserIdFromRequest(req, supabase);
     const profile = await ensureProfile(supabase, userId);
     return json({ user: { id: profile.id, email: profile.email, name: profile.display_name, plan: profile.plan }, credits: profile.credits, creditsMax: profile.credits_max });
+  }
+
+  if (action === "logout" && req.method === "POST") {
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
+    if (token) {
+      try {
+        await supabase.auth.admin.signOut(token);
+      } catch (_err) {
+        // Local logout still succeeds; the short-lived access token will expire naturally.
+      }
+    }
+    return json({ ok: true });
   }
 
   return json({ error: { message: "Auth route not found" } }, 404);

@@ -35,6 +35,8 @@ http.createServer(async (req, res) => {
       };
       [
         "authorization",
+        "x-flowtube-secret",
+        "x-huggyflow-secret",
         "x-flowtube-admin-secret",
         "x-huggyflow-admin-secret",
         "x-moneyfusion-secret",
@@ -44,6 +46,8 @@ http.createServer(async (req, res) => {
       ].forEach((name) => {
         if (req.headers[name]) headers[name] = req.headers[name];
       });
+      if (process.env.FLOWTUBE_EDGE_SECRET) headers["x-flowtube-secret"] = process.env.FLOWTUBE_EDGE_SECRET;
+      if (process.env.HUGGYFLOW_EDGE_SECRET) headers["x-huggyflow-secret"] = process.env.HUGGYFLOW_EDGE_SECRET;
       const upstream = await fetch(target, {
         method: req.method,
         headers,
