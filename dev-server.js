@@ -30,16 +30,30 @@ http.createServer(async (req, res) => {
       const target = "https://fuvrxobxjcqyevsjsdfd.supabase.co/functions/v1/flowtube-api" + url.pathname.replace(/^\/api/, "");
       const chunks = [];
       for await (const chunk of req) chunks.push(Buffer.from(chunk));
+      const headers = {
+        "content-type": req.headers["content-type"] || "application/json",
+      };
+      [
+        "authorization",
+        "x-flowtube-admin-secret",
+        "x-huggyflow-admin-secret",
+        "x-moneyfusion-secret",
+        "x-moneyfusion-signature",
+        "x-flowtube-provider-secret",
+        "x-fal-webhook-secret",
+      ].forEach((name) => {
+        if (req.headers[name]) headers[name] = req.headers[name];
+      });
       const upstream = await fetch(target, {
         method: req.method,
-        headers: { "content-type": req.headers["content-type"] || "application/json" },
+        headers,
         body: req.method === "GET" || req.method === "HEAD" ? undefined : Buffer.concat(chunks),
       });
-      const headers = Object.fromEntries(upstream.headers);
-      delete headers["content-encoding"];
-      delete headers["content-length"];
-      delete headers["transfer-encoding"];
-      res.writeHead(upstream.status, headers);
+      const responseHeaders = Object.fromEntries(upstream.headers);
+      delete responseHeaders["content-encoding"];
+      delete responseHeaders["content-length"];
+      delete responseHeaders["transfer-encoding"];
+      res.writeHead(upstream.status, responseHeaders);
       if (!upstream.body) return res.end();
       for await (const chunk of upstream.body) res.write(Buffer.from(chunk));
       res.end();
