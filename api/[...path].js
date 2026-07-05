@@ -1,7 +1,7 @@
 const { proxy } = require("./_proxy.js");
 
-// Routeur catch-all : proxifie toute requete /api/<...> vers la meme route de l'edge function.
-// Un seul fichier = une seule fonction serverless (limite du forfait Hobby: 12).
+// Routeur catch-all pour les routes simples (/api/bootstrap, /api/chat, /api/generate, ...).
+// Les routes imbriquees ont des wrappers explicites, car Vercel ne les resolvait pas partout.
 module.exports = async function handler(req, res) {
   let pathname = req.url || "";
   const qIndex = pathname.indexOf("?");

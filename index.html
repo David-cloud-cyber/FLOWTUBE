@@ -1810,6 +1810,7 @@ class Component extends DCLogic {
   }
   friendlyAuthError(message){
     const raw = String(message || '').trim();
+    if(/page could not be found|not_found|route not found|404/i.test(raw)) return 'Connexion indisponible. La route vient d etre corrigee, recharge la page puis reessaie.';
     if(/invalid login credentials/i.test(raw)) return 'E-mail ou mot de passe incorrect.';
     if(/email not confirmed/i.test(raw)) return 'Confirme ton e-mail avant de te connecter.';
     if(/user already registered|already been registered|already exists/i.test(raw)) return 'Un compte existe deja avec cet e-mail. Connecte-toi plutot.';
