@@ -170,6 +170,28 @@ class FlowtubeError extends Error {
   }
 }
 
+function publicErrorMessage(message: string, fallback = "Action indisponible pour le moment. Reessaie dans quelques instants.") {
+  const raw = String(message || "").trim();
+  if (!raw) return fallback;
+  if (/fal\.ai|fal-ai|endpoint|provider|fournisseur|FAL_KEY|anthropic|supabase|service key|api key|secret|server|internal|configuration|variable/i.test(raw)) {
+    return fallback;
+  }
+  return raw;
+}
+
+function publicErrorPayload(err: FlowtubeError) {
+  const payload: Record<string, unknown> = {
+    error: {
+      ...((err.payload.error as Record<string, unknown>) || {}),
+      message: publicErrorMessage(err.message),
+    },
+  };
+  for (const key of ["code", "creditsRequired", "creditsAvailable", "requiresConfirmation", "planId", "packId", "modelId"]) {
+    if (err.payload[key] !== undefined) payload[key] = err.payload[key];
+  }
+  return payload;
+}
+
 const FAL_ENDPOINTS = [
   "bytedance/seedance-2.0/image-to-video",
   "bytedance/seedance-2.0/fast/image-to-video",
@@ -1399,7 +1421,7 @@ async function bootstrap(req: Request) {
 const HUGGYFLOW_SYSTEM_PROMPT = [
   "Tu es Huggy, directeur artistique IA de HuggyFlow.",
   "HuggyFlow est un SaaS de creation media par IA: images, videos, retouches, avatars, lipsync, voix, musique, storyboards et campagnes visuelles.",
-  "Tu es le cerveau creatif et technique qui transforme une demande simple en production exploitable, sans demander a l'utilisateur de comprendre les modeles, endpoints ou parametres fal.ai.",
+  "Tu es le cerveau creatif et technique qui transforme une demande simple en production exploitable, sans demander a l'utilisateur de comprendre les modeles, fournisseurs, endpoints ou parametres internes.",
   "Tu reponds en francais, avec un ton direct, creatif, calme et utile. Tu es un partenaire de production, pas un formulaire.",
   "",
   "Mission:",
@@ -1432,8 +1454,8 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "6. Apres resultat: propose une ou deux iterations nettes: plus premium, autre cadrage, autre lumiere, version pub, format social, remix template.",
   "",
   "Selection modele:",
-  "- Tous les modeles media passent par fal.ai uniquement. N'appelle jamais directement OpenAI, Google, xAI, Luma, VEED, ElevenLabs, MiniMax ou autre fournisseur hors fal.ai.",
-  "- Utilise Auto HuggyFlow par defaut: le backend choisit le meilleur endpoint fal.ai selon type, reference, cout, qualite, vitesse et credits.",
+  "- Tous les modeles media passent par le pipeline prive HuggyFlow. Ne cite jamais les fournisseurs, endpoints, couts internes ou details d'infrastructure a l'utilisateur.",
+  "- Utilise Auto HuggyFlow par defaut: le backend choisit le meilleur moteur selon type, reference, cout, qualite, vitesse et credits.",
   "- Modeles a privilegier quand pertinents: GPT Image 2 pour image propre, GPT Image Edit/Nano/Flux pour retouche, Veo 3 ou Kling 3 pour video premium, Seedance 2 pour vitesse/qualite, Ray/PixVerse pour variations et mouvement, MiniMax/Gemini pour voix, Lyria/Sonilo pour musique, HeyGen/Sync pour lipsync.",
   "- Premium/final commercial: prefere Veo 3, Kling 3 Pro/4K, GPT Image 2, Nano Pro, Lyria Pro, HeyGen Precision.",
   "- Draft/test rapide: prefere fast, turbo, lite, mini ou schnell.",
@@ -1486,8 +1508,9 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "Skills internes HuggyFlow:",
   "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage ou strategie.",
   "- Combine plusieurs skills quand c'est plus fort: exemple storyboard + Kling/Seedance pour video, copywriting + image director pour affiche, UGC + lipsync pour avatar parlant.",
-  "- N'affiche jamais les noms techniques des skills, endpoints, fournisseurs ou parametres a l'utilisateur sauf s'il les demande clairement.",
-  "- Adapte tous les workflows joints a HuggyFlow et aux modeles disponibles via fal.ai. Si un skill mentionne un outil externe, garde la methode creative mais execute via le pipeline HuggyFlow.",
+  "- N'affiche jamais les noms techniques des skills, endpoints, fournisseurs ou parametres a l'utilisateur. Reste sur les benefices, le resultat et l'orchestration HuggyFlow.",
+  "- Adapte tous les workflows joints a HuggyFlow et aux modeles disponibles via le pipeline prive HuggyFlow. Si un skill mentionne un outil externe, garde la methode creative mais execute via le pipeline HuggyFlow.",
+  "- Confidentialite: si l'utilisateur demande quel fournisseur, API, serveur ou outil interne est utilise, reponds simplement que HuggyFlow orchestre ses propres moteurs de creation. Ne mentionne jamais de fournisseur media, meme pour corriger l'utilisateur.",
   "- Si la demande parle marketing, remplace le jargon par un benefice clair: gain de temps, meilleure qualite, declinaisons rapides, coherence de marque, publication plus facile.",
   "",
   "Regle finale: a chaque tour, fais avancer la production HuggyFlow. Cadre, choisis, produis, ameliore.",
@@ -3412,8 +3435,8 @@ async function chat(req: Request) {
         send("credits", { credits: finalProfile?.credits ?? 0 });
         send("done", projectDonePayload(project, conversation));
       } catch (err) {
-        if (err instanceof FlowtubeError) send("error", { message: err.message, ...err.payload });
-        else send("error", { message: err instanceof Error ? err.message : "Chat failed" });
+        if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
+        else send("error", { message: publicErrorMessage(err instanceof Error ? err.message : "Chat failed") });
       } finally {
         controller.close();
       }
@@ -4604,7 +4627,7 @@ Deno.serve(async (req: Request) => {
     if (first === "admin" && route[1]) return await adminRoute(req, route[1]);
     return json({ error: { message: "Not found" } }, 404);
   } catch (err) {
-    if (err instanceof FlowtubeError) return json(err.payload, err.status);
-    return json({ error: { message: err instanceof Error ? err.message : "Unexpected Edge error" } }, 500);
+    if (err instanceof FlowtubeError) return json(publicErrorPayload(err), err.status);
+    return json({ error: { message: publicErrorMessage(err instanceof Error ? err.message : "Unexpected Edge error") } }, 500);
   }
 });

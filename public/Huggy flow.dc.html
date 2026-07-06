@@ -32,6 +32,7 @@ input:focus,textarea:focus{outline:none}
 @keyframes tabFade{from{opacity:.45}to{opacity:1}}
 [data-nav-scroll]{scrollbar-width:none}
 [data-nav-scroll]::-webkit-scrollbar{display:none}
+[data-nav-scroll] button:active{transform:none!important}
 @keyframes typingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 @keyframes shimmer{0%{transform:translateX(-110%)}100%{transform:translateX(220%)}}
 @keyframes softPulse{0%,100%{opacity:.48}50%{opacity:1}}
@@ -44,60 +45,68 @@ input:focus,textarea:focus{outline:none}
 [data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(214,249,78,.10);color:#D6F94E}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
+[data-hf-rail="true"]{align-items:center}
+[data-hf-rail="true"] [data-hf-hide-rail]{display:none!important}
+[data-hf-rail="true"] [data-hf-rail-item]{width:38px!important;min-width:38px!important;height:38px;flex:0 0 38px!important;padding:0!important;justify-content:center!important;gap:0!important;align-self:center}
+[data-hf-rail="true"] [data-hf-rail-icon]{width:38px!important;height:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important}
+[data-hf-rail="true"] [data-hf-rail-item] > span:not([data-hf-rail-icon]){display:none!important}
+[data-hf-rail="true"] [data-hf-rail-list]{align-items:center;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
+[data-hf-rail="true"] [data-hf-rail-bottom]{align-items:center;width:100%}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:'Instrument Sans',system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
-  <aside style="{{ sidebarStyle }}">
+  <aside data-hf-rail="{{ sidebarRail }}" style="{{ sidebarStyle }}">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.09)">
-        <div style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#D6F94E;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B1C1E" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
-        <span style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">HuggyFlow</span>
-        <svg width="12" height="12" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 9 12 4 17 9"></polyline><polyline points="7 15 12 20 17 15"></polyline></svg>
+      <div data-hf-rail-item="true" onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.09)">
+        <div data-hf-rail-icon="true" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#D6F94E;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B1C1E" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+        <span data-hf-hide-rail="true" style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">HuggyFlow</span>
+        <svg data-hf-hide-rail="true" width="12" height="12" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 9 12 4 17 9"></polyline><polyline points="7 15 12 20 17 15"></polyline></svg>
       </div>
-      <button onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="width:32px;height:32px;flex:0 0 auto;border-radius:10px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.07);color:#E8E9EB">
+      <button data-hf-hide-rail="true" onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="width:32px;height:32px;flex:0 0 auto;border-radius:10px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.07);color:#E8E9EB">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><line x1="9.5" y1="4" x2="9.5" y2="20"></line></svg>
       </button>
     </div>
 
-    <div onClick="{{ newProject }}" style="display:flex;align-items:center;gap:11px;padding:6px 8px;border-radius:11px;cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-      <span style="width:27px;height:27px;flex:0 0 auto;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8E9EB" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
-      <span style="font-size:14px;font-weight:600">Nouveau projet</span>
+    <div data-hf-rail-item="true" onClick="{{ newProject }}" title="Nouveau projet" style="display:flex;align-items:center;gap:11px;padding:6px 8px;border-radius:11px;cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+      <span data-hf-rail-icon="true" style="width:27px;height:27px;flex:0 0 auto;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8E9EB" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
+      <span data-hf-hide-rail="true" style="font-size:14px;font-weight:600">Nouveau projet</span>
     </div>
-    <div style="display:flex;align-items:center;gap:11px;padding:6px 8px;border-radius:11px;cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-      <span style="width:27px;height:27px;flex:0 0 auto;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-      <span style="font-size:14px;font-weight:500;color:#CCCED2">Rechercher</span>
+    <div data-hf-rail-item="true" title="Rechercher" style="display:flex;align-items:center;gap:11px;padding:6px 8px;border-radius:11px;cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+      <span data-hf-rail-icon="true" style="width:27px;height:27px;flex:0 0 auto;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+      <span data-hf-hide-rail="true" style="font-size:14px;font-weight:500;color:#CCCED2">Rechercher</span>
     </div>
 
-    <div style="flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;margin:6px -4px 0;padding:0 4px">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px 6px">
+    <div data-hf-rail-list="true" style="flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;margin:6px -4px 0;padding:0 4px">
+      <div data-hf-hide-rail="true" style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px 6px">
         <span style="font-size:12px;color:#8B8E95;font-weight:500">Créations</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
-      <div onClick="{{ openGallery }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#B0B3B9"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
-        <span style="flex:1">Galerie</span>
+      <div data-hf-rail-item="true" onClick="{{ openGallery }}" title="Galerie" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#B0B3B9"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Galerie</span>
       </div>
       <sc-for list="{{ collections }}" as="c" hint-placeholder-count="3">
-        <div onClick="{{ c.onOpen }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-          <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#B0B3B9">{{ c.icon }}</span>
-          <span style="flex:1">{{ c.name }}</span>
-          <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 7px;border-radius:5px;background:#D6F94E;color:#1B1C1E;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
+        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#B0B3B9">{{ c.icon }}</span>
+          <span data-hf-hide-rail="true" style="flex:1">{{ c.name }}</span>
+          <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:#D6F94E;color:#1B1C1E;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
         </div>
       </sc-for>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px">
-        <span style="font-size:12px;color:#8B8E95;font-weight:500">Projets</span>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
+        <span data-hf-hide-rail="true" style="font-size:12px;color:#8B8E95;font-weight:500">Projets</span>
+        <svg data-hf-hide-rail="true" width="11" height="11" style="{{ projectsChevronStyle }}" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
+      <sc-if value="{{ showProjectsList }}" hint-placeholder-val="{{ true }}">
       <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
-        <div style="position:relative;display:flex;align-items:center;gap:6px;padding:0;border-radius:11px;font-size:13px;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <div data-hf-rail-item="true" title="{{ p.title }}" style="position:relative;display:flex;align-items:center;gap:6px;padding:0;border-radius:11px;font-size:13px;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
           <div onClick="{{ p.onClick }}" style="min-width:0;flex:1;display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer">
-            <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.dot }}"></span></span>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
+            <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.dot }}"></span></span>
+            <span data-hf-hide-rail="true" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
           </div>
-          <button onClick="{{ p.onMenu }}" title="Actions du projet" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.08);color:#E8E9EB">
+          <button data-hf-hide-rail="true" onClick="{{ p.onMenu }}" title="Actions du projet" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.08);color:#E8E9EB">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
           </button>
           <sc-if value="{{ p.menuOpen }}" hint-placeholder-val="{{ false }}">
@@ -108,41 +117,42 @@ input:focus,textarea:focus{outline:none}
           </sc-if>
         </div>
       </sc-for>
+      </sc-if>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:10px;padding-top:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-size:11.5px;color:#8B8E95">
+    <div data-hf-rail-bottom="true" style="display:flex;flex-direction:column;gap:10px;padding-top:10px">
+      <div data-hf-hide-rail="true" style="display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-size:11.5px;color:#8B8E95">
         <span>Crédits</span>
         <span style="font-family:'JetBrains Mono',monospace;color:#CCCED2;white-space:nowrap">{{ creditsLabel }}</span>
       </div>
-      <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.09);overflow:hidden;margin:0 8px"><div style="width:{{ creditsPct }};height:100%;border-radius:3px;background:#D6F94E"></div></div>
+      <div style="{{ creditsTrackStyle }}"><div style="{{ creditsBarStyle }}"></div></div>
 
-      <div onClick="{{ openAffiliate }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg></span>
-        <span>Affiliation</span>
+      <div data-hf-rail-item="true" onClick="{{ openAffiliate }}" title="Affiliation" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg></span>
+        <span data-hf-hide-rail="true">Affiliation</span>
       </div>
 
       <sc-if value="{{ canSeeAdmin }}" hint-placeholder-val="{{ false }}">
-        <div onClick="{{ openAdmin }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-          <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
-          <span style="flex:1">Admin</span>
-          <span style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D6F94E;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
+        <div data-hf-rail-item="true" onClick="{{ openAdmin }}" title="Admin" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+          <span data-hf-hide-rail="true" style="flex:1">Admin</span>
+          <span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D6F94E;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
         </div>
       </sc-if>
 
-      <div onClick="{{ openPricing }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(214,249,78,.10);border:1px solid rgba(214,249,78,.14);cursor:pointer;transition:background .18s" style-hover="background:rgba(214,249,78,.16)">
-        <svg width="14" height="14" style="flex:0 0 auto;color:#D6F94E" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"></path></svg>
-        <span style="flex:1;font-size:13.5px;font-weight:700;color:#D6F94E">Tarifs</span>
+      <div data-hf-rail-item="true" onClick="{{ openPricing }}" title="Tarifs" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(214,249,78,.10);border:1px solid rgba(214,249,78,.14);cursor:pointer;transition:background .18s" style-hover="background:rgba(214,249,78,.16)">
+        <span data-hf-rail-icon="true" style="color:#D6F94E"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1;font-size:13.5px;font-weight:700;color:#D6F94E">Tarifs</span>
         <span style="padding:3px 8px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10px;font-weight:800;letter-spacing:.04em">−20%</span>
       </div>
 
-      <div onClick="{{ openSettings }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:11px;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <div style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D6F94E 55%, #9DBD2A);box-shadow:0 0 0 2px #1B1C1E,0 0 0 3.5px rgba(214,249,78,.5)"></div>
-        <div style="min-width:0;flex:1">
+      <div data-hf-rail-item="true" onClick="{{ openSettings }}" title="{{ accountName }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:11px;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <div data-hf-rail-icon="true" style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D6F94E 55%, #9DBD2A);box-shadow:0 0 0 2px #1B1C1E,0 0 0 3.5px rgba(214,249,78,.5)"></div>
+        <div data-hf-hide-rail="true" style="min-width:0;flex:1">
           <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ accountName }}</div>
           <div style="font-size:11px;color:#8B8E95">{{ planLabel }}</div>
         </div>
-        <svg width="15" height="15" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <svg data-hf-hide-rail="true" width="15" height="15" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </div>
     </div>
   </aside>
@@ -1670,6 +1680,7 @@ class Component extends DCLogic {
     backendReady: false,
     sendLocked: false,
     sidebarCollapsed: !!this.initialUiState.sidebarCollapsed,
+    projectsExpanded: this.initialUiState.projectsExpanded !== false,
     projectMenuId: '',
     projectModal: null,
     renameProjectId: '',
@@ -1743,8 +1754,8 @@ class Component extends DCLogic {
   };
 
   tabStyle(active){
-    return 'padding:8px 18px;border-radius:999px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;gap:6px;align-items:center;transition:all .2s;' +
-      (active ? 'background:' + this.tokens().surface + ';color:' + this.tokens().ink + ';box-shadow:0 2px 8px -3px rgba(12,11,9,.25)' : 'background:transparent;color:' + this.tokens().text3);
+    return 'height:34px;min-height:34px;padding:0 18px;border-radius:999px;border:none;font-size:13px;font-weight:600;line-height:34px;cursor:pointer;font-family:inherit;display:inline-flex;gap:6px;align-items:center;justify-content:center;box-sizing:border-box;vertical-align:top;transform:none;transition:background .18s ease,color .18s ease,box-shadow .18s ease;' +
+      (active ? 'background:' + this.tokens().surface + ';color:' + this.tokens().ink + ';box-shadow:inset 0 0 0 1px rgba(' + this.tokens().lineRGB + ',.06)' : 'background:transparent;color:' + this.tokens().text3 + ';box-shadow:inset 0 0 0 1px transparent');
   }
 
   buildPlans(){
@@ -2140,14 +2151,21 @@ class Component extends DCLogic {
     clearInterval(this._ph);
     Object.keys(this.polls || {}).forEach(id=>clearTimeout(this.polls[id]));
     Object.keys(this.batchPolls || {}).forEach(id=>clearTimeout(this.batchPolls[id]));
+    clearTimeout(this.persistTimer);
+    clearTimeout(this.bootstrapTimer);
+    this.persistUiState();
     if(this.chatAbort) this.chatAbort.abort();
   }
   componentDidUpdate(prevProps, prevState){
-    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','sidebarCollapsed'];
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','sidebarCollapsed','projectsExpanded'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
-    if(changed) this.persistUiState();
+    if(changed) this.schedulePersistUiState();
     if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked) this.scrollChatToBottom();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
+  }
+  schedulePersistUiState(){
+    clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(()=>this.persistUiState(), 260);
   }
   persistUiState(){
     if(typeof window === 'undefined' || !window.localStorage) return;
@@ -2163,10 +2181,15 @@ class Component extends DCLogic {
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
-        sidebarCollapsed:!!this.state.sidebarCollapsed
+        sidebarCollapsed:!!this.state.sidebarCollapsed,
+        projectsExpanded:this.state.projectsExpanded !== false
       };
       window.localStorage.setItem('huggyflow_ui_state', JSON.stringify(payload));
     }catch(e){}
+  }
+  scheduleBootstrap(delay){
+    clearTimeout(this.bootstrapTimer);
+    this.bootstrapTimer = setTimeout(()=>this.bootstrap(), delay || 1200);
   }
   scrollChatToBottom(){
     if(typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
@@ -2356,7 +2379,7 @@ class Component extends DCLogic {
     }finally{
       this.chatAbort = null;
       this.setState({ sendLocked:false });
-      this.bootstrap();
+      this.scheduleBootstrap(1400);
     }
   }
   async consumeChatStream(res, agentId){
@@ -2827,8 +2850,11 @@ class Component extends DCLogic {
     const chipBase = 'display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .18s;';
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
-    const sendColor = st.sendLocked ? '#C45840' : '#D6F94E';
-    const sendFg = st.sendLocked ? '#FFFFFF' : '#1B1C1E';
+    const creditMax = Math.max(1, Number(st.creditsMax || 100));
+    const creditPct = Math.max(0, Math.min(100, Math.round(100 * Number(st.credits || 0) / creditMax)));
+    const creditColor = creditPct > 45 ? '#D6F94E' : (creditPct > 18 ? '#E8B25C' : '#C45840');
+    const sendColor = '#D6F94E';
+    const sendFg = '#1B1C1E';
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -2858,8 +2884,12 @@ class Component extends DCLogic {
       })),
       settingsAnim: st.settingsHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
       sidebarStyle: 'width:' + (st.sidebarCollapsed ? '72px' : '258px') + ';flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#E8E9EB;transition:width .24s ease;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both',
+      sidebarRail: st.sidebarCollapsed ? 'true' : 'false',
       sidebarToggleTitle: st.sidebarCollapsed ? 'Ouvrir la barre laterale' : 'Replier la barre laterale',
       toggleSidebar: ()=> this.setState(s=>({ sidebarCollapsed: !s.sidebarCollapsed })),
+      showProjectsList: st.sidebarCollapsed ? true : st.projectsExpanded !== false,
+      toggleProjectsSection: ()=> this.setState(s=>({ projectsExpanded: !(s.projectsExpanded !== false), projectMenuId:'' })),
+      projectsChevronStyle: 'flex:0 0 auto;transition:transform .18s ease;transform:rotate(' + (st.projectsExpanded !== false ? '0deg' : '-90deg') + ')',
       canSeeAdmin: this.isAdminUser(),
       showTeam: st.page === 'team',
       showApi: st.page === 'api',
@@ -3036,7 +3066,9 @@ class Component extends DCLogic {
       accountName: st.user ? st.user.name : 'Invité',
       planLabel: st.user ? 'Offre Creator' : 'Offre gratuite',
       creditsLabel: st.credits + ' / ' + st.creditsMax,
-      creditsPct: Math.round(100 * st.credits / st.creditsMax) + '%',
+      creditsPct: creditPct + '%',
+      creditsTrackStyle: 'height:' + (st.sidebarCollapsed ? '28px' : '3px') + ';width:' + (st.sidebarCollapsed ? '28px' : 'auto') + ';border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;margin:' + (st.sidebarCollapsed ? '0' : '0 8px') + ';position:relative;transition:height .2s ease,width .2s ease',
+      creditsBarStyle: 'width:' + (st.sidebarCollapsed ? '100%' : (creditPct + '%')) + ';height:' + (st.sidebarCollapsed ? (creditPct + '%') : '100%') + ';position:absolute;left:0;bottom:0;border-radius:999px;background:' + creditColor + ';transition:width .35s ease,height .35s ease,background .25s ease;box-shadow:0 0 14px -8px ' + creditColor,
       projects: [
         { title:'Packshots — collection été', dot:'#D6F94E', onClick: ()=>{} },
         { title:'Teaser lancement juillet', dot:'#C9A8E8', onClick: ()=>{} },
