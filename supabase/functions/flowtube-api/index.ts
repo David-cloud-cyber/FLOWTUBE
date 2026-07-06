@@ -96,7 +96,7 @@ async function anthropicMessages(payload: Record<string, unknown>, preferredMode
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret, x-huggyflow-secret, x-flowtube-admin-secret, x-huggyflow-admin-secret, stripe-signature, x-moneyfusion-secret, x-moneyfusion-signature, x-flowtube-provider-secret, x-fal-webhook-secret",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
 };
 
 type PricingModel = {
@@ -3671,6 +3671,47 @@ async function createProjectRoute(req: Request) {
   return json({ project: { id: result.project.id, title: result.project.title, conversationId: result.conversation.id } });
 }
 
+async function projectRoute(req: Request, projectId: string) {
+  if (!isUuid(projectId)) return json({ error: { message: "Project not found" } }, 404);
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const { data: project, error: projectError } = await supabase.from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (projectError) throw projectError;
+  if (!project) return json({ error: { message: "Project not found" } }, 404);
+
+  if (req.method === "PATCH") {
+    const body = await bodyJson(req);
+    const title = String(body.title || "").replace(/\s+/g, " ").trim().slice(0, 80) || "Nouveau projet";
+    const { data: updated, error } = await supabase.from("projects")
+      .update({ title })
+      .eq("id", projectId)
+      .eq("user_id", userId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    await supabase.from("conversations").update({ title }).eq("project_id", projectId).eq("user_id", userId);
+    return json({ project: { id: updated.id, title: updated.title } });
+  }
+
+  if (req.method === "DELETE") {
+    await supabase.from("messages").delete().eq("project_id", projectId).eq("user_id", userId);
+    await supabase.from("generations").delete().eq("project_id", projectId).eq("user_id", userId);
+    await supabase.from("agent_memory").delete().eq("project_id", projectId).eq("user_id", userId);
+    await supabase.from("agent_skills").delete().eq("project_id", projectId).eq("user_id", userId);
+    await supabase.from("brand_assets").delete().eq("project_id", projectId).eq("user_id", userId);
+    await supabase.from("conversations").delete().eq("project_id", projectId).eq("user_id", userId);
+    const { error } = await supabase.from("projects").delete().eq("id", projectId).eq("user_id", userId);
+    if (error) throw error;
+    return json({ ok: true, projectId });
+  }
+
+  return json({ error: { message: "Project route not found" } }, 404);
+}
+
 async function profileRoute(req: Request) {
   const supabase = adminClient();
   const userId = await userIdFromRequest(req, supabase);
@@ -4546,6 +4587,7 @@ Deno.serve(async (req: Request) => {
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
+    if (first === "projects" && route[1] && (req.method === "PATCH" || req.method === "DELETE")) return await projectRoute(req, route[1]);
     if (first === "profile" && (req.method === "GET" || req.method === "POST")) return await profileRoute(req);
     if (first === "team" && (req.method === "GET" || req.method === "POST")) return await teamRoute(req);
     if (((first === "api" && route[1] === "keys") || first === "keys") && (req.method === "GET" || req.method === "POST")) return await apiKeysRoute(req);

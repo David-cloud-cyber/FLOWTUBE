@@ -17,7 +17,7 @@ html{background:#0E0F12}
 body{margin:0}
 button,input,textarea{font:inherit}
 button{transition:transform .16s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,color .2s ease,filter .2s ease}
-button:active{transform:translateY(1px)}
+button:active{transform:scale(.95)}
 textarea{resize:none}
 input:focus,textarea:focus{outline:none}
 ::placeholder{color:#9A9DA4}
@@ -34,19 +34,29 @@ input:focus,textarea:focus{outline:none}
 [data-nav-scroll]::-webkit-scrollbar{display:none}
 @keyframes typingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 @keyframes shimmer{0%{transform:translateX(-110%)}100%{transform:translateX(220%)}}
+@keyframes softPulse{0%,100%{opacity:.48}50%{opacity:1}}
+[data-hf-md]{white-space:normal;overflow-wrap:anywhere}
+[data-hf-md] p{margin:0 0 10px}
+[data-hf-md] p:last-child{margin-bottom:0}
+[data-hf-md] strong{font-weight:750;color:inherit}
+[data-hf-md] ul,[data-hf-md] ol{margin:8px 0 10px 20px;padding:0}
+[data-hf-md] li{margin:5px 0}
+[data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(214,249,78,.10);color:#D6F94E}
+[data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
+[data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:'Instrument Sans',system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
-  <aside style="width:258px;flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#E8E9EB;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both">
+  <aside style="{{ sidebarStyle }}">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.09)">
         <div style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#D6F94E;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B1C1E" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
         <span style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">HuggyFlow</span>
         <svg width="12" height="12" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 9 12 4 17 9"></polyline><polyline points="7 15 12 20 17 15"></polyline></svg>
       </div>
-      <button title="Replier" style="width:32px;height:32px;flex:0 0 auto;border-radius:10px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.07);color:#E8E9EB">
+      <button onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="width:32px;height:32px;flex:0 0 auto;border-radius:10px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.07);color:#E8E9EB">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><line x1="9.5" y1="4" x2="9.5" y2="20"></line></svg>
       </button>
     </div>
@@ -82,9 +92,20 @@ input:focus,textarea:focus{outline:none}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
       <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
-        <div onClick="{{ p.onClick }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13px;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-          <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.dot }}"></span></span>
-          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
+        <div style="position:relative;display:flex;align-items:center;gap:6px;padding:0;border-radius:11px;font-size:13px;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+          <div onClick="{{ p.onClick }}" style="min-width:0;flex:1;display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer">
+            <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.dot }}"></span></span>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
+          </div>
+          <button onClick="{{ p.onMenu }}" title="Actions du projet" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.08);color:#E8E9EB">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+          </button>
+          <sc-if value="{{ p.menuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;right:0;top:32px;z-index:40;width:148px;padding:6px;border-radius:12px;background:#1B1C1E;border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 44px -24px rgba(0,0,0,.7);animation:fadeUp .14s ease both">
+              <button onClick="{{ p.onRename }}" style="width:100%;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:#E8E9EB;text-align:left;cursor:pointer;font-size:12.5px" style-hover="background:rgba(255,255,255,.07)">Renommer</button>
+              <button onClick="{{ p.onDelete }}" style="width:100%;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:#FFB7B7;text-align:left;cursor:pointer;font-size:12.5px" style-hover="background:rgba(255,107,107,.10)">Supprimer</button>
+            </div>
+          </sc-if>
         </div>
       </sc-for>
     </div>
@@ -101,11 +122,13 @@ input:focus,textarea:focus{outline:none}
         <span>Affiliation</span>
       </div>
 
-      <div onClick="{{ openAdmin }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
-        <span style="flex:1">Admin</span>
-        <span style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D6F94E;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
-      </div>
+      <sc-if value="{{ canSeeAdmin }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ openAdmin }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+          <span style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+          <span style="flex:1">Admin</span>
+          <span style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D6F94E;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
+        </div>
+      </sc-if>
 
       <div onClick="{{ openPricing }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(214,249,78,.10);border:1px solid rgba(214,249,78,.14);cursor:pointer;transition:background .18s" style-hover="background:rgba(214,249,78,.16)">
         <svg width="14" height="14" style="flex:0 0 auto;color:#D6F94E" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"></path></svg>
@@ -181,9 +204,10 @@ input:focus,textarea:focus{outline:none}
                   </sc-if>
                 </div>
                 <div style="flex:1"></div>
-                <span style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">↵ envoyer</span>
-                <button onClick="{{ send }}" title="Envoyer" style="width:38px;height:38px;flex:0 0 auto;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="background:#1B1C1E;color:#D6F94E">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg>
+                <span style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">{{ sendHint }}</span>
+                <button onClick="{{ sendAction }}" title="{{ sendButtonTitle }}" style="{{ sendButtonStyleLarge }}" style-hover="filter:brightness(.95)">
+                  <sc-if value="{{ isSending }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"></rect></svg></sc-if>
+                  <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg></sc-if>
                 </button>
               </div>
             </div>
@@ -216,7 +240,7 @@ input:focus,textarea:focus{outline:none}
         </sc-if>
 
         <sc-if value="{{ hasMessages }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;flex-direction:column;gap:26px;padding:26px 0 150px">
+          <div data-hf-chat-list="true" style="display:flex;flex-direction:column;gap:26px;padding:26px 0 150px">
             <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
               <div style="{{ m.rowStyle }}">
                 <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
@@ -227,14 +251,18 @@ input:focus,textarea:focus{outline:none}
                     <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
                     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:13px;padding-top:4px">
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
-                        <div style="display:inline-flex;align-items:center;gap:5px;padding:6px 2px">
-                          <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease infinite"></span>
-                          <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .18s infinite"></span>
-                          <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .36s infinite"></span>
+                        <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;max-width:460px">
+                          <div style="display:inline-flex;align-items:center;gap:5px">
+                            <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease infinite"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .18s infinite"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .36s infinite"></span>
+                          </div>
+                          <div data-hf-skeleton="true" style="height:10px;width:100%"></div>
+                          <div data-hf-skeleton="true" style="height:10px;width:72%"></div>
                         </div>
                       </sc-if>
                       <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}">
-                        <div style="font-size:14.5px;line-height:1.65;color:{{ tInkSoft }};max-width:560px">{{ m.text }}</div>
+                        <div style="font-size:14.5px;line-height:1.65;color:{{ tInkSoft }};max-width:560px">{{ m.richText }}</div>
                       </sc-if>
                       <sc-if value="{{ m.hasMedia }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
@@ -334,8 +362,9 @@ input:focus,textarea:focus{outline:none}
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
               <span style="padding:5px 11px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);font-size:11.5px;color:{{ tText3 }};white-space:nowrap">{{ curModelName }}</span>
               <div style="flex:1"></div>
-              <button onClick="{{ send }}" style="width:34px;height:34px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="background:#1B1C1E;color:#D6F94E">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg>
+              <button onClick="{{ sendAction }}" title="{{ sendButtonTitle }}" style="{{ sendButtonStyleSmall }}" style-hover="filter:brightness(.95)">
+                <sc-if value="{{ isSending }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"></rect></svg></sc-if>
+                <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg></sc-if>
               </button>
             </div>
           </div>
@@ -385,7 +414,7 @@ input:focus,textarea:focus{outline:none}
             </sc-for>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <button style="display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">
+            <button onClick="{{ openCompare }}" style="display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
               Comparer
               <span style="padding:2px 8px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:9.5px;font-weight:700;letter-spacing:.08em">NOUVEAU</span>
@@ -1510,6 +1539,71 @@ input:focus,textarea:focus{outline:none}
       </div>
     </div>
   </sc-if>
+
+  <sc-if value="{{ showProjectModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.54);display:flex;align-items:center;justify-content:center;padding:24px;animation:pageFade .2s ease both">
+      <div style="width:100%;max-width:390px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.12);border-radius:20px;padding:22px;box-shadow:0 24px 70px -34px rgba(0,0,0,.75);animation:fadeUp .2s ease both">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px">
+          <div style="font-family:'Instrument Serif',serif;font-size:28px;letter-spacing:-.01em">{{ projectModalTitle }}</div>
+          <button onClick="{{ closeProjectModal }}" title="Fermer" style="width:34px;height:34px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <sc-if value="{{ isRenameModal }}" hint-placeholder-val="{{ true }}">
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:600;color:{{ tText2 }}">Nom du projet
+            <input value="{{ renameTitle }}" onChange="{{ onRenameTitle }}" onKeyDown="{{ onRenameKey }}" placeholder="Nom du projet" style="padding:12px 14px;border-radius:12px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
+          </label>
+          <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:20px">
+            <button onClick="{{ closeProjectModal }}" style="padding:10px 16px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Annuler</button>
+            <button onClick="{{ confirmRenameProject }}" style="padding:10px 17px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Renommer</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isDeleteModal }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:14px;line-height:1.55;color:{{ tText2 }}">Ce projet sera retiré de ton espace. Les créations déjà sauvegardées dans la galerie restent disponibles.</div>
+          <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:20px">
+            <button onClick="{{ closeProjectModal }}" style="padding:10px 16px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Garder</button>
+            <button onClick="{{ confirmDeleteProject }}" style="padding:10px 17px;border-radius:999px;border:none;background:#C45840;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Supprimer</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCompare }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:58;background:rgba(0,0,0,.54);display:flex;align-items:center;justify-content:center;padding:24px;animation:pageFade .2s ease both">
+      <div style="width:100%;max-width:760px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.12);border-radius:22px;padding:24px;box-shadow:0 24px 70px -34px rgba(0,0,0,.75);animation:fadeUp .2s ease both">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px">
+          <div>
+            <div style="font-family:'Instrument Serif',serif;font-size:30px;letter-spacing:-.01em">Comparer les créations</div>
+            <div style="margin-top:4px;font-size:13px;color:{{ tText3 }}">Compare les deux derniers rendus terminés de ton projet.</div>
+          </div>
+          <button onClick="{{ closeCompare }}" title="Fermer" style="width:34px;height:34px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <sc-if value="{{ compareEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:30px;border-radius:16px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.09);font-size:14px;line-height:1.55;color:{{ tText2 }}">Crée au moins deux images ou vidéos dans ce projet, puis reviens ici pour les comparer côte à côte.</div>
+        </sc-if>
+        <sc-if value="{{ compareReady }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <sc-for list="{{ compareItems }}" as="ci" hint-placeholder-count="2">
+              <div style="border-radius:16px;overflow:hidden;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)">
+                <div style="position:relative;aspect-ratio:1/1;background:{{ tMediaGrad }}">
+                  <sc-if value="{{ ci.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ ci.url }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/></sc-if>
+                  <sc-if value="{{ ci.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ ci.url }}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video></sc-if>
+                </div>
+                <div style="padding:13px 14px">
+                  <div style="font-size:13px;font-weight:800;color:{{ tInk }}">{{ ci.label }}</div>
+                  <div style="margin-top:4px;font-size:11.5px;color:{{ tText4 }}">{{ ci.model }} · {{ ci.credits }}</div>
+                  <div style="margin-top:8px;font-size:12.5px;line-height:1.45;color:{{ tText2 }}">{{ ci.prompt }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;showSuggestions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Accueil&quot;}}">
@@ -1529,20 +1623,31 @@ class Component extends DCLogic {
     }
   }
 
+  storedUiState(){
+    const defaults = {};
+    if(typeof window === 'undefined' || !window.localStorage) return defaults;
+    try{
+      const saved = JSON.parse(window.localStorage.getItem('huggyflow_ui_state') || '{}') || {};
+      if(saved && typeof saved === 'object') return saved;
+    }catch(e){}
+    return defaults;
+  }
+
   initialAuthSession = this.storedAuthSession();
+  initialUiState = this.storedUiState();
 
   state = {
     theme: 'dark',
-    page: 'app',
-    input: '',
-    messages: [],
+    page: this.initialUiState.page || 'app',
+    input: this.initialUiState.input || '',
+    messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
-    modelId: 'auto',
-    mode: 'image',
+    modelId: this.initialUiState.modelId || 'auto',
+    mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
     suggestionSet: 0,
-    billing: 'annual',
-    segment: 'solo',
+    billing: this.initialUiState.billing || 'annual',
+    segment: this.initialUiState.segment || 'solo',
     faqOpen: 0,
     authMode: 'login',
     authName: '', authEmail: '', authPassword: '',
@@ -1553,9 +1658,9 @@ class Component extends DCLogic {
     pendingAuthAction: null,
     user: null,
     credits: 0, creditsMax: 100,
-    activeTitle: 'Nouveau projet',
-    activeProjectId: 'welcome',
-    projectsData: [],
+    activeTitle: this.initialUiState.activeTitle || 'Nouveau projet',
+    activeProjectId: this.initialUiState.activeProjectId || 'welcome',
+    projectsData: Array.isArray(this.initialUiState.projectsData) ? this.initialUiState.projectsData : [],
     pricingPlans: [],
     pricingModels: [],
     creditPacks: [],
@@ -1563,7 +1668,14 @@ class Component extends DCLogic {
     billingLoading: false,
     pricingNotice: '',
     backendReady: false,
-    sendLocked: false
+    sendLocked: false,
+    sidebarCollapsed: !!this.initialUiState.sidebarCollapsed,
+    projectMenuId: '',
+    projectModal: null,
+    renameProjectId: '',
+    renameTitle: '',
+    deleteProjectId: '',
+    compareOpen: false
   };
 
   MODELS = [
@@ -2028,6 +2140,86 @@ class Component extends DCLogic {
     clearInterval(this._ph);
     Object.keys(this.polls || {}).forEach(id=>clearTimeout(this.polls[id]));
     Object.keys(this.batchPolls || {}).forEach(id=>clearTimeout(this.batchPolls[id]));
+    if(this.chatAbort) this.chatAbort.abort();
+  }
+  componentDidUpdate(prevProps, prevState){
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','sidebarCollapsed'];
+    const changed = watched.some(key=>prevState[key] !== this.state[key]);
+    if(changed) this.persistUiState();
+    if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked) this.scrollChatToBottom();
+    if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
+  }
+  persistUiState(){
+    if(typeof window === 'undefined' || !window.localStorage) return;
+    try{
+      const payload = {
+        page:this.state.page === 'auth' ? 'app' : this.state.page,
+        input:this.state.input || '',
+        messages:this.state.messages || [],
+        activeProjectId:this.state.activeProjectId || 'welcome',
+        activeTitle:this.state.activeTitle || 'Nouveau projet',
+        projectsData:this.state.projectsData || [],
+        modelId:this.state.modelId || 'auto',
+        mode:this.state.mode || 'image',
+        billing:this.state.billing || 'annual',
+        segment:this.state.segment || 'solo',
+        sidebarCollapsed:!!this.state.sidebarCollapsed
+      };
+      window.localStorage.setItem('huggyflow_ui_state', JSON.stringify(payload));
+    }catch(e){}
+  }
+  scrollChatToBottom(){
+    if(typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+    requestAnimationFrame(()=>{
+      const list = document.querySelector('[data-screen-label="Interface principale"]') || document.querySelector('[data-hf-chat-list="true"]');
+      if(list) list.scrollTop = list.scrollHeight;
+    });
+  }
+  isAdminUser(){
+    const email = String((this.state.user && this.state.user.email) || '').trim().toLowerCase();
+    return !!this.state.authToken && email === 'novacore629@gmail.com';
+  }
+  normalizeMarkdownText(text){
+    return String(text || '')
+      .replace(/\s+(\d+\.\s+\*\*)/g, '\n\n$1')
+      .replace(/\s+-\s+(\*\*[^*]+\*\*)/g, '\n- $1')
+      .replace(/\s+(Petit point cash:)/g, '\n\n$1')
+      .replace(/\s+(Pour d[ée]marrer)/gi, '\n\n$1')
+      .trim();
+  }
+  inlineMarkdown(text, keyPrefix){
+    const parts = String(text || '').split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(part=>part !== '');
+    return parts.map((part, i)=>{
+      const key = (keyPrefix || 'md') + '-' + i;
+      if(part.indexOf('**') === 0 && part.lastIndexOf('**') === part.length - 2){
+        return React.createElement('strong', { key }, part.slice(2, -2));
+      }
+      if(part.indexOf('`') === 0 && part.lastIndexOf('`') === part.length - 1){
+        return React.createElement('code', { key }, part.slice(1, -1));
+      }
+      return React.createElement('span', { key }, part);
+    });
+  }
+  markdownBlocks(text){
+    const source = this.normalizeMarkdownText(text);
+    if(!source) return '';
+    const blocks = source.split(/\n{2,}/).map(block=>block.trim()).filter(Boolean);
+    const children = [];
+    blocks.forEach((block, bi)=>{
+      const lines = block.split(/\n/).map(line=>line.trim()).filter(Boolean);
+      const allBullets = lines.length > 1 && lines.every(line=>/^[-*]\s+/.test(line));
+      const allNumbers = lines.length > 1 && lines.every(line=>/^\d+\.\s+/.test(line));
+      if(allBullets || allNumbers){
+        const tag = allNumbers ? 'ol' : 'ul';
+        children.push(React.createElement(tag, { key:'b'+bi }, lines.map((line, li)=>{
+          const clean = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
+          return React.createElement('li', { key:'li'+li }, this.inlineMarkdown(clean, 'b'+bi+'li'+li));
+        })));
+      } else {
+        children.push(React.createElement('p', { key:'p'+bi }, this.inlineMarkdown(lines.join(' '), 'p'+bi)));
+      }
+    });
+    return React.createElement('div', { 'data-hf-md': true }, children);
   }
   updateAgentMessage(id, patch){
     this.setState(s=>({ messages:s.messages.map(m=>m.id === id ? Object.assign({}, m, patch) : m) }));
@@ -2100,6 +2292,14 @@ class Component extends DCLogic {
       sendLocked:true
     }), ()=>this.sendPromptToApi(t, agentId));
   }
+  stopGeneration(){
+    if(this.chatAbort) this.chatAbort.abort();
+    this.chatAbort = null;
+    this.setState(s=>({
+      sendLocked:false,
+      messages:s.messages.map(m=>m.typing ? Object.assign({}, m, { typing:false, text:'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
+    }));
+  }
   bindProjectFromApi(payload){
     const projectId = payload && (payload.projectId || payload.project_id);
     if(!projectId) return;
@@ -2133,8 +2333,10 @@ class Component extends DCLogic {
       agentModelId:this.agentModelApiId(model.id),
       aspectRatio:this.aspectRatioForMode(mode)
     };
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    this.chatAbort = controller;
     try{
-      const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload) });
+      const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload), signal:controller ? controller.signal : undefined });
       if(!res.ok){
         const data = await res.json().catch(()=>({}));
         throw new Error(data && data.error && data.error.message ? data.error.message : 'Chat failed');
@@ -2149,8 +2351,10 @@ class Component extends DCLogic {
       }
       if(!delivered) this.updateAgentMessage(agentId, { typing:false, text:'Creation lancee. Je synchronise les resultats avec HuggyFlow.' });
     }catch(err){
-      this.updateAgentMessage(agentId, { typing:false, text:this.friendlyError(err && err.message, 'La creation est indisponible pour le moment. Reessaie dans quelques instants.') });
+      const aborted = err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')));
+      this.updateAgentMessage(agentId, { typing:false, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La creation est indisponible pour le moment. Reessaie dans quelques instants.') });
     }finally{
+      this.chatAbort = null;
       this.setState({ sendLocked:false });
       this.bootstrap();
     }
@@ -2374,7 +2578,105 @@ class Component extends DCLogic {
   switchProject(id){
     const project = (this.state.projectsData || []).find(p=>p.id === id);
     if(!project) return;
-    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false });
+    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'' });
+  }
+  openProjectMenu(id, event){
+    if(event && event.stopPropagation) event.stopPropagation();
+    this.setState(s=>({ projectMenuId: s.projectMenuId === id ? '' : id }));
+  }
+  openRenameProject(project, event){
+    if(event && event.stopPropagation) event.stopPropagation();
+    this.setState({
+      projectModal:'rename',
+      renameProjectId:project.id,
+      renameTitle:project.title || 'Nouveau projet',
+      projectMenuId:''
+    });
+  }
+  openDeleteProject(project, event){
+    if(event && event.stopPropagation) event.stopPropagation();
+    this.setState({
+      projectModal:'delete',
+      deleteProjectId:project.id,
+      deleteProjectTitle:project.title || 'Nouveau projet',
+      projectMenuId:''
+    });
+  }
+  closeProjectModal(){
+    this.setState({ projectModal:null, renameProjectId:'', renameTitle:'', deleteProjectId:'' });
+  }
+  onRenameKey(event){
+    if(event.key === 'Enter'){ event.preventDefault(); this.confirmRenameProject(); }
+    if(event.key === 'Escape'){ event.preventDefault(); this.closeProjectModal(); }
+  }
+  async confirmRenameProject(){
+    const id = this.state.renameProjectId;
+    const title = String(this.state.renameTitle || '').trim() || 'Nouveau projet';
+    if(!id) return this.closeProjectModal();
+    const applyLocal = ()=>{
+      this.setState(s=>({
+        projectsData:(s.projectsData || []).map(p=>p.id === id ? Object.assign({}, p, { title }) : p),
+        activeTitle:s.activeProjectId === id ? title : s.activeTitle,
+        projectModal:null,
+        renameProjectId:'',
+        renameTitle:''
+      }));
+    };
+    if(String(id).indexOf('local-') === 0){ applyLocal(); return; }
+    try{
+      const res = await this.apiFetch('/api/projects/'+encodeURIComponent(id), { method:'PATCH', body:JSON.stringify({ title }) });
+      if(!res.ok) throw new Error('rename '+res.status);
+      applyLocal();
+    }catch(err){
+      this.setState({ pricingNotice:'Impossible de renommer le projet pour le moment.' });
+      applyLocal();
+    }
+  }
+  async confirmDeleteProject(){
+    const id = this.state.deleteProjectId;
+    if(!id) return this.closeProjectModal();
+    const applyLocal = ()=>{
+      this.setState(s=>{
+        const list = (s.projectsData || []).filter(p=>p.id !== id);
+        const next = s.activeProjectId === id ? (list[0] || null) : (list.find(p=>p.id === s.activeProjectId) || null);
+        return {
+          projectsData:list,
+          activeProjectId:next ? next.id : 'welcome',
+          activeTitle:next ? next.title : 'Nouveau projet',
+          messages:next ? (next.messages || []) : [],
+          projectModal:null,
+          deleteProjectId:'',
+          projectMenuId:''
+        };
+      });
+    };
+    if(String(id).indexOf('local-') === 0){ applyLocal(); return; }
+    try{
+      const res = await this.apiFetch('/api/projects/'+encodeURIComponent(id), { method:'DELETE' });
+      if(!res.ok) throw new Error('delete '+res.status);
+      applyLocal();
+    }catch(err){
+      this.setState({ pricingNotice:'Impossible de supprimer le projet pour le moment.' });
+      applyLocal();
+    }
+  }
+  compareMediaItems(){
+    const items = [];
+    (this.state.messages || []).forEach((msg, i)=>{
+      const media = msg.media;
+      if(!media || media.status !== 'done' || !media.resultUrl) return;
+      const type = this.mediaKind(media);
+      items.push({
+        label:'Version ' + (items.length + 1),
+        url:media.resultUrl,
+        isImage:type !== 'video',
+        isVideo:type === 'video',
+        model:media.model || 'HuggyFlow',
+        credits:(media.credits ? media.credits : 0) + ' cr.',
+        prompt:(media.prompt || msg.text || this.state.activeTitle || 'Création HuggyFlow').slice(0, 130)
+      });
+    });
+    return items.slice(-2).map((item, i)=>Object.assign({}, item, { label:'Version ' + (i + 1) }));
   }
   mediaKind(media){ return media && media.type === 'video' ? 'video' : media && media.type === 'voice' ? 'voice' : 'image'; }
   downloadMedia(url){
@@ -2524,6 +2826,9 @@ class Component extends DCLogic {
     ];
     const chipBase = 'display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .18s;';
     const T = this.tokens();
+    const compareItems = this.compareMediaItems();
+    const sendColor = st.sendLocked ? '#C45840' : '#D6F94E';
+    const sendFg = st.sendLocked ? '#FFFFFF' : '#1B1C1E';
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -2535,7 +2840,7 @@ class Component extends DCLogic {
         try{ localStorage.setItem('hf-theme', t); }catch(e){}
         return { theme: t };
       }),
-      showApp: st.page === 'app',
+      showApp: st.page === 'app' || (st.page === 'admin' && !this.isAdminUser()),
       showPricing: st.page === 'pricing',
       showAuth: st.page === 'auth',
       showBilling: st.page === 'billing',
@@ -2552,6 +2857,10 @@ class Component extends DCLogic {
         })
       })),
       settingsAnim: st.settingsHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
+      sidebarStyle: 'width:' + (st.sidebarCollapsed ? '72px' : '258px') + ';flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#E8E9EB;transition:width .24s ease;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both',
+      sidebarToggleTitle: st.sidebarCollapsed ? 'Ouvrir la barre laterale' : 'Replier la barre laterale',
+      toggleSidebar: ()=> this.setState(s=>({ sidebarCollapsed: !s.sidebarCollapsed })),
+      canSeeAdmin: this.isAdminUser(),
       showTeam: st.page === 'team',
       showApi: st.page === 'api',
       showStats: st.page === 'stats',
@@ -2736,8 +3045,8 @@ class Component extends DCLogic {
       ],
       showNotFound: st.page === 'notfound',
       showAffiliate: st.page === 'affiliate',
-      showAdmin: st.page === 'admin',
-      openAdmin: ()=> this.setState({ page:'admin', adminTab:'overview', adminHop:false, modelMenu:false }),
+      showAdmin: st.page === 'admin' && this.isAdminUser(),
+      openAdmin: ()=> this.isAdminUser() ? this.setState({ page:'admin', adminTab:'overview', adminHop:false, modelMenu:false }) : null,
       adminAnim: st.adminHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
       adminNav: [['overview','Vue d\'ensemble'],['users','Utilisateurs'],['moderation','Modération'],['models','Modèles'],['finance','Finances'],['platform','Plateforme']].map(p=>({
         label: p[1],
@@ -2886,6 +3195,13 @@ class Component extends DCLogic {
       onInput: (e)=> this.setState({ input: e.target.value }),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
+      sendAction: ()=> st.sendLocked ? this.stopGeneration() : this.sendPrompt(st.input),
+      sendButtonTitle: st.sendLocked ? 'Stop' : 'Envoyer',
+      sendHint: st.sendLocked ? 'stop' : '↵ envoyer',
+      isSending: !!st.sendLocked,
+      isIdle: !st.sendLocked,
+      sendButtonStyleLarge: 'width:48px;height:48px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px -14px rgba(214,249,78,.8)',
+      sendButtonStyleSmall: 'width:38px;height:38px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -14px rgba(214,249,78,.75)',
       toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu })),
       modelMenu: st.modelMenu,
       curModelName: this.curModel().name,
@@ -3012,9 +3328,14 @@ class Component extends DCLogic {
       projects: ((st.projectsData && st.projectsData.length) ? st.projectsData : [
         { id:'welcome', title:st.activeTitle || 'Nouveau projet' }
       ]).map((p,i)=>({
+        id:p.id,
         title:p.title || 'Nouveau projet',
         dot:['#D6F94E','#C9A8E8','#A8E8C0','#C4C7CC'][i % 4],
-        onClick:()=>this.switchProject(p.id)
+        menuOpen: st.projectMenuId === p.id,
+        onClick:()=>this.switchProject(p.id),
+        onMenu:(e)=>this.openProjectMenu(p.id, e),
+        onRename:(e)=>this.openRenameProject(p, e),
+        onDelete:(e)=>this.openDeleteProject(p, e)
       })),
       newProject: ()=> this.newProject(),
       openBilling: ()=>{ this.setState({ page:'billing', modelMenu:false }); this.loadBillingStatus(); },
@@ -3081,6 +3402,22 @@ class Component extends DCLogic {
       copyRefLink: ()=>{ const link = st.affiliateData && st.affiliateData.link; if(link && navigator.clipboard) navigator.clipboard.writeText(link).catch(()=>{}); this.setState({ refCopied:true }); setTimeout(()=>this.setState({ refCopied:false }), 1600); },
       affiliateLink: (st.affiliateData && st.affiliateData.link) || 'Connecte-toi pour generer ton lien',
       refCopyLabel: st.refCopied ? 'Copie' : 'Copier le lien',
+      showProjectModal: !!st.projectModal,
+      projectModalTitle: st.projectModal === 'delete' ? 'Supprimer le projet' : 'Renommer le projet',
+      isRenameModal: st.projectModal === 'rename',
+      isDeleteModal: st.projectModal === 'delete',
+      renameTitle: st.renameTitle || '',
+      onRenameTitle: (e)=> this.setState({ renameTitle:e.target.value }),
+      onRenameKey: (e)=> this.onRenameKey(e),
+      closeProjectModal: ()=> this.closeProjectModal(),
+      confirmRenameProject: ()=> this.confirmRenameProject(),
+      confirmDeleteProject: ()=> this.confirmDeleteProject(),
+      openCompare: ()=> this.setState({ compareOpen:true, modelMenu:false }),
+      closeCompare: ()=> this.setState({ compareOpen:false }),
+      showCompare: !!st.compareOpen,
+      compareItems,
+      compareEmpty: compareItems.length < 2,
+      compareReady: compareItems.length >= 2,
       affStats: [
         { label:'Clics ce mois', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.clicks) || 0), hint:'via ton lien' },
         { label:'Abonnes actifs', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.activeSubscribers) || 0), hint:'filleuls avec abonnement' },
@@ -3103,6 +3440,7 @@ class Component extends DCLogic {
           isAgent: m.role==='agent',
           rowStyle: 'display:flex;' + (m.role==='user' ? 'justify-content:flex-end' : 'justify-content:flex-start') + ';animation:fadeUp .3s ease both',
           text: m.text || '',
+          richText: this.markdownBlocks(m.text || ''),
           isTyping: !!m.typing,
           showText: !m.typing && !!m.text,
           hasMedia: !!m.media,
