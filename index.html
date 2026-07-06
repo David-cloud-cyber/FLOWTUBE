@@ -2122,6 +2122,18 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/bootstrap');
       if(!res.ok) throw new Error('bootstrap '+res.status);
       const data = await res.json();
+      const agentModels = Array.isArray(data.agentModels) ? data.agentModels : [];
+      if(agentModels.length){
+        const dots = ['#D6F94E','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
+        this.MODELS = agentModels.map((m,i)=>({
+          id:m.id || 'auto',
+          name:m.name || 'Auto HuggyFlow',
+          group:'Agent IA',
+          desc:m.description || 'Cerveau agent HuggyFlow',
+          creditsLabel:m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto'),
+          dot:dots[i % dots.length]
+        }));
+      }
       if(this.state.authToken && !data.user){
         this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
       }

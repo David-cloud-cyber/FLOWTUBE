@@ -4,7 +4,7 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const APP_NAME = "HuggyFlow";
-const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-opus-4-8";
+const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
 const ANTHROPIC_VERSION = "2023-06-01";
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
@@ -30,16 +30,40 @@ const AGENT_MODELS = [
 
 const AGENT_MODEL_FALLBACKS = [
   DEFAULT_MODEL,
-  "claude-fable-5",
-  "claude-opus-4-8",
-  "claude-sonnet-5",
   "claude-sonnet-4-6",
+  "claude-sonnet-5",
   "claude-haiku-4-5-20251001",
+  "claude-opus-4-8",
+  "claude-fable-5",
 ];
+
+const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margin: "eco" | "standard" | "premium" | "max" }> = {
+  "claude-haiku-4-5-20251001": { credits: 1, label: "1 cr", margin: "eco" },
+  "claude-sonnet-4-6": { credits: 3, label: "3 cr", margin: "standard" },
+  "claude-sonnet-5": { credits: 4, label: "4 cr", margin: "standard" },
+  "claude-opus-4-6": { credits: 8, label: "8 cr", margin: "premium" },
+  "claude-opus-4-7": { credits: 9, label: "9 cr", margin: "premium" },
+  "claude-opus-4-8": { credits: 10, label: "10 cr", margin: "premium" },
+  "claude-fable-5": { credits: 12, label: "12 cr", margin: "max" },
+  "claude-mythos-5": { credits: 12, label: "12 cr", margin: "max" },
+};
+
+function agentCreditRateForModel(modelId: string) {
+  const resolved = resolveAgentModelId(modelId);
+  if (AGENT_CREDIT_RATES[resolved]) return AGENT_CREDIT_RATES[resolved];
+  if (/opus/i.test(resolved)) return { credits: 10, label: "10 cr", margin: "premium" as const };
+  if (/fable|mythos/i.test(resolved)) return { credits: 12, label: "12 cr", margin: "max" as const };
+  if (/haiku/i.test(resolved)) return { credits: 1, label: "1 cr", margin: "eco" as const };
+  return { credits: 4, label: "4 cr", margin: "standard" as const };
+}
 
 function publicAgentModels() {
   return AGENT_MODELS.map((model) => ({
     ...model,
+    provider: "anthropic",
+    creditsPerMessage: agentCreditRateForModel(model.id).credits,
+    creditsLabel: model.id === "auto" ? `${agentCreditRateForModel(model.id).label} auto` : agentCreditRateForModel(model.id).label,
+    costClass: agentCreditRateForModel(model.id).margin,
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
   }));
 }
@@ -60,7 +84,11 @@ function agentModelFromBody(body: Record<string, unknown>) {
 }
 
 function agentModelFallbacks(preferred?: string) {
-  return uniqueStrings([resolveAgentModelId(preferred), ...AGENT_MODEL_FALLBACKS]);
+  const resolved = resolveAgentModelId(preferred);
+  const maxCredits = agentCreditRateForModel(resolved).credits;
+  return uniqueStrings([resolved, ...AGENT_MODEL_FALLBACKS]).filter((model) =>
+    model === resolved || agentCreditRateForModel(model).credits <= maxCredits
+  );
 }
 
 function shouldFallbackAnthropic(status: number) {
@@ -69,13 +97,113 @@ function shouldFallbackAnthropic(status: number) {
   return [400, 403, 404, 429, 529].includes(status);
 }
 
-async function anthropicMessages(payload: Record<string, unknown>, preferredModel?: string) {
+type AgentBillingContext = {
+  supabase: ReturnType<typeof adminClient>;
+  userId: string;
+  reason: string;
+  multiplier?: number;
+  send?: (event: string, payload: unknown) => void;
+};
+
+function agentCreditsForTurn(modelId: string, multiplier = 1) {
+  return Math.max(1, Math.ceil(agentCreditRateForModel(modelId).credits * Math.max(1, multiplier)));
+}
+
+async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefined, modelId: string) {
+  if (!billing) return;
+  const creditsRequired = agentCreditsForTurn(modelId, billing.multiplier);
+  const { data: profile, error } = await billing.supabase.from("profiles").select("credits").eq("id", billing.userId).single();
+  if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
+  const creditsAvailable = Number(profile?.credits || 0);
+  if (creditsAvailable < creditsRequired) {
+    throw new FlowtubeError(402, `Solde insuffisant: ${creditsRequired} credits requis, ${creditsAvailable} disponibles.`, {
+      code: "INSUFFICIENT_AGENT_CREDITS",
+      creditsRequired,
+      creditsAvailable,
+      modelId,
+    });
+  }
+}
+
+async function chargeAgentCredits(billing: AgentBillingContext | undefined, modelId: string) {
+  if (!billing) return { charged: 0, balance: undefined as number | undefined };
+  const rate = agentCreditRateForModel(modelId);
+  const credits = agentCreditsForTurn(modelId, billing.multiplier);
+  const { data: profile, error } = await billing.supabase.from("profiles").select("credits").eq("id", billing.userId).single();
+  if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
+  const creditsAvailable = Number(profile?.credits || 0);
+  if (creditsAvailable < credits) {
+    throw new FlowtubeError(402, `Solde insuffisant: ${credits} credits requis, ${creditsAvailable} disponibles.`, {
+      code: "INSUFFICIENT_AGENT_CREDITS",
+      creditsRequired: credits,
+      creditsAvailable,
+      modelId,
+    });
+  }
+  const nextCredits = Math.max(0, creditsAvailable - credits);
+  const { data: updated, error: updateError } = await billing.supabase.from("profiles")
+    .update({ credits: nextCredits })
+    .eq("id", billing.userId)
+    .gte("credits", credits)
+    .select("credits")
+    .maybeSingle();
+  if (updateError || !updated) {
+    throw new FlowtubeError(402, "Solde de credits insuffisant pour continuer.", {
+      code: "INSUFFICIENT_AGENT_CREDITS",
+      creditsRequired: credits,
+      creditsAvailable,
+      modelId,
+    });
+  }
+  const balanceAfter = Number(updated.credits || nextCredits);
+  const providerCostEstimateUsd = Number(((credits * CREDIT_FLOOR_USD) / MEDIA_MARGIN_MULTIPLIER).toFixed(4));
+  await billing.supabase.from("credit_transactions").insert({
+    user_id: billing.userId,
+    amount: -credits,
+    reason: "agent_message",
+    balance_after: balanceAfter,
+    metadata: {
+      provider: "anthropic",
+      model_id: modelId,
+      credit_rate_label: rate.label,
+      cost_class: rate.margin,
+      reason: billing.reason,
+      multiplier: Math.max(1, billing.multiplier || 1),
+    },
+  });
+  await billing.supabase.from("pricing_audit_logs").insert({
+    user_id: billing.userId,
+    credits_charged: credits,
+    credit_floor_usd: CREDIT_FLOOR_USD,
+    retail_credit_usd: RETAIL_CREDIT_USD,
+    provider_cost_usd: providerCostEstimateUsd,
+    status: "completed",
+    metadata: {
+      kind: "agent_message",
+      provider: "anthropic",
+      model_id: modelId,
+      credit_rate_label: rate.label,
+      cost_class: rate.margin,
+      reason: billing.reason,
+      margin_multiplier: MEDIA_MARGIN_MULTIPLIER,
+    },
+  });
+  if (billing.send) billing.send("credits", { credits: balanceAfter });
+  return { charged: credits, balance: balanceAfter };
+}
+
+function agentBilling(ctx: Omit<AgentBillingContext, "reason">, reason: string, multiplier = 1): AgentBillingContext {
+  return { ...ctx, reason, multiplier };
+}
+
+async function anthropicMessages(payload: Record<string, unknown>, preferredModel?: string, billing?: AgentBillingContext) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
   let lastStatus = 0;
   let lastText = "";
   const models = agentModelFallbacks(preferredModel);
   for (const model of models) {
+    await ensureAgentCreditsAvailable(billing, model);
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -85,7 +213,10 @@ async function anthropicMessages(payload: Record<string, unknown>, preferredMode
       },
       body: JSON.stringify({ ...payload, model }),
     });
-    if (response.ok) return { response, model };
+    if (response.ok) {
+      await chargeAgentCredits(billing, model);
+      return { response, model };
+    }
     lastStatus = response.status;
     lastText = await response.text().catch(() => "");
     if (!shouldFallbackAnthropic(response.status)) break;
@@ -228,6 +359,7 @@ const FAL_ENDPOINTS = [
   "fal-ai/bytedance/seedream/v4.5/edit",
   "fal-ai/bytedance/seedream/v4.5/text-to-image",
   "fal-ai/bytedance/seedream/v5/lite/text-to-image",
+  "fal-ai/bytedance/seed/v2/mini",
   "fal-ai/flux-2-pro",
   "fal-ai/flux-2-pro/edit",
   "fal-ai/flux-2-pro/outpaint",
@@ -302,6 +434,7 @@ const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
   "fal-ai/nano-banana-2/edit": { id: "nano2-edit", label: "Nano Banana 2 Edit", costPerUnitUsd: 0.08, qualityTier: "premium" },
   "fal-ai/flux/schnell": { id: "flux", label: "Flux Schnell", costPerUnitUsd: 0.04, qualityTier: "standard" },
   "fal-ai/bytedance/seedream/v5/lite/text-to-image": { id: "seedream-lite", label: "Seedream 5.0 Lite", costPerUnitUsd: 0.035, qualityTier: "economy" },
+  "fal-ai/bytedance/seed/v2/mini": { id: "seed-v2-mini", label: "Seed Image Mini", capabilities: ["text-to-image"], costPerUnitUsd: 0.03, qualityTier: "economy" },
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": { id: "kling", label: "Kling 2.5 Turbo Pro", costPerUnitUsd: 0.12, qualityTier: "premium", maximumUnits: 15 },
   "fal-ai/bytedance/seedance/v1/lite/text-to-video": { id: "seedance", label: "Seedance 1.0 Lite", costPerUnitUsd: 0.08, qualityTier: "standard", maximumUnits: 15 },
   "fal-ai/veo3": { id: "veoq", label: "Veo 3.1 Quality", costPerUnitUsd: 0.2, qualityTier: "premium", maximumUnits: 8 },
@@ -502,6 +635,7 @@ const FEATURED_MODEL_IDS = [
   "auto",
   "gpt-image-2",
   "gpt-image-2-edit",
+  "seed-v2-mini",
   "veoq",
   "kling-video-v3-pro-text-to-video",
   "kling-video-v3-4k-text-to-video",
@@ -526,6 +660,7 @@ const MODEL_SHORT_NAMES: Record<string, string> = {
   "flux-2-pro": "Flux 2 Pro",
   "flux-2-pro-edit": "Flux 2 Edit",
   "seedream-lite": "Seedream Lite",
+  "seed-v2-mini": "Seed Mini",
   "veoq": "Veo 3",
   "veol": "Veo 3 Fast",
   "kling-video-v3-pro-text-to-video": "Kling 3 Pro",
@@ -1377,6 +1512,8 @@ async function bootstrap(req: Request) {
       retailCreditUsd: RETAIL_CREDIT_USD,
       marginMultiplier: MEDIA_MARGIN_MULTIPLIER,
       expensiveCreditThreshold: EXPENSIVE_CREDIT_THRESHOLD,
+      agentCreditRates: AGENT_CREDIT_RATES,
+      agentDefaultModel: DEFAULT_MODEL,
     },
     agentModels: publicAgentModels(),
     // Les moteurs media fal.ai restent backend-only. Le frontend affiche seulement les modeles agent.
@@ -1845,7 +1982,7 @@ function extractSkillDirective(prompt: string): { name: string; triggers: string
 }
 
 // ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
-async function anthropicVision(imageUrl: string, question: string, preferredModel?: string): Promise<string> {
+async function anthropicVision(imageUrl: string, question: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return "";
   const { response } = await anthropicMessages({
@@ -1857,7 +1994,7 @@ async function anthropicVision(imageUrl: string, question: string, preferredMode
         { type: "text", text: question },
       ],
     }],
-  }, preferredModel);
+  }, preferredModel, billing);
   const data = await response.json();
   return (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
 }
@@ -1875,13 +2012,16 @@ function isVisualAnalysisRequest(prompt: string) {
     /\b(image|visuel|photo|pub|publicite|creative|ad|affiche|video|clip|reference|concurrent|hook)\b/.test(t);
 }
 
-async function runVisualAnalysis(url: string, isVideo: boolean, preferredModel?: string): Promise<string> {
+async function runVisualAnalysis(url: string, isVideo: boolean, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   try {
     if (!isVideo) {
-      const out = await anthropicVision(url, VISION_ANALYSIS_QUESTION, preferredModel);
+      const out = await anthropicVision(url, VISION_ANALYSIS_QUESTION, preferredModel, billing);
       if (out) return out;
     }
-  } catch (_err) { /* degrade ci-dessous */ }
+  } catch (err) {
+    if (err instanceof FlowtubeError) throw err;
+    /* degrade ci-dessous */
+  }
   // Video (Anthropic ne lit pas la video) ou echec: degrade honnete.
   return isVideo
     ? "Je peux analyser les images directement (hook, composition, lumiere, angle). Pour une video, envoie-moi une capture d'un plan cle et je te fais le breakdown complet du hook et du pacing."
@@ -1968,7 +2108,7 @@ async function fetchSearchText(query: string): Promise<string> {
   }
 }
 
-async function runWebResearch(url: string, userPrompt: string, preferredModel?: string): Promise<string> {
+async function runWebResearch(url: string, userPrompt: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   let pageText = "";
   try {
     pageText = await fetchPageText(url);
@@ -1985,16 +2125,17 @@ async function runWebResearch(url: string, userPrompt: string, preferredModel?: 
       max_tokens: 1000,
       system: huggyflowSystemPromptText(),
       messages: [{ role: "user", content: `${RESEARCH_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nContenu de ${url}:\n${pageText}` }],
-    }, preferredModel);
+    }, preferredModel, billing);
     const data = await response.json();
     const brief = (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
     return brief || `Contenu recupere de ${url}.`;
-  } catch (_err) {
+  } catch (err) {
+    if (err instanceof FlowtubeError) throw err;
     return `J'ai lu ${url} mais l'analyse est indisponible pour le moment. Reessaie dans un instant.`;
   }
 }
 
-async function runMarketResearch(query: string, userPrompt: string, preferredModel?: string): Promise<string> {
+async function runMarketResearch(query: string, userPrompt: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   let corpus = "";
   try {
     corpus = await fetchSearchText(query);
@@ -2016,11 +2157,12 @@ async function runMarketResearch(query: string, userPrompt: string, preferredMod
       max_tokens: 1100,
       system: huggyflowSystemPromptText(),
       messages: [{ role: "user", content: `${MARKET_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nRequete: ${query}\n\nSources/search snippets:\n${corpus}` }],
-    }, preferredModel);
+    }, preferredModel, billing);
     const data = await response.json();
     const brief = (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
     return brief || `Signaux recuperes pour "${query}".`;
-  } catch (_err) {
+  } catch (err) {
+    if (err instanceof FlowtubeError) throw err;
     return "J'ai recupere des signaux marche, mais l'analyse est indisponible pour le moment. Reessaie dans un instant.";
   }
 }
@@ -2081,6 +2223,7 @@ async function anthropicReply(
   onDelta?: (delta: string) => void,
   context: ReplyContext = {},
   preferredModel?: string,
+  billing?: AgentBillingContext,
 ) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   const emit = (text: string) => { if (onDelta && text) onDelta(text); };
@@ -2119,7 +2262,7 @@ async function anthropicReply(
       stream: true,
       system: huggyflowSystemPromptText(),
       messages,
-    }, preferredModel);
+    }, preferredModel, billing);
     if (!response.body) throw new Error("anthropic empty stream");
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -2147,7 +2290,8 @@ async function anthropicReply(
     }
     if (full.trim()) return full.trim();
     throw new Error("anthropic empty stream");
-  } catch (_err) {
+  } catch (err) {
+    if (err instanceof FlowtubeError) throw err;
     if (full.trim()) return full.trim();
     const text = fallbackReply(prompt, type, credits);
     emit(text);
@@ -2410,17 +2554,32 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
     if (name === "analyze_reference") {
       const url = String(input.url || "");
       if (!url) return "Aucune URL fournie a analyser.";
-      return await runVisualAnalysis(url, Boolean(input.is_video) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url), ctx.agentModelId);
+      return await runVisualAnalysis(
+        url,
+        Boolean(input.is_video) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url),
+        ctx.agentModelId,
+        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_visual_analysis"),
+      );
     }
     if (name === "research_url") {
       const url = String(input.url || "");
       if (!/^https?:\/\//i.test(url)) return "URL invalide pour la recherche.";
-      return await runWebResearch(url, String(ctx.body.message || ""), ctx.agentModelId);
+      return await runWebResearch(
+        url,
+        String(ctx.body.message || ""),
+        ctx.agentModelId,
+        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_web_research"),
+      );
     }
     if (name === "market_research") {
       const query = String(input.query || ctx.body.message || "").trim();
       if (!query) return "Sujet de recherche marche manquant.";
-      return await runMarketResearch(query, String(ctx.body.message || query), ctx.agentModelId);
+      return await runMarketResearch(
+        query,
+        String(ctx.body.message || query),
+        ctx.agentModelId,
+        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_market_research"),
+      );
     }
     if (name === "save_skill") {
       const triggers = Array.isArray(input.triggers) ? input.triggers.map(String).slice(0, 8) : [String(input.name)];
@@ -2478,7 +2637,11 @@ async function runAgentLoop(
       system: huggyflowSystemPromptText() + AGENT_LOOP_SYSTEM_EXTRA,
       tools: AGENT_TOOLS,
       messages,
-    }, ctx.agentModelId);
+    }, ctx.agentModelId, agentBilling({
+      supabase: ctx.supabase,
+      userId: ctx.userId,
+      send: ctx.send,
+    }, `agent_loop_iteration_${iteration + 1}`));
     const data = await response.json();
     const content: ApiContent[] = Array.isArray(data.content) ? data.content : [];
     for (const block of content) {
@@ -3266,6 +3429,8 @@ async function chat(req: Request) {
             content: content.trim(),
           });
         };
+        const billAgent = (reason: string, multiplier = 1) =>
+          agentBilling({ supabase, userId, send }, reason, multiplier);
 
         const metadata = cleanMetadata(profile.metadata);
         const pending = metadata.pending_generation as Record<string, unknown> | undefined;
@@ -3342,7 +3507,7 @@ async function chat(req: Request) {
             return;
           }
           send("text", { delta: "J'analyse le visuel..." });
-          const analysis = await runVisualAnalysis(target, isVideo, agentModelId);
+          const analysis = await runVisualAnalysis(target, isVideo, agentModelId, billAgent("visual_analysis"));
           send("text", { delta: analysis });
           await saveAssistant(analysis);
           send("done", projectDonePayload(project, conversation));
@@ -3353,7 +3518,7 @@ async function chat(req: Request) {
         const researchUrl = extractFirstUrl(prompt);
         if (researchUrl && isResearchRequest(prompt)) {
           send("text", { delta: `Je lis ${researchUrl}...` });
-          const brief = await runWebResearch(researchUrl, prompt, agentModelId);
+          const brief = await runWebResearch(researchUrl, prompt, agentModelId, billAgent("web_research"));
           send("text", { delta: brief });
           await saveAssistant(brief);
           send("done", projectDonePayload(project, conversation));
@@ -3361,7 +3526,7 @@ async function chat(req: Request) {
         }
         if (!researchUrl && isTrendResearchRequest(prompt)) {
           send("text", { delta: "J'analyse les signaux marche disponibles..." });
-          const brief = await runMarketResearch(prompt, prompt, agentModelId);
+          const brief = await runMarketResearch(prompt, prompt, agentModelId, billAgent("market_research"));
           send("text", { delta: brief });
           await saveAssistant(brief);
           send("done", projectDonePayload(project, conversation));
@@ -3511,7 +3676,16 @@ async function chat(req: Request) {
           elements,
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
-        const reply = await anthropicReply(prompt, type, credits, history, (delta) => send("text", { delta }), replyContext, agentModelId);
+        const reply = await anthropicReply(
+          prompt,
+          type,
+          credits,
+          history,
+          (delta) => send("text", { delta }),
+          replyContext,
+          agentModelId,
+          billAgent(willGenerate ? "agent_creation_brief" : "agent_chat_reply"),
+        );
         if (!willGenerate) await saveAssistant(reply);
 
         if (willGenerate) {
