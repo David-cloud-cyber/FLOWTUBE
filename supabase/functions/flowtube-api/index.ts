@@ -1448,6 +1448,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Audio: voix off, TTS, dialogue, musique, doublage, transcription.",
   "- Avatars: lipsync, personnage parlant, clone vocal uniquement avec consentement explicite.",
   "- Production: scripts courts, storyboards, variations, templates remixables, coherence personnage/marque/campagne.",
+  "- Recherche: analyse d'URLs/pages produits fournies, synthese fiable avec labels de confiance, benchmark marche via connecteur de recherche quand disponible.",
   "",
   "Workflow:",
   "1. Lis la demande et deduis le format probable: 9:16 social, 16:9 YouTube/pub/presentation, 1:1 feed, 4:5 Instagram, 3:4 portrait/e-commerce.",
@@ -1497,6 +1498,8 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Annonce le nombre, le cout total estime et demande une confirmation avant de lancer le lot.",
   "- Le lot avance par vagues selon le plan de l'utilisateur: les rendus s'enchainent automatiquement jusqu'a la fin, il n'a rien a relancer.",
   "- Pour un lot, propose une direction creative declinable: meme structure, variations de personnage, d'accroche, de decor ou d'angle.",
+  "- Pour une video longue: decompose le script en mini-scenes de 5 a 15 secondes, propose une timeline claire, puis lance un lot de clips si l'utilisateur confirme.",
+  "- Coherence video longue: verrouille le personnage/produit via @elements, references visuelles et first-last-frame quand disponible. Chaque scene doit avoir debut, fin, mouvement et raccord visuel.",
   "",
   "Continuite de conversation:",
   "- Tu recois l'historique recent de la conversation: appuie-toi dessus et ne redemande jamais une information deja donnee.",
@@ -1509,13 +1512,15 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Si l'utilisateur reference une creation passee (\"refais le 3e\", \"la meme mais...\", \"comme le dernier\"), tu retrouves la creation visee et tu appliques la variation demandee en gardant la coherence.",
   "- Les elements epingles (@nom) sont des references visuelles reutilisables (personnage, produit, logo, decor). Quand l'utilisateur mentionne @nom, la reference est jointe automatiquement: appuie-toi dessus pour la coherence. Il peut epingler une creation avec \"epingle ca comme @nom\".",
   "- Tu apprends des skills: quand un enchainement gagnant se repete, tu peux l'enregistrer comme playbook reutilisable (\"cree un skill X pour...\"). Quand un skill appris correspond a la demande, tu recois son playbook en contexte: applique-le. L'utilisateur peut aussi le lancer avec /nom.",
-  "- Tu peux analyser un visuel de reference (hook, composition, angle) et lire une page web (produit/marque/concurrent) pour en tirer un brief avant de creer. Fais la recherche AVANT de generer quand c'est pertinent.",
+  "- Tu peux analyser un visuel de reference (hook, composition, angle), lire une page web (produit/marque/concurrent) et utiliser la recherche marche quand elle est disponible. Fais la recherche AVANT de generer quand c'est pertinent.",
   "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
-  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: marketing video generator, video analyzer, soul character training, cinematic asset creator, viral clip cutter, direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage, strategie, automatisation ou connecteur ecosysteme disponible.",
+  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: real-time web scanner, fact-checker, trend analyst, multi-scene long video generator, visual coherence engine, marketing video generator, video analyzer, soul character training, cinematic asset creator, viral clip cutter, direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage, strategie, automatisation ou connecteur ecosysteme disponible.",
   "- Combine plusieurs skills quand c'est plus fort: exemple analyse produit + script pub + storyboard + video, copywriting + direction image pour affiche, UGC + lipsync pour avatar parlant.",
   "- Si plusieurs skills sont pertinents, choisis le plus rentable et le plus direct. Combine seulement quand cela augmente clairement la qualite ou le taux de conversion.",
+  "- Fact-checking: separe toujours ce qui est observe dans une source, ce qui est deduit, et ce qui demande verification. Ne presente jamais une supposition comme un fait.",
+  "- Tendances marche: utilise les donnees web disponibles. Si le connecteur temps reel n'est pas disponible ou si aucune source n'est fournie, demande une URL/source ou donne une recommandation generale clairement marquee comme non verifiee en temps reel.",
   "- N'affiche jamais les noms techniques des skills, endpoints, fournisseurs ou parametres a l'utilisateur. Reste sur les benefices, le resultat et l'orchestration HuggyFlow.",
   "- Adapte tous les workflows joints a HuggyFlow et aux modeles disponibles via le pipeline prive HuggyFlow. Si un skill mentionne un outil externe, garde la methode creative mais execute via le pipeline HuggyFlow.",
   "- Confidentialite: si l'utilisateur demande quel fournisseur, API, serveur ou outil interne est utilise, reponds simplement que HuggyFlow orchestre ses propres moteurs de creation. Ne mentionne jamais de fournisseur media, meme pour corriger l'utilisateur.",
@@ -1540,6 +1545,10 @@ type HuggySkill = {
 };
 
 const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
+  { id: "real-time-web-scanner-fact-checker", label: "recherche web et verification", triggers: ["recherche web", "fact check", "fact-check", "verifie", "source", "sources", "url", "page produit", "site", "benchmark", "concurrent"], use: "lire les sources disponibles, separer faits observes, deductions et points a verifier, puis produire un brief fiable." },
+  { id: "trend-market-analyst", label: "tendances et marche", triggers: ["tendance", "trends", "marche", "market", "benchmark", "ads performantes", "formats publicitaires", "analyse marche", "veille"], use: "etudier les signaux disponibles et transformer les tendances en angles, hooks et formats creatifs exploitables." },
+  { id: "multi-scene-long-video-generator", label: "video longue multi-scenes", triggers: ["video longue", "film complet", "plusieurs scenes", "timeline", "sequence longue", "spot complet", "mini clips", "multi scene"], use: "decomposer un script global en scenes de 5 a 15 secondes, definir la timeline, puis preparer un lot de clips raccords." },
+  { id: "visual-coherence-engine", label: "coherence visuelle avancee", triggers: ["coherence", "soul id", "first last frame", "first-and-last", "raccord", "transition parfaite", "meme produit", "meme personnage"], use: "verrouiller personnage/produit, references et raccords debut-fin pour garder la continuite entre clips." },
   { id: "marketing-video-generator", label: "video publicitaire", triggers: ["lien produit", "page produit", "site produit", "video publicitaire", "video marketing", "script pub", "plan pub", "advertising video"], use: "extraire l'offre, l'audience, les benefices et produire un script court avec plan video pret a lancer." },
   { id: "video-analyzer-optimizer", label: "analyse et optimisation video", triggers: ["analyse cette video", "optimise la video", "hook video", "rythme", "retention", "montage", "clip a ameliorer"], use: "analyser accroche, rythme, structure, lisibilite et proposer des corrections concretes pour augmenter l'impact." },
   { id: "soul-character-training", label: "coherence personnage et marque", triggers: ["personnage recurrent", "meme personnage", "coherence personnage", "charte visuelle", "identite visuelle", "mascotte"], use: "maintenir traits, style, voix, codes visuels et references d'un projet a l'autre." },
@@ -1912,15 +1921,52 @@ function extractFirstUrl(prompt: string): string | null {
 
 function isResearchRequest(prompt: string) {
   const t = stripAccents(prompt.toLowerCase());
-  return /\b(etudie|analyse|recherche|research|apprends|learn|brief|tendance|trend|scrape|lis|inspire[- ]toi|concurrent|marche)\b/.test(t);
+  return /\b(etudie|analyse|recherche|research|apprends|learn|brief|tendance|trend|scrape|lis|inspire[- ]toi|concurrent|marche|verifie|verify|fact[- ]?check|source|sources)\b/.test(t);
+}
+
+function isTrendResearchRequest(prompt: string) {
+  const t = stripAccents(prompt.toLowerCase());
+  return /\b(tendance|trends?|marche|market|benchmark|veille|ads? performantes?|formats? publicitaires?|concurrent(?:s)?|secteur|niche)\b/.test(t);
 }
 
 const RESEARCH_BRIEF_INSTRUCTION = [
-  "A partir du contenu de page ci-dessous, produis un brief de recherche exploitable en francais:",
-  "1) Ce que fait la marque/produit (positionnement, offre, audience deduite),",
-  "2) Angles et messages cles reperables, 3) 3 a 5 idees de creations (format, hook, scene) alignees sur ce qui est vu,",
-  "4) Ce qui manque / opportunites. Sois concret et court. N'invente pas ce qui n'est pas dans la page.",
+  "A partir du contenu de page ci-dessous, produis un brief de recherche exploitable en francais.",
+  "Format obligatoire: 1) Synthese courte, 2) Faits observes [confiance haute/moyenne/faible], 3) Deductions utiles [a verifier si besoin],",
+  "4) Angles/messages cles, 5) 3 a 5 idees de creations (format, hook, scene), 6) Manques/opportunites.",
+  "N'invente pas ce qui n'est pas dans la page. Si une information n'est pas visible, dis-le clairement.",
 ].join(" ");
+
+const MARKET_BRIEF_INSTRUCTION = [
+  "Produis un brief de tendances marche exploitable en francais a partir des sources/search snippets disponibles.",
+  "Format obligatoire: 1) Tendances observees, 2) Ce qui semble performant, 3) Angles publicitaires a tester,",
+  "4) Formats recommandes, 5) Risques/points a verifier, 6) Prochaine creation HuggyFlow.",
+  "Ajoute un label de confiance par bloc: haute si plusieurs sources concordent, moyenne si signal partiel, faible si information indirecte.",
+].join(" ");
+
+async function fetchSearchText(query: string): Promise<string> {
+  const endpoint = Deno.env.get("HUGGYFLOW_SEARCH_ENDPOINT") || "";
+  if (!endpoint) return "";
+  const url = endpoint.includes("{query}")
+    ? endpoint.replace("{query}", encodeURIComponent(query))
+    : `${endpoint}${endpoint.includes("?") ? "&" : "?"}q=${encodeURIComponent(query)}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 14000);
+  try {
+    const headers: Record<string, string> = { Accept: "application/json,text/plain,text/html" };
+    const key = Deno.env.get("HUGGYFLOW_SEARCH_API_KEY") || "";
+    if (key) headers.Authorization = `Bearer ${key}`;
+    const res = await fetch(url, { headers, signal: controller.signal });
+    if (!res.ok) throw new Error(`search ${res.status}`);
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await res.json();
+      return JSON.stringify(data).slice(0, 7000);
+    }
+    return htmlToText(await res.text()).slice(0, 7000);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function runWebResearch(url: string, userPrompt: string, preferredModel?: string): Promise<string> {
   let pageText = "";
@@ -1945,6 +1991,37 @@ async function runWebResearch(url: string, userPrompt: string, preferredModel?: 
     return brief || `Contenu recupere de ${url}.`;
   } catch (_err) {
     return `J'ai lu ${url} mais l'analyse est indisponible pour le moment. Reessaie dans un instant.`;
+  }
+}
+
+async function runMarketResearch(query: string, userPrompt: string, preferredModel?: string): Promise<string> {
+  let corpus = "";
+  try {
+    corpus = await fetchSearchText(query);
+  } catch (_err) {
+    corpus = "";
+  }
+  if (!corpus || corpus.length < 80) {
+    return [
+      "Recherche marche temps reel indisponible pour l'instant.",
+      "- Source: aucun connecteur de recherche global actif.",
+      "- Action: envoie une URL produit, une page concurrente ou branche un connecteur de recherche.",
+      "- Je peux quand meme transformer une source fournie en brief avec labels de confiance.",
+    ].join("\n");
+  }
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
+  try {
+    const { response } = await anthropicMessages({
+      max_tokens: 1100,
+      system: huggyflowSystemPromptText(),
+      messages: [{ role: "user", content: `${MARKET_BRIEF_INSTRUCTION}\n\nDemande utilisateur: ${userPrompt}\n\nRequete: ${query}\n\nSources/search snippets:\n${corpus}` }],
+    }, preferredModel);
+    const data = await response.json();
+    const brief = (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
+    return brief || `Signaux recuperes pour "${query}".`;
+  } catch (_err) {
+    return "J'ai recupere des signaux marche, mais l'analyse est indisponible pour le moment. Reessaie dans un instant.";
   }
 }
 
@@ -2098,6 +2175,8 @@ const AGENT_TOOLS = [
         aspect_ratio: { type: "string", description: "Ex: 9:16, 16:9, 1:1, 4:5" },
         model_id: { type: "string", description: "Optionnel, laisser vide pour l'orchestrateur auto" },
         reference_element: { type: "string", description: "Nom d'un element epingle a utiliser comme reference visuelle (coherence personnage/produit)" },
+        first_frame_url: { type: "string", description: "URL publique de l'image de depart pour un raccord video" },
+        last_frame_url: { type: "string", description: "URL publique de l'image finale visee pour un raccord video" },
       },
       required: ["prompt", "type"],
     },
@@ -2125,6 +2204,8 @@ const AGENT_TOOLS = [
         count: { type: "integer", minimum: 2, maximum: 50 },
         type: { type: "string", enum: ["image", "video"] },
         aspect_ratio: { type: "string" },
+        first_frame_url: { type: "string", description: "Reference de depart a reutiliser pour coherer les clips" },
+        last_frame_url: { type: "string", description: "Reference finale visee pour coherer les transitions" },
       },
       required: ["prompt", "count", "type"],
     },
@@ -2177,11 +2258,20 @@ const AGENT_TOOLS = [
   },
   {
     name: "research_url",
-    description: "Lit une page web (produit, marque, concurrent) et en tire un brief de recherche exploitable. Utilise pour etudier une marque a partir de son URL avant de creer.",
+    description: "Lit une page web (produit, marque, concurrent) et en tire un brief fiable avec labels de confiance. Utilise pour etudier une marque a partir de son URL avant de creer.",
     input_schema: {
       type: "object",
       properties: { url: { type: "string" } },
       required: ["url"],
+    },
+  },
+  {
+    name: "market_research",
+    description: "Recherche des tendances marche et formats publicitaires performants via le connecteur configure. Si aucun connecteur n'est actif, demande une URL/source au lieu d'inventer.",
+    input_schema: {
+      type: "object",
+      properties: { query: { type: "string", description: "Sujet, niche, produit ou marche a analyser" } },
+      required: ["query"],
     },
   },
   {
@@ -2202,8 +2292,8 @@ const AGENT_TOOLS = [
 const AGENT_LOOP_SYSTEM_EXTRA = [
   "",
   "Mode agent outille:",
-  "- Tu disposes d'outils reels. Utilise-les au lieu de decrire ce que tu ferais: generate_media pour creer, create_batch pour un lot, remember pour memoriser, estimate_cost pour un devis, list_recent_creations pour retrouver les creations passees.",
-  "- Enchaîne plusieurs outils si la tache le demande (ex: estimer puis generer; memoriser puis creer).",
+  "- Tu disposes d'outils reels. Utilise-les au lieu de decrire ce que tu ferais: generate_media pour creer, create_batch pour un lot ou une video multi-scenes, research_url pour lire une page, market_research pour les tendances, remember pour memoriser, estimate_cost pour un devis, list_recent_creations pour retrouver les creations passees.",
+  "- Enchaine plusieurs outils si la tache le demande (ex: lire une URL puis creer; estimer puis generer; memoriser puis creer).",
   "- Quand un outil renvoie une demande de confirmation de cout, transmets-la clairement a l'utilisateur et arrete-toi la: c'est lui qui confirme.",
   "- Reste bref entre les appels d'outils: une phrase d'intention avant, une phrase de resultat apres.",
 ].join("\n");
@@ -2238,6 +2328,8 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         modelId: String(input.model_id || "auto"),
         aspectRatio: String(input.aspect_ratio || ctx.body.aspectRatio || "4:5"),
         imageUrl: referenceUrl,
+        firstFrameUrl: input.first_frame_url || input.firstFrameUrl || ctx.body.firstFrameUrl || ctx.body.first_frame_url,
+        lastFrameUrl: input.last_frame_url || input.lastFrameUrl || ctx.body.lastFrameUrl || ctx.body.last_frame_url,
         confirmed: false,
       });
       ctx.send("generation", result.generation);
@@ -2281,6 +2373,8 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
           scene: sceneFromPrompt(prompt),
           duration: type === "video" ? quote.units : undefined,
           batch: count,
+          firstFrameUrl: input.first_frame_url || input.firstFrameUrl || ctx.body.firstFrameUrl || ctx.body.first_frame_url,
+          lastFrameUrl: input.last_frame_url || input.lastFrameUrl || ctx.body.lastFrameUrl || ctx.body.last_frame_url,
         },
         model: { id: model.id, name: model.name, type: model.type },
         quote,
@@ -2322,6 +2416,11 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
       const url = String(input.url || "");
       if (!/^https?:\/\//i.test(url)) return "URL invalide pour la recherche.";
       return await runWebResearch(url, String(ctx.body.message || ""), ctx.agentModelId);
+    }
+    if (name === "market_research") {
+      const query = String(input.query || ctx.body.message || "").trim();
+      if (!query) return "Sujet de recherche marche manquant.";
+      return await runMarketResearch(query, String(ctx.body.message || query), ctx.agentModelId);
     }
     if (name === "save_skill") {
       const triggers = Array.isArray(input.triggers) ? input.triggers.map(String).slice(0, 8) : [String(input.name)];
@@ -3255,6 +3354,14 @@ async function chat(req: Request) {
         if (researchUrl && isResearchRequest(prompt)) {
           send("text", { delta: `Je lis ${researchUrl}...` });
           const brief = await runWebResearch(researchUrl, prompt, agentModelId);
+          send("text", { delta: brief });
+          await saveAssistant(brief);
+          send("done", projectDonePayload(project, conversation));
+          return;
+        }
+        if (!researchUrl && isTrendResearchRequest(prompt)) {
+          send("text", { delta: "J'analyse les signaux marche disponibles..." });
+          const brief = await runMarketResearch(prompt, prompt, agentModelId);
           send("text", { delta: brief });
           await saveAssistant(brief);
           send("done", projectDonePayload(project, conversation));
