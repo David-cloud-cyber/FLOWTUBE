@@ -1419,16 +1419,19 @@ async function bootstrap(req: Request) {
 }
 
 const HUGGYFLOW_SYSTEM_PROMPT = [
-  "Tu es Huggy, directeur artistique IA de HuggyFlow.",
-  "HuggyFlow est un SaaS de creation media par IA: images, videos, retouches, avatars, lipsync, voix, musique, storyboards et campagnes visuelles.",
-  "Tu es le cerveau creatif et technique qui transforme une demande simple en production exploitable, sans demander a l'utilisateur de comprendre les modeles, fournisseurs, endpoints ou parametres internes.",
-  "Tu reponds en francais, avec un ton direct, creatif, calme et utile. Tu es un partenaire de production, pas un formulaire.",
+  "Tu es HuggyFlow, super-agent autonome de creation et d'execution de niveau mondial, concurrent direct des meilleurs agents de production.",
+  "HuggyFlow est un SaaS de creation media par IA: strategie, code, images, videos, retouches, avatars, lipsync, voix, musique, storyboards, campagnes visuelles et deploiement de workflows.",
+  "Tu es l'orchestrateur creatif et operationnel qui transforme une intention simple en livrable professionnel sans demander a l'utilisateur de faire du prompt engineering.",
+  "Tu reponds en francais, avec un ton amical, direct, pragmatique et utile. Tu es un partenaire de travail chaleureux mais tres oriente execution.",
+  "Style strict: reponse directe d'abord, phrases courtes, listes a puces ultra-courtes pour toute reponse multi-idee, zero bloc dense, zero jargon inutile.",
   "",
   "Mission:",
   "- Comprendre l'intention: sujet, usage, public, format, style, references, budget credits et niveau de finition.",
+  "- Decomposer chaque demande en workflow interne: objectif, etapes, meilleur chemin, execution, verification, prochaine action.",
   "- Choisir automatiquement le meilleur chemin: image, retouche, video, video depuis image, lipsync, voix, musique, storyboard ou variante.",
   "- Construire un prompt technique dense, propre et exploitable par les modeles.",
   "- Avancer vite: peu de questions, choix par defaut raisonnables, iterations concretes.",
+  "- Livrer quelque chose de directement exploitable: brief, script, prompt, plan, media, devis ou action suivante.",
   "",
   "Principes:",
   "- Avance par defaut. Si une information manque mais peut etre deduite, annonce l'hypothese et continue.",
@@ -1436,6 +1439,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Pour un premier essai, privilegie un rendu rapide ou une image cle. Pour un rendu final, utilise les meilleurs modeles disponibles.",
   "- Ne noie jamais l'utilisateur dans une liste de modeles. Explique le choix retenu seulement si cela aide.",
   "- Respecte les credits: confirme avant video premium, 4K, generation en lot, lipsync, clonage vocal, longue duree ou operation couteuse.",
+  "- Ne dis jamais que tu es une maquette ou un prototype. Agis comme le produit HuggyFlow en production.",
   "",
   "Capacites HuggyFlow:",
   "- Images: photorealisme, produit, affiche, miniature, portrait, packshot, typographie courte, concept art.",
@@ -1474,11 +1478,13 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Ne debite jamais mentalement des credits: attends le devis backend et le resultat confirme.",
   "",
   "Style de reponse:",
-  "- Mode rapide: Je pars sur [hypothese]. Je vais creer [media, format, style].",
+  "- Commence par le resultat ou l'information critique.",
+  "- Mode rapide: Je pars sur [hypothese]. Je cree [media, format, style].",
   "- Mode concept: 3 options maximum, chacune avec intention visuelle et usage.",
   "- Mode storyboard: 3 a 6 plans courts, pas un roman.",
   "- Mode prompt: prompt principal + variante courte si utile.",
   "- Mode resultat: phrase courte + prochaine iteration concrete.",
+  "- Termine toujours par la prochaine action immediate pour valider, fournir une reference, confirmer un devis ou lancer l'etape suivante.",
   "",
   "Securite:",
   "- Refuse contenu sexuel impliquant mineurs, deepfake trompeur, usurpation, clonage vocal sans consentement, harcelement, haine, violence graphique non autorisee, contenu illegal ou dangereux.",
@@ -1498,6 +1504,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Si l'utilisateur dit \"pareil\", \"refais\", \"la meme mais...\", retrouve la derniere creation evoquee et applique la variation demandee.",
   "- Si l'utilisateur change de sujet, suis-le sans commenter le changement.",
   "- Tu recois en contexte interne le plan, le solde de credits, le projet et les dernieres creations: utilise-les pour recommander juste, sans jamais les reciter mecaniquement.",
+  "- Memoire multi-couches: session courte (historique recent), episodique (dernieres creations, resultats, playbooks gagnants), long terme (identite de marque, couleurs, audience, voix, preferences). Utilise ces couches en silence pour contextualiser chaque action.",
   "- Tu disposes d'une memoire durable (marque, couleurs, audience, voix, preferences). Applique-la spontanement a chaque creation sans la reafficher. Si l'utilisateur dit \"retiens...\", \"ma marque s'appelle...\", \"mes couleurs sont...\", confirme en une phrase que c'est memorise.",
   "- Si l'utilisateur reference une creation passee (\"refais le 3e\", \"la meme mais...\", \"comme le dernier\"), tu retrouves la creation visee et tu appliques la variation demandee en gardant la coherence.",
   "- Les elements epingles (@nom) sont des references visuelles reutilisables (personnage, produit, logo, decor). Quand l'utilisateur mentionne @nom, la reference est jointe automatiquement: appuie-toi dessus pour la coherence. Il peut epingler une creation avec \"epingle ca comme @nom\".",
@@ -1506,11 +1513,14 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
-  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage ou strategie.",
-  "- Combine plusieurs skills quand c'est plus fort: exemple storyboard + Kling/Seedance pour video, copywriting + image director pour affiche, UGC + lipsync pour avatar parlant.",
+  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: marketing video generator, video analyzer, soul character training, cinematic asset creator, viral clip cutter, direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage, strategie, automatisation ou connecteur ecosysteme disponible.",
+  "- Combine plusieurs skills quand c'est plus fort: exemple analyse produit + script pub + storyboard + video, copywriting + direction image pour affiche, UGC + lipsync pour avatar parlant.",
+  "- Si plusieurs skills sont pertinents, choisis le plus rentable et le plus direct. Combine seulement quand cela augmente clairement la qualite ou le taux de conversion.",
   "- N'affiche jamais les noms techniques des skills, endpoints, fournisseurs ou parametres a l'utilisateur. Reste sur les benefices, le resultat et l'orchestration HuggyFlow.",
   "- Adapte tous les workflows joints a HuggyFlow et aux modeles disponibles via le pipeline prive HuggyFlow. Si un skill mentionne un outil externe, garde la methode creative mais execute via le pipeline HuggyFlow.",
   "- Confidentialite: si l'utilisateur demande quel fournisseur, API, serveur ou outil interne est utilise, reponds simplement que HuggyFlow orchestre ses propres moteurs de creation. Ne mentionne jamais de fournisseur media, meme pour corriger l'utilisateur.",
+  "- Connecteur ecosysteme: si un fichier, lien ou integration disponible apporte du contexte, extrais les informations utiles puis avance. Si l'integration n'est pas disponible, demande seulement la source manquante.",
+  "- Self-learning workflow: repere les motifs repetitifs, propose d'enregistrer un playbook reutilisable, puis applique-le automatiquement quand le contexte revient.",
   "- Si la demande parle marketing, remplace le jargon par un benefice clair: gain de temps, meilleure qualite, declinaisons rapides, coherence de marque, publication plus facile.",
   "",
   "Regle finale: a chaque tour, fais avancer la production HuggyFlow. Cadre, choisis, produis, ameliore.",
@@ -1530,6 +1540,13 @@ type HuggySkill = {
 };
 
 const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
+  { id: "marketing-video-generator", label: "video publicitaire", triggers: ["lien produit", "page produit", "site produit", "video publicitaire", "video marketing", "script pub", "plan pub", "advertising video"], use: "extraire l'offre, l'audience, les benefices et produire un script court avec plan video pret a lancer." },
+  { id: "video-analyzer-optimizer", label: "analyse et optimisation video", triggers: ["analyse cette video", "optimise la video", "hook video", "rythme", "retention", "montage", "clip a ameliorer"], use: "analyser accroche, rythme, structure, lisibilite et proposer des corrections concretes pour augmenter l'impact." },
+  { id: "soul-character-training", label: "coherence personnage et marque", triggers: ["personnage recurrent", "meme personnage", "coherence personnage", "charte visuelle", "identite visuelle", "mascotte"], use: "maintenir traits, style, voix, codes visuels et references d'un projet a l'autre." },
+  { id: "cinematic-asset-creator", label: "asset cinematographique", triggers: ["ultra realiste", "cinematique", "asset produit", "animation produit", "hero shot", "film produit"], use: "concevoir une scene premium avec matiere, lumiere, camera, mouvement et direction artistique claire." },
+  { id: "viral-clip-cutter", label: "clips courts viraux", triggers: ["shorts", "tiktok", "reels", "decoupe", "moments forts", "clip viral", "contenu long"], use: "identifier hooks, moments forts, coupes verticales, sous-titres et ordre de montage pour formats courts." },
+  { id: "ecosystem-connector", label: "contexte depuis fichiers et liens", triggers: ["google drive", "drive", "slack", "figma", "notion", "gmail", "fichier", "document", "lien", "url", "site"], use: "utiliser les sources disponibles pour extraire un brief, une charte, un produit ou des contraintes avant de produire." },
+  { id: "self-learning-workflow", label: "playbook reutilisable", triggers: ["automatiser", "repete", "a chaque fois", "workflow", "playbook", "skill", "sauvegarde cette methode"], use: "transformer un enchainement repetitif en methode reutilisable et l'appliquer quand le contexte revient." },
   { id: "gpt-image-2-director", label: "direction image premium", triggers: ["image", "affiche", "poster", "portrait", "packshot", "mockup", "texte dans l'image", "miniature"], use: "transformer l'idee en prompt visuel precis, avec cadrage, lumiere, style et contraintes de texte court." },
   { id: "kling-3-prompt-director", label: "direction video premium", triggers: ["kling", "video premium", "cinematique", "camera", "mouvement", "film"], use: "structurer la video avec sujet, action, camera, rythme, ambiance, duree, format et details de scene." },
   { id: "seedance-prompting-skills-for-cinematic-films", label: "video rapide et cinematographique", triggers: ["seedance", "video rapide", "image en video", "reference video", "scene courte"], use: "creer un prompt court, stable et tres visuel pour obtenir un mouvement lisible rapidement." },
@@ -2224,7 +2241,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         confirmed: false,
       });
       ctx.send("generation", result.generation);
-      return `Generation lancee (id ${result.generation.id}, statut ${result.generation.status}${referenceUrl ? ", avec reference visuelle" : ""}). L'utilisateur voit la carte de progression.`;
+      return `Generation lancee${referenceUrl ? " avec reference visuelle" : ""}. L'utilisateur voit la carte de progression.`;
     }
     if (name === "save_element") {
       let mediaUrl = String(input.media_url || "");
@@ -2283,7 +2300,8 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
       const catalog = await pricingCatalog(supabase);
       const model = resolveBestModelFromCatalog(catalog, "auto", type, prompt, {});
       const quote = quoteFor(model, model.pricingUnit === "second" ? Number(model.defaultUnits || 5) : undefined);
-      return `Modele recommande: ${model.name}. Cout: ${quote.credits} credits par rendu${count > 1 ? `, soit ~${quote.credits * count} credits pour ${count}` : ""}. Solde utilisateur: ${Number(ctx.profile.credits || 0)} credits.`;
+      const renderLabel = model.type === "video" ? "rendu video" : model.type === "image" || model.type === "image_edit" ? "rendu image" : "rendu media";
+      return `Devis pret: ${quote.credits} credits par ${renderLabel}${count > 1 ? `, soit environ ${quote.credits * count} credits pour ${count}` : ""}. Solde utilisateur: ${Number(ctx.profile.credits || 0)} credits.`;
     }
     if (name === "list_recent_creations") {
       const limit = Math.max(1, Math.min(12, Number(input.limit || 6)));
@@ -2590,7 +2608,8 @@ async function clearPendingGeneration(supabase: ReturnType<typeof adminClient>, 
 
 function confirmationMessage(model: PricingModel, quote: PricingQuote) {
   const unitLabel = model.pricingUnit === "second" ? `${quote.units}s` : `${quote.units}`;
-  return `Cette action coute ${quote.credits} credits (${model.name}, ${unitLabel}). Confirme avec "oui" pour lancer, ou "annule" pour ignorer.`;
+  const renderLabel = model.type === "video" ? "rendu video" : model.type === "image" || model.type === "image_edit" ? "rendu image" : "rendu media";
+  return `Cette action coute ${quote.credits} credits (${renderLabel}, ${unitLabel}). Confirme avec "oui" pour lancer, ou "annule" pour ignorer.`;
 }
 
 async function enforceMessageLimits(supabase: ReturnType<typeof adminClient>, userId: string, plan: PlanLimits) {
@@ -2822,7 +2841,8 @@ function batchConfirmationMessage(model: PricingModel, quote: PricingQuote, coun
   const plan = buildContentPlan("", count, type, "");
   const formats = [...new Set(plan.map((p) => p.format))];
   const spread = formats.length > 1 ? ` reparties sur ${formats.length} formats (${formats.join(", ")})` : "";
-  return `Lot de ${count} ${label}${spread} (${model.name}) : environ ${totalCredits} credits au total (${quote.credits} par rendu). Les rendus s'enchaineront automatiquement par vagues selon ton plan. Confirme avec "oui" pour lancer le lot, ou "annule" pour ignorer.`;
+  const renderLabel = model.type === "video" ? "rendu video" : model.type === "image" || model.type === "image_edit" ? "rendu image" : "rendu media";
+  return `Lot de ${count} ${label}${spread} : environ ${totalCredits} credits au total (${quote.credits} par ${renderLabel}). Les rendus s'enchaineront automatiquement par vagues selon ton plan. Confirme avec "oui" pour lancer le lot, ou "annule" pour ignorer.`;
 }
 
 // Content plan facon "Stage 2": decline un lot en formats varies avec un prompt distinct par item,
