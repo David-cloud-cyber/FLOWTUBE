@@ -359,7 +359,6 @@ const FAL_ENDPOINTS = [
   "fal-ai/bytedance/seedream/v4.5/edit",
   "fal-ai/bytedance/seedream/v4.5/text-to-image",
   "fal-ai/bytedance/seedream/v5/lite/text-to-image",
-  "fal-ai/bytedance/seed/v2/mini",
   "fal-ai/flux-2-pro",
   "fal-ai/flux-2-pro/edit",
   "fal-ai/flux-2-pro/outpaint",
@@ -430,25 +429,88 @@ const FAL_ENDPOINTS = [
 
 const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
   "fal-ai/nano-banana-pro": { id: "nano", label: "Nano Banana Pro", costPerUnitUsd: 0.15, qualityTier: "premium" },
+  "fal-ai/nano-banana-pro/edit": { id: "nano-pro-edit", label: "Nano Banana Pro Edit", costPerUnitUsd: 0.15, qualityTier: "premium" },
   "fal-ai/nano-banana-2": { id: "nano2", label: "Nano Banana 2", costPerUnitUsd: 0.08, qualityTier: "premium" },
   "fal-ai/nano-banana-2/edit": { id: "nano2-edit", label: "Nano Banana 2 Edit", costPerUnitUsd: 0.08, qualityTier: "premium" },
   "fal-ai/flux/schnell": { id: "flux", label: "Flux Schnell", costPerUnitUsd: 0.04, qualityTier: "standard" },
-  "fal-ai/bytedance/seedream/v5/lite/text-to-image": { id: "seedream-lite", label: "Seedream 5.0 Lite", costPerUnitUsd: 0.035, qualityTier: "economy" },
-  "fal-ai/bytedance/seed/v2/mini": { id: "seed-v2-mini", label: "Seed Image Mini", capabilities: ["text-to-image"], costPerUnitUsd: 0.03, qualityTier: "economy" },
+  "fal-ai/bytedance/seedream/v4.5/edit": { id: "seedream-45-edit", label: "Seedream 4.5 Edit", costPerUnitUsd: 0.04, qualityTier: "standard" },
+  "fal-ai/bytedance/seedream/v4.5/text-to-image": { id: "seedream-45", label: "Seedream 4.5", costPerUnitUsd: 0.04, qualityTier: "standard" },
+  "fal-ai/bytedance/seedream/v5/lite/text-to-image": { id: "seedream-lite", label: "Seedream 5.0 Lite", costPerUnitUsd: 0.04, qualityTier: "economy" },
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": { id: "kling", label: "Kling 2.5 Turbo Pro", costPerUnitUsd: 0.12, qualityTier: "premium", maximumUnits: 15 },
   "fal-ai/bytedance/seedance/v1/lite/text-to-video": { id: "seedance", label: "Seedance 1.0 Lite", costPerUnitUsd: 0.08, qualityTier: "standard", maximumUnits: 15 },
-  "fal-ai/veo3": { id: "veoq", label: "Veo 3.1 Quality", costPerUnitUsd: 0.2, qualityTier: "premium", maximumUnits: 8 },
-  "fal-ai/veo3/fast": { id: "veol", label: "Veo 3.1 Lite", costPerUnitUsd: 0.1, qualityTier: "standard", maximumUnits: 8 },
-  "openai/gpt-image-2": { id: "gpt-image-2", label: "GPT Image 2", costPerUnitUsd: 0.08, qualityTier: "premium" },
-  "openai/gpt-image-2/edit": { id: "gpt-image-2-edit", label: "GPT Image 2 Edit", costPerUnitUsd: 0.08, qualityTier: "premium" },
-  "fal-ai/gemini-3.1-flash-image-preview": { id: "gemini-flash-image", label: "Gemini 3.1 Flash Image", costPerUnitUsd: 0.04, qualityTier: "standard" },
-  "fal-ai/gemini-3.1-flash-image-preview/edit": { id: "gemini-flash-image-edit", label: "Gemini 3.1 Flash Image Edit", costPerUnitUsd: 0.04, qualityTier: "standard" },
+  "fal-ai/veo3": { id: "veoq", label: "Veo 3.1 Quality", costPerUnitUsd: 0.4, qualityTier: "premium", maximumUnits: 8 },
+  "fal-ai/veo3/fast": { id: "veol", label: "Veo 3.1 Fast", costPerUnitUsd: 0.15, qualityTier: "standard", maximumUnits: 8 },
+  "openai/gpt-image-2": { id: "gpt-image-2", label: "GPT Image 2", costPerUnitUsd: 0.211, qualityTier: "premium", metadata: { default_quality: "high", pricing_source: "fal.ai high 1024x1024" } },
+  "openai/gpt-image-2/edit": { id: "gpt-image-2-edit", label: "GPT Image 2 Edit", costPerUnitUsd: 0.219, qualityTier: "premium", metadata: { default_quality: "high", pricing_source: "fal.ai high 1024x1024 edit" } },
+  "fal-ai/gemini-3.1-flash-image-preview": { id: "gemini-flash-image", label: "Gemini 3.1 Flash Image", costPerUnitUsd: 0.08, qualityTier: "standard" },
+  "fal-ai/gemini-3.1-flash-image-preview/edit": { id: "gemini-flash-image-edit", label: "Gemini 3.1 Flash Image Edit", costPerUnitUsd: 0.08, qualityTier: "standard" },
   "fal-ai/minimax/speech-2.8-hd": { id: "minimax-tts", label: "MiniMax Speech 2.8 HD", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "premium" },
-  "fal-ai/minimax/speech-2.8-turbo": { id: "minimax-tts-turbo", label: "MiniMax Speech 2.8 Turbo", costPerUnitUsd: 0.05, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "standard" },
+  "fal-ai/minimax/speech-2.8-turbo": { id: "minimax-tts-turbo", label: "MiniMax Speech 2.8 Turbo", costPerUnitUsd: 0.06, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "standard" },
   "fal-ai/minimax/voice-clone": { id: "minimax-voice-clone", label: "MiniMax Voice Clone", costPerUnitUsd: 1.5, qualityTier: "premium", maximumUnits: 1 },
-  "fal-ai/gemini-3.1-flash-tts": { id: "gemini-flash-tts", label: "Gemini 3.1 Flash TTS", costPerUnitUsd: 0.04, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "standard" },
-  "fal-ai/lyria3/pro": { id: "lyria3-pro", label: "Lyria 3 Pro", costPerUnitUsd: 0.18, pricingUnit: "second", defaultUnits: 30, minimumUnits: 10, maximumUnits: 120, qualityTier: "premium" },
+  "fal-ai/gemini-3.1-flash-tts": { id: "gemini-flash-tts", label: "Gemini 3.1 Flash TTS", costPerUnitUsd: 0.15, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "standard" },
+  "fal-ai/lyria3/pro": { id: "lyria3-pro", label: "Lyria 3 Pro", costPerUnitUsd: 0.08, pricingUnit: "unit", defaultUnits: 1, minimumUnits: 1, maximumUnits: 1, qualityTier: "premium" },
   "sonilo/v1.1/text-to-music": { id: "sonilo-music", label: "Sonilo 1.1 Music", costPerUnitUsd: 0.08, pricingUnit: "second", defaultUnits: 30, minimumUnits: 10, maximumUnits: 120, qualityTier: "standard" },
+  "alibaba/happy-horse/v1.1/image-to-video": { label: "Happy Horse I2V", costPerUnitUsd: 0.18, pricingUnit: "second", qualityTier: "premium" },
+  "alibaba/happy-horse/v1.1/reference-to-video": { label: "Happy Horse Reference", costPerUnitUsd: 0.18, pricingUnit: "second", qualityTier: "premium" },
+  "alibaba/happy-horse/v1.1/text-to-video": { label: "Happy Horse T2V", costPerUnitUsd: 0.18, pricingUnit: "second", qualityTier: "premium" },
+  "bytedance/seedance-2.0/image-to-video": { label: "Seedance 2 I2V", costPerUnitUsd: 0.3034, pricingUnit: "second", qualityTier: "premium" },
+  "bytedance/seedance-2.0/reference-to-video": { label: "Seedance 2 Reference", costPerUnitUsd: 0.3034, pricingUnit: "second", qualityTier: "premium" },
+  "bytedance/seedance-2.0/text-to-video": { label: "Seedance 2 T2V", costPerUnitUsd: 0.3034, pricingUnit: "second", qualityTier: "premium" },
+  "bytedance/seedance-2.0/fast/image-to-video": { label: "Seedance 2 Fast I2V", costPerUnitUsd: 0.2419, pricingUnit: "second", qualityTier: "standard" },
+  "bytedance/seedance-2.0/fast/reference-to-video": { label: "Seedance 2 Fast Reference", costPerUnitUsd: 0.2419, pricingUnit: "second", qualityTier: "standard" },
+  "bytedance/seedance-2.0/fast/text-to-video": { label: "Seedance 2 Fast T2V", costPerUnitUsd: 0.2419, pricingUnit: "second", qualityTier: "standard" },
+  "bytedance/seedance-2.0/mini/image-to-video": { label: "Seedance 2 Mini I2V", costPerUnitUsd: 0.0721, pricingUnit: "second", qualityTier: "economy" },
+  "bytedance/seedance-2.0/mini/reference-to-video": { label: "Seedance 2 Mini Reference", costPerUnitUsd: 0.0928, pricingUnit: "second", qualityTier: "economy" },
+  "bytedance/seedance-2.0/mini/text-to-video": { label: "Seedance 2 Mini T2V", costPerUnitUsd: 0.0721, pricingUnit: "second", qualityTier: "economy" },
+  "fal-ai/kling-video/v3/4k/image-to-video": { label: "Kling 3 4K I2V", costPerUnitUsd: 0.42, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/kling-video/v3/4k/text-to-video": { label: "Kling 3 4K T2V", costPerUnitUsd: 0.42, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/kling-video/v3/pro/image-to-video": { label: "Kling 3 Pro I2V", costPerUnitUsd: 0.168, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/kling-video/v3/pro/text-to-video": { label: "Kling 3 Pro T2V", costPerUnitUsd: 0.168, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/kling-video/v3/standard/image-to-video": { label: "Kling 3 Standard I2V", costPerUnitUsd: 0.126, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/kling-video/v3/standard/text-to-video": { label: "Kling 3 Standard T2V", costPerUnitUsd: 0.126, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/veo3.1/extend-video": { label: "Veo 3.1 Extend", costPerUnitUsd: 0.4, pricingUnit: "second", qualityTier: "premium", maximumUnits: 8 },
+  "fal-ai/veo3.1/fast/extend-video": { label: "Veo 3.1 Fast Extend", costPerUnitUsd: 0.15, pricingUnit: "second", qualityTier: "standard", maximumUnits: 8 },
+  "fal-ai/veo3.1/lite/first-last-frame-to-video": { label: "Veo 3.1 Lite First Last", costPerUnitUsd: 0.05, pricingUnit: "second", qualityTier: "economy", maximumUnits: 8 },
+  "fal-ai/veo3.1/lite/image-to-video": { label: "Veo 3.1 Lite I2V", costPerUnitUsd: 0.05, pricingUnit: "second", qualityTier: "economy", maximumUnits: 8 },
+  "luma/agent/ray/v3.2/text-to-video": { label: "Ray 3.2 T2V", costPerUnitUsd: 0.2, pricingUnit: "second", qualityTier: "premium" },
+  "luma/agent/ray/v3.2/image-to-video": { label: "Ray 3.2 I2V", costPerUnitUsd: 0.06, pricingUnit: "second", qualityTier: "standard" },
+  "luma/agent/ray/v3.2/reframe": { label: "Ray 3.2 Reframe", costPerUnitUsd: 0.12, pricingUnit: "second", qualityTier: "standard" },
+  "luma/agent/ray/v3.2/video-to-video": { label: "Ray 3.2 Video Remix", costPerUnitUsd: 0.216, pricingUnit: "second", qualityTier: "premium" },
+  "xai/grok-imagine-video/v1.5/image-to-video": { label: "Grok Video I2V", costPerUnitUsd: 0.14, pricingUnit: "second", qualityTier: "standard" },
+  "xai/grok-imagine-video/reference-to-video": { label: "Grok Video Reference", costPerUnitUsd: 0.07, pricingUnit: "second", qualityTier: "standard" },
+  "xai/grok-imagine-video/extend-video": { label: "Grok Video Extend", costPerUnitUsd: 0.08, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/pixverse/v6/image-to-video": { label: "PixVerse 6 I2V", costPerUnitUsd: 0.06, pricingUnit: "second", qualityTier: "standard" },
+  "google/gemini-omni-flash/image-to-video": { label: "Gemini Omni I2V", costPerUnitUsd: 0.13, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/creatify/aurora": { label: "Creatify Aurora", costPerUnitUsd: 0.14, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/bytedance/omnihuman/v1.5": { label: "OmniHuman 1.5", costPerUnitUsd: 0.16, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/heygen/avatar3/digital-twin": { label: "HeyGen Avatar 3 Twin", costPerUnitUsd: 0.034, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/heygen/avatar4/digital-twin": { label: "HeyGen Avatar 4 Twin", costPerUnitUsd: 0.1, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/heygen/avatar4/image-to-video": { label: "HeyGen Avatar 4 I2V", costPerUnitUsd: 0.1, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/heygen/avatar5/digital-twin": { label: "HeyGen Avatar 5 Twin", costPerUnitUsd: 0.1, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/heygen/v2/translate/precision": { label: "HeyGen Translate Precision", costPerUnitUsd: 0.1, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/heygen/v2/translate/speed": { label: "HeyGen Translate Speed", costPerUnitUsd: 0.05, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/heygen/v2/video-agent": { label: "HeyGen Video Agent 2", costPerUnitUsd: 0.034, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/heygen/v3/lipsync/precision": { label: "HeyGen Lipsync Precision", costPerUnitUsd: 0.1, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/heygen/v3/lipsync/speed": { label: "HeyGen Lipsync Speed", costPerUnitUsd: 0.05, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/heygen/v3/video-agent": { label: "HeyGen Video Agent 3", costPerUnitUsd: 0.034, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/sync-lipsync/v3": { label: "Sync Lipsync 3", costPerUnitUsd: 0.1333, pricingUnit: "second", qualityTier: "premium" },
+  "fal-ai/sync-lipsync/v3/image-to-video": { label: "Sync Lipsync 3 I2V", costPerUnitUsd: 0.1333, pricingUnit: "second", qualityTier: "premium" },
+  "veed/avatars/audio-to-video": { label: "VEED Avatar Audio", costPerUnitUsd: 0.005, pricingUnit: "second", qualityTier: "economy" },
+  "veed/avatars/text-to-video": { label: "VEED Avatar Text", costPerUnitUsd: 0.0059, pricingUnit: "second", qualityTier: "economy" },
+  "veed/fabric-1.0": { label: "VEED Fabric", capabilities: ["text-to-video"], costPerUnitUsd: 0.08, pricingUnit: "second", qualityTier: "standard" },
+  "veed/fabric-1.0/text": { label: "VEED Fabric Text", capabilities: ["text-to-video"], costPerUnitUsd: 0.08, pricingUnit: "second", qualityTier: "standard" },
+  "veed/subtitles": { label: "VEED Subtitles", costPerUnitUsd: 0.0017, pricingUnit: "second", qualityTier: "economy" },
+  "veed/video-background-removal": { label: "VEED BG Removal", capabilities: ["video-to-video", "remove-background"], costPerUnitUsd: 0.0225, pricingUnit: "second", qualityTier: "standard" },
+  "veed/video-background-removal/fast": { label: "VEED BG Removal Fast", capabilities: ["video-to-video", "remove-background"], costPerUnitUsd: 0.012, pricingUnit: "second", qualityTier: "economy" },
+  "veed/video-background-removal/green-screen": { label: "VEED Green Screen", capabilities: ["video-to-video", "remove-background"], costPerUnitUsd: 0.025, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/elevenlabs/dubbing": { label: "ElevenLabs Dubbing", costPerUnitUsd: 0.015, pricingUnit: "second", defaultUnits: 60, minimumUnits: 1, maximumUnits: 600, qualityTier: "premium" },
+  "fal-ai/elevenlabs/music": { label: "ElevenLabs Music", costPerUnitUsd: 0.0134, pricingUnit: "second", defaultUnits: 60, minimumUnits: 1, maximumUnits: 300, qualityTier: "premium" },
+  "fal-ai/elevenlabs/text-to-dialogue/eleven-v3": { label: "ElevenLabs Dialogue", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", defaultUnits: 1, minimumUnits: 1, maximumUnits: 20, qualityTier: "premium" },
+  "fal-ai/elevenlabs/voice-changer": { label: "ElevenLabs Voice Changer", costPerUnitUsd: 0.005, pricingUnit: "second", defaultUnits: 60, minimumUnits: 1, maximumUnits: 600, qualityTier: "standard" },
+  "fal-ai/bria/background/remove": { label: "Bria Background Remove", costPerUnitUsd: 0.018, qualityTier: "standard" },
+  "fal-ai/topaz/upscale/video": { label: "Topaz Video Upscale", costPerUnitUsd: 0.02, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/seedvr/upscale/image": { label: "SeedVR Image Upscale", costPerUnitUsd: 0.004, qualityTier: "economy" },
+  "xai/grok-imagine-image/edit": { label: "Grok Image Edit", costPerUnitUsd: 0.022, qualityTier: "standard" },
 };
 
 function idFromEndpoint(endpoint: string) {
@@ -540,27 +602,52 @@ function pricingUnitForEndpoint(type: string, caps: string[]) {
 
 function costForEndpoint(endpoint: string, type: string, caps: string[]) {
   const e = endpoint.toLowerCase();
-  if (e.includes("4k")) return 0.35;
-  if (e.includes("veo3.1") || e.includes("veo3")) return e.includes("lite") || e.includes("fast") ? 0.1 : 0.2;
-  if (e.includes("kling-video/v3/pro")) return 0.18;
-  if (e.includes("kling-video/v3/standard")) return 0.12;
-  if (e.includes("seedance-2.0/mini")) return 0.06;
-  if (e.includes("seedance-2.0/fast")) return 0.08;
-  if (e.includes("seedance-2.0")) return 0.12;
-  if (e.includes("ray/v3.2")) return 0.18;
-  if (e.includes("grok-imagine-video")) return 0.18;
-  if (e.includes("happy-horse") || e.includes("pixverse")) return 0.08;
-  if (e.includes("avatar") || e.includes("heygen") || e.includes("omnihuman")) return 0.14;
+  if (e.includes("kling-video/v3/4k")) return 0.42;
+  if (e.includes("4k")) return 0.42;
+  if (e.includes("veo3.1/lite")) return 0.05;
+  if (e.includes("veo3.1/fast") || e.includes("veo3/fast")) return 0.15;
+  if (e.includes("veo3.1") || e.includes("veo3")) return 0.4;
+  if (e.includes("kling-video/v3/pro")) return 0.168;
+  if (e.includes("kling-video/v3/standard")) return 0.126;
+  if (e.includes("seedance-2.0/mini/reference")) return 0.0928;
+  if (e.includes("seedance-2.0/mini")) return 0.0721;
+  if (e.includes("seedance-2.0/fast")) return 0.2419;
+  if (e.includes("seedance-2.0")) return 0.3034;
+  if (e.includes("ray/v3.2/text-to-video")) return 0.2;
+  if (e.includes("ray/v3.2/image-to-video")) return 0.06;
+  if (e.includes("ray/v3.2/reframe")) return 0.12;
+  if (e.includes("ray/v3.2/video-to-video")) return 0.216;
+  if (e.includes("grok-imagine-video/v1.5")) return 0.14;
+  if (e.includes("grok-imagine-video/reference")) return 0.07;
+  if (e.includes("grok-imagine-video/extend")) return 0.08;
+  if (e.includes("happy-horse")) return 0.18;
+  if (e.includes("pixverse")) return 0.06;
+  if (e.includes("omnihuman")) return 0.16;
+  if (e.includes("heygen/v3/lipsync/precision")) return 0.1;
+  if (e.includes("heygen/v3/lipsync/speed")) return 0.05;
+  if (e.includes("heygen") && e.includes("video-agent")) return 0.034;
+  if (e.includes("heygen") && e.includes("speed")) return 0.05;
+  if (e.includes("avatar") || e.includes("heygen")) return 0.1;
+  if (e.includes("sync-lipsync")) return 0.1333;
+  if (e.includes("creatify/aurora")) return 0.14;
+  if (e.includes("gemini-omni-flash/image-to-video")) return 0.13;
   if (type === "video" || type === "video_edit" || type === "lipsync") return 0.1;
   if (e.includes("voice-clone") || e.includes("digital-twin")) return 1.5;
+  if (e.includes("elevenlabs/music")) return 0.0134;
+  if (e.includes("elevenlabs/dubbing")) return 0.015;
+  if (e.includes("elevenlabs/voice-changer")) return 0.005;
+  if (e.includes("elevenlabs/text-to-dialogue")) return 0.1;
   if (caps.includes("music")) return 0.08;
   if (type === "audio") return 0.05;
-  if (e.includes("gpt-image-2") || e.includes("nano-banana-pro")) return 0.08;
+  if (e.includes("gpt-image-2/edit")) return 0.219;
+  if (e.includes("gpt-image-2")) return 0.211;
+  if (e.includes("nano-banana-pro")) return 0.15;
   if (e.includes("nano-banana-2")) return 0.08;
   if (e.includes("flux-2-pro")) return 0.06;
   if (e.includes("flux/dev")) return 0.04;
   if (e.includes("flux/schnell")) return 0.04;
-  if (e.includes("seedream")) return 0.035;
+  if (e.includes("seedream")) return 0.04;
+  if (e.includes("bria/background/remove")) return 0.018;
   if (e.includes("remove-background") || e.includes("background/remove")) return 0.01;
   return 0.04;
 }
@@ -631,24 +718,7 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
 
 const modelRegistry: PricingModel[] = FAL_ENDPOINTS.map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
 
-const FEATURED_MODEL_IDS = [
-  "auto",
-  "gpt-image-2",
-  "gpt-image-2-edit",
-  "seed-v2-mini",
-  "veoq",
-  "kling-video-v3-pro-text-to-video",
-  "kling-video-v3-4k-text-to-video",
-  "bytedance-seedance-2-0-text-to-video",
-  "bytedance-seedance-2-0-image-to-video",
-  "pixverse-v6-image-to-video",
-  "luma-agent-ray-v3-2-image-to-video",
-  "minimax-tts",
-  "lyria3-pro",
-  "heygen-v3-lipsync-precision",
-  "sync-lipsync-v3",
-  "minimax-voice-clone",
-];
+const FEATURED_MODEL_IDS: string[] = [];
 
 const MODEL_SHORT_NAMES: Record<string, string> = {
   "gpt-image-2": "GPT Image 2",
@@ -660,7 +730,6 @@ const MODEL_SHORT_NAMES: Record<string, string> = {
   "flux-2-pro": "Flux 2 Pro",
   "flux-2-pro-edit": "Flux 2 Edit",
   "seedream-lite": "Seedream Lite",
-  "seed-v2-mini": "Seed Mini",
   "veoq": "Veo 3",
   "veol": "Veo 3 Fast",
   "kling-video-v3-pro-text-to-video": "Kling 3 Pro",
@@ -702,7 +771,6 @@ function compactModelName(model: PricingModel) {
 }
 
 function modelUiBadge(model: PricingModel) {
-  if (FEATURED_MODEL_IDS.includes(model.id)) return "TOP";
   const tier = String((model.metadata || {}).quality_tier || "");
   if (tier === "premium" || model.premium) return "PRO";
   if (/fast|turbo|lite|mini|schnell/i.test(model.endpoint)) return "FAST";
@@ -932,14 +1000,17 @@ async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
       if (!dbModel) return registryModel;
       dbById.delete(registryModel.id);
       return {
-        ...registryModel,
         ...dbModel,
-        endpoint: dbModel.endpoint || registryModel.endpoint,
+        ...registryModel,
+        name: registryModel.name || dbModel.name,
+        endpoint: registryModel.endpoint || dbModel.endpoint,
+        requiresConfirmation: registryModel.requiresConfirmation || dbModel.requiresConfirmation,
         metadata: {
-          ...registryModel.metadata,
           ...(dbModel.metadata || {}),
+          ...registryModel.metadata,
           provider: "fal.ai",
           fal_only: true,
+          pricing_source: "verified_fal_registry",
         },
       };
     });
@@ -1015,8 +1086,6 @@ function scoreModel(model: PricingModel, type: string, capability: string, promp
   const text = prompt.toLowerCase();
   const tier = String((model.metadata || {}).quality_tier || "standard");
   let score = 100;
-  const featuredIndex = FEATURED_MODEL_IDS.indexOf(model.id);
-  if (featuredIndex >= 0) score += Math.max(12, 56 - featuredIndex * 3);
   score += tier === "premium" ? 40 : tier === "standard" ? 24 : 12;
   if (model.premium) score += 12;
   const endpoint = String(model.endpoint || "").toLowerCase();
@@ -1044,22 +1113,14 @@ function resolveBestModelFromCatalog(catalog: PricingModel[], modelId: string | 
 }
 
 function resolveModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string) {
-  const defaults: Record<string, string> = {
-    image: "gpt-image-2",
-    image_edit: "gpt-image-2-edit",
-    video: "veoq",
-    video_edit: "luma-agent-ray-v3-2-video-to-video",
-    audio: "minimax-tts",
-    lipsync: "heygen-v3-lipsync-precision",
-    voice_clone: "minimax-voice-clone",
-  };
-  const defaultId = defaults[type] || "nano";
+  const cheapestCompatible = [...catalog.filter((m) => m.type === type)]
+    .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
+  const cheapestRegistry = [...modelRegistry.filter((m) => m.type === type)]
+    .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
   return catalog.find((m) => m.id === modelId && m.type === type)
-    || catalog.find((m) => m.id === defaultId && m.type === type)
-    || catalog.find((m) => m.type === type)
+    || cheapestCompatible
     || modelRegistry.find((m) => m.id === modelId && m.type === type)
-    || modelRegistry.find((m) => m.id === defaultId && m.type === type)
-    || modelRegistry.find((m) => m.type === type)
+    || cheapestRegistry
     || modelRegistry[0];
 }
 
