@@ -65,6 +65,7 @@ input:focus,textarea:focus{outline:none}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:'Instrument Sans',system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
+  <input id="hf-file-input" type="file" accept="image/*,video/*,audio/*,.pdf,.txt,.md,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
   <aside data-hf-rail="{{ sidebarRail }}" style="{{ sidebarStyle }}">
@@ -198,8 +199,19 @@ input:focus,textarea:focus{outline:none}
 
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
               <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="2" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;min-height:48px;max-height:140px;overflow-y:auto"></textarea>
+              <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+                  <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
+                    <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
+                      <span style="width:6px;height:6px;border-radius:50%;background:#D6F94E;flex:0 0 auto"></span>
+                      <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
+                      <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
               <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
-                <button title="Ajouter une référence" style="width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba({{ tLineRGB }},.14);color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05)">
+                <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyle }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div style="position:relative">
@@ -264,7 +276,18 @@ input:focus,textarea:focus{outline:none}
             <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
               <div style="{{ m.rowStyle }}">
                 <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
-                  <div style="max-width:78%;padding:12px 17px;border-radius:18px 18px 6px 18px;background:{{ tInk }};font-size:14.5px;line-height:1.55;color:{{ tPageBg }}">{{ m.text }}</div>
+                  <div style="max-width:78%;padding:12px 17px;border-radius:18px 18px 6px 18px;background:{{ tInk }};font-size:14.5px;line-height:1.55;color:{{ tPageBg }}">
+                    <div>{{ m.text }}</div>
+                    <sc-if value="{{ m.hasUserAttachments }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+                        <sc-for list="{{ m.userAttachments }}" as="ua" hint-placeholder-count="1">
+                          <span style="display:inline-flex;align-items:center;gap:6px;max-width:190px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.14);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                            <span style="width:5px;height:5px;border-radius:50%;background:#D6F94E;flex:0 0 auto"></span>{{ ua.name }}
+                          </span>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
                 </sc-if>
                 <sc-if value="{{ m.isAgent }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;gap:12px;align-items:flex-start;width:100%">
@@ -379,7 +402,21 @@ input:focus,textarea:focus{outline:none}
         <div style="width:100%;max-width:720px;pointer-events:auto">
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:12px 12px 10px;box-shadow:0 18px 44px -30px rgba(12,11,9,.4)">
             <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Continuer la conversation…" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:14.5px;line-height:1.5;font-family:inherit;padding:4px 6px;min-height:28px;max-height:120px;overflow-y:auto"></textarea>
+            <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
+                <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
+                  <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
+                    <span style="width:6px;height:6px;border-radius:50%;background:#D6F94E;flex:0 0 auto"></span>
+                    <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
+                    <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
+                  </span>
+                </sc-for>
+              </div>
+            </sc-if>
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyleSmall }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
               <span style="padding:5px 11px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);font-size:11.5px;color:{{ tText3 }};white-space:nowrap">{{ curModelName }}</span>
               <div style="flex:1"></div>
               <button onClick="{{ sendAction }}" title="{{ sendButtonTitle }}" style="{{ sendButtonStyleSmall }}" style-hover="filter:brightness(.95)">
@@ -1696,7 +1733,10 @@ class Component extends DCLogic {
     renameProjectId: '',
     renameTitle: '',
     deleteProjectId: '',
-    compareOpen: false
+    compareOpen: false,
+    attachments: Array.isArray(this.initialUiState.attachments) ? this.initialUiState.attachments : [],
+    uploadingAttachment: false,
+    attachmentNotice: ''
   };
 
   MODELS = [
@@ -1711,22 +1751,22 @@ class Component extends DCLogic {
   ];
 
   PLACEHOLDERS = [
-    "Décris une image publicitaire pour ta marque…",
-    "Un spot vidéo de 15 secondes qui présente…",
-    "Une voix off chaleureuse pour ton tutoriel…",
-    "Un visuel produit épuré sur fond crème…"
+    "Decris ce que tu veux creer...",
+    "Cree une video courte pour presenter mon produit...",
+    "Ameliore cette image pour une publicite...",
+    "Prepare une voix off claire pour mon contenu..."
   ];
 
   SUGGESTION_SETS = [
     [
-      { tag:'Image', tagBg:'#EAF5C8', text:"Un packshot minimaliste de mon produit sur fond crème, lumière douce du matin" },
-      { tag:'Vidéo', tagBg:'#EBDDF2', text:"Un teaser de 10 secondes pour annoncer le lancement de ma collection" },
-      { tag:'Voix', tagBg:'#D8F0E2', text:"Une voix off posée qui lit mon script d'introduction de podcast" }
+      { tag:'Image', tagBg:'#EAF5C8', text:"Une belle photo de mon produit, prete pour Instagram" },
+      { tag:'Video', tagBg:'#EBDDF2', text:"Une video courte pour annoncer le lancement de ma collection" },
+      { tag:'Voix', tagBg:'#D8F0E2', text:"Une voix off chaleureuse pour presenter mon idee simplement" }
     ],
     [
-      { tag:'Marketing', tagBg:'#F2E3DD', text:"Trois déclinaisons d'un visuel Instagram pour ma promo de juillet" },
-      { tag:'Image', tagBg:'#EAF5C8', text:"Un portrait éditorial de fondatrice, style magazine, tons chauds" },
-      { tag:'Vidéo', tagBg:'#EBDDF2', text:"Une boucle d'ambiance pour l'écran d'accueil de mon site" }
+      { tag:'Marketing', tagBg:'#F2E3DD', text:"Trois idees de visuels pour vendre mon offre cette semaine" },
+      { tag:'Image', tagBg:'#EAF5C8', text:"Un portrait professionnel et naturel pour ma marque" },
+      { tag:'Video', tagBg:'#EBDDF2', text:"Une video simple et accrocheuse pour ma page d'accueil" }
     ]
   ];
 
@@ -1734,7 +1774,7 @@ class Component extends DCLogic {
     { q:'Comment fonctionnent les crédits ?', a:"Les crédits servent à lancer tes créations. HuggyFlow indique le coût avant les rendus importants et ne retire les crédits qu'après une création réussie." },
     { q:'Est-ce que mon abonnement se renouvelle ?', a:"Oui, chaque offre se renouvelle automatiquement (par mois ou par an selon ton choix). Tu peux annuler à tout moment depuis ton compte ; l'accès reste actif jusqu'à la fin de la période payée." },
     { q:'Puis-je ajouter des crédits ?', a:"Oui. Si tu épuises tes crédits avant le renouvellement, tu peux acheter des packs de crédits supplémentaires sans changer d'offre." },
-    { q:'Pourquoi la vidéo coûte plus cher ?', a:"Générer une vidéo demande beaucoup plus de calcul qu'une image : chaque seconde est composée de dizaines d'images cohérentes entre elles. C'est pourquoi les modèles vidéo consomment de 263 à 438 crédits par clip de 5 secondes." },
+    { q:'Pourquoi la vidéo utilise plus de crédits ?', a:"Une vidéo demande plus de travail qu'une image : HuggyFlow prépare le mouvement, garde la scène cohérente et assemble le rendu final. Tu vois le coût avant de lancer les créations importantes." },
     { q:'Puis-je changer de plan ?', a:"À tout moment. Le passage à une offre supérieure est immédiat, la différence est calculée au prorata sur ta prochaine facture." }
   ];
 
@@ -1783,7 +1823,7 @@ class Component extends DCLogic {
     };
     const apiPlans = (this.state.pricingPlans || []).filter(p=>{
       const id = String(p.id || '');
-      const seg = (['free','basic','creator','pro'].indexOf(id) >= 0) ? 'solo' : ((['crew','squad'].indexOf(id) >= 0) ? 'team' : 'business');
+      const seg = (['free','starter','basic','creator','pro'].indexOf(id) >= 0) ? 'solo' : ((['studio','business','crew','squad','max'].indexOf(id) >= 0) ? 'team' : 'business');
       return seg === this.state.segment;
     }).map(p=>{
       const meta = p.metadata || {};
@@ -1792,7 +1832,7 @@ class Component extends DCLogic {
         id:p.id, name:name.toUpperCase(), tag:meta.badge || (p.priorityQueue ? 'POPULAIRE' : 'OFFRE'), tagKind:p.priorityQueue ? 'lime' : 'muted',
         popular:!!p.priorityQueue, tagline:meta.tagline || meta.description || 'Pour creer avec HuggyFlow',
         credits:Number(p.includedCredits || 0), m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
-        cta:Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte',
+        cta:meta.cta || (Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte'),
         vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
         gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
       };
@@ -1975,6 +2015,94 @@ class Component extends DCLogic {
     });
     return false;
   }
+  openFilePicker(){
+    if(this.state.uploadingAttachment) return;
+    if(!this.requireAuth('Connecte-toi pour ajouter un fichier a ton projet HuggyFlow.', { type:'attach' })) return;
+    const input = typeof document !== 'undefined' ? document.getElementById('hf-file-input') : null;
+    if(input) input.click();
+  }
+  attachmentKind(file){
+    const type = String(file && file.type || '').toLowerCase();
+    if(type.indexOf('image/') === 0) return 'image';
+    if(type.indexOf('video/') === 0) return 'video';
+    if(type.indexOf('audio/') === 0) return 'audio';
+    if(type.indexOf('text/') === 0 || /\.md$|\.txt$|\.csv$/i.test(file.name || '')) return 'text';
+    return 'file';
+  }
+  cleanFileName(name){
+    return String(name || 'fichier').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 90) || 'fichier';
+  }
+  readFileAsDataUrl(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(String(reader.result || ''));
+      reader.onerror = ()=>reject(reader.error || new Error('lecture fichier'));
+      reader.readAsDataURL(file);
+    });
+  }
+  readTextPreview(file){
+    const kind = this.attachmentKind(file);
+    if(kind !== 'text' || file.size > 350000) return Promise.resolve('');
+    return new Promise(resolve=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(String(reader.result || '').slice(0, 12000));
+      reader.onerror = ()=>resolve('');
+      reader.readAsText(file);
+    });
+  }
+  async onFileInput(e){
+    const file = e && e.target && e.target.files && e.target.files[0];
+    if(e && e.target) e.target.value = '';
+    if(!file || this.state.uploadingAttachment) return;
+    if(!this.requireAuth('Connecte-toi pour ajouter un fichier a ton projet HuggyFlow.', { type:'attach' })) return;
+    this.setState({ uploadingAttachment:true, attachmentNotice:'Ajout du fichier...' });
+    try{
+      const dataUrl = await this.readFileAsDataUrl(file);
+      const textPreview = await this.readTextPreview(file);
+      const res = await this.apiFetch('/api/upload', {
+        method:'POST',
+        body:JSON.stringify({
+          fileName:this.cleanFileName(file.name),
+          contentType:file.type || 'application/octet-stream',
+          data:dataUrl,
+          kind:this.attachmentKind(file),
+          textPreview
+        })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'upload');
+      const attachment = {
+        id:data.id || ('att-'+Date.now()),
+        name:data.name || this.cleanFileName(file.name),
+        kind:data.kind || this.attachmentKind(file),
+        url:data.url || data.publicUrl || '',
+        contentType:data.contentType || file.type || '',
+        textPreview:data.textPreview || textPreview || ''
+      };
+      this.setState(s=>({ attachments:(s.attachments || []).concat([attachment]).slice(-4), uploadingAttachment:false, attachmentNotice:'Fichier ajoute.' }));
+      setTimeout(()=>this.setState({ attachmentNotice:'' }), 1600);
+    }catch(err){
+      this.setState({ uploadingAttachment:false, attachmentNotice:this.friendlyError(err && err.message, 'Impossible d ajouter ce fichier pour le moment.') });
+    }
+  }
+  removeAttachment(id){
+    this.setState(s=>({ attachments:(s.attachments || []).filter(a=>a.id !== id) }));
+  }
+  attachmentPayload(){
+    const items = (this.state.attachments || []).filter(a=>a && a.url);
+    const firstImage = items.find(a=>a.kind === 'image');
+    const firstVideo = items.find(a=>a.kind === 'video');
+    const firstAudio = items.find(a=>a.kind === 'audio');
+    const payload = { attachments: items.map(a=>({ id:a.id, name:a.name, kind:a.kind, url:a.url, contentType:a.contentType, textPreview:a.textPreview || '' })) };
+    if(firstImage) {
+      payload.imageUrl = firstImage.url;
+      payload.referenceImageUrl = firstImage.url;
+    }
+    if(firstVideo) payload.videoUrl = firstVideo.url;
+    if(firstAudio) payload.audioUrl = firstAudio.url;
+    if(items.length) payload.referenceUrls = items.map(a=>a.url);
+    return payload;
+  }
   runPendingAuthAction(){
     const pending = this.state.pendingAuthAction;
     if(!pending) return;
@@ -1982,6 +2110,7 @@ class Component extends DCLogic {
       if(pending.type === 'send') this.sendPrompt(pending.text);
       if(pending.type === 'newProject') this.newProject();
       if(pending.type === 'checkout') this.startCheckout(pending.planId);
+      if(pending.type === 'attach') this.openFilePicker();
     });
   }
   saveSession(data, action){
@@ -2104,6 +2233,7 @@ class Component extends DCLogic {
       id: (m && m.id) || ('m'+Date.now()+Math.floor(Math.random()*999)),
       role,
       text: (m && (m.text || m.content)) || '',
+      attachments: Array.isArray(m && m.attachments) ? m.attachments : [],
       kind: media ? (media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image') : undefined,
       media: media || undefined,
       batch: m && m.batch
@@ -2179,7 +2309,7 @@ class Component extends DCLogic {
     if(this.chatAbort) this.chatAbort.abort();
   }
   componentDidUpdate(prevProps, prevState){
-    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','sidebarCollapsed','projectsExpanded'];
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','attachments','sidebarCollapsed','projectsExpanded'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
     if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked) this.scrollChatToBottom();
@@ -2203,6 +2333,7 @@ class Component extends DCLogic {
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
+        attachments:this.state.attachments || [],
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         projectsExpanded:this.state.projectsExpanded !== false
       };
@@ -2226,10 +2357,17 @@ class Component extends DCLogic {
   }
   normalizeMarkdownText(text){
     return String(text || '')
+      .replace(/\r/g, '')
+      .replace(/^\s*[-*_]{3,}\s*$/gm, '')
+      .replace(/\s+(#{1,6}\s+)/g, '\n\n$1')
+      .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+      .replace(/\s+(-\s+\*\*)/g, '\n$1')
+      .replace(/\s+(-\s+[A-ZÀ-Üa-zà-ÿ])/g, '\n$1')
       .replace(/\s+(\d+\.\s+\*\*)/g, '\n\n$1')
       .replace(/\s+-\s+(\*\*[^*]+\*\*)/g, '\n- $1')
       .replace(/\s+(Petit point cash:)/g, '\n\n$1')
       .replace(/\s+(Pour d[ée]marrer)/gi, '\n\n$1')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
   inlineMarkdown(text, keyPrefix){
@@ -2323,19 +2461,24 @@ class Component extends DCLogic {
   }
   sendPrompt(text){
     const t = (text || '').trim();
-    if(!t || this.state.sendLocked) return;
+    const currentAttachments = (this.state.attachments || []).filter(a=>a && a.url);
+    if((!t && !currentAttachments.length) || this.state.sendLocked) return;
     if(!this.requireAuth('Connecte-toi pour creer, sauvegarder et suivre tes creations HuggyFlow.', { type:'send', text:t })) return;
+    const prompt = t || 'Analyse le fichier joint et propose la meilleure suite.';
+    const userText = t || ('Fichier joint : ' + currentAttachments.map(a=>a.name).join(', '));
+    const attachmentPayload = this.attachmentPayload();
     const mode = this.state.mode || 'image';
     const kind = mode === 'video' ? 'video' : mode === 'audio' ? 'voice' : 'image';
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
-    const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:t };
+    const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
     const agentMsg = { id:agentId, role:'agent', typing:true, kind };
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
       input:'',
-      activeTitle:t.slice(0, 34) + (t.length > 34 ? '...' : ''),
+      attachments:[],
+      activeTitle:prompt.slice(0, 34) + (prompt.length > 34 ? '...' : ''),
       sendLocked:true
-    }), ()=>this.sendPromptToApi(t, agentId));
+    }), ()=>this.sendPromptToApi(prompt, agentId, attachmentPayload));
   }
   stopGeneration(){
     if(this.chatAbort) this.chatAbort.abort();
@@ -2367,17 +2510,17 @@ class Component extends DCLogic {
       return { projectsData:projects, activeProjectId:projectId, activeTitle:title || 'Nouveau projet' };
     });
   }
-  async sendPromptToApi(text, agentId){
+  async sendPromptToApi(text, agentId, attachmentPayload){
     const model = this.curModel();
     const mode = this.state.mode || 'image';
-    const payload = {
+    const payload = Object.assign({
       message:text,
       projectId:this.state.activeProjectId,
       mode,
       modelId:'auto',
       agentModelId:this.agentModelApiId(model.id),
       aspectRatio:this.aspectRatioForMode(mode)
-    };
+    }, attachmentPayload || {});
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     this.chatAbort = controller;
     try{
@@ -2435,7 +2578,7 @@ class Component extends DCLogic {
     if(buffer.trim()) handle(buffer);
     return delivered;
   }
-  checkoutPlanId(id){ return ({ creator:'basic' })[id] || id; }
+  checkoutPlanId(id){ return ({ basic:'creator', max:'studio', scale:'agency' })[id] || id; }
   async startCheckout(planId){
     const checkoutPlanId = this.checkoutPlanId(planId);
     if(checkoutPlanId === 'free'){
@@ -2445,9 +2588,21 @@ class Component extends DCLogic {
     }
     if(!this.requireAuth('Connecte-toi pour choisir cette offre et l associer a ton compte.', { type:'checkout', planId })) return;
     try{
+      let customerPhone = '';
+      if(this.state.billingStatus && this.state.billingStatus.moneyFusionConfigured && typeof window !== 'undefined'){
+        try{ customerPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
+        if(!customerPhone && window.prompt){
+          customerPhone = (window.prompt('Numero de paiement pour finaliser avec MoneyFusion') || '').trim();
+          if(customerPhone) try{ localStorage.setItem('huggyflow_checkout_phone', customerPhone); }catch(e){}
+        }
+        if(!customerPhone){
+          this.setState({ pricingNotice:'Ajoute ton numero de paiement pour ouvrir le checkout.' });
+          return;
+        }
+      }
       const res = await this.apiFetch('/api/billing/checkout', {
         method:'POST',
-        body:JSON.stringify({ type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual' })
+        body:JSON.stringify({ type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone })
       });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
@@ -3247,11 +3402,18 @@ class Component extends DCLogic {
       openAuth: ()=> this.setState({ page:'auth', modelMenu:false }),
       backToApp: ()=> this.setState({ page:'app' }),
       onInput: (e)=> this.setState({ input: e.target.value }),
+      onFileInput: (e)=> this.onFileInput(e),
+      openFilePicker: ()=> this.openFilePicker(),
+      attachButtonTitle: st.uploadingAttachment ? 'Ajout en cours' : 'Ajouter une image, une video, un son ou un document',
+      attachButtonStyle: 'width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
+      attachButtonStyleSmall: 'width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
+      hasAttachments: ((st.attachments || []).length > 0),
+      attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', onRemove:()=>this.removeAttachment(a.id) })),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
       sendAction: ()=> st.sendLocked ? this.stopGeneration() : this.sendPrompt(st.input),
       sendButtonTitle: st.sendLocked ? 'Stop' : 'Envoyer',
-      sendHint: st.sendLocked ? 'stop' : '↵ envoyer',
+      sendHint: st.uploadingAttachment ? (st.attachmentNotice || 'ajout...') : (st.sendLocked ? 'stop' : '↵ envoyer'),
       isSending: !!st.sendLocked,
       isIdle: !st.sendLocked,
       sendButtonStyleLarge: 'width:48px;height:48px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px -14px rgba(214,249,78,.8)',
@@ -3288,7 +3450,7 @@ class Component extends DCLogic {
       monthlyTabStyle: this.tabStyle(st.billing==='monthly'),
       annualTabStyle: this.tabStyle(st.billing==='annual'),
       plans: this.buildPlans(),
-      plansGridCols: 'repeat(' + (this.PLAN_DATA[st.segment] || []).length + ',1fr)',
+      plansGridCols: 'repeat(' + Math.max(1, this.buildPlans().length) + ',1fr)',
       segmentTabs: [['solo','Solo'],['team','Équipe'],['business','Business Plan']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.segment === p[0]),
@@ -3494,6 +3656,8 @@ class Component extends DCLogic {
           isAgent: m.role==='agent',
           rowStyle: 'display:flex;' + (m.role==='user' ? 'justify-content:flex-end' : 'justify-content:flex-start') + ';animation:fadeUp .3s ease both',
           text: m.text || '',
+          hasUserAttachments: Array.isArray(m.attachments) && m.attachments.length > 0,
+          userAttachments: (m.attachments || []).map(a=>({ name:a.name || 'Fichier joint' })),
           richText: this.markdownBlocks(m.text || ''),
           isTyping: !!m.typing,
           showText: !m.typing && !!m.text,

@@ -785,18 +785,40 @@ function modelUiRank(model: PricingModel) {
   return (typeOrder[model.type] || 99) + (tier === "premium" ? 0 : tier === "standard" ? 4 : 8);
 }
 
-const fallbackPlans: Record<string, PlanLimits> = {
-  free: { id: "free", displayName: "Free", includedCredits: 100, monthlyPriceUsd: 0, annualPriceUsd: 0, monthlyMessageLimit: 60, dailyMessageLimit: 10, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7, storageGb: 1, maxUploadMb: 25, seatLimit: 1, supportLevel: "community", priorityQueue: false, metadata: { checkout: false } },
-  basic: { id: "basic", displayName: "Creator", includedCredits: 1600, monthlyPriceUsd: 19, annualPriceUsd: 180, monthlyMessageLimit: 500, dailyMessageLimit: 80, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 20, maxUploadMb: 120, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { alias: "starter", checkout: true } },
-  starter: { id: "starter", displayName: "Creator", includedCredits: 1600, monthlyPriceUsd: 19, annualPriceUsd: 180, monthlyMessageLimit: 500, dailyMessageLimit: 80, dailyVideoLimit: 2, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 20, maxUploadMb: 120, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: { canonical: "basic", checkout: true } },
-  pro: { id: "pro", displayName: "Pro", includedCredits: 5500, monthlyPriceUsd: 59, annualPriceUsd: 588, monthlyMessageLimit: 1800, dailyMessageLimit: 180, dailyVideoLimit: 10, concurrentImageJobs: 5, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 150, maxUploadMb: 300, seatLimit: 3, supportLevel: "priority", priorityQueue: false, metadata: { checkout: true } },
-  crew: { id: "crew", displayName: "Crew", includedCredits: 8000, monthlyPriceUsd: 89, annualPriceUsd: 852, monthlyMessageLimit: 2600, dailyMessageLimit: 220, dailyVideoLimit: 14, concurrentImageJobs: 3, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 120, storageGb: 300, maxUploadMb: 450, seatLimit: 5, supportLevel: "standard", priorityQueue: false, metadata: { checkout: true, team: true, audience: "Petites equipes qui demarrent" } },
-  squad: { id: "squad", displayName: "Squad", includedCredits: 12000, monthlyPriceUsd: 129, annualPriceUsd: 1236, monthlyMessageLimit: 4200, dailyMessageLimit: 320, dailyVideoLimit: 20, concurrentImageJobs: 6, concurrentVideoJobs: 3, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 150, storageGb: 450, maxUploadMb: 600, seatLimit: 10, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, team: true, audience: "Equipes en pleine croissance" } },
-  max: { id: "max", displayName: "Max", includedCredits: 15000, monthlyPriceUsd: 149, annualPriceUsd: 1428, monthlyMessageLimit: 5000, dailyMessageLimit: 350, dailyVideoLimit: 26, concurrentImageJobs: 9, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 600, maxUploadMb: 600, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: { alias: "studio", checkout: true } },
-  scale: { id: "scale", displayName: "Scale", includedCredits: 30000, monthlyPriceUsd: 299, annualPriceUsd: 2868, monthlyMessageLimit: 12000, dailyMessageLimit: 700, dailyVideoLimit: 60, concurrentImageJobs: 14, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1500, maxUploadMb: 1000, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Agences et equipes en volume" } },
-  enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 60000, monthlyPriceUsd: 599, annualPriceUsd: 5988, monthlyMessageLimit: 30000, dailyMessageLimit: 1500, dailyVideoLimit: 130, concurrentImageJobs: 28, concurrentVideoJobs: 14, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 5000, maxUploadMb: 2000, seatLimit: 60, supportLevel: "dedicated", priorityQueue: true, metadata: { checkout: true, business: true, audience: "Production intensive et organisations", dedicated_support: true } },
-  studio: { id: "studio", displayName: "Max", includedCredits: 15000, monthlyPriceUsd: 149, annualPriceUsd: 1428, monthlyMessageLimit: 5000, dailyMessageLimit: 350, dailyVideoLimit: 26, concurrentImageJobs: 9, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 600, maxUploadMb: 600, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: { canonical: "max", checkout: true } },
+const PRICING_MARGIN_METADATA = {
+  checkout: true,
+  infra_reserve_percent: 10,
+  payment_reserve_percent: 7,
+  minimum_net_credit_usd: 0.009,
+  margin_rule: "credits priced after AI cost, storage, bandwidth, payments, and support reserve",
+  model_policy: "HuggyFlow auto-routes every request to the best available backend model for the task",
 };
+
+function planMeta(extra: Record<string, unknown> = {}) {
+  return { ...PRICING_MARGIN_METADATA, ...extra };
+}
+
+const fallbackPlans: Record<string, PlanLimits> = {
+  free: { id: "free", displayName: "Free", includedCredits: 100, monthlyPriceUsd: 0, annualPriceUsd: 0, monthlyMessageLimit: 60, dailyMessageLimit: 10, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7, storageGb: 1, maxUploadMb: 25, seatLimit: 1, supportLevel: "community", priorityQueue: false, metadata: planMeta({ checkout: false, badge: "GRATUIT", tagline: "Pour essayer HuggyFlow sans risque", cta: "Creer gratuitement" }) },
+  starter: { id: "starter", displayName: "Starter", includedCredits: 550, monthlyPriceUsd: 6.99, annualPriceUsd: 67, monthlyMessageLimit: 300, dailyMessageLimit: 45, dailyVideoLimit: 1, concurrentImageJobs: 1, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 5, maxUploadMb: 80, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: planMeta({ badge: "DEPART", tagline: "Pour publier quelques contenus chaque semaine", cta: "Commencer" }) },
+  creator: { id: "creator", displayName: "Creator", includedCredits: 1300, monthlyPriceUsd: 14.99, annualPriceUsd: 144, monthlyMessageLimit: 900, dailyMessageLimit: 90, dailyVideoLimit: 3, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "audio", "image_edit"], watermarkRequired: false, mediaRetentionDays: 45, storageGb: 30, maxUploadMb: 150, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: planMeta({ badge: "CREATEUR", tagline: "Pour creer regulierement avec un budget maitrise", cta: "Choisir Creator" }) },
+  basic: { id: "basic", displayName: "Creator", includedCredits: 1300, monthlyPriceUsd: 14.99, annualPriceUsd: 144, monthlyMessageLimit: 900, dailyMessageLimit: 90, dailyVideoLimit: 3, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "audio", "image_edit"], watermarkRequired: false, mediaRetentionDays: 45, storageGb: 30, maxUploadMb: 150, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: planMeta({ canonical: "creator", hidden: true }) },
+  pro: { id: "pro", displayName: "Pro", includedCredits: 3500, monthlyPriceUsd: 39, annualPriceUsd: 374, monthlyMessageLimit: 2500, dailyMessageLimit: 180, dailyVideoLimit: 10, concurrentImageJobs: 5, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 150, maxUploadMb: 300, seatLimit: 2, supportLevel: "priority", priorityQueue: false, metadata: planMeta({ badge: "POPULAIRE", tagline: "Pour produire vite et sans exploser les couts", cta: "Passer Pro" }) },
+  studio: { id: "studio", displayName: "Studio", includedCredits: 9000, monthlyPriceUsd: 99, annualPriceUsd: 950, monthlyMessageLimit: 6000, dailyMessageLimit: 420, dailyVideoLimit: 30, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 600, seatLimit: 3, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ badge: "STUDIO", tagline: "Pour une petite equipe qui publie chaque jour", cta: "Choisir Studio", team: true }) },
+  business: { id: "business", displayName: "Business", includedCredits: 18000, monthlyPriceUsd: 199, annualPriceUsd: 1910, monthlyMessageLimit: 15000, dailyMessageLimit: 850, dailyVideoLimit: 70, concurrentImageJobs: 12, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1200, maxUploadMb: 1000, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ badge: "BUSINESS", tagline: "Pour equipes, marques et boutiques en volume", cta: "Choisir Business", team: true, api_access: true }) },
+  agency: { id: "agency", displayName: "Agency", includedCredits: 36000, monthlyPriceUsd: 399, annualPriceUsd: 3830, monthlyMessageLimit: 35000, dailyMessageLimit: 1500, dailyVideoLimit: 150, concurrentImageJobs: 20, concurrentVideoJobs: 12, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 2500, maxUploadMb: 1500, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ badge: "AGENCE", tagline: "Pour servir plusieurs clients avec une marge stable", cta: "Choisir Agency", business: true, api_access: true }) },
+  enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 80000, monthlyPriceUsd: 799, annualPriceUsd: 7670, monthlyMessageLimit: 90000, dailyMessageLimit: 4000, dailyVideoLimit: 360, concurrentImageJobs: 40, concurrentVideoJobs: 24, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 8000, maxUploadMb: 2500, seatLimit: 60, supportLevel: "dedicated", priorityQueue: true, metadata: planMeta({ badge: "SUR MESURE", tagline: "Pour production intensive, support dedie et volumes negocies", cta: "Parler a l'equipe", business: true, dedicated_support: true }) },
+  crew: { id: "crew", displayName: "Studio", includedCredits: 9000, monthlyPriceUsd: 99, annualPriceUsd: 950, monthlyMessageLimit: 6000, dailyMessageLimit: 420, dailyVideoLimit: 30, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 600, seatLimit: 3, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "studio", hidden: true }) },
+  squad: { id: "squad", displayName: "Business", includedCredits: 18000, monthlyPriceUsd: 199, annualPriceUsd: 1910, monthlyMessageLimit: 15000, dailyMessageLimit: 850, dailyVideoLimit: 70, concurrentImageJobs: 12, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1200, maxUploadMb: 1000, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "business", hidden: true }) },
+  max: { id: "max", displayName: "Studio", includedCredits: 9000, monthlyPriceUsd: 99, annualPriceUsd: 950, monthlyMessageLimit: 6000, dailyMessageLimit: 420, dailyVideoLimit: 30, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 600, seatLimit: 3, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "studio", hidden: true }) },
+  scale: { id: "scale", displayName: "Agency", includedCredits: 36000, monthlyPriceUsd: 399, annualPriceUsd: 3830, monthlyMessageLimit: 35000, dailyMessageLimit: 1500, dailyVideoLimit: 150, concurrentImageJobs: 20, concurrentVideoJobs: 12, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 2500, maxUploadMb: 1500, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "agency", hidden: true }) },
+};
+
+const PUBLIC_PLAN_IDS = ["free", "starter", "creator", "pro", "studio", "business", "agency", "enterprise"];
+
+function publicPricingPlans() {
+  return PUBLIC_PLAN_IDS.map((id) => planPublic(fallbackPlans[id]));
+}
 
 function serviceKey() {
   const rawSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
@@ -1190,6 +1212,7 @@ function normalizePlan(row: Record<string, unknown>): PlanLimits {
 
 async function resolvePlan(supabase: ReturnType<typeof adminClient>, plan: string | null | undefined) {
   const normalized = normalizePlanId(plan);
+  if (fallbackPlans[normalized]) return fallbackPlans[normalized];
   const { data, error } = await supabase.from("pricing_plans").select("*").eq("id", normalized).maybeSingle();
   if (!error && data) return normalizePlan(data);
   return fallbackPlans[normalized] || fallbackPlans.free;
@@ -1528,6 +1551,7 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
         id: message.id,
         role: message.role === "assistant" ? "agent" : message.role,
         text: message.content,
+        attachments: message.metadata?.attachments || undefined,
         batch: message.metadata?.batch || undefined,
         media: !message.metadata?.batch && genByMessage.has(message.id)
           ? mediaFromGeneration(genByMessage.get(message.id)!)
@@ -1543,7 +1567,6 @@ async function bootstrap(req: Request) {
   const profile = userId ? await ensureProfile(supabase, userId) : null;
   const projects = userId ? await listProjectData(supabase, userId) : [];
   const catalog = await pricingCatalog(supabase);
-  const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("sort_order", { ascending: true });
   const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
   const { data: subscription } = userId
     ? await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()
@@ -1579,7 +1602,7 @@ async function bootstrap(req: Request) {
     agentModels: publicAgentModels(),
     // Les moteurs media fal.ai restent backend-only. Le frontend affiche seulement les modeles agent.
     models: [],
-    plans: (plans || []).filter((plan) => !["starter", "studio"].includes(String(plan.id))).map((plan) => planPublic(normalizePlan(plan))),
+    plans: publicPricingPlans(),
     creditPacks: (creditPacks || []).map((pack) => ({
       id: pack.id,
       label: pack.label,
@@ -1847,7 +1870,41 @@ type ReplyContext = {
   memory?: string[];
   elements?: AgentElement[];
   learnedSkill?: string;
+  attachments?: string[];
 };
+
+function normalizeRequestAttachments(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 6).map((item) => {
+    const obj = (item && typeof item === "object") ? item as Record<string, unknown> : {};
+    const url = String(obj.url || obj.publicUrl || obj.public_url || "").trim();
+    return {
+      id: String(obj.id || ""),
+      name: safeUploadName(obj.name || obj.fileName || "Fichier"),
+      kind: String(obj.kind || "file").slice(0, 24),
+      url,
+      contentType: String(obj.contentType || obj.content_type || ""),
+      textPreview: String(obj.textPreview || obj.text_preview || "").slice(0, 4000),
+    };
+  }).filter((item) => item.url || item.textPreview);
+}
+
+function attachmentContextFromBody(body: Record<string, unknown>) {
+  const items = normalizeRequestAttachments(body.attachments);
+  const pushUrl = (name: string, kind: string, value: unknown) => {
+    const url = String(value || "").trim();
+    if (url && !items.some((item) => item.url === url)) items.push({ id: "", name, kind, url, contentType: "", textPreview: "" });
+  };
+  pushUrl("Image jointe", "image", body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url);
+  pushUrl("Video jointe", "video", body.videoUrl || body.video_url);
+  pushUrl("Audio joint", "audio", body.audioUrl || body.audio_url);
+  const refs = Array.isArray(body.referenceUrls || body.reference_urls) ? (body.referenceUrls || body.reference_urls) as unknown[] : [];
+  refs.slice(0, 6).forEach((url, idx) => pushUrl(`Reference ${idx + 1}`, "reference", url));
+  return items.map((item) => {
+    const preview = item.textPreview ? `\nExtrait:\n${item.textPreview}` : "";
+    return `${item.name} (${item.kind}${item.contentType ? `, ${item.contentType}` : ""})${item.url ? `: ${item.url}` : ""}${preview}`.slice(0, 4500);
+  });
+}
 
 type MemoryDirective = { kind: "brand" | "fact" | "preference" | "style"; label: string; content: string };
 
@@ -2304,6 +2361,7 @@ async function anthropicReply(
     context.memory && context.memory.length ? `Memoire durable (marque, preferences, faits a respecter sans les reciter):\n${context.memory.map((line) => `  - ${line}`).join("\n")}` : "",
     context.elements && context.elements.length ? `Elements epingles (references reutilisables via @nom): ${context.elements.map((el) => `@${el.name} (${el.kind})`).join(", ")}.` : "",
     context.learnedSkill ? `Skill appris a appliquer pour cette demande:\n${context.learnedSkill}` : "",
+    context.attachments && context.attachments.length ? `Fichiers joints par l'utilisateur:\n${context.attachments.map((line) => `  - ${line}`).join("\n")}` : "",
     context.recentCreations && context.recentCreations.length ? `Dernieres creations du projet:\n${context.recentCreations.map((line) => `  - ${line}`).join("\n")}` : "",
     context.willGenerate ? "Une generation va etre lancee apres ta reponse: annonce la direction creative, pas de question inutile." : "Aucune generation ne sera lancee pour ce message: reponds a la question ou fais avancer le brief.",
     context.batchCount && context.batchCount >= 2 ? `Lot demande: ${context.batchCount} creations.` : "",
@@ -2673,6 +2731,7 @@ async function runAgentLoop(
     context.memory && context.memory.length ? `Memoire durable:\n${context.memory.map((l) => `  - ${l}`).join("\n")}` : "",
     context.elements && context.elements.length ? `Elements epingles: ${context.elements.map((el) => `@${el.name} (${el.kind})`).join(", ")}.` : "",
     context.learnedSkill ? `Skill appris a appliquer:\n${context.learnedSkill}` : "",
+    context.attachments && context.attachments.length ? `Fichiers joints:\n${context.attachments.map((line) => `  - ${line}`).join("\n")}` : "",
   ].filter(Boolean).join("\n");
   type ApiContent = Record<string, unknown>;
   const messages: { role: "user" | "assistant"; content: string | ApiContent[] }[] = [
@@ -3451,6 +3510,8 @@ async function batchStatus(req: Request, batchId: string) {
 async function chat(req: Request) {
   const body = await bodyJson(req);
   const prompt = String(body.message || "");
+  const requestAttachments = normalizeRequestAttachments((body as Record<string, unknown>).attachments);
+  const attachmentContext = attachmentContextFromBody(body as Record<string, unknown>);
   const agentModelId = agentModelFromBody(body as Record<string, unknown>);
   const encoder = new TextEncoder();
 
@@ -3479,6 +3540,7 @@ async function chat(req: Request) {
           conversation_id: conversation.id,
           role: "user",
           content: prompt,
+          metadata: requestAttachments.length ? { attachments: requestAttachments } : {},
         });
         const saveAssistant = async (content: string) => {
           if (!content || !content.trim()) return;
@@ -3642,6 +3704,7 @@ async function chat(req: Request) {
             memory,
             elements,
             learnedSkill: loopMatched ? `${loopMatched.name}: ${loopMatched.playbook}`.slice(0, 800) : undefined,
+            attachments: attachmentContext,
           };
           const reply = await runAgentLoop(loopCtx, prompt, history, loopContext);
           await saveAssistant(reply);
@@ -3735,6 +3798,7 @@ async function chat(req: Request) {
           willGenerate,
           memory,
           elements,
+          attachments: attachmentContext,
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
         const reply = await anthropicReply(
@@ -3835,6 +3899,11 @@ function extensionFromContentType(contentType: string, fallbackType: string) {
   if (contentType.includes("mp4")) return "mp4";
   if (contentType.includes("mpeg")) return "mp3";
   if (contentType.includes("wav")) return "wav";
+  if (contentType.includes("pdf")) return "pdf";
+  if (contentType.includes("plain")) return "txt";
+  if (contentType.includes("markdown")) return "md";
+  if (contentType.includes("msword")) return "doc";
+  if (contentType.includes("wordprocessingml")) return "docx";
   return fallbackType === "video" ? "mp4" : fallbackType === "audio" ? "mp3" : "png";
 }
 
@@ -3894,6 +3963,105 @@ async function persistMediaAsset(supabase: ReturnType<typeof adminClient>, gener
   }
 
   await supabase.from("media_assets").insert(asset);
+}
+
+function uploadKindFromBody(kind: unknown, contentType: string) {
+  const explicit = String(kind || "").toLowerCase();
+  if (["image", "video", "audio", "text", "file"].includes(explicit)) return explicit;
+  if (contentType.startsWith("image/")) return "image";
+  if (contentType.startsWith("video/")) return "video";
+  if (contentType.startsWith("audio/")) return "audio";
+  if (contentType.startsWith("text/")) return "text";
+  return "file";
+}
+
+function uploadAllowedContentType(contentType: string) {
+  const type = contentType.toLowerCase();
+  return type.startsWith("image/")
+    || type.startsWith("video/")
+    || type.startsWith("audio/")
+    || type.startsWith("text/")
+    || [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/json",
+      "application/octet-stream",
+    ].includes(type);
+}
+
+function safeUploadName(name: unknown) {
+  return String(name || "fichier")
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 90) || "fichier";
+}
+
+function bytesFromDataUrl(data: unknown) {
+  const raw = String(data || "");
+  const base64 = raw.includes(",") ? raw.slice(raw.indexOf(",") + 1) : raw;
+  if (!base64) throw new FlowtubeError(400, "Fichier vide.", { code: "UPLOAD_EMPTY" });
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function uploadRoute(req: Request) {
+  const body = await bodyJson(req);
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const profile = await ensureProfile(supabase, userId);
+  await enforceRateLimit(req, supabase, "upload", userId, 30);
+  const plan = await resolvePlan(supabase, String(profile.plan || "free"));
+  const contentType = String(body.contentType || body.content_type || "application/octet-stream").toLowerCase();
+  if (!uploadAllowedContentType(contentType)) {
+    throw new FlowtubeError(415, "Format de fichier non pris en charge.", { code: "UNSUPPORTED_UPLOAD_TYPE" });
+  }
+  const bytes = bytesFromDataUrl(body.data || body.base64);
+  const maxBytes = Math.max(1, Number(plan.maxUploadMb || 25)) * 1024 * 1024;
+  if (bytes.byteLength > maxBytes) {
+    throw new FlowtubeError(413, `Fichier trop lourd pour ton plan (${plan.maxUploadMb} Mo maximum).`, {
+      code: "UPLOAD_TOO_LARGE",
+      maxUploadMb: plan.maxUploadMb,
+    });
+  }
+  const kind = uploadKindFromBody(body.kind, contentType);
+  const fileName = safeUploadName(body.fileName || body.name);
+  const ext = extensionFromContentType(contentType, kind === "file" ? "png" : kind);
+  const path = `${userId}/uploads/${crypto.randomUUID()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from(MEDIA_BUCKET)
+    .upload(path, new Blob([bytes], { type: contentType }), { contentType, upsert: false });
+  if (uploadError) throw uploadError;
+  const signedSeconds = Math.max(3600, Math.min(Number(plan.mediaRetentionDays || 30) * 24 * 60 * 60, 60 * 60 * 24 * 30));
+  const { data: signed, error: signedError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, signedSeconds);
+  if (signedError) throw signedError;
+  const expiresAt = new Date(Date.now() + signedSeconds * 1000).toISOString();
+  const textPreview = String(body.textPreview || body.text_preview || "").slice(0, 12000);
+  const { data: asset } = await supabase.from("media_assets").insert({
+    user_id: userId,
+    bucket: MEDIA_BUCKET,
+    object_path: path,
+    content_type: contentType,
+    bytes: bytes.byteLength,
+    public_url: signed?.signedUrl || "",
+    signed_url_expires_at: expiresAt,
+    expires_at: expiresAt,
+    status: "available",
+    metadata: { upload: true, kind, file_name: fileName, text_preview: textPreview || undefined },
+  }).select("id").single();
+  return json({
+    id: asset?.id || crypto.randomUUID(),
+    name: fileName,
+    kind,
+    contentType,
+    bytes: bytes.byteLength,
+    url: signed?.signedUrl || "",
+    expiresAt,
+    textPreview,
+  });
 }
 
 async function refundFailedGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
@@ -4637,10 +4805,9 @@ async function statsRoute(req: Request) {
 
 async function pricingRoute() {
   const supabase = adminClient();
-  const { data: plans } = await supabase.from("pricing_plans").select("*").eq("active", true).order("sort_order", { ascending: true });
   const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
   return json({
-    plans: (plans || []).map((plan) => planPublic(normalizePlan(plan))),
+    plans: publicPricingPlans(),
     creditPacks: creditPacks || [],
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
@@ -4968,6 +5135,7 @@ Deno.serve(async (req: Request) => {
 
     if (first === "bootstrap" && req.method === "GET") return await bootstrap(req);
     if (first === "chat" && req.method === "POST") return await chat(req);
+    if (first === "upload" && req.method === "POST") return await uploadRoute(req);
     if (first === "generate" && req.method === "POST") return await directGenerate(req);
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
