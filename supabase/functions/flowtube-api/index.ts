@@ -112,7 +112,7 @@ function agentCreditsForTurn(modelId: string, multiplier = 1) {
 async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefined, modelId: string) {
   if (!billing) return;
   const creditsRequired = agentCreditsForTurn(modelId, billing.multiplier);
-  const { data: profile, error } = await billing.supabase.from("profiles").select("credits").eq("id", billing.userId).single();
+  const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
   if (creditsAvailable < creditsRequired) {
@@ -145,7 +145,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     .update({ credits: nextCredits })
     .eq("id", billing.userId)
     .gte("credits", credits)
-    .select("credits")
+    .select("credits,credits_max")
     .maybeSingle();
   if (updateError || !updated) {
     throw new FlowtubeError(402, "Solde de credits insuffisant pour continuer.", {
@@ -188,7 +188,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
       margin_multiplier: MEDIA_MARGIN_MULTIPLIER,
     },
   });
-  if (billing.send) billing.send("credits", { credits: balanceAfter });
+  if (billing.send) billing.send("credits", { credits: balanceAfter, creditsMax: Number(updated.credits_max || profile?.credits_max || 100) });
   return { charged: credits, balance: balanceAfter };
 }
 
@@ -3592,8 +3592,8 @@ async function chat(req: Request) {
             }, reply);
             send("generation", result.generation);
           }
-          const { data: freshProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
-          send("credits", { credits: freshProfile?.credits ?? 0 });
+          const { data: freshProfile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
+          send("credits", { credits: freshProfile?.credits ?? 0, creditsMax: freshProfile?.credits_max ?? 100 });
           send("done", projectDonePayload(project, conversation));
           return;
         }
@@ -3708,8 +3708,8 @@ async function chat(req: Request) {
           };
           const reply = await runAgentLoop(loopCtx, prompt, history, loopContext);
           await saveAssistant(reply);
-          const { data: loopProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
-          send("credits", { credits: loopProfile?.credits ?? 0 });
+          const { data: loopProfile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
+          send("credits", { credits: loopProfile?.credits ?? 0, creditsMax: loopProfile?.credits_max ?? 100 });
           send("done", projectDonePayload(project, conversation));
           return;
         }
@@ -3857,8 +3857,8 @@ async function chat(req: Request) {
           }, reply);
           send("generation", result.generation);
         }
-        const { data: finalProfile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
-        send("credits", { credits: finalProfile?.credits ?? 0 });
+        const { data: finalProfile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
+        send("credits", { credits: finalProfile?.credits ?? 0, creditsMax: finalProfile?.credits_max ?? 100 });
         send("done", projectDonePayload(project, conversation));
       } catch (err) {
         if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });

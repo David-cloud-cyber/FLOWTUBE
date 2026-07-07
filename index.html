@@ -1837,7 +1837,8 @@ class Component extends DCLogic {
         gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
       };
     });
-    const planList = apiPlans.length ? apiPlans : (this.PLAN_DATA[this.state.segment] || this.PLAN_DATA.solo);
+    const basePlanList = apiPlans.length ? apiPlans : (this.PLAN_DATA[this.state.segment] || this.PLAN_DATA.solo);
+    const planList = this.visiblePricingPlans(basePlanList);
     return planList.map(d=>{
       const img = Math.floor(d.credits/35);
       const sd = Math.floor(d.credits/263);
@@ -1881,7 +1882,8 @@ class Component extends DCLogic {
           d.watermark ? feat(false, 'Marque HuggyFlow sur les exports') : feat(true, 'Exports sans marque'),
           d.priority ? feat(true, 'Rythme prioritaire') : feat(false, 'Rythme standard')
         ],
-        cardStyle: 'position:relative;display:flex;flex-direction:column;border-radius:20px;padding:24px 22px;' +
+        cardStyle: (this.state.segment === 'solo' && !this.state.authToken && d.id === 'pro' ? 'grid-column:2 / span 1;' : '') +
+          'position:relative;display:flex;flex-direction:column;border-radius:20px;padding:24px 22px;' +
           (d.popular
             ? 'background:' + T.surface + ';border:1.5px solid ' + T.ink + ';box-shadow:0 24px 54px -34px rgba(12,11,9,.5)'
             : 'background:' + T.surfaceSoft + ';border:1px solid rgba(' + T.lineRGB + ',.10)'),
@@ -1890,6 +1892,25 @@ class Component extends DCLogic {
         onSelect: ()=> this.startCheckout(d.id)
       };
     });
+  }
+
+  visiblePricingPlans(planList){
+    let list = (planList || []).slice();
+    if(this.state.segment === 'solo'){
+      if(this.state.authToken) list = list.filter(p=>p.id !== 'free');
+      const order = this.state.authToken ? ['starter','creator','pro'] : ['free','starter','creator','pro'];
+      list.sort((a,b)=>{
+        const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
+        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      });
+    }
+    return list;
+  }
+
+  pricingGridCols(){
+    const plans = this.buildPlans();
+    if(this.state.segment === 'solo' && !this.state.authToken && plans.length >= 4) return 'repeat(3,1fr)';
+    return 'repeat(' + Math.max(1, plans.length) + ',1fr)';
   }
 
   tokens(){
@@ -2427,6 +2448,14 @@ class Component extends DCLogic {
       if(m.media && m.media.generationId && m.media.status === 'loading') this.pollGeneration(m.id, m.media.generationId);
     }));
   }
+  applyCreditPayload(payload){
+    if(!payload) return;
+    const patch = {};
+    if(payload.credits !== undefined && payload.credits !== null) patch.credits = Number(payload.credits);
+    const creditsMax = payload.creditsMax !== undefined ? payload.creditsMax : payload.credits_max;
+    if(creditsMax !== undefined && creditsMax !== null) patch.creditsMax = Number(creditsMax);
+    if(Object.keys(patch).length) this.setState(patch);
+  }
   pollGeneration(messageId, generationId){
     this.polls = this.polls || {};
     if(this.polls[generationId]) return;
@@ -2444,7 +2473,7 @@ class Component extends DCLogic {
         const data = await res.json();
         const media = this.normalizeMedia(data.generation || data);
         if(media) this.updateAgentMessage(messageId, { media, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image' });
-        if(data.credits !== undefined) this.setState({ credits:Number(data.credits) });
+        this.applyCreditPayload(data);
         if(media && media.status === 'loading') this.polls[generationId] = setTimeout(run, 2400);
         else delete this.polls[generationId];
       }catch(err){
@@ -2564,7 +2593,7 @@ class Component extends DCLogic {
       if(type === 'message'){ this.appendAgentText(agentId, payload.text || ''); delivered = true; }
       if(type === 'generation'){ this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
       if(type === 'done'){ this.bindProjectFromApi(payload); delivered = true; }
-      if(type === 'credits') this.setState({ credits:Number(payload.credits || this.state.credits) });
+      if(type === 'credits') this.applyCreditPayload(payload);
       if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, text:this.friendlyError(payload.message, 'La creation a echoue. Reessaie avec une consigne plus courte.') }); delivered = true; }
     };
     while(true){
@@ -2619,7 +2648,8 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/billing/status');
       if(!res.ok) throw new Error('billing '+res.status);
       const data = await res.json();
-      this.setState({ billingStatus:data, credits:Number(data.credits !== undefined ? data.credits : this.state.credits), creditsMax:Number(data.creditsMax || this.state.creditsMax) });
+      this.setState({ billingStatus:data });
+      this.applyCreditPayload(data);
     }catch(err){
       this.setState({ pricingNotice:'Impossible de charger la facturation pour le moment.' });
     }finally{
@@ -3450,7 +3480,7 @@ class Component extends DCLogic {
       monthlyTabStyle: this.tabStyle(st.billing==='monthly'),
       annualTabStyle: this.tabStyle(st.billing==='annual'),
       plans: this.buildPlans(),
-      plansGridCols: 'repeat(' + Math.max(1, this.buildPlans().length) + ',1fr)',
+      plansGridCols: this.pricingGridCols(),
       segmentTabs: [['solo','Solo'],['team','Équipe'],['business','Business Plan']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.segment === p[0]),
