@@ -12,6 +12,9 @@ const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
 const MEDIA_MARGIN_MULTIPLIER = 3.5;
 const EXPENSIVE_CREDIT_THRESHOLD = 200;
+const DEFAULT_MONEYFUSION_CHECKOUT_URL = "https://pay.moneyfusion.net/HuggyFlow/72cdb377014bd232/pay/";
+const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
+const DEFAULT_BILLING_CURRENCY = (Deno.env.get("MONEYFUSION_CURRENCY") || "XOF").toUpperCase();
 const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
@@ -129,7 +132,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
   if (!billing) return { charged: 0, balance: undefined as number | undefined };
   const rate = agentCreditRateForModel(modelId);
   const credits = agentCreditsForTurn(modelId, billing.multiplier);
-  const { data: profile, error } = await billing.supabase.from("profiles").select("credits").eq("id", billing.userId).single();
+  const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
   if (creditsAvailable < credits) {
@@ -1057,12 +1060,14 @@ function requestTypeFromBody(body: Record<string, unknown>, prompt: string) {
   const raw = String(body.mode || "").toLowerCase();
   const allowedTypes = ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"];
   if (allowedTypes.includes(explicitType)) return explicitType;
-  const text = prompt.toLowerCase();
+  const text = stripAccents(prompt.toLowerCase());
   if (/lip[-\s]?sync|synchronise.*l[eè]vres|doublage.*l[eè]vres/.test(text)) return "lipsync";
   if (/clone.*voix|clonage.*voix|voice clone|digital twin/.test(text)) return "voice_clone";
   if (/musique|music|chanson|soundtrack|bande son|tts|voix off|voice over|audio|doublage|transcri/.test(text)) return "audio";
   if (/retouche|modifier|edite|edit|background|arriere-plan|upscale|agrandir|remove/.test(text) && raw === "image") return "image_edit";
   if (/reframe|extend|prolonge|upscale.*video|sous-titre|subtitle|fond.*video/.test(text) && raw === "video") return "video_edit";
+  if (/\b(video|clip|reels?|tiktok|ugc|pub video|spot|storyboard anime|animation)\b/.test(text)) return "video";
+  if (/\b(image|photo|visuel|affiche|poster|miniature|thumbnail|packshot)\b/.test(text)) return raw === "video" ? "video" : "image";
   if (allowedTypes.includes(raw)) return raw;
   return "image";
 }
@@ -1101,6 +1106,18 @@ function requestedCapability(type: string, prompt: string, body: Record<string, 
   return type === "video" ? "text-to-video" : "text-to-image";
 }
 
+function aspectRatioForRequest(body: Record<string, unknown>, prompt: string, type: string) {
+  if (isUgcPipelineRequest(prompt) && type === "video") return "9:16";
+  return String(body.aspectRatio || body.aspect_ratio || "4:5");
+}
+
+function requestedUnitsForModel(model: PricingModel, body: Record<string, unknown>, prompt: string, type: string) {
+  if (model.pricingUnit === "second") {
+    return Number(body.duration || body.durationSeconds || (isUgcPipelineRequest(prompt) && type === "video" ? 15 : model.defaultUnits));
+  }
+  return Number(body.units || model.defaultUnits);
+}
+
 function scoreModel(model: PricingModel, type: string, capability: string, prompt: string) {
   if (model.type !== type) return -1000;
   const caps = modelCapabilities(model);
@@ -1116,6 +1133,8 @@ function scoreModel(model: PricingModel, type: string, capability: string, promp
   if (/personnage|avatar|humain|face|visage|talking head/.test(text) && /heygen|omnihuman|avatar|sync-lipsync/.test(endpoint)) score += 30;
   if (/cinema|cinematique|realiste|camera|mouvement/.test(text) && /veo|kling|ray|seedance/.test(endpoint)) score += 24;
   if (/image|photo|visuel|affiche|packshot|logo/.test(text) && /gpt-image-2|nano-banana|flux-2|gemini/.test(endpoint)) score += 22;
+  if (/ugc|createur|face camera|temoignage|testimonial|tiktok|reels/.test(text) && endpoint.includes("kling-video/v3")) score += 40;
+  if (/visage|portrait|createur|creator|ugc|personne/.test(text) && endpoint.includes("nano-banana-pro")) score += 28;
   if (capability.includes("video") && /seedance-2.0|kling-video\/v3|veo3.1|ray\/v3.2|grok-imagine-video/.test(endpoint)) score += 18;
   score -= Math.min(30, quoteFor(model).credits / 80);
   return score;
@@ -1219,12 +1238,18 @@ async function resolvePlan(supabase: ReturnType<typeof adminClient>, plan: strin
 }
 
 function planPublic(plan: PlanLimits) {
+  const monthlyXof = usdToXof(plan.monthlyPriceUsd);
+  const annualXof = usdToXof(plan.annualPriceUsd);
   return {
     id: plan.id,
     displayName: plan.displayName,
     includedCredits: plan.includedCredits,
     monthlyPriceUsd: plan.monthlyPriceUsd,
     annualPriceUsd: plan.annualPriceUsd,
+    monthlyPriceXof: monthlyXof,
+    annualPriceXof: annualXof,
+    currency: DEFAULT_BILLING_CURRENCY,
+    usdXofRate: DEFAULT_USD_XOF_RATE,
     monthlyMessageLimit: plan.monthlyMessageLimit,
     dailyMessageLimit: plan.dailyMessageLimit,
     dailyVideoLimit: plan.dailyVideoLimit,
@@ -1258,7 +1283,7 @@ function stripePriceForPack(pack: Record<string, unknown>) {
 }
 
 function moneyFusionCheckoutUrl() {
-  return Deno.env.get("MONEYFUSION_CHECKOUT_URL") || Deno.env.get("MONEYFUSION_API_URL") || "";
+  return Deno.env.get("MONEYFUSION_CHECKOUT_URL") || Deno.env.get("MONEYFUSION_API_URL") || DEFAULT_MONEYFUSION_CHECKOUT_URL;
 }
 
 function moneyFusionCallbackUrl() {
@@ -1270,11 +1295,15 @@ function moneyFusionReturnUrl() {
 }
 
 function moneyFusionAmount(usd: number) {
-  const currency = (Deno.env.get("MONEYFUSION_CURRENCY") || "USD").toUpperCase();
+  const currency = DEFAULT_BILLING_CURRENCY;
   if (currency === "USD") return Number(usd.toFixed(2));
-  const rate = Number(Deno.env.get("MONEYFUSION_USD_RATE") || 0);
+  const rate = DEFAULT_USD_XOF_RATE;
   if (!rate) throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_USD_RATE manque pour convertir les tarifs.", { code: "MONEYFUSION_RATE_MISSING", currency });
   return Math.round(usd * rate);
+}
+
+function usdToXof(usd: number) {
+  return Math.round(Number(usd || 0) * DEFAULT_USD_XOF_RATE);
 }
 
 function moneyFusionPaymentUrl(data: Record<string, unknown>) {
@@ -1284,7 +1313,36 @@ function moneyFusionPaymentUrl(data: Record<string, unknown>) {
 
 function moneyFusionToken(data: Record<string, unknown>) {
   const nested = (data.data || data.result || {}) as Record<string, unknown>;
-  return String(data.token || data.payment_token || data.paymentToken || data.transaction_id || data.reference || nested.token || nested.payment_token || nested.paymentToken || nested.transaction_id || nested.reference || "");
+  return String(data.token || data.tokenPay || data.token_pay || data.payment_token || data.paymentToken || data.transaction_id || data.reference || nested.token || nested.tokenPay || nested.token_pay || nested.payment_token || nested.paymentToken || nested.transaction_id || nested.reference || "");
+}
+
+function moneyFusionStatusValue(data: Record<string, unknown>) {
+  const nested = (data.data || data.result || data.payment || {}) as Record<string, unknown>;
+  return String(data.status || data.statut || data.payment_status || data.etat || data.state || nested.status || nested.statut || nested.payment_status || nested.etat || nested.state || "").toLowerCase();
+}
+
+function moneyFusionPaid(data: Record<string, unknown>) {
+  const rawStatus = moneyFusionStatusValue(data);
+  return ["paid", "success", "successful", "completed", "complete", "approved", "valid", "valide", "succeeded", "succes", "ok"].some((s) => rawStatus.includes(s));
+}
+
+function moneyFusionHeaders() {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  const apiKey = Deno.env.get("MONEYFUSION_API_KEY") || Deno.env.get("MONEYFUSION_PRIVATE_KEY") || "";
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+    headers["moneyfusion-private-key"] = apiKey;
+  }
+  return headers;
+}
+
+function moneyFusionStatusUrl(token: string) {
+  const url = moneyFusionCheckoutUrl();
+  if (!token || !url) return "";
+  if (Deno.env.get("MONEYFUSION_STATUS_URL")) {
+    return String(Deno.env.get("MONEYFUSION_STATUS_URL")).replace("{token}", encodeURIComponent(token));
+  }
+  return url.replace(/\/pay\/?$/i, `/paiementNotif/${encodeURIComponent(token)}`);
 }
 
 async function moneyFusionRequest(payload: Record<string, unknown>) {
@@ -1292,9 +1350,7 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
   if (!url) {
     throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_CHECKOUT_URL manque dans les variables Supabase.", { code: "MONEYFUSION_NOT_CONFIGURED" });
   }
-  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
-  const apiKey = Deno.env.get("MONEYFUSION_API_KEY") || "";
-  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const headers: Record<string, string> = { ...moneyFusionHeaders(), "Content-Type": "application/json" };
   const response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -1306,6 +1362,13 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
     throw new FlowtubeError(502, "MoneyFusion n'a pas renvoye d'URL de paiement.", { code: "MONEYFUSION_URL_MISSING", moneyfusion: data });
   }
   return { data, paymentUrl, token };
+}
+
+async function moneyFusionLookupPayment(token: string): Promise<Record<string, unknown>> {
+  const url = moneyFusionStatusUrl(token);
+  if (!url) return {};
+  const response = await fetch(url, { method: "GET", headers: moneyFusionHeaders() });
+  return await response.json().catch(() => ({}));
 }
 
 function formBody(params: Record<string, string | number | boolean | null | undefined>) {
@@ -1352,7 +1415,7 @@ async function ensureBillingCustomer(supabase: ReturnType<typeof adminClient>, p
     stripe_customer_id: stripe.id,
     email,
     name: String(profile.display_name || ""),
-    currency: String(profile.currency || "usd"),
+    currency: String(profile.currency || DEFAULT_BILLING_CURRENCY.toLowerCase()),
   }, { onConflict: "user_id" });
   await supabase.from("profiles").update({ stripe_customer_id: stripe.id, billing_email: email }).eq("id", profile.id);
   return String(stripe.id);
@@ -1457,6 +1520,7 @@ async function ensureProfile(supabase: ReturnType<typeof adminClient>, userId: s
     plan: "free",
     credits: 100,
     credits_max: 100,
+    currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
   };
   const { data: inserted, error } = await supabase.from("profiles").insert(profile).select("*").single();
   if (error) throw error;
@@ -1596,6 +1660,8 @@ async function bootstrap(req: Request) {
       retailCreditUsd: RETAIL_CREDIT_USD,
       marginMultiplier: MEDIA_MARGIN_MULTIPLIER,
       expensiveCreditThreshold: EXPENSIVE_CREDIT_THRESHOLD,
+      currency: DEFAULT_BILLING_CURRENCY,
+      usdXofRate: DEFAULT_USD_XOF_RATE,
       agentCreditRates: AGENT_CREDIT_RATES,
       agentDefaultModel: DEFAULT_MODEL,
     },
@@ -1615,6 +1681,8 @@ async function bootstrap(req: Request) {
       stripeConfigured: Boolean(stripeSecret()),
       moneyFusionConfigured: Boolean(moneyFusionCheckoutUrl()),
       moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
+      currency: DEFAULT_BILLING_CURRENCY,
+      usdXofRate: DEFAULT_USD_XOF_RATE,
       siteUrl: APP_BASE_URL,
       subscription: subscription ? {
         planId: subscription.plan_id,
@@ -1666,6 +1734,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Images: photorealisme, produit, affiche, miniature, portrait, packshot, typographie courte, concept art.",
   "- Edition image: edit, image-to-image, outpaint, remove background, upscale, reference style.",
   "- Videos: text-to-video, image-to-video, reference-to-video, first-last-frame, extend-video, video-to-video, reframe, upscale.",
+  "- Lecture video uploadee: resume, timestamps, hook, rythme, audio, scenes, moments forts, remix, critique creative et recommandations 9:16.",
   "- Audio: voix off, TTS, dialogue, musique, doublage, transcription.",
   "- Avatars: lipsync, personnage parlant, clone vocal uniquement avec consentement explicite.",
   "- Production: scripts courts, storyboards, variations, templates remixables, coherence personnage/marque/campagne.",
@@ -1678,12 +1747,14 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "4. Pour une video: duree + format + mouvement camera + rythme + action principale + ambiance + reference si presente.",
   "5. Pour une retouche: conserve ce qui doit rester stable, modifie seulement ce qui est demande.",
   "6. Apres resultat: propose une ou deux iterations nettes: plus premium, autre cadrage, autre lumiere, version pub, format social, remix template.",
+  "7. Pour une pub UGC realiste: collecte obligatoirement produit, video UGC de reference, au moins deux references faciales, public cible et type d'accroche. Ne demande jamais la duree, le format, l'outil de montage, le modele image ou le modele video: HuggyFlow choisit et produit en 15s vertical 9:16.",
   "",
   "Selection modele:",
   "- Tous les modeles media passent par le pipeline prive HuggyFlow. Ne cite jamais les fournisseurs, endpoints, couts internes ou details d'infrastructure a l'utilisateur.",
   "- Utilise Auto HuggyFlow par defaut: le backend choisit le meilleur moteur selon type, reference, cout, qualite, vitesse et credits.",
   "- Modeles a privilegier quand pertinents: GPT Image 2 pour image propre, GPT Image Edit/Nano/Flux pour retouche, Veo 3 ou Kling 3 pour video premium, Seedance 2 pour vitesse/qualite, Ray/PixVerse pour variations et mouvement, MiniMax/Gemini pour voix, Lyria/Sonilo pour musique, HeyGen/Sync pour lipsync.",
   "- Premium/final commercial: prefere Veo 3, Kling 3 Pro/4K, GPT Image 2, Nano Pro, Lyria Pro, HeyGen Precision.",
+  "- Pub UGC 15s: cree d'abord un script horodate, puis un createur fictif coherent depuis les references faciales, puis un clip vertical realiste avec coupes controlees. Si un element obligatoire manque, demande-le avant de lancer.",
   "- Draft/test rapide: prefere fast, turbo, lite, mini ou schnell.",
   "- Reference ou personnage recurrent: prefere image-to-video, reference-to-video, avatar, lipsync ou modeles coherents avec reference.",
   "- Retouche: prefere edit, image-to-image, outpaint, remove-background ou upscale.",
@@ -1733,11 +1804,12 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Si l'utilisateur reference une creation passee (\"refais le 3e\", \"la meme mais...\", \"comme le dernier\"), tu retrouves la creation visee et tu appliques la variation demandee en gardant la coherence.",
   "- Les elements epingles (@nom) sont des references visuelles reutilisables (personnage, produit, logo, decor). Quand l'utilisateur mentionne @nom, la reference est jointe automatiquement: appuie-toi dessus pour la coherence. Il peut epingler une creation avec \"epingle ca comme @nom\".",
   "- Tu apprends des skills: quand un enchainement gagnant se repete, tu peux l'enregistrer comme playbook reutilisable (\"cree un skill X pour...\"). Quand un skill appris correspond a la demande, tu recois son playbook en contexte: applique-le. L'utilisateur peut aussi le lancer avec /nom.",
+  "- Apprentissage autonome controle: si un motif de travail revient ou qu'un workflow devient reutilisable, enregistre un skill prive court avec declencheurs, playbook et garde-fous. N'apprends jamais de donnees sensibles, secrets, cles API ou informations de paiement.",
   "- Tu peux analyser un visuel de reference (hook, composition, angle), lire une page web (produit/marque/concurrent) et utiliser la recherche marche quand elle est disponible. Fais la recherche AVANT de generer quand c'est pertinent.",
   "- Quand aucune generation n'est prevue pour ce message, reponds utile et court: pas de fausse promesse de rendu.",
   "",
   "Skills internes HuggyFlow:",
-  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: real-time web scanner, fact-checker, trend analyst, multi-scene long video generator, visual coherence engine, marketing video generator, video analyzer, soul character training, cinematic asset creator, viral clip cutter, direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage, strategie, automatisation ou connecteur ecosysteme disponible.",
+  "- Avant de repondre, choisis en silence la ou les competences utiles selon la demande: video reader, UGC pipeline, UGC scriptwriter, psychologie marketing, real-time web scanner, fact-checker, trend analyst, market research, multi-scene long video generator, visual coherence engine, marketing video generator, video analyzer, soul character training, cinematic asset creator, viral clip cutter, direction image, direction video, storyboard, publicite, reseaux sociaux, copywriting, musique, voix, retouche, extraction d'objet, miniature, B-roll, UGC, personnage, strategie, automatisation ou connecteur ecosysteme disponible.",
   "- Combine plusieurs skills quand c'est plus fort: exemple analyse produit + script pub + storyboard + video, copywriting + direction image pour affiche, UGC + lipsync pour avatar parlant.",
   "- Si plusieurs skills sont pertinents, choisis le plus rentable et le plus direct. Combine seulement quand cela augmente clairement la qualite ou le taux de conversion.",
   "- Fact-checking: separe toujours ce qui est observe dans une source, ce qui est deduit, et ce qui demande verification. Ne presente jamais une supposition comme un fait.",
@@ -1766,6 +1838,13 @@ type HuggySkill = {
 };
 
 const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
+  { id: "video-reader-creative-analyst", label: "lecture et analyse video", triggers: ["video uploadee", "fichier video", "analyse cette video", "lis cette video", "timestamp", "moments forts", "hook video", "pacing", "rythme video", "transcription video"], use: "lire une video fournie, extraire scenes, timestamps, hook, audio, rythme et recommandations de remix sans demander une capture." },
+  { id: "ugc-15s-production-pipeline", label: "pipeline pub UGC 15s", triggers: ["ugc", "pub ugc", "video ugc", "createur ugc", "testimonial", "temoignage", "tiktok ad", "reels ad", "pub realiste", "produit face camera"], use: "collecter produit, video UGC reference, deux visages, cible et accroche; ecrire script horodate; creer personnage fictif; preparer clip vertical 15s realiste." },
+  { id: "ugc-scriptwriter", label: "script createur naturel", triggers: ["script ugc", "creator script", "talking head", "script tiktok", "script reels", "temoignage script", "influencer script"], use: "ecrire un script parle naturel avec hook, probleme, preuve, benefice, gestes et CTA doux." },
+  { id: "marketing-psychology-mental-models", label: "psychologie marketing", triggers: ["psychologie marketing", "mental model", "preuve sociale", "urgence", "objection", "confiance", "conversion", "prix", "pricing", "desir", "achat"], use: "choisir les bons leviers: preuve sociale, contraste, urgence ethique, friction, confiance, benefice immediat et objection principale." },
+  { id: "market-research-decision-brief", label: "etude de marche decisionnelle", triggers: ["etude de marche", "market research", "analyse concurrent", "tam", "sam", "som", "investisseur", "veille", "categorie", "industrie"], use: "produire une synthese sourcée avec faits, deductions, risques, opportunites et decision recommandee." },
+  { id: "media-orchestrator-private", label: "orchestration media privee", triggers: ["genere image", "cree video", "audio", "voix", "musique", "retouche", "upscale", "remove background", "sous titres", "avatar"], use: "router vers le meilleur moteur prive HuggyFlow selon qualite, cout, reference, duree et plan utilisateur, sans exposer le fournisseur." },
+  { id: "interactive-motion-designer", label: "micro-interactions et fluidite UI", triggers: ["animation", "motion", "transition", "micro interaction", "skeleton", "shimmer", "bouton sensible", "drag", "swipe", "loading"], use: "ameliorer les interactions avec transitions douces, feedback immediat, skeletons et animations sobres." },
   { id: "real-time-web-scanner-fact-checker", label: "recherche web et verification", triggers: ["recherche web", "fact check", "fact-check", "verifie", "source", "sources", "url", "page produit", "site", "benchmark", "concurrent"], use: "lire les sources disponibles, separer faits observes, deductions et points a verifier, puis produire un brief fiable." },
   { id: "trend-market-analyst", label: "tendances et marche", triggers: ["tendance", "trends", "marche", "market", "benchmark", "ads performantes", "formats publicitaires", "analyse marche", "veille"], use: "etudier les signaux disponibles et transformer les tendances en angles, hooks et formats creatifs exploitables." },
   { id: "multi-scene-long-video-generator", label: "video longue multi-scenes", triggers: ["video longue", "film complet", "plusieurs scenes", "timeline", "sequence longue", "spot complet", "mini clips", "multi scene"], use: "decomposer un script global en scenes de 5 a 15 secondes, definir la timeline, puis preparer un lot de clips raccords." },
@@ -1904,6 +1983,48 @@ function attachmentContextFromBody(body: Record<string, unknown>) {
     const preview = item.textPreview ? `\nExtrait:\n${item.textPreview}` : "";
     return `${item.name} (${item.kind}${item.contentType ? `, ${item.contentType}` : ""})${item.url ? `: ${item.url}` : ""}${preview}`.slice(0, 4500);
   });
+}
+
+function isVideoAttachment(item: { kind: string; contentType: string; url: string }) {
+  return item.kind === "video" || item.contentType.startsWith("video/") || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(item.url);
+}
+
+function isImageAttachment(item: { kind: string; contentType: string; url: string }) {
+  return item.kind === "image" || item.contentType.startsWith("image/") || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(item.url);
+}
+
+function isUgcPipelineRequest(prompt: string) {
+  const text = stripAccents(prompt.toLowerCase());
+  return /\bugc\b|creator content|createur face camera|temoignage video|pub realiste|video publicitaire realiste|tiktok ad|reels ad/.test(text);
+}
+
+function ugcPipelineMissingInputs(prompt: string, attachments: ReturnType<typeof normalizeRequestAttachments>) {
+  const text = stripAccents(prompt.toLowerCase());
+  const urls = [...prompt.matchAll(/https?:\/\/[^\s<>"']+/gi)].map((m) => m[0]);
+  const imageCount = attachments.filter(isImageAttachment).length;
+  const referenceUrlPattern = /tiktok|youtube|youtu\.be|pinterest|instagram|mp4|mov|webm/i;
+  const hasVideoReference = attachments.some(isVideoAttachment) || urls.some((url) => referenceUrlPattern.test(url));
+  const hasProductUrlOrName = urls.some((url) => !referenceUrlPattern.test(url)) || /\b(produit|marque|boutique|shop|lien produit|url produit|photo produit|nom du produit)\b.{0,80}\S/.test(text);
+  const hasProductImageHint = imageCount >= 1 && /\b(produit|packshot|article|photo produit|image produit)\b/.test(text);
+  const hasProduct = hasProductUrlOrName || hasProductImageHint;
+  const hasFaceRefs = imageCount >= (hasProductUrlOrName ? 2 : 3) || /\b(deux|2)\b.{0,30}\b(visages?|faces?|references? faciales?|photos? de personnes?)\b/.test(text);
+  const hasAudience = /\b(cible|audience|public|client(?:e)?s?|femmes?|hommes?|ados?|parents?|entrepreneurs?|age|ans)\b/.test(text);
+  const missing: string[] = [];
+  if (!hasProduct) missing.push("Produit: nom, URL ou image du produit.");
+  if (!hasVideoReference) missing.push("Video UGC de reference: lien TikTok, Pinterest, YouTube ou fichier video.");
+  if (!hasFaceRefs) missing.push("References faciales: au moins 2 images de personnes reelles coherentes avec la marque.");
+  if (!hasAudience) missing.push("Public cible: qui doit acheter, avec age/probleme/desir si possible.");
+  return missing;
+}
+
+function ugcPipelineMissingReply(missing: string[]) {
+  return [
+    "Je peux lancer la pub UGC 15s, mais il manque des elements obligatoires.",
+    ...missing.map((item) => `- ${item}`),
+    "- Accroche: tu peux choisir probleme/solution, avant/apres, temoignage, transformation, ou me laisser decider.",
+    "",
+    "Des que tu m'envoies ces elements, je prepare le script, le visage createur fictif, puis le clip vertical 9:16.",
+  ].join("\n");
 }
 
 type MemoryDirective = { kind: "brand" | "fact" | "preference" | "style"; label: string; content: string };
@@ -2099,6 +2220,29 @@ function extractSkillDirective(prompt: string): { name: string; triggers: string
   return { name, triggers: triggers.length ? triggers : [name] };
 }
 
+function autoLearnSkillCandidate(prompt: string, attachments: ReturnType<typeof normalizeRequestAttachments>): { name: string; triggers: string[]; playbook: string } | null {
+  const raw = String(prompt || "").trim();
+  const text = stripAccents(raw.toLowerCase());
+  if (/(token|cle api|clé api|secret|mot de passe|password|carte bancaire|numero de carte|cvv|private key|access token)/i.test(raw)) return null;
+  const reusable = /\b(a chaque fois|chaque fois|toujours|repete|repeter|workflow|playbook|template|modele reutilisable|process|pipeline|pour mes pubs|pour mes videos|pour ma marque)\b/.test(text);
+  const ugc = isUgcPipelineRequest(raw);
+  if (!reusable && !ugc) return null;
+  const baseName = ugc ? "ugc-15s-production" : "workflow-huggyflow";
+  const triggers = uniqueStrings([
+    ugc ? "ugc" : "",
+    ugc ? "pub ugc" : "",
+    ...raw.replace(/[^\p{L}0-9\s-]/gu, " ").split(/\s+/).filter((w) => w.length >= 5 && !/chaque|toujours|workflow|template|faire|avec|pour|dans|cette|cette/.test(stripAccents(w.toLowerCase()))),
+  ]).slice(0, 8);
+  const attachmentKinds = uniqueStrings(attachments.map((item) => item.kind || item.contentType).filter(Boolean));
+  const playbook = [
+    `Workflow appris depuis la demande utilisateur: ${raw.slice(0, 700)}`,
+    attachmentKinds.length ? `Fichiers typiques attendus: ${attachmentKinds.join(", ")}.` : "",
+    ugc ? "Regle UGC: verifier produit, video reference, deux visages, cible et accroche avant generation; produire script horodate puis clip vertical 15s." : "Regle: appliquer les preferences et etapes de cette demande quand un contexte similaire revient.",
+    "Garde-fou: ne jamais reutiliser secrets, cles API, donnees de paiement ou informations sensibles.",
+  ].filter(Boolean).join("\n");
+  return { name: baseName, triggers: triggers.length ? triggers : [baseName], playbook };
+}
+
 // ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
 async function anthropicVision(imageUrl: string, question: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -2117,6 +2261,52 @@ async function anthropicVision(imageUrl: string, question: string, preferredMode
   return (data.content || []).map((part: { text?: string }) => part.text || "").join("").trim();
 }
 
+function base64FromBytes(bytes: Uint8Array) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function geminiVideoAnalysis(videoUrl: string, question: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("GOOGLE_AI_API_KEY") || "";
+  if (!apiKey) return "";
+  const maxMb = Math.max(5, Number(Deno.env.get("HUGGYFLOW_VIDEO_ANALYSIS_MAX_MB") || 24));
+  const video = await fetch(videoUrl, { headers: { Accept: "video/*,*/*" } });
+  if (!video.ok) throw new Error(`video fetch ${video.status}`);
+  const contentType = video.headers.get("content-type") || "video/mp4";
+  const bytes = new Uint8Array(await video.arrayBuffer());
+  if (bytes.byteLength > maxMb * 1024 * 1024) {
+    return `Video recue, mais trop lourde pour l'analyse instantanee (${Math.round(bytes.byteLength / 1024 / 1024)} Mo). Envoie un extrait plus court ou demande un decoupage en scenes.`;
+  }
+  const model = Deno.env.get("GEMINI_VIDEO_MODEL") || "gemini-2.5-flash";
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        role: "user",
+        parts: [
+          { inline_data: { mime_type: contentType, data: base64FromBytes(bytes) } },
+          { text: question },
+        ],
+      }],
+      generationConfig: { temperature: 0.35, maxOutputTokens: 1200 },
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`video analysis ${res.status}`);
+  const text = (data.candidates || [])
+    .flatMap((candidate: Record<string, unknown>) => ((candidate.content as Record<string, unknown> | undefined)?.parts || []) as Record<string, unknown>[])
+    .map((part: Record<string, unknown>) => String(part.text || ""))
+    .join("")
+    .trim();
+  if (text && billing) await chargeAgentCredits(billing, preferredModel || DEFAULT_MODEL);
+  return text;
+}
+
 const VISION_ANALYSIS_QUESTION = [
   "Tu es directeur creatif. Analyse ce visuel/creative comme un pro de la performance, pas en resume descriptif.",
   "Donne un breakdown actionnable: 1) le hook (ce qui capte l'oeil en premier et pourquoi), 2) la composition et le cadrage,",
@@ -2126,12 +2316,16 @@ const VISION_ANALYSIS_QUESTION = [
 
 function isVisualAnalysisRequest(prompt: string) {
   const t = stripAccents(prompt.toLowerCase());
-  return /\b(analyse|analyze|decortique|breakdown|regarde|etudie|inspire[- ]toi de)\b/.test(t) &&
-    /\b(image|visuel|photo|pub|publicite|creative|ad|affiche|video|clip|reference|concurrent|hook)\b/.test(t);
+  return /\b(analyse|analyze|decortique|breakdown|regarde|etudie|lis|resume|resumer|transcris|transcription|moments forts|inspire[- ]toi de)\b/.test(t) &&
+    /\b(image|visuel|photo|pub|publicite|creative|ad|affiche|video|clip|reference|concurrent|hook|rythme|timestamp)\b/.test(t);
 }
 
 async function runVisualAnalysis(url: string, isVideo: boolean, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   try {
+    if (isVideo) {
+      const out = await geminiVideoAnalysis(url, VIDEO_ANALYSIS_QUESTION, preferredModel, billing);
+      if (out) return out;
+    }
     if (!isVideo) {
       const out = await anthropicVision(url, VISION_ANALYSIS_QUESTION, preferredModel, billing);
       if (out) return out;
@@ -2140,9 +2334,8 @@ async function runVisualAnalysis(url: string, isVideo: boolean, preferredModel?:
     if (err instanceof FlowtubeError) throw err;
     /* degrade ci-dessous */
   }
-  // Video (Anthropic ne lit pas la video) ou echec: degrade honnete.
   return isVideo
-    ? "Je peux analyser les images directement (hook, composition, lumiere, angle). Pour une video, envoie-moi une capture d'un plan cle et je te fais le breakdown complet du hook et du pacing."
+    ? "Video recue. L'analyse video instantanee n'est pas encore configuree sur ce workspace. Ajoute la cle d'analyse video ou envoie un extrait plus court, et je te fais le breakdown complet."
     : "Je n'ai pas pu lire ce visuel. Verifie que l'URL de l'image est publique et reessaie.";
 }
 
@@ -2192,6 +2385,14 @@ const RESEARCH_BRIEF_INSTRUCTION = [
   "Format obligatoire: 1) Synthese courte, 2) Faits observes [confiance haute/moyenne/faible], 3) Deductions utiles [a verifier si besoin],",
   "4) Angles/messages cles, 5) 3 a 5 idees de creations (format, hook, scene), 6) Manques/opportunites.",
   "N'invente pas ce qui n'est pas dans la page. Si une information n'est pas visible, dis-le clairement.",
+].join(" ");
+
+const VIDEO_ANALYSIS_QUESTION = [
+  "Tu es directeur creatif UGC et monteur performance. Analyse cette video uploadee comme reference de production.",
+  "Donne un rapport actionnable en francais: 1) resume court, 2) scenes/timestamps approximatifs, 3) hook et moment fort,",
+  "4) rythme et structure, 5) gestuelle/personnalite du createur, 6) audio/voix/sous-titres si perceptibles,",
+  "7) ce qu'il faut reproduire pour une pub HuggyFlow, 8) idees de remix 9:16.",
+  "Ne cite aucun fournisseur technique. Sois clair, court et utile.",
 ].join(" ");
 
 const MARKET_BRIEF_INSTRUCTION = [
@@ -2589,7 +2790,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         prompt: String(input.prompt || ""),
         type: String(input.type || "image"),
         modelId: String(input.model_id || "auto"),
-        aspectRatio: String(input.aspect_ratio || ctx.body.aspectRatio || "4:5"),
+        aspectRatio: aspectRatioForRequest({ ...ctx.body, aspectRatio: input.aspect_ratio || ctx.body.aspectRatio }, String(input.prompt || ""), String(input.type || "image")),
         imageUrl: referenceUrl,
         firstFrameUrl: input.first_frame_url || input.firstFrameUrl || ctx.body.firstFrameUrl || ctx.body.first_frame_url,
         lastFrameUrl: input.last_frame_url || input.lastFrameUrl || ctx.body.lastFrameUrl || ctx.body.last_frame_url,
@@ -2623,7 +2824,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
       const type = String(input.type || "video");
       const catalog = await pricingCatalog(supabase);
       const model = resolveBestModelFromCatalog(catalog, "auto", type, prompt, {});
-      const quote = quoteFor(model, model.pricingUnit === "second" ? Number(model.defaultUnits || 5) : undefined);
+      const quote = quoteFor(model, requestedUnitsForModel(model, {}, prompt, type));
       await enforceBatchGuards(supabase, ctx.profile, plan, model, quote, count);
       ensureProviderReady(model);
       await savePendingGeneration(supabase, ctx.profile, {
@@ -2632,7 +2833,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
           prompt,
           type,
           modelId: model.id,
-          aspectRatio: String(input.aspect_ratio || "4:5"),
+          aspectRatio: aspectRatioForRequest({ aspectRatio: input.aspect_ratio }, prompt, type),
           scene: sceneFromPrompt(prompt),
           duration: type === "video" ? quote.units : undefined,
           batch: count,
@@ -2656,7 +2857,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
       const count = Math.max(1, Math.min(50, Number(input.count || 1)));
       const catalog = await pricingCatalog(supabase);
       const model = resolveBestModelFromCatalog(catalog, "auto", type, prompt, {});
-      const quote = quoteFor(model, model.pricingUnit === "second" ? Number(model.defaultUnits || 5) : undefined);
+      const quote = quoteFor(model, requestedUnitsForModel(model, {}, prompt, type));
       const renderLabel = model.type === "video" ? "rendu video" : model.type === "image" || model.type === "image_edit" ? "rendu image" : "rendu media";
       return `Devis pret: ${quote.credits} credits par ${renderLabel}${count > 1 ? `, soit environ ${quote.credits * count} credits pour ${count}` : ""}. Solde utilisateur: ${Number(ctx.profile.credits || 0)} credits.`;
     }
@@ -3066,8 +3267,9 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   const type = requestTypeFromBody(body, prompt);
   const catalog = await pricingCatalog(supabase);
   const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body);
-  const requestedUnits = model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits) : Number(body.units || model.defaultUnits);
+  const requestedUnits = requestedUnitsForModel(model, body, prompt, type);
   const quote = quoteFor(model, requestedUnits);
+  const aspectRatio = aspectRatioForRequest(body, prompt, type);
   const credits = quote.credits;
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
   await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
@@ -3087,7 +3289,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       prompt,
       type,
       modelId: model.id,
-      aspectRatio: body.aspectRatio || "4:5",
+      aspectRatio,
       scene: body.scene || sceneFromPrompt(prompt),
       duration: model.pricingUnit === "second" ? quote.units : undefined,
       units: model.pricingUnit !== "second" ? quote.units : undefined,
@@ -3135,7 +3337,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       model_label: model.name,
       pricing_model_id: model.id,
       prompt,
-      aspect_ratio: String(body.aspectRatio || "4:5"),
+      aspect_ratio: aspectRatio,
       duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
       progress: 1,
       credits,
@@ -3379,8 +3581,9 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
   const type = requestTypeFromBody(body, prompt);
   const catalog = await pricingCatalog(supabase);
   const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body);
-  const requestedUnits = model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits) : Number(body.units || model.defaultUnits);
+  const requestedUnits = requestedUnitsForModel(model, body, prompt, type);
   const quote = quoteFor(model, requestedUnits);
+  const aspectRatio = aspectRatioForRequest(body, prompt, type);
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
   await enforceRateLimit(req, supabase, `generate.${type}`, userId, GENERATION_RATE_LIMIT);
   let { project, conversation } = await resolveProjectAndConversation(supabase, userId, String(body.projectId || ""), projectTitleFromPrompt(prompt));
@@ -3421,7 +3624,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     model_label: model.name,
     pricing_model_id: model.id,
     prompt: contentPlan[index].prompt,
-    aspect_ratio: String(body.aspectRatio || "4:5"),
+    aspect_ratio: aspectRatio,
     duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
     progress: 1,
     credits: quote.credits,
@@ -3533,6 +3736,8 @@ async function chat(req: Request) {
         if (memoryDirectives.length) await saveAgentMemory(supabase, userId, project.id, memoryDirectives);
         const memory = await loadAgentMemory(supabase, userId, project.id);
         const elements = await loadElements(supabase, userId);
+        const autoSkill = autoLearnSkillCandidate(prompt, requestAttachments);
+        if (autoSkill) await saveLearnedSkill(supabase, userId, String(project.id), autoSkill.name, autoSkill.triggers, autoSkill.playbook, true);
         const learnedSkills = await loadLearnedSkills(supabase, userId);
         await supabase.from("messages").insert({
           user_id: userId,
@@ -3596,6 +3801,17 @@ async function chat(req: Request) {
           send("credits", { credits: freshProfile?.credits ?? 0, creditsMax: freshProfile?.credits_max ?? 100 });
           send("done", projectDonePayload(project, conversation));
           return;
+        }
+
+        if (isUgcPipelineRequest(prompt)) {
+          const missing = ugcPipelineMissingInputs(prompt, requestAttachments);
+          if (missing.length) {
+            const reply = ugcPipelineMissingReply(missing);
+            send("text", { delta: reply });
+            await saveAssistant(reply);
+            send("done", projectDonePayload(project, conversation));
+            return;
+          }
         }
 
         // Commande "cree un skill ...": l'utilisateur enregistre un workflow reutilisable.
@@ -3718,7 +3934,8 @@ async function chat(req: Request) {
         const type = requestTypeFromBody({ ...body, mode }, prompt);
         const catalog = await pricingCatalog(supabase);
         const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body as Record<string, unknown>);
-        const quote = quoteFor(model, model.pricingUnit === "second" ? Number(body.duration || model.defaultUnits || 5) : undefined);
+        const aspectRatio = aspectRatioForRequest(body as Record<string, unknown>, prompt, type);
+        const quote = quoteFor(model, requestedUnitsForModel(model, body as Record<string, unknown>, prompt, type));
         const willGenerate = shouldGenerateMedia(prompt, mode);
         const batchCount = willGenerate ? batchCountFromPrompt(prompt) : 1;
 
@@ -3731,7 +3948,7 @@ async function chat(req: Request) {
               prompt,
               type,
               modelId: model.id,
-              aspectRatio: body.aspectRatio || "4:5",
+              aspectRatio,
               scene: sceneFromPrompt(prompt),
               duration: type === "video" ? quote.units : undefined,
               batch: batchCount,
@@ -3762,7 +3979,7 @@ async function chat(req: Request) {
               prompt,
               type,
               modelId: model.id,
-              aspectRatio: body.aspectRatio || "4:5",
+              aspectRatio,
               scene: sceneFromPrompt(prompt),
               duration: type === "video" ? quote.units : undefined,
               imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url,
@@ -3844,7 +4061,7 @@ async function chat(req: Request) {
             prompt: basePrompt,
             type,
             modelId: model.id,
-            aspectRatio: body.aspectRatio,
+            aspectRatio,
             scene: sceneFromPrompt(basePrompt),
             duration: model.pricingUnit === "second" ? quote.units : undefined,
             confirmed: body.confirmed === true || !quote.requiresConfirmation,
@@ -4348,6 +4565,7 @@ async function authRoute(req: Request, action: string) {
         plan: "free",
         credits: 100,
         credits_max: 100,
+        currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
       }, { onConflict: "id" });
     }
     return json({ user: data.user, session: data.session, needsEmailConfirmation: !data.session });
@@ -4373,6 +4591,7 @@ async function authRoute(req: Request, action: string) {
         email,
         billing_email: email,
         display_name: data.user.user_metadata?.display_name || data.user.email || "Utilisateur",
+        currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
       }, { onConflict: "id" });
     }
     return json({ user: data.user, session: data.session });
@@ -4419,9 +4638,6 @@ async function createMoneyFusionCheckout(
   const userId = String(profile.id);
   const profileMetadata = (profile.metadata || {}) as Record<string, unknown>;
   const phone = String(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "").trim();
-  if (!phone) {
-    throw new FlowtubeError(400, "MoneyFusion demande un numero client. Envoie customerPhone avec le checkout.", { code: "MONEYFUSION_PHONE_REQUIRED" });
-  }
 
   let amountUsd = 0;
   let article = `${APP_NAME} credits`;
@@ -4447,16 +4663,23 @@ async function createMoneyFusionCheckout(
   }
 
   const reference = crypto.randomUUID();
-  const payload = {
-    totalPrice: moneyFusionAmount(amountUsd),
+  const amountXof = moneyFusionAmount(amountUsd);
+  const callbackUrl = moneyFusionCallbackUrl();
+  const returnUrl = String(body.successUrl || successUrl || moneyFusionReturnUrl());
+  const payload: Record<string, unknown> = {
+    totalPrice: amountXof,
     article,
-    numeroSend: phone,
+    articles: [{ name: article, price: amountXof, quantity: 1 }],
+    personal_Info: [{ user_id: userId, reference, type, plan_id: plan?.id || null, credit_pack_id: pack?.id || null, interval }],
     nomclient: String(profile.display_name || profile.email || "Client Huggyflow"),
-    return_url: String(body.successUrl || successUrl || moneyFusionReturnUrl()),
-    webhook_url: moneyFusionCallbackUrl(),
+    return_url: returnUrl,
+    webhook_url: callbackUrl,
+    callback_url: callbackUrl,
     reference,
+    currency: DEFAULT_BILLING_CURRENCY,
     metadata,
   };
+  if (phone) payload.numeroSend = phone;
   const session = await moneyFusionRequest(payload);
   const providerToken = session.token || reference;
 
@@ -4472,9 +4695,9 @@ async function createMoneyFusionCheckout(
     billing_interval: type === "credits" ? null : interval,
     status: "open",
     amount_usd: amountUsd,
-    currency: Deno.env.get("MONEYFUSION_CURRENCY") || "usd",
+    currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
     checkout_url: session.paymentUrl,
-    metadata: { moneyfusion: session.data, payload, plan: plan ? planPublic(plan) : null, pack },
+    metadata: { moneyfusion: session.data, payload, amount_xof: amountXof, usd_xof_rate: DEFAULT_USD_XOF_RATE, plan: plan ? planPublic(plan) : null, pack },
     provider_payload: session.data,
   });
 
@@ -4579,6 +4802,8 @@ async function billingStatus(req: Request) {
     user: { id: profile.id, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end },
     credits: profile.credits,
     creditsMax: profile.credits_max,
+    currency: DEFAULT_BILLING_CURRENCY,
+    usdXofRate: DEFAULT_USD_XOF_RATE,
     subscription,
     invoices: invoices || [],
     transactions: transactions || [],
@@ -4813,6 +5038,8 @@ async function pricingRoute() {
       stripeConfigured: Boolean(stripeSecret()),
       moneyFusionConfigured: Boolean(moneyFusionCheckoutUrl()),
       moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
+      currency: DEFAULT_BILLING_CURRENCY,
+      usdXofRate: DEFAULT_USD_XOF_RATE,
       siteUrl: APP_BASE_URL,
     },
   });
@@ -5006,18 +5233,26 @@ async function moneyFusionCallback(req: Request) {
 
   const body = req.method === "GET" ? {} : await bodyJson(req);
   const supabase = adminClient();
-  const token = String(body.token || body.payment_token || body.paymentToken || body.transaction_id || body.reference || url.searchParams.get("token") || url.searchParams.get("reference") || "");
+  const token = String(body.token || body.tokenPay || body.token_pay || body.payment_token || body.paymentToken || body.transaction_id || body.reference || url.searchParams.get("token") || url.searchParams.get("tokenPay") || url.searchParams.get("reference") || "");
   const reference = String(body.reference || body.order_id || body.orderId || url.searchParams.get("reference") || "");
   const eventId = token || reference || crypto.randomUUID();
-  const rawStatus = String(body.status || body.statut || body.payment_status || body.etat || url.searchParams.get("status") || "").toLowerCase();
-  const paid = ["paid", "success", "successful", "completed", "complete", "approved", "valid", "valide", "succeeded"].some((s) => rawStatus.includes(s));
+  const { data: existingEvent } = await supabase.from("payment_events").select("processed").eq("provider", "moneyfusion").eq("provider_event_id", eventId).maybeSingle();
+  if (existingEvent?.processed) return json({ received: true, duplicate: true });
+
+  let verified: Record<string, unknown> = {};
+  if (token) {
+    try { verified = await moneyFusionLookupPayment(token); } catch (_err) { verified = {}; }
+  }
+  const mergedStatusSource = { ...verified, ...body, status: body.status || body.statut || url.searchParams.get("status") || moneyFusionStatusValue(verified) };
+  const rawStatus = moneyFusionStatusValue(mergedStatusSource);
+  const paid = moneyFusionPaid(mergedStatusSource);
 
   await supabase.from("payment_events").upsert({
     provider: "moneyfusion",
     provider_event_id: eventId,
     event_type: rawStatus || "callback",
     processed: false,
-    metadata: { body, query: Object.fromEntries(url.searchParams.entries()) },
+    metadata: { body, verified, query: Object.fromEntries(url.searchParams.entries()) },
   }, { onConflict: "provider,provider_event_id" });
 
   let session: Record<string, unknown> | null = null;
@@ -5038,8 +5273,8 @@ async function moneyFusionCallback(req: Request) {
     await supabase.from("billing_checkout_sessions").update({
       status: "completed",
       completed_at: new Date().toISOString(),
-      provider_payload: body,
-      metadata: Object.assign({}, session.metadata || {}, { callback: body }),
+      provider_payload: { body, verified },
+      metadata: Object.assign({}, session.metadata || {}, { callback: body, verified }),
     }).eq("id", session.id);
 
     const userId = String(session.user_id || "");
@@ -5051,8 +5286,8 @@ async function moneyFusionCallback(req: Request) {
   } else if (!paid && rawStatus) {
     await supabase.from("billing_checkout_sessions").update({
       status: rawStatus.includes("fail") || rawStatus.includes("cancel") ? "failed" : "open",
-      provider_payload: body,
-      metadata: Object.assign({}, session.metadata || {}, { callback: body }),
+      provider_payload: { body, verified },
+      metadata: Object.assign({}, session.metadata || {}, { callback: body, verified }),
     }).eq("id", session.id);
   }
 

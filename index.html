@@ -1721,6 +1721,8 @@ class Component extends DCLogic {
     pricingPlans: [],
     pricingModels: [],
     creditPacks: [],
+    billingCurrency: 'XOF',
+    usdXofRate: 600,
     billingStatus: null,
     billingLoading: false,
     pricingNotice: '',
@@ -1812,6 +1814,10 @@ class Component extends DCLogic {
     const T = this.tokens();
     const annual = this.state.billing==='annual';
     const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    const rate = Number(this.state.usdXofRate || 600);
+    const toXof = (usd, provided)=> Number(provided || Math.round(Number(usd || 0) * rate));
+    const fmtXof = n => fmt(Number(n || 0)) + ' FCFA';
+    const fmtUsd = n => '$' + Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
     const TYPE_LABELS = { image:'images', video:'vidéos', audio:'voix et sons', lipsync:'visages parlants', image_edit:'retouches image', video_edit:'retouches vidéo', voice_clone:'clonage de voix' };
     const feat = (ok, text) => ({ ok, no: !ok, text, color: ok ? T.inkSoft : T.text4 });
     const allocOn = 'padding:3px 9px;border-radius:999px;background:#D6F94E;color:#191813;font-size:10.5px;font-weight:700;white-space:nowrap';
@@ -1832,6 +1838,7 @@ class Component extends DCLogic {
         id:p.id, name:name.toUpperCase(), tag:meta.badge || (p.priorityQueue ? 'POPULAIRE' : 'OFFRE'), tagKind:p.priorityQueue ? 'lime' : 'muted',
         popular:!!p.priorityQueue, tagline:meta.tagline || meta.description || 'Pour creer avec HuggyFlow',
         credits:Number(p.includedCredits || 0), m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
+        mXof:toXof(p.monthlyPriceUsd, p.monthlyPriceXof), aMXof:p.annualPriceXof ? Math.round(Number(p.annualPriceXof || 0) / 12) : toXof(p.monthlyPriceUsd, p.monthlyPriceXof), aYXof:toXof(p.annualPriceUsd, p.annualPriceXof),
         cta:meta.cta || (Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte'),
         vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
         gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
@@ -1856,10 +1863,10 @@ class Component extends DCLogic {
         ],
         creditsNote: fmt(d.credits) + ' crédits inclus à chaque période',
         hasOldPrice: annual && !free,
-        oldPrice: '$' + d.m,
-        price: '$' + (free ? 0 : (annual ? d.aM : d.m)),
-        per: free ? 'inclus' : (annual ? "par mois, payé à l'année" : 'par mois'),
-        billedNote: (annual && !free) ? ('Facturé $' + fmt(d.aY) + '/an') : '',
+        oldPrice: fmtXof(toXof(d.m, d.mXof)),
+        price: fmtXof(free ? 0 : (annual ? toXof(d.aM, d.aMXof) : toXof(d.m, d.mXof))),
+        per: free ? 'inclus' : (annual ? ("par mois, soit " + fmtUsd(d.aM) + ", payé à l'année") : ("par mois, soit " + fmtUsd(d.m))),
+        billedNote: (annual && !free) ? ('Facturé ' + fmtXof(toXof(d.aY, d.aYXof)) + '/an (' + fmtUsd(d.aY) + '/an)') : '',
         cta: d.cta,
         features: [
           feat(true, d.vidJobs + ' vidéo / ' + d.imgJobs + ' image en même temps'),
@@ -2304,6 +2311,8 @@ class Component extends DCLogic {
         pricingModels: data.models || [],
         creditPacks: data.creditPacks || [],
         billingStatus: data.billing || this.state.billingStatus,
+        billingCurrency: (data.pricing && data.pricing.currency) || (data.billing && data.billing.currency) || this.state.billingCurrency,
+        usdXofRate: Number((data.pricing && data.pricing.usdXofRate) || (data.billing && data.billing.usdXofRate) || this.state.usdXofRate || 600),
         authEmail: this.state.authEmail || (data.user && data.user.email) || '',
         authName: this.state.authName || (data.user && data.user.name) || '',
         backendReady:true
@@ -2620,14 +2629,7 @@ class Component extends DCLogic {
       let customerPhone = '';
       if(this.state.billingStatus && this.state.billingStatus.moneyFusionConfigured && typeof window !== 'undefined'){
         try{ customerPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
-        if(!customerPhone && window.prompt){
-          customerPhone = (window.prompt('Numero de paiement pour finaliser avec MoneyFusion') || '').trim();
-          if(customerPhone) try{ localStorage.setItem('huggyflow_checkout_phone', customerPhone); }catch(e){}
-        }
-        if(!customerPhone){
-          this.setState({ pricingNotice:'Ajoute ton numero de paiement pour ouvrir le checkout.' });
-          return;
-        }
+        if(customerPhone) try{ localStorage.setItem('huggyflow_checkout_phone', customerPhone); }catch(e){}
       }
       const res = await this.apiFetch('/api/billing/checkout', {
         method:'POST',
