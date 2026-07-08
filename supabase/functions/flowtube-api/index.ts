@@ -1311,6 +1311,29 @@ function moneyFusionPaymentUrl(data: Record<string, unknown>) {
   return String(data.url || data.payment_url || data.paymentUrl || data.link || nested.url || nested.payment_url || nested.paymentUrl || nested.link || "");
 }
 
+function moneyFusionDirectPaymentUrl(payload: Record<string, unknown>) {
+  const base = moneyFusionCheckoutUrl();
+  const url = new URL(base);
+  const params: Record<string, string> = {
+    reference: String(payload.reference || ""),
+    amount: String(payload.totalPrice || ""),
+    totalPrice: String(payload.totalPrice || ""),
+    currency: String(payload.currency || DEFAULT_BILLING_CURRENCY),
+    article: String(payload.article || APP_NAME),
+    callback_url: String(payload.callback_url || ""),
+    webhook_url: String(payload.webhook_url || ""),
+    return_url: String(payload.return_url || ""),
+  };
+  for (const [key, value] of Object.entries(params)) {
+    if (value) url.searchParams.set(key, value);
+  }
+  return url.toString();
+}
+
+function moneyFusionCanFallbackToDirect(url: string) {
+  return /pay\.moneyfusion\.net/i.test(url) || Deno.env.get("MONEYFUSION_DIRECT_CHECKOUT") === "true";
+}
+
 function moneyFusionToken(data: Record<string, unknown>) {
   const nested = (data.data || data.result || {}) as Record<string, unknown>;
   return String(data.token || data.tokenPay || data.token_pay || data.payment_token || data.paymentToken || data.transaction_id || data.reference || nested.token || nested.tokenPay || nested.token_pay || nested.payment_token || nested.paymentToken || nested.transaction_id || nested.reference || "");
@@ -1351,17 +1374,31 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
     throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_CHECKOUT_URL manque dans les variables Supabase.", { code: "MONEYFUSION_NOT_CONFIGURED" });
   }
   const headers: Record<string, string> = { ...moneyFusionHeaders(), "Content-Type": "application/json" };
-  const response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
-  const data = await response.json().catch(() => ({}));
+  let response: Response;
+  try {
+    response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
+  } catch (err) {
+    if (moneyFusionCanFallbackToDirect(url)) {
+      const directUrl = moneyFusionDirectPaymentUrl(payload);
+      return { data: { direct_checkout: true, error: String(err) }, paymentUrl: directUrl, token: String(payload.reference || "") };
+    }
+    throw err;
+  }
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
   if (!response.ok) {
+    if (moneyFusionCanFallbackToDirect(url)) {
+      const directUrl = moneyFusionDirectPaymentUrl(payload);
+      return { data: { direct_checkout: true, status: response.status, fallback: true }, paymentUrl: directUrl, token: String(payload.reference || "") };
+    }
     throw new FlowtubeError(response.status, "MoneyFusion a refuse la creation du paiement.", { code: "MONEYFUSION_ERROR", moneyfusion: data });
   }
-  const paymentUrl = moneyFusionPaymentUrl(data);
+  const paymentUrl = moneyFusionPaymentUrl(data) || (moneyFusionCanFallbackToDirect(url) ? moneyFusionDirectPaymentUrl(payload) : "");
   const token = moneyFusionToken(data);
   if (!paymentUrl) {
     throw new FlowtubeError(502, "MoneyFusion n'a pas renvoye d'URL de paiement.", { code: "MONEYFUSION_URL_MISSING", moneyfusion: data });
   }
-  return { data, paymentUrl, token };
+  return { data, paymentUrl, token: token || String(payload.reference || "") };
 }
 
 async function moneyFusionLookupPayment(token: string): Promise<Record<string, unknown>> {

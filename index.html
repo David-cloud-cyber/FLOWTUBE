@@ -2633,7 +2633,7 @@ class Component extends DCLogic {
       }
       const res = await this.apiFetch('/api/billing/checkout', {
         method:'POST',
-        body:JSON.stringify({ type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone })
+        body:JSON.stringify({ provider:'moneyfusion', type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone })
       });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
