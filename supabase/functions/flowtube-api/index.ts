@@ -1314,12 +1314,14 @@ function moneyFusionPaymentUrl(data: Record<string, unknown>) {
 function moneyFusionDirectPaymentUrl(payload: Record<string, unknown>) {
   const base = moneyFusionCheckoutUrl();
   const url = new URL(base);
+  const articles = Array.isArray(payload.article) ? payload.article as Record<string, unknown>[] : [];
+  const articleName = articles.length ? String(articles[0].nom || articles[0].name || APP_NAME) : String(payload.article || APP_NAME);
   const params: Record<string, string> = {
     reference: String(payload.reference || ""),
     amount: String(payload.totalPrice || ""),
     totalPrice: String(payload.totalPrice || ""),
     currency: String(payload.currency || DEFAULT_BILLING_CURRENCY),
-    article: String(payload.article || APP_NAME),
+    article: articleName,
     callback_url: String(payload.callback_url || ""),
     webhook_url: String(payload.webhook_url || ""),
     return_url: String(payload.return_url || ""),
@@ -1331,7 +1333,7 @@ function moneyFusionDirectPaymentUrl(payload: Record<string, unknown>) {
 }
 
 function moneyFusionCanFallbackToDirect(url: string) {
-  return /pay\.moneyfusion\.net/i.test(url) || Deno.env.get("MONEYFUSION_DIRECT_CHECKOUT") === "true";
+  return Deno.env.get("MONEYFUSION_DIRECT_CHECKOUT") === "true" && /pay\.moneyfusion\.net/i.test(url);
 }
 
 function moneyFusionToken(data: Record<string, unknown>) {
@@ -1375,14 +1377,18 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
   }
   const headers: Record<string, string> = { ...moneyFusionHeaders(), "Content-Type": "application/json" };
   let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.max(3000, Number(Deno.env.get("MONEYFUSION_TIMEOUT_MS") || 12000)));
   try {
-    response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
+    response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload), signal: controller.signal });
   } catch (err) {
     if (moneyFusionCanFallbackToDirect(url)) {
       const directUrl = moneyFusionDirectPaymentUrl(payload);
       return { data: { direct_checkout: true, error: String(err) }, paymentUrl: directUrl, token: String(payload.reference || "") };
     }
-    throw err;
+    throw new FlowtubeError(503, "MoneyFusion est momentanement sature. Reessaie dans une minute.", { code: "MONEYFUSION_UNAVAILABLE" });
+  } finally {
+    clearTimeout(timeout);
   }
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
@@ -1391,7 +1397,7 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
       const directUrl = moneyFusionDirectPaymentUrl(payload);
       return { data: { direct_checkout: true, status: response.status, fallback: true }, paymentUrl: directUrl, token: String(payload.reference || "") };
     }
-    throw new FlowtubeError(response.status, "MoneyFusion a refuse la creation du paiement.", { code: "MONEYFUSION_ERROR", moneyfusion: data });
+    throw new FlowtubeError(response.status === 429 || response.status >= 500 ? 503 : response.status, response.status >= 500 ? "MoneyFusion est momentanement sature. Reessaie dans une minute." : "MoneyFusion a refuse la creation du paiement.", { code: "MONEYFUSION_ERROR", moneyfusion: data, status: response.status });
   }
   const paymentUrl = moneyFusionPaymentUrl(data) || (moneyFusionCanFallbackToDirect(url) ? moneyFusionDirectPaymentUrl(payload) : "");
   const token = moneyFusionToken(data);
@@ -4705,9 +4711,16 @@ async function createMoneyFusionCheckout(
   const returnUrl = String(body.successUrl || successUrl || moneyFusionReturnUrl());
   const payload: Record<string, unknown> = {
     totalPrice: amountXof,
-    article,
-    articles: [{ name: article, price: amountXof, quantity: 1 }],
-    personal_Info: [{ user_id: userId, reference, type, plan_id: plan?.id || null, credit_pack_id: pack?.id || null, interval }],
+    article: [{ nom: article, montant: amountXof }],
+    personal_Info: [{
+      userId,
+      orderId: reference,
+      reference,
+      type,
+      plan_id: plan?.id || null,
+      credit_pack_id: pack?.id || null,
+      interval,
+    }],
     nomclient: String(profile.display_name || profile.email || "Client Huggyflow"),
     return_url: returnUrl,
     webhook_url: callbackUrl,
@@ -5270,8 +5283,9 @@ async function moneyFusionCallback(req: Request) {
 
   const body = req.method === "GET" ? {} : await bodyJson(req);
   const supabase = adminClient();
+  const personalInfo = Array.isArray(body.personal_Info) ? (body.personal_Info[0] || {}) as Record<string, unknown> : {};
   const token = String(body.token || body.tokenPay || body.token_pay || body.payment_token || body.paymentToken || body.transaction_id || body.reference || url.searchParams.get("token") || url.searchParams.get("tokenPay") || url.searchParams.get("reference") || "");
-  const reference = String(body.reference || body.order_id || body.orderId || url.searchParams.get("reference") || "");
+  const reference = String(body.reference || body.order_id || body.orderId || personalInfo.reference || personalInfo.orderId || personalInfo.order_id || url.searchParams.get("reference") || "");
   const eventId = token || reference || crypto.randomUUID();
   const { data: existingEvent } = await supabase.from("payment_events").select("processed").eq("provider", "moneyfusion").eq("provider_event_id", eventId).maybeSingle();
   if (existingEvent?.processed) return json({ received: true, duplicate: true });
