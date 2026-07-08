@@ -1773,10 +1773,10 @@ class Component extends DCLogic {
   ];
 
   FAQS = [
-    { q:'Comment fonctionnent les crédits ?', a:"Les crédits servent à lancer tes créations. HuggyFlow indique le coût avant les rendus importants et ne retire les crédits qu'après une création réussie." },
+    { q:'Comment fonctionnent les crédits ?', a:"Chaque création consomme des crédits selon le rendu demandé : image rapide, image premium, vidéo courte, voix ou montage. HuggyFlow affiche le coût avant les créations importantes et ne retire les crédits qu'après un rendu réussi." },
     { q:'Est-ce que mon abonnement se renouvelle ?', a:"Oui, chaque offre se renouvelle automatiquement (par mois ou par an selon ton choix). Tu peux annuler à tout moment depuis ton compte ; l'accès reste actif jusqu'à la fin de la période payée." },
     { q:'Puis-je ajouter des crédits ?', a:"Oui. Si tu épuises tes crédits avant le renouvellement, tu peux acheter des packs de crédits supplémentaires sans changer d'offre." },
-    { q:'Pourquoi la vidéo utilise plus de crédits ?', a:"Une vidéo demande plus de travail qu'une image : HuggyFlow prépare le mouvement, garde la scène cohérente et assemble le rendu final. Tu vois le coût avant de lancer les créations importantes." },
+    { q:'Pourquoi la vidéo utilise plus de crédits ?', a:"Une vidéo demande plus de calcul qu'une image : durée, qualité, mouvement, voix et cohérence changent le coût final. Les vidéos premium consomment donc plus de crédits que les rendus rapides." },
     { q:'Puis-je changer de plan ?', a:"À tout moment. Le passage à une offre supérieure est immédiat, la différence est calculée au prorata sur ta prochaine facture." }
   ];
 
@@ -1784,24 +1784,26 @@ class Component extends DCLogic {
     solo: [
       { id:'free', name:'FREE', tag:'GRATUIT', tagKind:'muted', tagline:'Pour tester HuggyFlow', credits:100, m:0, aM:0, aY:0, cta:'Créer un compte',
         vidJobs:0, imgJobs:1, dailyVid:1, msg:60, gb:1, days:7, types:['image'], priority:false, seats:1, watermark:true },
-      { id:'creator', name:'CREATOR', tag:'CRÉATEUR', tagKind:'blue', tagline:'Pour créateurs solo', credits:1600, m:19, aM:15, aY:180, cta:'Choisir Creator',
-        vidJobs:1, imgJobs:2, dailyVid:2, msg:500, gb:20, days:30, types:['image','video','image_edit'], priority:false, seats:1, watermark:false },
-      { id:'pro', name:'PRO', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour produire chaque semaine', credits:5500, m:59, aM:49, aY:588, cta:'Choisir Pro',
-        vidJobs:2, imgJobs:5, dailyVid:10, msg:1800, gb:150, days:90, types:['image','video','audio','lipsync','image_edit','video_edit'], priority:false, seats:3, watermark:false }
+      { id:'starter', name:'STARTER', tag:'DÉPART', tagKind:'muted', tagline:'Pour publier quelques contenus chaque semaine', credits:550, m:6.99, aM:6, aY:67, cta:'Commencer',
+        vidJobs:1, imgJobs:1, dailyVid:1, msg:300, gb:5, days:30, types:['image','video','image_edit'], priority:false, seats:1, watermark:false },
+      { id:'creator', name:'CREATOR', tag:'CRÉATEUR', tagKind:'blue', tagline:'Pour créateurs solo', credits:1300, m:14.99, aM:12, aY:144, cta:'Choisir Creator',
+        vidJobs:1, imgJobs:2, dailyVid:3, msg:900, gb:30, days:45, types:['image','video','audio','image_edit'], priority:false, seats:1, watermark:false },
+      { id:'pro', name:'PRO', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour produire vite sans exploser les coûts', credits:3500, m:39, aM:31, aY:374, cta:'Choisir Pro',
+        vidJobs:2, imgJobs:5, dailyVid:10, msg:2500, gb:150, days:90, types:['image','video','audio','lipsync','image_edit','video_edit'], priority:false, seats:2, watermark:false }
     ],
     team: [
-      { id:'crew', name:'CREW', tag:'ÉQUIPE', tagKind:'muted', tagline:'Pour petites équipes', credits:8000, m:89, aM:71, aY:852, cta:'Choisir Crew',
-        vidJobs:2, imgJobs:3, dailyVid:14, msg:2600, gb:300, days:120, types:['image','video','audio','lipsync','image_edit','video_edit'], priority:false, seats:5, watermark:false },
-      { id:'squad', name:'SQUAD', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour équipes qui publient chaque jour', credits:12000, m:129, aM:103, aY:1236, cta:'Choisir Squad',
-        vidJobs:3, imgJobs:6, dailyVid:20, msg:4200, gb:450, days:150, types:['image','video','audio','lipsync','image_edit','video_edit'], priority:true, seats:10, watermark:false }
+      { id:'crew', name:'STUDIO', tag:'ÉQUIPE', tagKind:'muted', tagline:'Pour petites équipes', credits:9000, m:99, aM:79, aY:950, cta:'Choisir Studio',
+        vidJobs:4, imgJobs:8, dailyVid:30, msg:6000, gb:500, days:180, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:3, watermark:false },
+      { id:'squad', name:'BUSINESS', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour équipes qui publient chaque jour', credits:18000, m:199, aM:159, aY:1910, cta:'Choisir Business',
+        vidJobs:8, imgJobs:12, dailyVid:70, msg:15000, gb:1200, days:365, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:8, watermark:false }
     ],
     business: [
-      { id:'max', name:'MAX', tag:'BUSINESS', tagKind:'muted', tagline:'Pour studios intensifs', credits:15000, m:149, aM:119, aY:1428, cta:'Choisir Max',
-        vidJobs:4, imgJobs:9, dailyVid:26, msg:5000, gb:600, days:180, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:8, watermark:false },
-      { id:'scale', name:'SCALE', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour production à grande échelle', credits:30000, m:299, aM:239, aY:2868, cta:'Choisir Scale',
-        vidJobs:8, imgJobs:14, dailyVid:60, msg:12000, gb:1500, days:365, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:20, watermark:false },
-      { id:'enterprise', name:'ENTERPRISE', tag:'SUR MESURE', tagKind:'muted', tagline:'Pour grandes organisations', credits:60000, m:599, aM:499, aY:5988, cta:'Nous contacter',
-        vidJobs:14, imgJobs:28, dailyVid:130, msg:30000, gb:5000, days:730, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:60, watermark:false }
+      { id:'max', name:'AGENCY', tag:'AGENCE', tagKind:'muted', tagline:'Pour servir plusieurs clients avec une marge stable', credits:36000, m:399, aM:319, aY:3830, cta:'Choisir Agency',
+        vidJobs:12, imgJobs:20, dailyVid:150, msg:35000, gb:2500, days:365, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:20, watermark:false },
+      { id:'scale', name:'SCALE', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour production à grande échelle', credits:80000, m:799, aM:639, aY:7670, cta:'Choisir Scale',
+        vidJobs:24, imgJobs:40, dailyVid:360, msg:90000, gb:8000, days:730, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:60, watermark:false },
+      { id:'enterprise', name:'ENTERPRISE', tag:'SUR MESURE', tagKind:'muted', tagline:'Pour grandes organisations', credits:160000, m:1499, aM:1199, aY:14390, cta:'Nous contacter',
+        vidJobs:40, imgJobs:80, dailyVid:999, msg:999999, gb:20000, days:730, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:999, watermark:false }
     ]
   };
 
@@ -1847,9 +1849,10 @@ class Component extends DCLogic {
     const basePlanList = apiPlans.length ? apiPlans : (this.PLAN_DATA[this.state.segment] || this.PLAN_DATA.solo);
     const planList = this.visiblePricingPlans(basePlanList);
     return planList.map(d=>{
-      const img = Math.floor(d.credits/35);
-      const sd = Math.floor(d.credits/263);
-      const veo = Math.floor(d.credits/438);
+      const fastImg = Math.floor(d.credits/18);
+      const img = Math.floor(d.credits/66);
+      const sd = Math.floor(d.credits/252);
+      const veo = Math.floor(d.credits/759);
       const hasVid = d.types.indexOf('video') >= 0;
       const hasEdit = d.types.indexOf('image_edit') >= 0;
       const free = d.m === 0;
@@ -1857,7 +1860,8 @@ class Component extends DCLogic {
         name: d.name, tag: d.tag, tagStyle: tagStyles[d.tagKind], tagline: d.tagline,
         creditsTitle: fmt(d.credits) + ' crédits/mois',
         equivalences: [
-          fmt(img) + ' images studio',
+          'Jusqu’à ' + fmt(fastImg) + ' images rapides',
+          fmt(img) + ' images premium',
           hasVid ? (sd + ' clips rapides 5s') : 'Vidéo rapide non incluse',
           hasVid ? (veo + ' clips premium 5s') : 'Vidéo premium non incluse'
         ],
@@ -1878,10 +1882,10 @@ class Component extends DCLogic {
           feat(d.seats > 1, d.seats + (d.seats > 1 ? ' utilisateurs' : ' utilisateur'))
         ],
         models: [
-          { name:'Images studio', cost:'35 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(img) + ' images', allocStyle: allocOn },
-          { name:'Retouches et variantes', cost:'35 cr.', ok:hasEdit, no:!hasEdit, color: hasEdit ? T.inkSoft : T.text4, alloc: hasEdit ? fmt(img) + ' images' : 'Non inclus', allocStyle: hasEdit ? allocOn : allocOff },
-          { name:'Vidéos rapides', cost:'263 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? sd + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff },
-          { name:'Vidéos premium', cost:'438 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? veo + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff }
+          { name:'Images rapides', cost:'18 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(fastImg) + ' images', allocStyle: allocOn },
+          { name:'Images premium', cost:'66 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(img) + ' images', allocStyle: allocOn },
+          { name:'Vidéos rapides', cost:'252 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? sd + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff },
+          { name:'Vidéos premium', cost:'759 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? veo + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff }
         ],
         rhythm: [
           feat(true, fmt(d.gb) + ' Go pour tes médias'),
@@ -3125,9 +3129,9 @@ class Component extends DCLogic {
         prevTitle: 'Mois dernier : ' + Math.round(b.p * 4) + ' crédits'
       })),
       modelUsage: [
-        { name:'Vidéos premium', credits:'438 cr', pct:'37%', dot:'#C9A8E8' },
-        { name:'Images studio', credits:'420 cr', pct:'35%', dot:'#D6F94E' },
-        { name:'Vidéos rapides', credits:'263 cr', pct:'22%', dot:'#E8D79B' },
+        { name:'Vidéos premium', credits:'759 cr', pct:'37%', dot:'#C9A8E8' },
+        { name:'Images premium', credits:'66 cr', pct:'35%', dot:'#D6F94E' },
+        { name:'Vidéos rapides', credits:'252 cr', pct:'22%', dot:'#E8D79B' },
         { name:'Voix et audio', credits:'63 cr', pct:'6%', dot:'#A8E8C0' }
       ],
       highlights: [

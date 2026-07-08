@@ -11,6 +11,13 @@ const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
 const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
 const MEDIA_MARGIN_MULTIPLIER = 3.5;
+const MIN_MEDIA_GROSS_MARGIN_RATIO = 0.45;
+const QUALITY_MARGIN_MULTIPLIERS: Record<"economy" | "standard" | "premium" | "heavy", number> = {
+  economy: 3,
+  standard: 3.2,
+  premium: 3.5,
+  heavy: 4,
+};
 const EXPENSIVE_CREDIT_THRESHOLD = 200;
 const DEFAULT_MONEYFUSION_CHECKOUT_URL = "https://pay.moneyfusion.net/HuggyFlow/72cdb377014bd232/pay/";
 const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
@@ -46,20 +53,28 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
   "claude-haiku-4-5-20251001": { credits: 1, label: "1 cr", margin: "eco" },
   "claude-sonnet-4-6": { credits: 3, label: "3 cr", margin: "standard" },
   "claude-sonnet-5": { credits: 4, label: "4 cr", margin: "standard" },
-  "claude-opus-4-6": { credits: 8, label: "8 cr", margin: "premium" },
-  "claude-opus-4-7": { credits: 9, label: "9 cr", margin: "premium" },
-  "claude-opus-4-8": { credits: 10, label: "10 cr", margin: "premium" },
-  "claude-fable-5": { credits: 12, label: "12 cr", margin: "max" },
-  "claude-mythos-5": { credits: 12, label: "12 cr", margin: "max" },
+  "claude-opus-4-6": { credits: 10, label: "10 cr", margin: "premium" },
+  "claude-opus-4-7": { credits: 11, label: "11 cr", margin: "premium" },
+  "claude-opus-4-8": { credits: 12, label: "12 cr", margin: "premium" },
+  "claude-fable-5": { credits: 18, label: "18 cr", margin: "max" },
+  "claude-mythos-5": { credits: 18, label: "18 cr", margin: "max" },
 };
 
 function agentCreditRateForModel(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
   if (AGENT_CREDIT_RATES[resolved]) return AGENT_CREDIT_RATES[resolved];
-  if (/opus/i.test(resolved)) return { credits: 10, label: "10 cr", margin: "premium" as const };
-  if (/fable|mythos/i.test(resolved)) return { credits: 12, label: "12 cr", margin: "max" as const };
+  if (/opus/i.test(resolved)) return { credits: 12, label: "12 cr", margin: "premium" as const };
+  if (/fable|mythos/i.test(resolved)) return { credits: 18, label: "18 cr", margin: "max" as const };
   if (/haiku/i.test(resolved)) return { credits: 1, label: "1 cr", margin: "eco" as const };
   return { credits: 4, label: "4 cr", margin: "standard" as const };
+}
+
+function agentMarginMultiplierForModel(modelId: string) {
+  const margin = agentCreditRateForModel(modelId).margin;
+  if (margin === "max") return QUALITY_MARGIN_MULTIPLIERS.heavy;
+  if (margin === "premium") return QUALITY_MARGIN_MULTIPLIERS.premium;
+  if (margin === "eco") return QUALITY_MARGIN_MULTIPLIERS.economy;
+  return QUALITY_MARGIN_MULTIPLIERS.standard;
 }
 
 function publicAgentModels() {
@@ -169,7 +184,8 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     });
   }
   const balanceAfter = Number(updated.credits || nextCredits);
-  const providerCostEstimateUsd = Number(((credits * CREDIT_FLOOR_USD) / MEDIA_MARGIN_MULTIPLIER).toFixed(4));
+  const agentMarginMultiplier = agentMarginMultiplierForModel(modelId);
+  const providerCostEstimateUsd = Number(((credits * CREDIT_FLOOR_USD) / agentMarginMultiplier).toFixed(4));
   await billing.supabase.from("credit_transactions").insert({
     user_id: billing.userId,
     amount: -credits,
@@ -198,7 +214,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
       credit_rate_label: rate.label,
       cost_class: rate.margin,
       reason: billing.reason,
-      margin_multiplier: MEDIA_MARGIN_MULTIPLIER,
+      margin_multiplier: agentMarginMultiplier,
     },
   });
   if (billing.send) billing.send("credits", { credits: balanceAfter, creditsMax: Number(updated.credits_max || profile?.credits_max || 100) });
@@ -277,6 +293,12 @@ type PricingQuote = {
   revenueFloorUsd: number;
   revenueRetailUsd: number;
   grossMarginFloorUsd: number;
+  grossMarginRetailUsd: number;
+  grossMarginFloorRatio: number;
+  grossMarginRetailRatio: number;
+  minimumMarginRatio: number;
+  marginMultiplier: number;
+  profitable: boolean;
   requiresConfirmation: boolean;
 };
 
@@ -608,6 +630,37 @@ function qualityTierForEndpoint(endpoint: string) {
   return "standard";
 }
 
+function marginClassForModel(type: string, qualityTier: string, endpoint = ""): "economy" | "standard" | "premium" | "heavy" {
+  const e = endpoint.toLowerCase();
+  if (
+    e.includes("4k")
+    || e.includes("sora")
+    || e.includes("veo3")
+    || (e.includes("seedance-2.0") && !e.includes("/fast/") && !e.includes("/mini/"))
+    || e.includes("sync-lipsync")
+    || e.includes("voice-clone")
+    || e.includes("digital-twin")
+    || type === "voice_clone"
+  ) return "heavy";
+  if (qualityTier === "premium" || type === "lipsync") return "premium";
+  if (qualityTier === "economy") return "economy";
+  return "standard";
+}
+
+function marginMultiplierForEndpoint(type: string, qualityTier: string, endpoint: string) {
+  return QUALITY_MARGIN_MULTIPLIERS[marginClassForModel(type, qualityTier, endpoint)] || MEDIA_MARGIN_MULTIPLIER;
+}
+
+function ratioFromAmounts(revenueUsd: number, providerCostUsd: number) {
+  if (revenueUsd <= 0) return -1;
+  return Number(((revenueUsd - providerCostUsd) / revenueUsd).toFixed(4));
+}
+
+function minimumMarginRatioForModel(model: PricingModel) {
+  const configured = Number((model.metadata || {}).minimum_margin_ratio || 0);
+  return configured > 0 ? configured : MIN_MEDIA_GROSS_MARGIN_RATIO;
+}
+
 function pricingUnitForEndpoint(type: string, caps: string[]) {
   if (type === "video" || type === "video_edit" || type === "lipsync" || caps.includes("music")) return "second";
   if (type === "audio" && (caps.includes("tts") || caps.includes("dubbing") || caps.includes("speech-to-text"))) return "thousand_chars";
@@ -701,6 +754,8 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
   const cost = override.costPerUnitUsd || costForEndpoint(endpoint, type, caps);
   const defaultUnits = override.defaultUnits || defaultUnitsForEndpoint(type, caps);
   const premium = override.premium ?? qualityTier === "premium";
+  const marginClass = marginClassForModel(type, qualityTier, endpoint);
+  const marginMultiplier = override.marginMultiplier || marginMultiplierForEndpoint(type, qualityTier, endpoint);
   return {
     id: override.id || idFromEndpoint(endpoint),
     name: override.name || override.label || labelFromEndpoint(endpoint),
@@ -713,7 +768,7 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
     maximumUnits: override.maximumUnits || maximumUnitsForEndpoint(type, caps, endpoint),
     creditFloorUsd: override.creditFloorUsd || CREDIT_FLOOR_USD,
     retailCreditUsd: override.retailCreditUsd || RETAIL_CREDIT_USD,
-    marginMultiplier: override.marginMultiplier || MEDIA_MARGIN_MULTIPLIER,
+    marginMultiplier,
     requiresConfirmation: override.requiresConfirmation ?? (type !== "image" && type !== "image_edit" || premium || cost >= 0.08),
     premium,
     metadata: {
@@ -722,6 +777,9 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
       capabilities: caps,
       input_profile: override.inputProfile || inputProfileForCapabilities(caps),
       quality_tier: qualityTier,
+      margin_class: marginClass,
+      target_margin_ratio: Number(((marginMultiplier - 1) / marginMultiplier).toFixed(3)),
+      minimum_margin_ratio: MIN_MEDIA_GROSS_MARGIN_RATIO,
       family: override.family || endpoint.split("/")[0],
       fal_only: true,
       cost_estimate: true,
@@ -850,7 +908,9 @@ const PRICING_MARGIN_METADATA = {
   checkout: true,
   infra_reserve_percent: 10,
   payment_reserve_percent: 7,
-  minimum_net_credit_usd: 0.009,
+  minimum_net_credit_usd: CREDIT_FLOOR_USD,
+  minimum_gross_margin_ratio: MIN_MEDIA_GROSS_MARGIN_RATIO,
+  target_margin_multipliers: QUALITY_MARGIN_MULTIPLIERS,
   margin_rule: "credits priced after AI cost, storage, bandwidth, payments, and support reserve",
   model_policy: "HuggyFlow auto-routes every request to the best available backend model for the task",
 };
@@ -1054,11 +1114,17 @@ async function authenticatedUserIdFromRequest(req: Request, supabase: ReturnType
 }
 
 function normalizePricingModel(row: Record<string, unknown>): PricingModel {
+  const type = String(row.media_type || row.type || "image");
+  const endpoint = row.fal_endpoint ? String(row.fal_endpoint) : undefined;
+  const metadata = (row.metadata || {}) as Record<string, unknown>;
+  const qualityTier = String(metadata.quality_tier || row.quality_tier || qualityTierForEndpoint(endpoint || String(row.id || "")));
+  const marginClass = marginClassForModel(type, qualityTier, endpoint || String(row.id || ""));
+  const marginMultiplier = Number(row.margin_multiplier || QUALITY_MARGIN_MULTIPLIERS[marginClass] || MEDIA_MARGIN_MULTIPLIER);
   return {
     id: String(row.id),
     name: String(row.label || row.name || row.id),
-    type: String(row.media_type || row.type || "image"),
-    endpoint: row.fal_endpoint ? String(row.fal_endpoint) : undefined,
+    type,
+    endpoint,
     pricingUnit: String(row.pricing_unit || "unit") as PricingModel["pricingUnit"],
     costPerUnitUsd: Number(row.cost_per_unit_usd || row.costUsd || 0.04),
     defaultUnits: Number(row.default_units || row.duration || 1),
@@ -1066,10 +1132,16 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
     maximumUnits: row.maximum_units ? Number(row.maximum_units) : undefined,
     creditFloorUsd: Number(row.credit_floor_usd || CREDIT_FLOOR_USD),
     retailCreditUsd: Number(row.retail_credit_usd || RETAIL_CREDIT_USD),
-    marginMultiplier: Number(row.margin_multiplier || MEDIA_MARGIN_MULTIPLIER),
+    marginMultiplier,
     requiresConfirmation: Boolean(row.requires_confirmation),
     premium: Boolean(row.premium),
-    metadata: (row.metadata || {}) as Record<string, unknown>,
+    metadata: {
+      quality_tier: qualityTier,
+      margin_class: marginClass,
+      target_margin_ratio: Number(((marginMultiplier - 1) / marginMultiplier).toFixed(3)),
+      minimum_margin_ratio: Number(metadata.minimum_margin_ratio || MIN_MEDIA_GROSS_MARGIN_RATIO),
+      ...metadata,
+    },
   };
 }
 
@@ -1239,6 +1311,10 @@ function quoteFor(model: PricingModel, requestedUnits?: number): PricingQuote {
   const revenueFloorUsd = Number((credits * model.creditFloorUsd).toFixed(4));
   const revenueRetailUsd = Number((credits * model.retailCreditUsd).toFixed(4));
   const grossMarginFloorUsd = Number((revenueFloorUsd - providerCostUsd).toFixed(4));
+  const grossMarginRetailUsd = Number((revenueRetailUsd - providerCostUsd).toFixed(4));
+  const grossMarginFloorRatio = ratioFromAmounts(revenueFloorUsd, providerCostUsd);
+  const grossMarginRetailRatio = ratioFromAmounts(revenueRetailUsd, providerCostUsd);
+  const minimumMarginRatio = minimumMarginRatioForModel(model);
   return {
     credits,
     units,
@@ -1246,6 +1322,12 @@ function quoteFor(model: PricingModel, requestedUnits?: number): PricingQuote {
     revenueFloorUsd,
     revenueRetailUsd,
     grossMarginFloorUsd,
+    grossMarginRetailUsd,
+    grossMarginFloorRatio,
+    grossMarginRetailRatio,
+    minimumMarginRatio,
+    marginMultiplier: model.marginMultiplier,
+    profitable: grossMarginFloorRatio >= minimumMarginRatio,
     requiresConfirmation: model.requiresConfirmation || credits >= EXPENSIVE_CREDIT_THRESHOLD,
   };
 }
@@ -1762,6 +1844,8 @@ async function bootstrap(req: Request) {
       creditFloorUsd: CREDIT_FLOOR_USD,
       retailCreditUsd: RETAIL_CREDIT_USD,
       marginMultiplier: MEDIA_MARGIN_MULTIPLIER,
+      minimumMediaGrossMarginRatio: MIN_MEDIA_GROSS_MARGIN_RATIO,
+      qualityMarginMultipliers: QUALITY_MARGIN_MULTIPLIERS,
       expensiveCreditThreshold: EXPENSIVE_CREDIT_THRESHOLD,
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
@@ -3491,6 +3575,16 @@ async function enforceGenerationGuards(
       availableCredits: Number(profile.credits || 0),
     });
   }
+  if (!quote.profitable) {
+    throw new FlowtubeError(409, "Ce rendu est temporairement indisponible : son tarif doit etre ajuste avant lancement. Essaie Auto HuggyFlow ou une duree plus courte.", {
+      code: "MARGIN_GUARD",
+      credits: quote.credits,
+      providerCostUsd: quote.providerCostUsd,
+      grossMarginFloorRatio: quote.grossMarginFloorRatio,
+      minimumMarginRatio: quote.minimumMarginRatio,
+      modelId: model.id,
+    });
+  }
 
   if (model.type === "video") {
     const { count: dailyVideos } = await supabase.from("generations")
@@ -4589,6 +4683,7 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
   const providerCostUsd = Number(generation.cost_usd || 0);
   const revenueFloorUsd = Number((credits * creditFloorUsd).toFixed(4));
   const grossMarginFloorUsd = Number((revenueFloorUsd - providerCostUsd).toFixed(4));
+  const grossMarginFloorRatio = ratioFromAmounts(revenueFloorUsd, providerCostUsd);
   await supabase.from("profiles").update({ credits: nextCredits }).eq("id", userId);
   await supabase.from("credit_transactions").insert({
     user_id: userId,
@@ -4603,6 +4698,7 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
       provider_cost_usd: providerCostUsd,
       revenue_floor_usd: revenueFloorUsd,
       gross_margin_floor_usd: grossMarginFloorUsd,
+      gross_margin_floor_ratio: grossMarginFloorRatio,
     },
   });
   await supabase.from("pricing_audit_logs").insert({
@@ -4618,6 +4714,7 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
       model_label: generation.model_label,
       media_type: generation.type,
       margin_multiplier: generation.margin_multiplier || MEDIA_MARGIN_MULTIPLIER,
+      gross_margin_floor_ratio: grossMarginFloorRatio,
       result_url_present: Boolean(generation.result_url),
     },
   });
