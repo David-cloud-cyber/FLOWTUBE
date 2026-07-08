@@ -15,6 +15,8 @@ const EXPENSIVE_CREDIT_THRESHOLD = 200;
 const DEFAULT_MONEYFUSION_CHECKOUT_URL = "https://pay.moneyfusion.net/HuggyFlow/72cdb377014bd232/pay/";
 const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
 const DEFAULT_BILLING_CURRENCY = (Deno.env.get("MONEYFUSION_CURRENCY") || "XOF").toUpperCase();
+const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true";
+const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_MEDIA_ENABLED") || "").toLowerCase() === "true";
 const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
@@ -69,6 +71,14 @@ function publicAgentModels() {
     costClass: agentCreditRateForModel(model.id).margin,
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
   }));
+}
+
+function cleanAgentDisplayText(text: string) {
+  return String(text || "")
+    .replace(/\*\*/g, "")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s*-{3,}\s*$/gm, "")
+    .replace(/`([^`\n]{1,80})`/g, "$1");
 }
 
 function uniqueStrings(values: string[]) {
@@ -238,6 +248,7 @@ type PricingModel = {
   name: string;
   type: string;
   endpoint?: string;
+  provider?: "fal" | "openrouter";
   pricingUnit: "unit" | "second" | "thousand_chars";
   costPerUnitUsd: number;
   defaultUnits: number;
@@ -721,6 +732,53 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
 
 const modelRegistry: PricingModel[] = FAL_ENDPOINTS.map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
 
+const OPENROUTER_PHASE2_MODELS: PricingModel[] = [
+  {
+    ...falModel("openrouter/xai/grok-imagine-video", {
+      id: "or-grok-imagine-video",
+      label: "Grok Imagine Video",
+      type: "video",
+      capabilities: ["text-to-video", "image-to-video", "reference-to-video"],
+      costPerUnitUsd: 0.12,
+      pricingUnit: "second",
+      qualityTier: "standard",
+      maximumUnits: 15,
+      metadata: { phase: 2, provider: "openrouter", prepared_only: true },
+    }),
+    provider: "openrouter",
+  },
+  {
+    ...falModel("openrouter/openai/gpt-image", {
+      id: "or-gpt-image",
+      label: "GPT Image",
+      type: "image",
+      capabilities: ["text-to-image", "edit"],
+      costPerUnitUsd: 0.22,
+      qualityTier: "premium",
+      metadata: { phase: 2, provider: "openrouter", prepared_only: true },
+    }),
+    provider: "openrouter",
+  },
+  {
+    ...falModel("openrouter/nvidia/nemotron", {
+      id: "or-nemotron-triage",
+      label: "Nemotron Triage",
+      type: "agent",
+      capabilities: ["agent-triage"],
+      costPerUnitUsd: 0.001,
+      qualityTier: "economy",
+      metadata: { phase: 2, provider: "openrouter", prepared_only: true, role: "agent-triage" },
+    }),
+    provider: "openrouter",
+  },
+];
+
+function enabledModelRegistry() {
+  return OPENROUTER_MEDIA_ENABLED && Deno.env.get("OPENROUTER_API_KEY")
+    ? [...modelRegistry, ...OPENROUTER_PHASE2_MODELS]
+    : modelRegistry;
+}
+
 const FEATURED_MODEL_IDS: string[] = [];
 
 const MODEL_SHORT_NAMES: Record<string, string> = {
@@ -1016,11 +1074,12 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
 }
 
 async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
+  const baseRegistry = enabledModelRegistry();
   const { data, error } = await supabase.from("pricing_models").select("*").eq("active", true);
   if (!error && data?.length) {
     const dbModels = data.map(normalizePricingModel);
     const dbById = new Map(dbModels.map((model) => [model.id, model]));
-    const merged = modelRegistry.map((registryModel) => {
+    const merged = baseRegistry.map((registryModel) => {
       const dbModel = dbById.get(registryModel.id);
       if (!dbModel) return registryModel;
       dbById.delete(registryModel.id);
@@ -1047,7 +1106,7 @@ async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
     }
     return merged.filter((model) => Boolean(model.endpoint));
   }
-  return modelRegistry;
+  return baseRegistry;
 }
 
 function modelCapabilities(model: PricingModel) {
@@ -1156,13 +1215,14 @@ function resolveBestModelFromCatalog(catalog: PricingModel[], modelId: string | 
 function resolveModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string) {
   const cheapestCompatible = [...catalog.filter((m) => m.type === type)]
     .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
-  const cheapestRegistry = [...modelRegistry.filter((m) => m.type === type)]
+  const registry = enabledModelRegistry();
+  const cheapestRegistry = [...registry.filter((m) => m.type === type)]
     .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
   return catalog.find((m) => m.id === modelId && m.type === type)
     || cheapestCompatible
-    || modelRegistry.find((m) => m.id === modelId && m.type === type)
+    || registry.find((m) => m.id === modelId && m.type === type)
     || cheapestRegistry
-    || modelRegistry[0];
+    || registry[0];
 }
 
 function unitsFor(model: PricingModel, requestedUnits?: number) {
@@ -1707,6 +1767,12 @@ async function bootstrap(req: Request) {
       usdXofRate: DEFAULT_USD_XOF_RATE,
       agentCreditRates: AGENT_CREDIT_RATES,
       agentDefaultModel: DEFAULT_MODEL,
+      providers: {
+        mediaPrivatePipeline: Boolean(Deno.env.get("FAL_KEY")),
+        openRouterPrepared: true,
+        openRouterEnabled: OPENROUTER_ENABLED,
+        openRouterMediaEnabled: OPENROUTER_MEDIA_ENABLED && Boolean(Deno.env.get("OPENROUTER_API_KEY")),
+      },
     },
     agentModels: publicAgentModels(),
     // Les moteurs media fal.ai restent backend-only. Le frontend affiche seulement les modeles agent.
@@ -1812,6 +1878,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Formule courte: Cette option coute environ [X] credits. Je recommande ce rendu car [raison]. Tu confirmes ?",
   "- Si l'utilisateur semble economiser, propose une version moins chere: image cle, draft, duree courte ou modele fast.",
   "- Ne debite jamais mentalement des credits: attends le devis backend et le resultat confirme.",
+  "- Pour les modeles agent couteux, protege la marge: utilise la grille credits backend, reserve les cerveaux premium aux briefs complexes, et privilegie Auto HuggyFlow quand le besoin est simple.",
   "",
   "Style de reponse:",
   "- Commence par le resultat ou l'information critique.",
@@ -1820,6 +1887,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Mode storyboard: 3 a 6 plans courts, pas un roman.",
   "- Mode prompt: prompt principal + variante courte si utile.",
   "- Mode resultat: phrase courte + prochaine iteration concrete.",
+  "- N'utilise pas de Markdown decoratif visible: pas de **gras**, pas de titres ###, pas de separateurs ---. Utilise des tirets simples et des phrases courtes.",
   "- Termine toujours par la prochaine action immediate pour valider, fournir une reference, confirmer un devis ou lancer l'etape suivante.",
   "",
   "Securite:",
@@ -1863,6 +1931,9 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Connecteur ecosysteme: si un fichier, lien ou integration disponible apporte du contexte, extrais les informations utiles puis avance. Si l'integration n'est pas disponible, demande seulement la source manquante.",
   "- Self-learning workflow: repere les motifs repetitifs, propose d'enregistrer un playbook reutilisable, puis applique-le automatiquement quand le contexte revient.",
   "- Si la demande parle marketing, remplace le jargon par un benefice clair: gain de temps, meilleure qualite, declinaisons rapides, coherence de marque, publication plus facile.",
+  "- Video uploadee: si l'utilisateur joint une video et demande de la lire, analyser, resumer, decouper ou remixer, utilise l'analyse video avant de proposer une creation. Restitue timestamps, hook, rythme, scenes et opportunites de remix.",
+  "- Production UGC 15s: collecte les donnees obligatoires, ecris un script horodate, cree un createur fictif coherent, prepare le plan vertical, puis demande confirmation du devis avant generation couteuse.",
+  "- Sites, landing pages et mini-outils: livre une structure claire et des assets HuggyFlow. Ne promets une URL live que si un connecteur de deploiement est configure.",
   "",
   "Regle finale: a chaque tour, fais avancer la production HuggyFlow. Cadre, choisis, produis, ameliore.",
 ].join("\n");
@@ -1878,6 +1949,14 @@ type HuggySkill = {
   label: string;
   triggers: string[];
   use: string;
+};
+
+type HuggySkillRecipe = {
+  requiredInputs?: string[];
+  workflow: string[];
+  routing?: string[];
+  output: string;
+  safeguards?: string[];
 };
 
 const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
@@ -1916,6 +1995,8 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "asset-extraction", label: "objet propre et transparent", triggers: ["png", "fond transparent", "detourer", "logo", "asset", "sticker", "element ui"], use: "isoler un objet propre, net et reutilisable avec fond transparent ou arriere-plan retire." },
   { id: "google-flow-composer", label: "musique et ambiance sonore", triggers: ["musique", "jingle", "soundtrack", "audio", "chanson", "ambiance sonore"], use: "decrire rythme, instruments, energie, duree et evolution pour accompagner le visuel." },
   { id: "cod-ultimate-thumbnail", label: "miniature accrocheuse", triggers: ["thumbnail", "miniature", "youtube", "cover", "vignette"], use: "creer une composition simple, lisible, contrastree et orientee clic sans texte trop long." },
+  { id: "product-photoshoot-studio", label: "shooting produit", triggers: ["photo produit", "product photoshoot", "packshot premium", "ecommerce", "produit studio", "hero product", "visuel produit"], use: "transformer une photo ou un brief produit en visuel studio/lifestyle propre, vendable et reutilisable en pub." },
+  { id: "landing-page-composer", label: "page de vente", triggers: ["landing page", "page de vente", "page produit", "mini site", "site produit", "funnel", "web creator"], use: "composer une page claire avec promesse, benefices, preuves, tarifs, FAQ et CTA sans casser l'interface HuggyFlow." },
   { id: "copywriting", label: "texte commercial clair", triggers: ["texte", "copy", "landing", "pricing", "accroche", "slogan", "description"], use: "ecrire des phrases simples, rassurantes et orientees benefice." },
   { id: "ad-creative", label: "idees publicitaires", triggers: ["creative", "headline", "variante pub", "crochet", "angle publicitaire"], use: "proposer des angles courts, testables et faciles a decliner." },
   { id: "paid-ads", label: "campagne payante", triggers: ["google ads", "meta ads", "tiktok ads", "linkedin ads", "campagne"], use: "adapter format, message et appel a l'action au canal vise." },
@@ -1926,6 +2007,124 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "prompt-engineering-expert", label: "amelioration de prompt", triggers: ["prompt", "systeme", "instruction", "ameliorer le prompt", "agent"], use: "clarifier role, contexte, contraintes, sortie attendue et criteres de qualite." },
   { id: "nike-air-force-ad", label: "style campagne mode", triggers: ["sneaker", "chaussure", "mode", "streetwear", "campagne produit"], use: "adapter l'energie publicitaire mode a une creation originale, sans copier une marque protegee." },
 ];
+
+const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
+  "ugc-15s-production-pipeline": {
+    requiredInputs: ["produit nom/URL/image", "video UGC de reference", "2 references faciales", "public cible", "accroche ou Auto"],
+    workflow: ["analyser produit et reference", "ecrire script 0-15s", "creer personnage fictif coherent", "preparer frame createur/produit", "generer clip vertical", "sauvegarder template remixable"],
+    routing: ["agent pour script", "image premium pour createur/produit", "video humaine realiste", "voix/lipsync si utile"],
+    output: "script horodate + devis credits + generation apres confirmation",
+    safeguards: ["ne jamais demander duree/format/modele", "15s vertical 9:16 par defaut", "consentement si visage/voix reels"],
+  },
+  "marketing-video-generator": {
+    requiredInputs: ["produit ou URL", "audience si disponible", "objectif si disponible"],
+    workflow: ["analyser offre", "choisir angle", "ecrire hooks", "decliner scripts", "preparer visuel/video", "proposer A/B test"],
+    routing: ["research si URL", "agent pour angles", "image/video selon format"],
+    output: "campagne avec angles, hooks, CTA, formats et devis",
+  },
+  "media-orchestrator-private": {
+    workflow: ["classifier la demande", "choisir type media", "estimer cout", "selectionner moteur prive", "generer ou demander confirmation"],
+    routing: ["Auto HuggyFlow", "draft economique si test", "premium si usage commercial final"],
+    output: "media cree via pipeline prive, sans exposer fournisseurs ni endpoints",
+    safeguards: ["ne jamais afficher les fournisseurs media au frontend", "confirmer avant operation couteuse"],
+  },
+  "ugc-scriptwriter": {
+    requiredInputs: ["hook", "produit", "message cle", "audience"],
+    workflow: ["ouvrir avec hook exact", "montrer probleme", "introduire produit naturellement", "prouver avec details", "terminer CTA doux"],
+    output: "script parle naturel de 15 a 45 secondes avec gestes et ton createur",
+  },
+  "video-reader-creative-analyst": {
+    requiredInputs: ["video ou lien video"],
+    workflow: ["identifier scenes", "extraire hook et rythme", "noter timestamps", "diagnostiquer retention", "proposer remix ou pub"],
+    output: "brief video lisible avec moments forts, faiblesses, recommandations et prochaine action",
+  },
+  "real-time-web-scanner-fact-checker": {
+    requiredInputs: ["URL ou sujet a verifier"],
+    workflow: ["lire source", "extraire faits", "marquer confiance", "separer deduction", "proposer decision"],
+    output: "brief fiable avec faits observes, deductions et points a verifier",
+  },
+  "trend-market-analyst": {
+    requiredInputs: ["niche, produit ou marche"],
+    workflow: ["collecter signaux", "identifier formats performants", "trouver angles", "proposer tests creatifs"],
+    output: "tendances exploitables en hooks, formats et prochaines creations",
+  },
+  "storyboard-cheatcode": {
+    workflow: ["decomposer en 3 a 6 plans", "definir camera/lumiere/action", "creer keyframes low-cost", "lancer video seulement apres validation"],
+    output: "storyboard valide avant generation couteuse",
+  },
+  "multi-scene-long-video-generator": {
+    workflow: ["decouper script en mini-scenes", "estimer cout total", "demander confirmation", "generer par lots", "preparer assemblage"],
+    output: "timeline multi-scenes avec clips raccords et cout total",
+    safeguards: ["bloquer avant generation si cout important"],
+  },
+  "visual-coherence-engine": {
+    workflow: ["classer references produit/personnage/style", "verrouiller @elements", "choisir reference-to-video ou first-last-frame", "controler raccords"],
+    output: "coherence personnage/produit entre variantes et scenes",
+  },
+  "market-research-decision-brief": {
+    workflow: ["collecter sources", "separer faits/deductions", "identifier opportunites", "lister risques", "terminer par decision"],
+    output: "brief decisionnel avec recommandations actionnables",
+  },
+  "marketing-psychology-mental-models": {
+    workflow: ["identifier comportement vise", "trouver frein principal", "choisir 1 a 3 leviers", "appliquer au script/visuel/CTA"],
+    output: "recommandations marketing simples, ethiques et testables",
+  },
+  "product-photoshoot-studio": {
+    requiredInputs: ["photo produit ou description produit", "usage: pub, fiche produit, hero, miniature"],
+    workflow: ["nettoyer produit", "choisir decor utile", "definir lumiere/cadrage", "creer packshot ou lifestyle", "preparer variante video si utile"],
+    routing: ["image premium pour final", "edit/outpaint si photo source", "video image-to-video si animation demandee"],
+    output: "visuel produit vendable, propre et coherent avec la marque",
+  },
+  "landing-page-composer": {
+    requiredInputs: ["produit/offre", "audience", "prix ou CTA si connu"],
+    workflow: ["promesse claire", "benefices", "preuves", "offres/pricing", "FAQ objections", "CTA principal"],
+    output: "copy et structure de page pretes a integrer sans modifier l'interface actuelle",
+    safeguards: ["ne pas promettre de deploiement live si aucun connecteur n'est configure"],
+  },
+  "soul-character-studio": {
+    requiredInputs: ["reference personnage ou description", "style marque"],
+    workflow: ["definir traits stables", "creer reference sheet", "epingler @personnage", "reutiliser dans images/videos"],
+    output: "personnage coherent reutilisable",
+    safeguards: ["ne pas cloner visage reel sans consentement"],
+  },
+  "google-flow-composer": {
+    workflow: ["definir energie", "choisir rythme/instruments", "adapter duree", "generer ou proposer ambiance sonore"],
+    output: "direction audio claire pour voix, musique ou ambiance",
+  },
+  "asset-extraction": {
+    workflow: ["identifier objet", "retirer fond", "nettoyer contours", "preparer PNG/asset reutilisable"],
+    output: "asset propre pour scenes, pubs ou landing page",
+  },
+  "video-analyzer-optimizer": {
+    requiredInputs: ["video ou reference"],
+    workflow: ["analyser hook", "mesurer rythme", "repere baisse d'attention", "proposer coupes", "decliner version courte"],
+    output: "plan d'optimisation video avec timestamps et actions concretes",
+  },
+  "cinematic-asset-creator": {
+    workflow: ["clarifier sujet", "choisir camera/lumiere", "definir matiere et mouvement", "generer asset premium"],
+    output: "scene ou asset produit a rendu commercial",
+  },
+  "viral-clip-cutter": {
+    workflow: ["trouver moments forts", "creer hook 1-3s", "couper en vertical", "ajouter rythme/CTA"],
+    output: "plan de clips courts prets pour Reels, TikTok ou Shorts",
+  },
+  "ecosystem-connector": {
+    workflow: ["lire fichiers/liens disponibles", "extraire contraintes utiles", "injecter contexte dans brief", "avancer sans redemander"],
+    output: "brief enrichi par les sources fournies",
+  },
+  "copywriting": {
+    workflow: ["remplacer jargon", "clarifier benefice", "reduire friction", "donner CTA simple"],
+    output: "texte utilisateur clair, court et vendable",
+  },
+  "self-learning-workflow": {
+    workflow: ["detecter motif repetitif", "resumer playbook", "sauvegarder declencheurs", "appliquer au prochain contexte"],
+    output: "skill prive reutilisable, sans secrets ni donnees sensibles",
+  },
+  "prompt-engineering-expert": {
+    workflow: ["clarifier role", "lister capacites", "definir routage", "ajouter garde-fous", "specifier format de reponse", "proteger UX existante"],
+    output: "prompt systeme robuste, oriente execution, compatible production HuggyFlow",
+  },
+};
 
 function scoreSkill(skill: HuggySkill, text: string, type: string) {
   const hay = ` ${text.toLowerCase()} ${type.toLowerCase()} `;
@@ -1949,7 +2148,16 @@ function skillHintsForPrompt(prompt: string, type: string) {
   const picked = ranked.length ? ranked.map((row) => row.skill) : defaults
     .map((id) => HUGGYFLOW_SKILL_LIBRARY.find((skill) => skill.id === id))
     .filter(Boolean) as HuggySkill[];
-  return picked.slice(0, 5).map((skill) => `- ${skill.label}: ${skill.use}`).join("\n");
+  return picked.slice(0, 5).map((skill) => {
+    const recipe = HUGGYFLOW_SKILL_RECIPES[skill.id];
+    const lines = [`- ${skill.label}: ${skill.use}`];
+    if (recipe?.requiredInputs?.length) lines.push(`  Inputs requis: ${recipe.requiredInputs.join("; ")}`);
+    if (recipe?.workflow?.length) lines.push(`  Workflow: ${recipe.workflow.join(" -> ")}`);
+    if (recipe?.routing?.length) lines.push(`  Routage: ${recipe.routing.join(" -> ")}`);
+    if (recipe?.output) lines.push(`  Sortie: ${recipe.output}`);
+    if (recipe?.safeguards?.length) lines.push(`  Garde-fous: ${recipe.safeguards.join("; ")}`);
+    return lines.join("\n");
+  }).join("\n");
 }
 
 function fallbackReply(prompt: string, type: string, credits: number) {
@@ -2799,10 +3007,10 @@ const AGENT_TOOLS = [
 const AGENT_LOOP_SYSTEM_EXTRA = [
   "",
   "Mode agent outille:",
-  "- Tu disposes d'outils reels. Utilise-les au lieu de decrire ce que tu ferais: generate_media pour creer, create_batch pour un lot ou une video multi-scenes, research_url pour lire une page, market_research pour les tendances, remember pour memoriser, estimate_cost pour un devis, list_recent_creations pour retrouver les creations passees.",
+  "- Tu disposes d'outils reels. Utilise-les au lieu de decrire ce que tu ferais: generate_media pour creer, create_batch pour un lot ou une video multi-scenes, research_url pour lire une page, market_research pour les tendances, remember pour memoriser, save_skill pour enregistrer un playbook, estimate_cost pour un devis, list_recent_creations pour retrouver les creations passees.",
   "- Enchaine plusieurs outils si la tache le demande (ex: lire une URL puis creer; estimer puis generer; memoriser puis creer).",
   "- Quand un outil renvoie une demande de confirmation de cout, transmets-la clairement a l'utilisateur et arrete-toi la: c'est lui qui confirme.",
-  "- Reste bref entre les appels d'outils: une phrase d'intention avant, une phrase de resultat apres.",
+  "- Reste bref entre les appels d'outils: une phrase d'intention avant, une phrase de resultat apres. Pas de Markdown decoratif.",
 ].join("\n");
 
 type AgentLoopCtx = {
@@ -3086,6 +3294,13 @@ function falInput(model: PricingModel, prompt: string, aspectRatio: string, dura
 }
 
 function ensureProviderReady(model: PricingModel) {
+  const provider = model.provider || String((model.metadata || {}).provider || "fal.ai");
+  if (provider === "openrouter") {
+    if (!OPENROUTER_MEDIA_ENABLED || !Deno.env.get("OPENROUTER_API_KEY")) {
+      throw new FlowtubeError(503, "Ce moteur HuggyFlow est prepare pour une prochaine phase, mais il n'est pas encore active.", { code: "PROVIDER_NOT_CONFIGURED", modelId: model.id });
+    }
+    throw new FlowtubeError(503, "Ce moteur HuggyFlow est prepare mais le runner media Phase 2 n'est pas encore active.", { code: "PROVIDER_NOT_CONFIGURED", modelId: model.id });
+  }
   if (!Deno.env.get("FAL_KEY")) {
     throw new FlowtubeError(503, "fal.ai n'est pas encore configure. Ajoute FAL_KEY dans Supabase avant de lancer des generations.", { code: "PROVIDER_NOT_CONFIGURED" });
   }
@@ -3763,7 +3978,13 @@ async function chat(req: Request) {
 
   const stream = new ReadableStream({
     start: async (controller) => {
-      const send = (event: string, payload: unknown) => controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
+      const send = (event: string, payload: unknown) => {
+        let nextPayload = payload;
+        if (event === "text" && payload && typeof payload === "object" && typeof (payload as Record<string, unknown>).delta === "string") {
+          nextPayload = { ...(payload as Record<string, unknown>), delta: cleanAgentDisplayText(String((payload as Record<string, unknown>).delta || "")) };
+        }
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(nextPayload)}\n\n`));
+      };
       try {
         const supabase = adminClient();
         const userId = await userIdFromRequest(req, supabase);
@@ -3797,7 +4018,7 @@ async function chat(req: Request) {
             project_id: project.id,
             conversation_id: conversation.id,
             role: "assistant",
-            content: content.trim(),
+            content: cleanAgentDisplayText(content).trim(),
           });
         };
         const billAgent = (reason: string, multiplier = 1) =>
