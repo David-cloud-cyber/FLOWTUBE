@@ -40,6 +40,8 @@ input:focus,textarea:focus{outline:none}
 @keyframes pageSettle{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes sideIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
 @keyframes tabFade{from{opacity:.45}to{opacity:1}}
+@keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes modalScale{from{transform:scale(.975);opacity:0}to{transform:scale(1);opacity:1}}
 [data-nav-scroll]{scrollbar-width:none}
 [data-nav-scroll]::-webkit-scrollbar{display:none}
 [data-nav-scroll] button:active{transform:none!important}
@@ -981,6 +983,311 @@ input:focus,textarea:focus{outline:none}
     </div>
   </sc-if>
 
+  <!-- ========== SETTINGS MODAL (Claude-style centered popup with sidebar) ========== -->
+  <sc-if value="{{ showSettingsModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
+      <div onClick="{{ backToApp }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)"></div>
+      <div style="position:relative;width:820px;max-width:92vw;height:580px;max-height:85vh;background:#1E1F23;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;overflow:hidden;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
+
+        <!-- Sidebar -->
+        <div style="width:210px;flex:0 0 210px;background:#17181C;border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;padding:16px 10px 16px 12px;overflow-y:auto">
+          <!-- Search -->
+          <div style="position:relative;margin-bottom:14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B6E75" stroke-width="2" stroke-linecap="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher" style="width:100%;padding:8px 10px 8px 30px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#E8E9EB;font-size:12.5px;font-family:inherit" style-focus="border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06)"/>
+          </div>
+
+          <!-- Section: Paramètres -->
+          <sc-if value="{{ showSectionParamètres }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:0 6px;margin-bottom:4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6B6E75;font-weight:700">Paramètres</div>
+
+            <sc-if value="{{ showGénéralBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickGénéral }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnGénéralStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnGénéralIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Général
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showCompteBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickCompte }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnCompteStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnCompteIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Compte
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showConfidentialitéBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickConfidentialité }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnConfidentialitéStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnConfidentialitéIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Confidentialité
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showFacturationBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickFacturation }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnFacturationStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnFacturationIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                Facturation
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showUtilisationBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickUtilisation }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnUtilisationStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnUtilisationIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Utilisation
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showCapacitésBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickCapacités }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnCapacitésStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnCapacitésIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                Capacités
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showClaudeCodeBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickClaudeCode }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnClaudeCodeStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnClaudeCodeIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                Claude Code
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showApiBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickApi }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnApiStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnApiIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                Claude dans Ch…
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <!-- Section: Personnaliser -->
+          <sc-if value="{{ showSectionPersonnaliser }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:12px 6px 4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6B6E75;font-weight:700">Personnaliser</div>
+
+            <sc-if value="{{ showSkillsBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickSkills }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnSkillsStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnSkillsIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                Compétences
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showConnectorsBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickConnectors }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnConnectorsStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnConnectorsIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                Connecteurs
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showPluginsBtn }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickPlugins }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnPluginsStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnPluginsIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4M4.2 19.8l2.8-2.8M17 7l2.8-2.8"></path></svg>
+                Plugins
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+
+        <!-- Right content pane -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <!-- Close button -->
+          <div style="display:flex;justify-content:flex-end;padding:14px 16px 0">
+            <button onClick="{{ backToApp }}" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s" style-hover="background:rgba(255,255,255,.06)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+
+          <!-- Content scroll area -->
+          <div style="flex:1;overflow-y:auto;padding:8px 32px 32px">
+
+            <!-- ===== Général (Profil) ===== -->
+            <sc-if value="{{ modalShowSettings }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:24px">Profil</div>
+
+              <!-- Avatar -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:13.5px;color:#BCC0C6">Avatar</span>
+                <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D6F94E 55%, #9DBD2A);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#1B1C1E">{{ avatarInitial }}</div>
+              </div>
+
+              <!-- Nom complet -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:13.5px;color:#BCC0C6">Nom complet</span>
+                <input value="{{ settingsName }}" onChange="{{ onSettingsName }}" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
+              </div>
+
+              <!-- Comment vous appelle-t-on -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:13.5px;color:#BCC0C6">Comment souhaitez-vous qu'on vous appelle ?</span>
+                <input value="{{ settingsCalledName }}" onChange="{{ onSettingsCalledName }}" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
+              </div>
+
+              <!-- Description du travail -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:13.5px;color:#BCC0C6">Quelle est la meilleure description de votre travail ?</span>
+                <select value="{{ settingsJobDesc }}" onChange="{{ onSettingsJobDesc }}" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;cursor:pointer">
+                  <option>Développeur</option><option>Designer</option><option>Marketing</option><option>Autre</option>
+                </select>
+              </div>
+
+              <!-- Instructions -->
+              <div style="margin-top:20px">
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">Instructions pour HuggyFlow</div>
+                <div style="font-size:12px;color:#767C85;margin-bottom:10px">HuggyFlow gardera ces éléments à l'esprit dans les chats.</div>
+                <textarea value="{{ settingsInstructions }}" onChange="{{ onSettingsInstructions }}" placeholder="p. ex. lorsque j'apprends de nouveaux concepts, je trouve les analogies particulièrement utiles" style="width:100%;min-height:90px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;line-height:1.5" style-focus="border-color:rgba(255,255,255,.2)"></textarea>
+              </div>
+
+              <!-- Préférences -->
+              <div style="margin-top:28px;font-size:16px;font-weight:700;margin-bottom:16px">Préférences</div>
+
+              <!-- Apparence -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:13.5px;color:#BCC0C6">Apparence</span>
+                <div style="display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">
+                  <button onClick="{{ setSystemTheme }}" style="padding:5px 10px;border-radius:999px;border:none;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;{{ systemTabStyle }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></button>
+                  <button onClick="{{ setLightTheme }}" style="padding:5px 10px;border-radius:999px;border:none;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;{{ lightTabStyle }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"></line><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"></line><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"></line></svg></button>
+                  <button onClick="{{ setDarkTheme }}" style="padding:5px 10px;border-radius:999px;border:none;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;{{ darkTabStyle }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+                </div>
+              </div>
+
+              <!-- Police de discussion -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+                <span style="font-size:13.5px;color:#BCC0C6">Police de discussion</span>
+                <select value="{{ settingsFont }}" onChange="{{ onSettingsFont }}" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;cursor:pointer">
+                  <option>Anthropic Serif</option><option>Instrument Sans</option><option>JetBrains Mono</option><option>System UI</option>
+                </select>
+              </div>
+
+              <!-- Save -->
+              <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
+                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
+                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D6F94E;font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ===== Compte placeholder ===== -->
+            <sc-if value="{{ modalShowAccount }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Compte</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Gère ton e-mail, ta session et la suppression de ton compte.</div>
+              <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:13.5px;color:#BCC0C6">E-mail</span>
+                <input value="{{ settingsEmail }}" onChange="{{ onSettingsEmail }}" type="email" style="width:240px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
+              </div>
+              <div style="margin-top:28px;display:flex;gap:8px">
+                <button onClick="{{ openAuth }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ sessionCta }}</button>
+                <button style="padding:9px 16px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Supprimer le compte</button>
+              </div>
+            </sc-if>
+
+            <!-- ===== Confidentialité placeholder ===== -->
+            <sc-if value="{{ modalShowPrivacy }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Confidentialité</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Contrôle comment tes données sont utilisées.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Améliorer le modèle</div><div style="font-size:12px;color:#767C85;margin-top:2px">Tes conversations peuvent servir à améliorer nos modèles</div></div>
+                <div onClick="{{ toggleDataTraining }}" style="{{ trainTrackStyle }}"><span style="{{ trainKnobStyle }}"></span></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Partager les analytics</div><div style="font-size:12px;color:#767C85;margin-top:2px">Aide-nous à comprendre comment le produit est utilisé</div></div>
+                <div onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}"><span style="{{ analyticsKnobStyle }}"></span></div>
+              </div>
+            </sc-if>
+
+            <!-- ===== Capabilities placeholder ===== -->
+            <sc-if value="{{ modalShowCapabilities }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Capacités</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Modèles disponibles, limites et fonctionnalités de ton plan.</div>
+            </sc-if>
+
+            <!-- ===== Claude Code placeholder ===== -->
+            <sc-if value="{{ modalShowClaudeCode }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Claude Code</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Terminal, CLI et authentification depuis l'éditeur.</div>
+            </sc-if>
+
+            <!-- ===== Skills placeholder ===== -->
+            <sc-if value="{{ modalShowSkills }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Compétences</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Gère les compétences personnalisées pour enrichir tes interactions.</div>
+            </sc-if>
+
+            <!-- ===== Connectors placeholder ===== -->
+            <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Connecteurs</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Connecte GitHub, Google Drive et d'autres services.</div>
+            </sc-if>
+
+            <!-- ===== Plugins placeholder ===== -->
+            <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Plugins</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Découvre et installe des extensions tierces.</div>
+            </sc-if>
+
+            <!-- ===== Billing (reuses existing content inline) ===== -->
+            <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Facturation</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Tes factures, ton abonnement et ton moyen de paiement.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Abonnement actuel</div><div style="font-size:12px;color:#767C85;margin-top:2px">{{ billingPlanName }} – {{ billingPlanPrice }}</div></div>
+                <span style="padding:3px 10px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10px;font-weight:800;letter-spacing:.05em">ACTIF</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Moyen de paiement</div><div style="font-size:12px;color:#767C85;margin-top:2px">•••• 4242 – Expire 08/2028</div></div>
+                <button style="padding:7px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Modifier</button>
+              </div>
+              <div style="margin-top:16px"><button onClick="{{ openPricing }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Changer d'offre</button></div>
+            </sc-if>
+
+            <!-- ===== Team ===== -->
+            <sc-if value="{{ modalShowTeam }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Équipe &amp; collaboration</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Invite ton équipe, gère les rôles et partagez les crédits.</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
+                <span style="font-size:12px;color:#9AA0A8">Sièges</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#E8E9EB">{{ seatsLabel }}</span>
+              </div>
+              <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px">
+                <input value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" type="email" placeholder="collegue@exemple.com" style="flex:1;min-width:200px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit" style-focus="border-color:rgba(255,255,255,.2)"/>
+                <button onClick="{{ sendInvite }}" style="padding:10px 18px;border-radius:10px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Envoyer</button>
+              </div>
+            </sc-if>
+
+            <!-- ===== API ===== -->
+            <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">API &amp; intégrations</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Connecte HuggyFlow à tes outils et automatise tes générations.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#767C85;font-weight:700">Clés API</span>
+                <button onClick="{{ createKey }}" style="padding:7px 14px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">+ Créer une clé</button>
+              </div>
+              <sc-for list="{{ apiKeys }}" as="k" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#E8E9EB">{{ k.name }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#767C85;margin-top:2px">{{ k.masked }}</div></div>
+                  <button onClick="{{ k.onCopy }}" style="padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:transparent;color:#BCC0C6;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ k.copyLabel }}</button>
+                </div>
+              </sc-for>
+            </sc-if>
+
+            <!-- ===== Stats ===== -->
+            <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:20px;font-weight:700;margin-bottom:12px">Utilisation</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Où passent tes crédits et ce que tu produis.</div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+                <sc-for list="{{ statCards }}" as="sc" hint-placeholder-count="4">
+                  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px">
+                    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#767C85;font-weight:700">{{ sc.label }}</div>
+                    <div style="margin-top:8px;font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:#F2F3F5">{{ sc.value }}</div>
+                    <div style="margin-top:6px;font-size:11px;color:{{ sc.deltaColor }};font-weight:600">{{ sc.delta }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </sc-if>
+  <!-- ========== END SETTINGS MODAL ========== -->
+
   <sc-if value="{{ showStats }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Statistiques d'usage" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
@@ -1665,6 +1972,17 @@ input:focus,textarea:focus{outline:none}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;showSuggestions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Accueil&quot;}}">
 class Component extends DCLogic {
+  getResolvedTheme() {
+    let t = this.state.theme;
+    if (t === 'system') {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return 'dark';
+    }
+    return t || 'dark';
+  }
+
   storedAuthSession(){
     const empty = { access_token:'', refresh_token:'', expires_at:0 };
     if(typeof window === 'undefined' || !window.localStorage) return empty;
@@ -1925,7 +2243,7 @@ class Component extends DCLogic {
   }
 
   tokens(){
-    return this.state.theme === 'dark' ? {
+    return this.getResolvedTheme() === 'dark' ? {
       pageBg:'#0E0F12', surface:'#17181C', surfaceSoft:'rgba(23,24,28,.72)',
       ink:'#F2F3F5', inkSoft:'#D7DADE', text2:'#BCC0C6', text3:'#9AA0A8', text4:'#767C85',
       lineRGB:'242,243,245', green:'#D6F94E', xMuted:'#4E535A', strike:'#666C74',
@@ -1939,7 +2257,10 @@ class Component extends DCLogic {
   }
 
   componentDidMount(){
-    try{ if(localStorage.getItem('hf-theme') === 'light') this.setState({ theme:'light' }); }catch(e){}
+    try{
+      const t = localStorage.getItem('hf-theme');
+      if(t) this.setState({ theme: t });
+    }catch(e){}
     this._ph = setInterval(()=>{
       this.setState(s=>({ placeholderIdx: (s.placeholderIdx+1) % this.PLACEHOLDERS.length }));
     }, 3600);
@@ -3071,20 +3392,184 @@ class Component extends DCLogic {
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
+      isDark: this.getResolvedTheme() === 'dark',
+      isLight: this.getResolvedTheme() !== 'dark',
+      showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      settingsSearchQuery: st.settingsSearchQuery || '',
+      onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
+      avatarInitial: (st.settingsName || (st.user && st.user.name) || 'D')[0].toUpperCase(),
+      showSectionParamètres: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        const matches = (label, synonyms = []) => {
+          if (!query) return true;
+          return label.toLowerCase().includes(query) || synonyms.some(s => s.toLowerCase().includes(query));
+        };
+        const showGénéral = matches('Général', ['profil', 'preferences', 'apparence', 'police']);
+        const showCompte = matches('Compte', ['email', 'supprimer', 'deconnexion']);
+        const showConfidentialité = matches('Confidentialité', ['privacy', 'data', 'analytics', 'securite']);
+        const showFacturation = matches('Facturation', ['billing', 'payment', 'carte', 'factures', 'tarifs']);
+        const showUtilisation = matches('Utilisation', ['stats', 'credits', 'charts', 'graphique']);
+        const showCapacités = matches('Capacités', ['limits', 'models', 'features']);
+        const showClaudeCode = matches('Claude Code', ['terminal', 'cli', 'auth']);
+        const showApi = matches('Claude dans Chrome', ['api', 'keys', 'integrations']);
+        return showGénéral || showCompte || showConfidentialité || showFacturation || showUtilisation || showCapacités || showClaudeCode || showApi;
+      })(),
+      showSectionPersonnaliser: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        const matches = (label, synonyms = []) => {
+          if (!query) return true;
+          return label.toLowerCase().includes(query) || synonyms.some(s => s.toLowerCase().includes(query));
+        };
+        const showSkills = matches('Compétences', ['skills', 'scripts']);
+        const showConnectors = matches('Connecteurs', ['connectors', 'github', 'drive']);
+        const showPlugins = matches('Plugins', ['store', 'tools']);
+        return showSkills || showConnectors || showPlugins;
+      })(),
+      showGénéralBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'général'.includes(query) || 'profil'.includes(query) || 'preferences'.includes(query) || 'apparence'.includes(query) || 'police'.includes(query);
+      })(),
+      showCompteBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'compte'.includes(query) || 'email'.includes(query) || 'supprimer'.includes(query) || 'deconnexion'.includes(query);
+      })(),
+      showConfidentialitéBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'confidentialité'.includes(query) || 'privacy'.includes(query) || 'data'.includes(query) || 'analytics'.includes(query) || 'securite'.includes(query);
+      })(),
+      showFacturationBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'facturation'.includes(query) || 'billing'.includes(query) || 'payment'.includes(query) || 'carte'.includes(query) || 'factures'.includes(query) || 'tarifs'.includes(query);
+      })(),
+      showTeamBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'équipe'.includes(query) || 'team'.includes(query) || 'collaboration'.includes(query) || 'membres'.includes(query);
+      })(),
+      showUtilisationBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'utilisation'.includes(query) || 'stats'.includes(query) || 'credits'.includes(query) || 'charts'.includes(query) || 'graphique'.includes(query);
+      })(),
+      showCapacitésBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'capacités'.includes(query) || 'limits'.includes(query) || 'models'.includes(query) || 'features'.includes(query);
+      })(),
+      showClaudeCodeBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'claude code'.includes(query) || 'terminal'.includes(query) || 'cli'.includes(query) || 'auth'.includes(query);
+      })(),
+      showApiBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'claude dans chrome'.includes(query) || 'api'.includes(query) || 'keys'.includes(query) || 'integrations'.includes(query);
+      })(),
+      showSkillsBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'compétences'.includes(query) || 'skills'.includes(query) || 'scripts'.includes(query);
+      })(),
+      showConnectorsBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'connecteurs'.includes(query) || 'connectors'.includes(query) || 'github'.includes(query) || 'drive'.includes(query);
+      })(),
+      showPluginsBtn: (() => {
+        const query = (st.settingsSearchQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        return 'plugins'.includes(query) || 'store'.includes(query) || 'tools'.includes(query);
+      })(),
+      clickGénéral: ()=> this.setState({ page:'settings', settingsSaved:false, settingsHop:false }),
+      clickCompte: ()=> this.setState({ page:'account', settingsHop:false }),
+      clickConfidentialité: ()=> this.setState({ page:'privacy', settingsHop:false }),
+      clickFacturation: ()=> this.setState({ page:'billing', settingsHop:false }, ()=> this.loadBillingStatus()),
+      clickTeam: ()=> this.setState({ page:'team', settingsHop:false }, ()=> this.loadTeam()),
+      clickUtilisation: ()=> this.setState({ page:'stats', settingsHop:false }, ()=> this.loadStats()),
+      clickCapacités: ()=> this.setState({ page:'capabilities', settingsHop:false }),
+      clickClaudeCode: ()=> this.setState({ page:'claudecode', settingsHop:false }),
+      clickApi: ()=> this.setState({ page:'api', settingsHop:false }, ()=> this.loadApiKeys()),
+      clickSkills: ()=> this.setState({ page:'skills', settingsHop:false }),
+      clickConnectors: ()=> this.setState({ page:'connectors', settingsHop:false }),
+      clickPlugins: ()=> this.setState({ page:'plugins', settingsHop:false }),
+      btnGénéralStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnGénéralIconColor: st.page === 'settings' ? '#FFF' : '#8B8E95',
+      btnCompteStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnCompteIconColor: st.page === 'account' ? '#FFF' : '#8B8E95',
+      btnConfidentialitéStyle: st.page === 'privacy' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnConfidentialitéIconColor: st.page === 'privacy' ? '#FFF' : '#8B8E95',
+      btnFacturationStyle: st.page === 'billing' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnFacturationIconColor: st.page === 'billing' ? '#FFF' : '#8B8E95',
+      btnTeamStyle: st.page === 'team' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnTeamIconColor: st.page === 'team' ? '#FFF' : '#8B8E95',
+      btnUtilisationStyle: st.page === 'stats' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnUtilisationIconColor: st.page === 'stats' ? '#FFF' : '#8B8E95',
+      btnCapacitésStyle: st.page === 'capabilities' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnCapacitésIconColor: st.page === 'capabilities' ? '#FFF' : '#8B8E95',
+      btnClaudeCodeStyle: st.page === 'claudecode' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnClaudeCodeIconColor: st.page === 'claudecode' ? '#FFF' : '#8B8E95',
+      btnApiStyle: st.page === 'api' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnApiIconColor: st.page === 'api' ? '#FFF' : '#8B8E95',
+      btnSkillsStyle: st.page === 'skills' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnSkillsIconColor: st.page === 'skills' ? '#FFF' : '#8B8E95',
+      btnConnectorsStyle: st.page === 'connectors' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnConnectorsIconColor: st.page === 'connectors' ? '#FFF' : '#8B8E95',
+      btnPluginsStyle: st.page === 'plugins' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      btnPluginsIconColor: st.page === 'plugins' ? '#FFF' : '#8B8E95',
+      showAccountPlaceholder: st.page === 'account',
+      showPrivacyPlaceholder: st.page === 'privacy',
+      showCapabilitiesPlaceholder: st.page === 'capabilities',
+      showClaudeCodePlaceholder: st.page === 'claudecode',
+      showSkillsPlaceholder: st.page === 'skills',
+      showConnectorsPlaceholder: st.page === 'connectors',
+      showPluginsPlaceholder: st.page === 'plugins',
+      settingsCalledName: st.settingsCalledName ?? (st.settingsName || (st.user ? st.user.name : '') || 'David'),
+      onSettingsCalledName: (e)=> this.setState({ settingsCalledName: e.target.value, settingsSaved:false }),
+      settingsJobDesc: st.settingsJobDesc ?? 'Autre',
+      onSettingsJobDesc: (e)=> this.setState({ settingsJobDesc: e.target.value, settingsSaved:false }),
+      settingsInstructions: st.settingsInstructions ?? '',
+      onSettingsInstructions: (e)=> this.setState({ settingsInstructions: e.target.value, settingsSaved:false }),
+      settingsFont: st.settingsFont ?? 'Anthropic Serif',
+      onSettingsFont: (e)=> this.setState({ settingsFont: e.target.value, settingsSaved:false }),
+      toggleDataTraining: ()=> this.setState(s=>({ trainData: !s.trainData })),
+      trainTrackStyle: this.switchTrack(st.trainData !== false),
+      trainKnobStyle: this.switchKnob(st.trainData !== false),
+      toggleAnalyticsSharing: ()=> this.setState(s=>({ shareAnalytics: !s.shareAnalytics })),
+      analyticsTrackStyle: this.switchTrack(st.shareAnalytics !== false),
+      analyticsKnobStyle: this.switchKnob(st.shareAnalytics !== false),
+      setSystemTheme: ()=> this.setState({ theme:'system' }, ()=>{ try{ localStorage.setItem('hf-theme','system'); }catch(e){} }),
+      systemTabStyle: st.theme === 'system' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#8B8E95',
+      lightTabStyle: st.theme === 'light' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#8B8E95',
+      darkTabStyle: st.theme === 'dark' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#8B8E95',
+      showApp: st.page === 'app' || (st.page === 'admin' && !this.isAdminUser()) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
-      isDark: st.theme === 'dark',
-      isLight: st.theme !== 'dark',
       toggleTheme: ()=> this.setState(s=>{
         const t = s.theme === 'dark' ? 'light' : 'dark';
         try{ localStorage.setItem('hf-theme', t); }catch(e){}
         return { theme: t };
       }),
-      showApp: st.page === 'app' || (st.page === 'admin' && !this.isAdminUser()),
       showPricing: st.page === 'pricing',
       showAuth: st.page === 'auth',
-      showBilling: st.page === 'billing',
+      showBilling: false,
       showGallery: st.page === 'gallery',
-      showSettings: st.page === 'settings',
+      showSettings: false,
+      modalShowSettings: st.page === 'settings',
+      modalShowBilling: st.page === 'billing',
+      modalShowTeam: st.page === 'team',
+      modalShowApi: st.page === 'api',
+      modalShowStats: st.page === 'stats',
+      modalShowAccount: st.page === 'account',
+      modalShowPrivacy: st.page === 'privacy',
+      modalShowCapabilities: st.page === 'capabilities',
+      modalShowClaudeCode: st.page === 'claudecode',
+      modalShowSkills: st.page === 'skills',
+      modalShowConnectors: st.page === 'connectors',
+      modalShowPlugins: st.page === 'plugins',
       settingsNav: [['settings','Profil'],['billing','Facturation'],['team','Équipe'],['api','API'],['stats','Statistiques']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.page === p[0]) + ';flex:0 0 auto;white-space:nowrap',
@@ -3104,9 +3589,9 @@ class Component extends DCLogic {
       toggleProjectsSection: ()=> this.setState(s=>({ projectsExpanded: !(s.projectsExpanded !== false), projectMenuId:'' })),
       projectsChevronStyle: 'flex:0 0 auto;transition:transform .18s ease;transform:rotate(' + (st.projectsExpanded !== false ? '0deg' : '-90deg') + ')',
       canSeeAdmin: this.isAdminUser(),
-      showTeam: st.page === 'team',
-      showApi: st.page === 'api',
-      showStats: st.page === 'stats',
+      showTeam: false,
+      showApi: false,
+      showStats: false,
       openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label: p[1],
