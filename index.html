@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="alternate icon" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/huggyflow-logo.png">
-<meta name="theme-color" content="#D6F94E">
+<meta name="theme-color" content="#0F1113">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -17,19 +17,20 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="alternate icon" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/huggyflow-logo.png">
-<meta name="theme-color" content="#D6F94E">
+<meta name="theme-color" content="#0F1113">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
 <style>
+ :root{--hf-page:#0F1113;--hf-surface:#1C1E20;--hf-surface-2:#23262A;--hf-ink:#F7F7F8;--hf-text-2:#898A8B;--hf-text-3:#A8A8A8;--hf-line:#2E3031;--hf-lime:#D1FE17;--hf-cyan:#18DCFF;--hf-magenta:#FF005B;--hf-dark-ink:#131517;--hf-radius-control:8px;--hf-radius-card:12px;--hf-radius-panel:16px}
 *{box-sizing:border-box}
-html{background:#0E0F12}
+html{background:var(--hf-page)}
 body{margin:0}
 button,input,textarea{font:inherit}
 button{transition:transform .16s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,color .2s ease,filter .2s ease}
-button:active{transform:scale(.95)}
+button:active{transform:scale(.97)}
 textarea{resize:none}
-input:focus,textarea:focus{outline:none}
+input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset:1px}
 ::placeholder{color:#9A9DA4}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(120,116,104,.35);border-radius:9px}
@@ -54,7 +55,7 @@ input:focus,textarea:focus{outline:none}
 [data-hf-md] strong{font-weight:750;color:inherit}
 [data-hf-md] ul,[data-hf-md] ol{margin:8px 0 10px 20px;padding:0}
 [data-hf-md] li{margin:5px 0}
-[data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(214,249,78,.10);color:#D6F94E}
+[data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(214,249,78,.10);color:#D1FE17}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
 [data-hf-rail="true"]{align-items:center}
@@ -64,67 +65,68 @@ input:focus,textarea:focus{outline:none}
 [data-hf-rail="true"] [data-hf-rail-item] > span:not([data-hf-rail-icon]){display:none!important}
 [data-hf-rail="true"] [data-hf-rail-list]{align-items:center;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
 [data-hf-rail="true"] [data-hf-rail-bottom]{align-items:center;width:100%}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </helmet>
-<div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:'Instrument Sans',system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
+<div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
   <input id="hf-file-input" type="file" accept="image/*,video/*,audio/*,.pdf,.txt,.md,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
   <aside data-hf-rail="{{ sidebarRail }}" style="{{ sidebarStyle }}">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div data-hf-rail-item="true" onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.09)">
-        <div data-hf-rail-icon="true" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#D6F94E;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B1C1E" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+        <div data-hf-rail-icon="true" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#D1FE17;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#131517" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
         <span data-hf-hide-rail="true" style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">HuggyFlow</span>
-        <svg data-hf-hide-rail="true" width="12" height="12" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 9 12 4 17 9"></polyline><polyline points="7 15 12 20 17 15"></polyline></svg>
+        <svg data-hf-hide-rail="true" width="12" height="12" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 9 12 4 17 9"></polyline><polyline points="7 15 12 20 17 15"></polyline></svg>
       </div>
-      <button data-hf-hide-rail="true" onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="width:32px;height:32px;flex:0 0 auto;border-radius:10px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.07);color:#E8E9EB">
+      <button data-hf-hide-rail="true" onClick="{{ toggleSidebar }}" title="{{ sidebarToggleTitle }}" style="width:32px;height:32px;flex:0 0 auto;border-radius:10px;border:none;background:transparent;color:#898A8B;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.07);color:#F7F7F8">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><line x1="9.5" y1="4" x2="9.5" y2="20"></line></svg>
       </button>
     </div>
 
     <div data-hf-rail-item="true" onClick="{{ newProject }}" title="Nouveau projet" style="display:flex;align-items:center;gap:11px;padding:6px 8px;border-radius:11px;cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-      <span data-hf-rail-icon="true" style="width:27px;height:27px;flex:0 0 auto;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8E9EB" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
+      <span data-hf-rail-icon="true" style="width:27px;height:27px;flex:0 0 auto;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F7F7F8" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
       <span data-hf-hide-rail="true" style="font-size:14px;font-weight:600">Nouveau projet</span>
     </div>
     <div data-hf-rail-item="true" title="Rechercher" style="display:flex;align-items:center;gap:11px;padding:6px 8px;border-radius:11px;cursor:pointer;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-      <span data-hf-rail-icon="true" style="width:27px;height:27px;flex:0 0 auto;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-      <span data-hf-hide-rail="true" style="font-size:14px;font-weight:500;color:#CCCED2">Rechercher</span>
+      <span data-hf-rail-icon="true" style="width:27px;height:27px;flex:0 0 auto;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+      <span data-hf-hide-rail="true" style="font-size:14px;font-weight:500;color:#A8A8A8">Rechercher</span>
     </div>
 
     <div data-hf-rail-list="true" style="flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;margin:6px -4px 0;padding:0 4px">
       <div data-hf-hide-rail="true" style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px 6px">
-        <span style="font-size:12px;color:#8B8E95;font-weight:500">Créations</span>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <span style="font-size:12px;color:#898A8B;font-weight:500">Créations</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
-      <div data-hf-rail-item="true" onClick="{{ openGallery }}" title="Galerie" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#B0B3B9"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
+      <div data-hf-rail-item="true" onClick="{{ openGallery }}" title="Galerie" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
         <span data-hf-hide-rail="true" style="flex:1">Galerie</span>
       </div>
       <sc-for list="{{ collections }}" as="c" hint-placeholder-count="3">
-        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#B0B3B9">{{ c.icon }}</span>
+        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8">{{ c.icon }}</span>
           <span data-hf-hide-rail="true" style="flex:1">{{ c.name }}</span>
-          <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:#D6F94E;color:#1B1C1E;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
+          <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:#D1FE17;color:#131517;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
         </div>
       </sc-for>
 
       <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
-        <span data-hf-hide-rail="true" style="font-size:12px;color:#8B8E95;font-weight:500">Projets</span>
-        <svg data-hf-hide-rail="true" width="11" height="11" style="{{ projectsChevronStyle }}" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <span data-hf-hide-rail="true" style="font-size:12px;color:#898A8B;font-weight:500">Projets</span>
+        <svg data-hf-hide-rail="true" width="11" height="11" style="{{ projectsChevronStyle }}" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
       <sc-if value="{{ showProjectsList }}" hint-placeholder-val="{{ true }}">
       <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
-        <div data-hf-rail-item="true" title="{{ p.title }}" style="position:relative;display:flex;align-items:center;gap:6px;padding:0;border-radius:11px;font-size:13px;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <div data-hf-rail-item="true" title="{{ p.title }}" style="position:relative;display:flex;align-items:center;gap:6px;padding:0;border-radius:11px;font-size:13px;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
           <div onClick="{{ p.onClick }}" style="min-width:0;flex:1;display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer">
             <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.dot }}"></span></span>
             <span data-hf-hide-rail="true" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
           </div>
-          <button data-hf-hide-rail="true" onClick="{{ p.onMenu }}" title="Actions du projet" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:none;background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.08);color:#E8E9EB">
+          <button data-hf-hide-rail="true" onClick="{{ p.onMenu }}" title="Actions du projet" style="width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:none;background:transparent;color:#898A8B;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.08);color:#F7F7F8">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
           </button>
           <sc-if value="{{ p.menuOpen }}" hint-placeholder-val="{{ false }}">
-            <div style="position:absolute;right:0;top:32px;z-index:40;width:148px;padding:6px;border-radius:12px;background:#1B1C1E;border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 44px -24px rgba(0,0,0,.7);animation:fadeUp .14s ease both">
-              <button onClick="{{ p.onRename }}" style="width:100%;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:#E8E9EB;text-align:left;cursor:pointer;font-size:12.5px" style-hover="background:rgba(255,255,255,.07)">Renommer</button>
+            <div style="position:absolute;right:0;top:32px;z-index:40;width:148px;padding:6px;border-radius:12px;background:#131517;border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 44px -24px rgba(0,0,0,.7);animation:fadeUp .14s ease both">
+              <button onClick="{{ p.onRename }}" style="width:100%;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:#F7F7F8;text-align:left;cursor:pointer;font-size:12.5px" style-hover="background:rgba(255,255,255,.07)">Renommer</button>
               <button onClick="{{ p.onDelete }}" style="width:100%;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:#FFB7B7;text-align:left;cursor:pointer;font-size:12.5px" style-hover="background:rgba(255,107,107,.10)">Supprimer</button>
             </div>
           </sc-if>
@@ -134,38 +136,38 @@ input:focus,textarea:focus{outline:none}
     </div>
 
     <div data-hf-rail-bottom="true" style="display:flex;flex-direction:column;gap:10px;padding-top:10px">
-      <div data-hf-hide-rail="true" style="display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-size:11.5px;color:#8B8E95">
+      <div data-hf-hide-rail="true" style="display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-size:11.5px;color:#898A8B">
         <span>Crédits</span>
-        <span style="font-family:'JetBrains Mono',monospace;color:#CCCED2;white-space:nowrap">{{ creditsLabel }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;color:#A8A8A8;white-space:nowrap">{{ creditsLabel }}</span>
       </div>
       <div style="{{ creditsTrackStyle }}"><div style="{{ creditsBarStyle }}"></div></div>
 
-      <div data-hf-rail-item="true" onClick="{{ openAffiliate }}" title="Affiliation" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg></span>
+      <div data-hf-rail-item="true" onClick="{{ openAffiliate }}" title="Affiliation" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg></span>
         <span data-hf-hide-rail="true">Affiliation</span>
       </div>
 
       <sc-if value="{{ canSeeAdmin }}" hint-placeholder-val="{{ false }}">
-        <div data-hf-rail-item="true" onClick="{{ openAdmin }}" title="Admin" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#CCCED2;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B3B9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+        <div data-hf-rail-item="true" onClick="{{ openAdmin }}" title="Admin" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
           <span data-hf-hide-rail="true" style="flex:1">Admin</span>
-          <span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D6F94E;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
+          <span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D1FE17;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
         </div>
       </sc-if>
 
       <div data-hf-rail-item="true" onClick="{{ openPricing }}" title="Tarifs" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(214,249,78,.10);border:1px solid rgba(214,249,78,.14);cursor:pointer;transition:background .18s" style-hover="background:rgba(214,249,78,.16)">
-        <span data-hf-rail-icon="true" style="color:#D6F94E"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"></path></svg></span>
-        <span data-hf-hide-rail="true" style="flex:1;font-size:13.5px;font-weight:700;color:#D6F94E">Tarifs</span>
-        <span style="padding:3px 8px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10px;font-weight:800;letter-spacing:.04em">−20%</span>
+        <span data-hf-rail-icon="true" style="color:#D1FE17"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1;font-size:13.5px;font-weight:700;color:#D1FE17">Tarifs</span>
+        <span style="padding:3px 8px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;letter-spacing:.04em">−20%</span>
       </div>
 
       <div data-hf-rail-item="true" onClick="{{ openSettings }}" title="{{ accountName }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:11px;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <div data-hf-rail-icon="true" style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D6F94E 55%, #9DBD2A);box-shadow:0 0 0 2px #1B1C1E,0 0 0 3.5px rgba(214,249,78,.5)"></div>
+        <div data-hf-rail-icon="true" style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D1FE17 55%, #9DBD2A);box-shadow:0 0 0 2px #131517,0 0 0 3.5px rgba(214,249,78,.5)"></div>
         <div data-hf-hide-rail="true" style="min-width:0;flex:1">
           <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ accountName }}</div>
-          <div style="font-size:11px;color:#8B8E95">{{ planLabel }}</div>
+          <div style="font-size:11px;color:#898A8B">{{ planLabel }}</div>
         </div>
-        <svg data-hf-hide-rail="true" width="15" height="15" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#8B8E95" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <svg data-hf-hide-rail="true" width="15" height="15" style="flex:0 0 auto" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </div>
     </div>
   </aside>
@@ -184,7 +186,7 @@ input:focus,textarea:focus{outline:none}
         </button>
         <button onClick="{{ openPricing }}" style="padding:8px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Tarifs</button>
         <button onClick="{{ openPricing }}" style="display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:{{ tInkSoft }}">
-          <span style="width:7px;height:7px;border-radius:50%;background:#D6F94E"></span>Passer Pro
+          <span style="width:7px;height:7px;border-radius:50%;background:#D1FE17"></span>Passer Pro
         </button>
       </div>
     </div>
@@ -195,7 +197,7 @@ input:focus,textarea:focus{outline:none}
         <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
           <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0 64px;animation:fadeUp .4s ease both">
             <div style="text-align:center;margin-bottom:34px">
-              <div style="font-family:'Instrument Serif',serif;font-size:42px;line-height:1.12;letter-spacing:-.01em;color:{{ tInk }}">On crée quoi <em style="font-style:italic">aujourd'hui</em> ?</div>
+              <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;line-height:1.12;letter-spacing:-.01em;color:{{ tInk }}">On crée quoi <em style="font-style:italic">aujourd'hui</em> ?</div>
               <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos et voix — décris ton idée, HuggyFlow s'occupe du reste.</div>
             </div>
 
@@ -205,7 +207,7 @@ input:focus,textarea:focus{outline:none}
                 <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
                   <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
                     <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                      <span style="width:6px;height:6px;border-radius:50%;background:#D6F94E;flex:0 0 auto"></span>
+                      <span style="width:6px;height:6px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>
                       <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
                       <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
                     </span>
@@ -284,7 +286,7 @@ input:focus,textarea:focus{outline:none}
                       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
                         <sc-for list="{{ m.userAttachments }}" as="ua" hint-placeholder-count="1">
                           <span style="display:inline-flex;align-items:center;gap:6px;max-width:190px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.14);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            <span style="width:5px;height:5px;border-radius:50%;background:#D6F94E;flex:0 0 auto"></span>{{ ua.name }}
+                            <span style="width:5px;height:5px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>{{ ua.name }}
                           </span>
                         </sc-for>
                       </div>
@@ -293,7 +295,7 @@ input:focus,textarea:focus{outline:none}
                 </sc-if>
                 <sc-if value="{{ m.isAgent }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;gap:12px;align-items:flex-start;width:100%">
-                    <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+                    <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
                     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:13px;padding-top:4px">
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
@@ -323,14 +325,14 @@ input:focus,textarea:focus{outline:none}
                               <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:16px 18px;overflow:hidden">
                                 <div style="position:absolute;top:0;bottom:0;left:0;width:45%;background:linear-gradient(100deg,transparent,rgba(214,249,78,.07),transparent);animation:shimmer 2.2s linear infinite"></div>
                                 <div style="display:flex;align-items:center;justify-content:space-between;z-index:1">
-                                  <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px;font-weight:600;color:#E8E9EB">
-                                    <span style="width:6px;height:6px;border-radius:50%;background:#D6F94E;animation:typingDot 1.2s ease infinite"></span>{{ m.caption }}
+                                  <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px;font-weight:600;color:#F7F7F8">
+                                    <span style="width:6px;height:6px;border-radius:50%;background:#D1FE17;animation:typingDot 1.2s ease infinite"></span>{{ m.caption }}
                                   </span>
-                                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8B8E95">{{ m.eta }}</span>
+                                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#898A8B">{{ m.eta }}</span>
                                 </div>
                                 <div style="display:flex;flex-direction:column;align-items:center;gap:10px;z-index:1">
-                                  <span style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:500;color:#F2F3F5">{{ m.pct }}</span>
-                                  <span style="font-size:12.5px;color:#B0B3B9;animation:pageFade .4s both">{{ m.stage }}</span>
+                                  <span style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:500;color:#F7F7F8">{{ m.pct }}</span>
+                                  <span style="font-size:12.5px;color:#A8A8A8;animation:pageFade .4s both">{{ m.stage }}</span>
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:8px;z-index:1">
                                   <div style="display:flex;gap:5px">
@@ -340,18 +342,18 @@ input:focus,textarea:focus{outline:none}
                                     <div style="flex:1;height:34px;border-radius:6px;background:rgba(255,255,255,{{ m.f4 }});transition:background .5s"></div>
                                     <div style="flex:1;height:34px;border-radius:6px;background:rgba(255,255,255,{{ m.f5 }});transition:background .5s"></div>
                                   </div>
-                                  <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden"><div style="width:{{ m.pct }};height:100%;border-radius:3px;background:#D6F94E;transition:width .4s ease"></div></div>
+                                  <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden"><div style="width:{{ m.pct }};height:100%;border-radius:3px;background:#D1FE17;transition:width .4s ease"></div></div>
                                 </div>
                               </div>
                             </sc-if>
                             <sc-if value="{{ m.imgResult }}" hint-placeholder-val="{{ false }}">
                               <img src="{{ m.resultUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"/>
-                              <div style="position:absolute;left:12px;top:12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#E8E9EB;background:rgba(0,0,0,.38);padding:4px 9px;border-radius:999px">{{ m.caption }}</div>
+                              <div style="position:absolute;left:12px;top:12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#F7F7F8;background:rgba(0,0,0,.38);padding:4px 9px;border-radius:999px">{{ m.caption }}</div>
                             </sc-if>
                             <sc-if value="{{ m.vidResult }}" hint-placeholder-val="{{ false }}">
                               <video src="{{ m.resultUrl }}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
                               <div style="position:absolute;left:12px;top:12px;display:flex;gap:6px;pointer-events:none">
-                                <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#E8E9EB">{{ m.caption }}</span>
+                                <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#F7F7F8">{{ m.caption }}</span>
                               </div>
                             </sc-if>
                             <sc-if value="{{ m.imgDone }}" hint-placeholder-val="{{ false }}">
@@ -365,18 +367,18 @@ input:focus,textarea:focus{outline:none}
                             </sc-if>
                             <sc-if value="{{ m.vidDone }}" hint-placeholder-val="{{ false }}">
                               <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:pageFade .5s both">
-                                <button title="Lire" style="width:58px;height:58px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)" style-hover="transform:scale(1.06)">
+                                <button title="Lire" style="width:58px;height:58px;border-radius:999px;border:none;background:#D1FE17;color:#131517;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)" style-hover="transform:scale(1.06)">
                                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                                 </button>
                               </div>
                               <div style="position:absolute;left:12px;top:12px;display:flex;gap:6px">
-                                <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#E8E9EB">{{ m.caption }}</span>
-                                <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#D6F94E">5,0 s</span>
+                                <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#F7F7F8">{{ m.caption }}</span>
+                                <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#D1FE17">5,0 s</span>
                               </div>
                               <div style="position:absolute;left:14px;right:14px;bottom:12px;display:flex;align-items:center;gap:10px">
-                                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#B0B3B9">0:00</span>
-                                <div style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.18)"><div style="width:18%;height:100%;border-radius:3px;background:#D6F94E"></div></div>
-                                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#B0B3B9">0:05</span>
+                                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A8A8A8">0:00</span>
+                                <div style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.18)"><div style="width:18%;height:100%;border-radius:3px;background:#D1FE17"></div></div>
+                                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A8A8A8">0:05</span>
                               </div>
                             </sc-if>
                           </div>
@@ -408,7 +410,7 @@ input:focus,textarea:focus{outline:none}
               <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
                 <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
                   <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                    <span style="width:6px;height:6px;border-radius:50%;background:#D6F94E;flex:0 0 auto"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>
                     <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
                     <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
                   </span>
@@ -438,7 +440,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:1080px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:52px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -452,17 +454,17 @@ input:focus,textarea:focus{outline:none}
           </div>
         </div>
 
-        <div style="background:#1B1C1E;border-radius:24px;padding:36px 40px;margin-bottom:48px">
-          <span style="display:inline-block;padding:5px 13px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10.5px;font-weight:700;letter-spacing:.1em">OFFRES HUGGYFLOW</span>
-          <div style="margin-top:18px;font-family:'Instrument Serif',serif;font-size:36px;line-height:1.22;letter-spacing:-.005em">
-            <div style="color:#D6F94E">Des créations prêtes à publier.</div>
-            <div style="color:#FAF7EF">Tu paies seulement ce qui réussit.</div>
+        <div style="background:#131517;border-radius:24px;padding:36px 40px;margin-bottom:48px">
+          <span style="display:inline-block;padding:5px 13px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10.5px;font-weight:700;letter-spacing:.1em">OFFRES HUGGYFLOW</span>
+          <div style="margin-top:18px;font-family:'Space Grotesk',ui-sans-serif;font-size:36px;line-height:1.22;letter-spacing:-.005em">
+            <div style="color:#D1FE17">Des créations prêtes à publier.</div>
+            <div style="color:#F7F7F8">Tu paies seulement ce qui réussit.</div>
           </div>
           <div style="margin-top:14px;font-size:14px;color:rgba(249,246,238,.62)">Choisis un rythme adapté à tes projets. HuggyFlow te prévient avant les rendus les plus lourds.</div>
         </div>
 
         <div style="margin-bottom:26px">
-          <div style="font-family:'Instrument Serif',serif;font-size:42px;letter-spacing:-.01em">Tarifs HuggyFlow</div>
+          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;letter-spacing:-.01em">Tarifs HuggyFlow</div>
           <div style="margin-top:8px;font-size:14.5px;color:{{ tText3 }}">Des offres simples pour créer des images, vidéos, voix et contenus prêts à utiliser.</div>
         </div>
 
@@ -476,7 +478,7 @@ input:focus,textarea:focus{outline:none}
             <button onClick="{{ openCompare }}" style="display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
               Comparer
-              <span style="padding:2px 8px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:9.5px;font-weight:700;letter-spacing:.08em">NOUVEAU</span>
+              <span style="padding:2px 8px;border-radius:999px;background:#D1FE17;color:#131517;font-size:9.5px;font-weight:700;letter-spacing:.08em">NOUVEAU</span>
             </button>
             <div style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
               <button onClick="{{ setMonthly }}" style="{{ monthlyTabStyle }}">Mensuel</button>
@@ -517,7 +519,7 @@ input:focus,textarea:focus{outline:none}
                 <sc-if value="{{ pl.hasOldPrice }}" hint-placeholder-val="{{ false }}">
                   <span style="font-size:19px;font-weight:600;color:{{ tStrike }};text-decoration:line-through">{{ pl.oldPrice }}</span>
                 </sc-if>
-                <span style="font-family:'Instrument Serif',serif;font-size:40px;line-height:1">{{ pl.price }}</span>
+                <span style="font-family:'Space Grotesk',ui-sans-serif;font-size:40px;line-height:1">{{ pl.price }}</span>
                 <span style="font-size:12.5px;color:{{ tText3 }}">{{ pl.per }}</span>
               </div>
 
@@ -577,7 +579,7 @@ input:focus,textarea:focus{outline:none}
         <div style="margin-top:26px;text-align:center;font-size:12.5px;color:{{ tText4 }}">Les prix peuvent varier selon les taxes locales. Le paiement s'ouvre au moment de choisir une offre.</div>
 
         <div style="max-width:620px;margin:64px auto 0">
-          <div style="text-align:center;font-family:'Instrument Serif',serif;font-size:28px;margin-bottom:22px">Questions utiles</div>
+          <div style="text-align:center;font-family:'Space Grotesk',ui-sans-serif;font-size:28px;margin-bottom:22px">Questions utiles</div>
           <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="5">
             <div onClick="{{ q.onToggle }}" style="border-bottom:1px solid rgba({{ tLineRGB }},.10);padding:17px 4px;cursor:pointer">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
@@ -593,7 +595,7 @@ input:focus,textarea:focus{outline:none}
 
         <div style="margin-top:56px;display:flex;align-items:center;justify-content:center;gap:16px">
           <span style="font-size:15px;font-weight:600">Prêt à créer ?</span>
-          <button onClick="{{ selectPro }}" style="padding:11px 24px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Choisir Pro</button>
+          <button onClick="{{ selectPro }}" style="padding:11px 24px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Choisir Pro</button>
         </div>
       </div>
     </div>
@@ -604,9 +606,9 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:1020px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
-            <span style="padding:3px 10px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10px;font-weight:800;letter-spacing:.08em">ADMIN</span>
+            <span style="padding:3px 10px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;letter-spacing:.08em">ADMIN</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
             <button onClick="{{ toggleTheme }}" title="Basculer le thème" style="width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05)">
@@ -620,7 +622,7 @@ input:focus,textarea:focus{outline:none}
         </div>
 
         <div style="margin-bottom:22px">
-          <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">Panel admin</div>
+          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">Panel admin</div>
           <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Pilote la plateforme : utilisateurs, contenus, modèles et revenus.</div>
         </div>
         <div data-nav-scroll style="display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08);margin-bottom:28px;max-width:max-content;overflow-x:auto">
@@ -635,7 +637,7 @@ input:focus,textarea:focus{outline:none}
               <sc-for list="{{ adminKpis }}" as="k" hint-placeholder-count="4">
                 <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px">
                   <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">{{ k.label }}</div>
-                  <div style="margin-top:10px;font-family:'Instrument Serif',serif;font-size:30px;line-height:1">{{ k.value }}</div>
+                  <div style="margin-top:10px;font-family:'Space Grotesk',ui-sans-serif;font-size:30px;line-height:1">{{ k.value }}</div>
                   <div style="margin-top:8px;font-size:11.5px;font-weight:600;color:{{ k.deltaColor }}">{{ k.delta }}</div>
                 </div>
               </sc-for>
@@ -646,7 +648,7 @@ input:focus,textarea:focus{outline:none}
                 <div style="display:flex;align-items:flex-end;gap:10px;height:130px">
                   <sc-for list="{{ adminChart }}" as="b" hint-placeholder-count="7">
                     <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end">
-                      <div title="{{ b.title }}" style="width:100%;height:{{ b.h }};border-radius:6px 6px 0 0;background:#D6F94E"></div>
+                      <div title="{{ b.title }}" style="width:100%;height:{{ b.h }};border-radius:6px 6px 0 0;background:#D1FE17"></div>
                       <span style="font-size:10.5px;color:{{ tText4 }};font-family:'JetBrains Mono',monospace">{{ b.label }}</span>
                     </div>
                   </sc-for>
@@ -674,7 +676,7 @@ input:focus,textarea:focus{outline:none}
             <sc-for list="{{ adminUsers }}" as="u" hint-placeholder-count="6">
               <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 110px;gap:12px;align-items:center;padding:13px 22px;border-bottom:1px solid rgba({{ tLineRGB }},.07)" style-hover="background:rgba({{ tLineRGB }},.03)">
                 <div style="display:flex;align-items:center;gap:11px;min-width:0">
-                  <div style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:{{ u.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#1B1C1E">{{ u.initials }}</div>
+                  <div style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:{{ u.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#131517">{{ u.initials }}</div>
                   <div style="min-width:0">
                     <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</div>
                     <div style="font-size:11px;color:{{ tText4 }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.email }}</div>
@@ -700,7 +702,7 @@ input:focus,textarea:focus{outline:none}
                 </div>
                 <sc-if value="{{ r.pending }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;gap:7px">
-                    <button onClick="{{ r.onApprove }}" style="padding:8px 15px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Approuver</button>
+                    <button onClick="{{ r.onApprove }}" style="padding:8px 15px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Approuver</button>
                     <button onClick="{{ r.onRemove }}" style="padding:8px 15px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Retirer</button>
                   </div>
                 </sc-if>
@@ -761,7 +763,7 @@ input:focus,textarea:focus{outline:none}
               <sc-for list="{{ adminFinKpis }}" as="k" hint-placeholder-count="3">
                 <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px">
                   <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">{{ k.label }}</div>
-                  <div style="margin-top:10px;font-family:'Instrument Serif',serif;font-size:30px;line-height:1">{{ k.value }}</div>
+                  <div style="margin-top:10px;font-family:'Space Grotesk',ui-sans-serif;font-size:30px;line-height:1">{{ k.value }}</div>
                   <div style="margin-top:8px;font-size:11.5px;font-weight:600;color:{{ k.deltaColor }}">{{ k.delta }}</div>
                 </div>
               </sc-for>
@@ -774,7 +776,7 @@ input:focus,textarea:focus{outline:none}
                     <span style="font-weight:600">{{ p.name }}</span>
                     <span style="font-family:'JetBrains Mono',monospace;color:{{ tText3 }}">{{ p.count }} · {{ p.mrr }}</span>
                   </div>
-                  <div style="height:5px;border-radius:5px;background:rgba({{ tLineRGB }},.08);overflow:hidden"><div style="width:{{ p.pct }};height:100%;border-radius:5px;background:#D6F94E"></div></div>
+                  <div style="height:5px;border-radius:5px;background:rgba({{ tLineRGB }},.08);overflow:hidden"><div style="width:{{ p.pct }};height:100%;border-radius:5px;background:#D1FE17"></div></div>
                 </div>
               </sc-for>
             </div>
@@ -789,7 +791,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -803,11 +805,11 @@ input:focus,textarea:focus{outline:none}
           </div>
         </div>
 
-        <div style="background:#1B1C1E;border-radius:24px;padding:36px 40px;margin-bottom:32px">
-          <span style="display:inline-block;padding:5px 13px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10.5px;font-weight:700;letter-spacing:.1em">PROGRAMME D'AFFILIATION</span>
-          <div style="margin-top:18px;font-family:'Instrument Serif',serif;font-size:36px;line-height:1.22;letter-spacing:-.005em">
-            <div style="color:#D6F94E">Recommande HuggyFlow.</div>
-            <div style="color:#FAF7EF">Gagne 30% à vie sur chaque abonnement.</div>
+        <div style="background:#131517;border-radius:24px;padding:36px 40px;margin-bottom:32px">
+          <span style="display:inline-block;padding:5px 13px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10.5px;font-weight:700;letter-spacing:.1em">PROGRAMME D'AFFILIATION</span>
+          <div style="margin-top:18px;font-family:'Space Grotesk',ui-sans-serif;font-size:36px;line-height:1.22;letter-spacing:-.005em">
+            <div style="color:#D1FE17">Recommande HuggyFlow.</div>
+            <div style="color:#F7F7F8">Gagne 30% à vie sur chaque abonnement.</div>
           </div>
           <div style="margin-top:14px;font-size:14px;color:rgba(249,246,238,.62)">Chaque personne qui s'abonne via ton lien te reverse 30% de son abonnement, tous les mois, tant qu'elle reste cliente.</div>
         </div>
@@ -819,7 +821,7 @@ input:focus,textarea:focus{outline:none}
               <svg width="14" height="14" style="flex:0 0 auto;color:{{ tText4 }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
               <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{{ tText2 }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ affiliateLink }}</span>
             </div>
-            <button onClick="{{ copyRefLink }}" style="padding:12px 22px;border-radius:12px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="filter:brightness(.96)">{{ refCopyLabel }}</button>
+            <button onClick="{{ copyRefLink }}" style="padding:12px 22px;border-radius:12px;border:none;background:#D1FE17;color:#131517;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="filter:brightness(.96)">{{ refCopyLabel }}</button>
           </div>
         </div>
 
@@ -827,7 +829,7 @@ input:focus,textarea:focus{outline:none}
           <sc-for list="{{ affStats }}" as="a" hint-placeholder-count="3">
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px">
               <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">{{ a.label }}</div>
-              <div style="margin-top:10px;font-family:'Instrument Serif',serif;font-size:30px;line-height:1">{{ a.value }}</div>
+              <div style="margin-top:10px;font-family:'Space Grotesk',ui-sans-serif;font-size:30px;line-height:1">{{ a.value }}</div>
               <div style="margin-top:8px;font-size:11.5px;color:{{ tText3 }}">{{ a.hint }}</div>
             </div>
           </sc-for>
@@ -851,7 +853,7 @@ input:focus,textarea:focus{outline:none}
             <div style="display:flex;flex-direction:column;gap:14px">
               <sc-for list="{{ affSteps }}" as="s" hint-placeholder-count="3">
                 <div style="display:flex;gap:12px;align-items:flex-start">
-                  <span style="width:24px;height:24px;flex:0 0 auto;border-radius:50%;background:#D6F94E;color:#1B1C1E;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800">{{ s.n }}</span>
+                  <span style="width:24px;height:24px;flex:0 0 auto;border-radius:50%;background:#D1FE17;color:#131517;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800">{{ s.n }}</span>
                   <span style="font-size:13px;line-height:1.55;color:{{ tText2 }}">{{ s.text }}</span>
                 </div>
               </sc-for>
@@ -870,7 +872,7 @@ input:focus,textarea:focus{outline:none}
     <div data-screen-label="Page 404" style="position:absolute;inset:0;z-index:25;background:{{ tPageBg }};display:flex;flex-direction:column;overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 28px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+          <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
           <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
         </div>
         <button onClick="{{ toggleTheme }}" title="Basculer le thème" style="width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05)">
@@ -881,12 +883,12 @@ input:focus,textarea:focus{outline:none}
 
       <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px 28px 70px">
         <div style="text-align:center;max-width:480px">
-          <div style="display:inline-flex;align-items:baseline;gap:6px;font-family:'Instrument Serif',serif;font-size:120px;line-height:1;letter-spacing:-.02em">
+          <div style="display:inline-flex;align-items:baseline;gap:6px;font-family:'Space Grotesk',ui-sans-serif;font-size:120px;line-height:1;letter-spacing:-.02em">
             <span>4</span>
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:92px;height:92px;border-radius:50%;background:#D6F94E;transform:translateY(-8px)"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#1B1C1E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:92px;height:92px;border-radius:50%;background:#D1FE17;transform:translateY(-8px)"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#131517" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></span>
             <span>4</span>
           </div>
-          <div style="margin-top:26px;font-family:'Instrument Serif',serif;font-size:30px;letter-spacing:-.01em">Cette page s'est égarée</div>
+          <div style="margin-top:26px;font-family:'Space Grotesk',ui-sans-serif;font-size:30px;letter-spacing:-.01em">Cette page s'est égarée</div>
           <div style="margin-top:10px;font-size:14.5px;line-height:1.6;color:{{ tText3 }}">Le projet a peut-être été déplacé, archivé ou supprimé. Tes créations, elles, sont toujours bien au chaud.</div>
           <div style="margin-top:28px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button onClick="{{ backToApp }}" style="flex:0 0 auto;white-space:nowrap;padding:12px 24px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="opacity:.9">Retour à l'accueil</button>
@@ -902,7 +904,7 @@ input:focus,textarea:focus{outline:none}
     <div data-screen-label="Onboarding nouveau membre" style="position:absolute;inset:0;z-index:25;background:{{ tPageBg }};display:flex;flex-direction:column;overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 28px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+          <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
           <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
         </div>
         <button onClick="{{ backToApp }}" style="padding:8px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText3 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Passer</button>
@@ -917,7 +919,7 @@ input:focus,textarea:focus{outline:none}
 
           <sc-if value="{{ obIsStep1 }}" hint-placeholder-val="{{ true }}">
             <div style="animation:fadeUp .3s ease both">
-              <div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.15;letter-spacing:-.01em">Bienvenue 👋<br/>Fais connaissance avec ton espace.</div>
+              <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:34px;line-height:1.15;letter-spacing:-.01em">Bienvenue 👋<br/>Fais connaissance avec ton espace.</div>
               <div style="margin-top:10px;font-size:14px;color:{{ tText3 }}">Deux petites choses pour personnaliser HuggyFlow.</div>
               <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:{{ tText2 }};margin-top:26px">Ton prénom
                 <input value="{{ obName }}" onChange="{{ onObName }}" placeholder="Prénom" style="padding:12px 14px;border-radius:12px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:14.5px;font-family:inherit;font-weight:400;transition:border-color .2s" style-focus="border-color:{{ tInk }}"/>
@@ -933,7 +935,7 @@ input:focus,textarea:focus{outline:none}
 
           <sc-if value="{{ obIsStep2 }}" hint-placeholder-val="{{ false }}">
             <div style="animation:fadeUp .3s ease both">
-              <div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.15;letter-spacing:-.01em">Qu'est-ce que tu veux créer ?</div>
+              <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:34px;line-height:1.15;letter-spacing:-.01em">Qu'est-ce que tu veux créer ?</div>
               <div style="margin-top:10px;font-size:14px;color:{{ tText3 }}">On met en avant les bons modèles pour toi. Tu pourras tout changer plus tard.</div>
               <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px">
                 <sc-for list="{{ obTypes }}" as="t" hint-placeholder-count="3">
@@ -951,13 +953,13 @@ input:focus,textarea:focus{outline:none}
 
           <sc-if value="{{ obIsStep3 }}" hint-placeholder-val="{{ false }}">
             <div style="animation:fadeUp .3s ease both">
-              <div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.15;letter-spacing:-.01em">Tu rejoins HuggyFlow Studio</div>
+              <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:34px;line-height:1.15;letter-spacing:-.01em">Tu rejoins HuggyFlow Studio</div>
               <div style="margin-top:10px;font-size:14px;color:{{ tText3 }}">Ton équipe et vos crédits partagés t'attendent.</div>
               <div style="margin-top:26px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:20px">
                 <div style="display:flex;align-items:center;gap:12px">
                   <div style="display:flex">
                     <sc-for list="{{ obTeamMembers }}" as="tm" hint-placeholder-count="4">
-                      <div style="width:32px;height:32px;border-radius:50%;background:{{ tm.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#1B1C1E;margin-left:-6px;box-shadow:0 0 0 2px {{ tSurface }}">{{ tm.initials }}</div>
+                      <div style="width:32px;height:32px;border-radius:50%;background:{{ tm.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#131517;margin-left:-6px;box-shadow:0 0 0 2px {{ tSurface }}">{{ tm.initials }}</div>
                     </sc-for>
                   </div>
                   <div style="flex:1;min-width:0">
@@ -976,7 +978,7 @@ input:focus,textarea:focus{outline:none}
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:32px">
             <button onClick="{{ obBack }}" style="{{ obBackStyle }}">Retour</button>
-            <button onClick="{{ obNext }}" style="padding:12px 26px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="filter:brightness(.96)">{{ obNextLabel }}</button>
+            <button onClick="{{ obNext }}" style="padding:12px 26px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px -4px rgba(178,214,40,.35)" style-hover="filter:brightness(.96)">{{ obNextLabel }}</button>
           </div>
         </div>
       </div>
@@ -991,9 +993,9 @@ input:focus,textarea:focus{outline:none}
         <button onClick="{{ closeCheckoutPhone }}" title="Fermer" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.11);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:20px;line-height:1">×</button>
         <div style="font-size:19px;font-weight:750;color:{{ tInk }}">Paiement sécurisé</div>
         <div style="margin-top:7px;font-size:13px;line-height:1.5;color:{{ tText3 }}">Entre le numéro Mobile Money qui recevra la demande de paiement.</div>
-        <input value="{{ checkoutPhone }}" onChange="{{ onCheckoutPhoneChange }}" inputmode="tel" autocomplete="tel" placeholder="Ex. +225 07 00 00 00 00" style="margin-top:18px;width:100%;box-sizing:border-box;padding:12px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:{{ tSurfaceSoft }};color:{{ tInk }};font-size:14px;font-family:inherit" style-focus="border-color:#D6F94E"/>
+        <input value="{{ checkoutPhone }}" onChange="{{ onCheckoutPhoneChange }}" inputmode="tel" autocomplete="tel" placeholder="Ex. +225 07 00 00 00 00" style="margin-top:18px;width:100%;box-sizing:border-box;padding:12px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:{{ tSurfaceSoft }};color:{{ tInk }};font-size:14px;font-family:inherit" style-focus="border-color:#D1FE17"/>
         <sc-if value="{{ hasPricingNotice }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;color:#D17D64;font-size:12px">{{ pricingNotice }}</div></sc-if>
-        <button onClick="{{ submitCheckoutPhone }}" disabled="{{ checkoutBusy }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D6F94E;color:#1B1C1E;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">{{ checkoutButtonLabel }}</button>
+        <button onClick="{{ submitCheckoutPhone }}" disabled="{{ checkoutBusy }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D1FE17;color:#131517;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">{{ checkoutButtonLabel }}</button>
       </div>
     </div>
   </sc-if>
@@ -1005,11 +1007,11 @@ input:focus,textarea:focus{outline:none}
       <div style="position:relative;width:820px;max-width:92vw;height:580px;max-height:85vh;background:#1E1F23;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;overflow:hidden;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
 
         <!-- Sidebar -->
-        <div style="width:210px;flex:0 0 210px;background:#17181C;border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;padding:16px 10px 16px 12px;overflow-y:auto">
+        <div style="width:210px;flex:0 0 210px;background:#1C1E20;border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;padding:16px 10px 16px 12px;overflow-y:auto">
           <!-- Search -->
           <div style="position:relative;margin-bottom:14px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B6E75" stroke-width="2" stroke-linecap="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher" style="width:100%;padding:8px 10px 8px 30px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#E8E9EB;font-size:12.5px;font-family:inherit" style-focus="border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06)"/>
+            <input value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher" style="width:100%;padding:8px 10px 8px 30px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:12.5px;font-family:inherit" style-focus="border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06)"/>
           </div>
 
           <!-- Section: Paramètres -->
@@ -1111,7 +1113,7 @@ input:focus,textarea:focus{outline:none}
         <div style="flex:1;display:flex;flex-direction:column;min-width:0">
           <!-- Close button -->
           <div style="display:flex;justify-content:flex-end;padding:14px 16px 0">
-            <button onClick="{{ backToApp }}" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#8B8E95;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s" style-hover="background:rgba(255,255,255,.06)">
+            <button onClick="{{ backToApp }}" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#898A8B;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s" style-hover="background:rgba(255,255,255,.06)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
@@ -1125,26 +1127,26 @@ input:focus,textarea:focus{outline:none}
 
               <!-- Avatar -->
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">Avatar</span>
-                <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D6F94E 55%, #9DBD2A);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#1B1C1E">{{ avatarInitial }}</div>
+                <span style="font-size:13.5px;color:#A8A8A8">Avatar</span>
+                <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D1FE17 55%, #9DBD2A);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#131517">{{ avatarInitial }}</div>
               </div>
 
               <!-- Nom complet -->
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">Nom complet</span>
-                <input value="{{ settingsName }}" onChange="{{ onSettingsName }}" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
+                <span style="font-size:13.5px;color:#A8A8A8">Nom complet</span>
+                <input value="{{ settingsName }}" onChange="{{ onSettingsName }}" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
               </div>
 
               <!-- Comment vous appelle-t-on -->
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">Comment souhaitez-vous qu'on vous appelle ?</span>
-                <input value="{{ settingsCalledName }}" onChange="{{ onSettingsCalledName }}" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
+                <span style="font-size:13.5px;color:#A8A8A8">Comment souhaitez-vous qu'on vous appelle ?</span>
+                <input value="{{ settingsCalledName }}" onChange="{{ onSettingsCalledName }}" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
               </div>
 
               <!-- Description du travail -->
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">Quelle est la meilleure description de votre travail ?</span>
-                <select value="{{ settingsJobDesc }}" onChange="{{ onSettingsJobDesc }}" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;cursor:pointer">
+                <span style="font-size:13.5px;color:#A8A8A8">Quelle est la meilleure description de votre travail ?</span>
+                <select value="{{ settingsJobDesc }}" onChange="{{ onSettingsJobDesc }}" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;cursor:pointer">
                   <option>Développeur</option><option>Designer</option><option>Marketing</option><option>Autre</option>
                 </select>
               </div>
@@ -1152,8 +1154,8 @@ input:focus,textarea:focus{outline:none}
               <!-- Instructions -->
               <div style="margin-top:20px">
                 <div style="font-size:14px;font-weight:600;margin-bottom:4px">Instructions pour HuggyFlow</div>
-                <div style="font-size:12px;color:#767C85;margin-bottom:10px">HuggyFlow gardera ces éléments à l'esprit dans les chats.</div>
-                <textarea value="{{ settingsInstructions }}" onChange="{{ onSettingsInstructions }}" placeholder="p. ex. lorsque j'apprends de nouveaux concepts, je trouve les analogies particulièrement utiles" style="width:100%;min-height:90px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;line-height:1.5" style-focus="border-color:rgba(255,255,255,.2)"></textarea>
+                <div style="font-size:12px;color:#898A8B;margin-bottom:10px">HuggyFlow gardera ces éléments à l'esprit dans les chats.</div>
+                <textarea value="{{ settingsInstructions }}" onChange="{{ onSettingsInstructions }}" placeholder="p. ex. lorsque j'apprends de nouveaux concepts, je trouve les analogies particulièrement utiles" style="width:100%;min-height:90px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;line-height:1.5" style-focus="border-color:rgba(255,255,255,.2)"></textarea>
               </div>
 
               <!-- Préférences -->
@@ -1161,7 +1163,7 @@ input:focus,textarea:focus{outline:none}
 
               <!-- Apparence -->
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">Apparence</span>
+                <span style="font-size:13.5px;color:#A8A8A8">Apparence</span>
                 <div style="display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">
                   <button onClick="{{ setSystemTheme }}" style="padding:5px 10px;border-radius:999px;border:none;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;{{ systemTabStyle }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></button>
                   <button onClick="{{ setLightTheme }}" style="padding:5px 10px;border-radius:999px;border:none;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;{{ lightTabStyle }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"></line><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"></line><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"></line></svg></button>
@@ -1171,40 +1173,40 @@ input:focus,textarea:focus{outline:none}
 
               <!-- Police de discussion -->
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
-                <span style="font-size:13.5px;color:#BCC0C6">Police de discussion</span>
-                <select value="{{ settingsFont }}" onChange="{{ onSettingsFont }}" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;cursor:pointer">
-                  <option>Anthropic Serif</option><option>Instrument Sans</option><option>JetBrains Mono</option><option>System UI</option>
+                <span style="font-size:13.5px;color:#A8A8A8">Police de discussion</span>
+                <select value="{{ settingsFont }}" onChange="{{ onSettingsFont }}" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;cursor:pointer">
+                  <option>System UI</option><option>Space Grotesk</option><option>Inter</option><option>JetBrains Mono</option>
                 </select>
               </div>
 
               <!-- Save -->
               <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
-                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
-                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D6F94E;font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
+                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
+                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D1FE17;font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
               </div>
             </sc-if>
 
             <!-- ===== Compte placeholder ===== -->
             <sc-if value="{{ modalShowAccount }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Compte</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Gère ton e-mail, ta session et la suppression de ton compte.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6">Gère ton e-mail, ta session et la suppression de ton compte.</div>
               <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">E-mail de facturation</span>
-                <input value="{{ settingsEmail }}" onChange="{{ onSettingsEmail }}" type="email" style="width:240px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
+                <span style="font-size:13.5px;color:#A8A8A8">E-mail de facturation</span>
+                <input value="{{ settingsEmail }}" onChange="{{ onSettingsEmail }}" type="email" style="width:240px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
               </div>
               <div style="margin-top:28px;display:flex;gap:8px">
-                <button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
-                <button onClick="{{ openAuth }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ sessionCta }}</button>
-                <button onClick="{{ exportAccountData }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Exporter mes donnees</button>
+                <button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
+                <button onClick="{{ openAuth }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ sessionCta }}</button>
+                <button onClick="{{ exportAccountData }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Exporter mes donnees</button>
                 <button onClick="{{ openAccountDeletion }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Supprimer le compte</button>
               </div>
               <sc-if value="{{ accountDeletionOpen }}" hint-placeholder-val="{{ false }}">
                 <div style="margin-top:18px;padding:14px;border-radius:12px;border:1px solid rgba(196,88,64,.3);background:rgba(196,88,64,.06)">
-                  <div style="font-size:12.5px;line-height:1.5;color:#F2F3F5">Cette action est definitive. Ecris SUPPRIMER pour confirmer.</div>
+                  <div style="font-size:12.5px;line-height:1.5;color:#F7F7F8">Cette action est definitive. Ecris SUPPRIMER pour confirmer.</div>
                   <div style="display:flex;gap:8px;margin-top:12px">
-                    <input value="{{ accountDeletionConfirmation }}" onChange="{{ onAccountDeletionConfirmation }}" placeholder="SUPPRIMER" style="flex:1;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.16);color:#F2F3F5;font-size:12px;font-family:inherit"/>
+                    <input value="{{ accountDeletionConfirmation }}" onChange="{{ onAccountDeletionConfirmation }}" placeholder="SUPPRIMER" style="flex:1;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.16);color:#F7F7F8;font-size:12px;font-family:inherit"/>
                     <button onClick="{{ confirmAccountDeletion }}" style="{{ accountDeletionButtonStyle }}" disabled="{{ accountDeletionBusy }}">Confirmer</button>
-                    <button onClick="{{ closeAccountDeletion }}" style="padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#BCC0C6;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Annuler</button>
+                    <button onClick="{{ closeAccountDeletion }}" style="padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#A8A8A8;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Annuler</button>
                   </div>
                 </div>
               </sc-if>
@@ -1213,33 +1215,33 @@ input:focus,textarea:focus{outline:none}
             <!-- ===== Confidentialité placeholder ===== -->
             <sc-if value="{{ modalShowPrivacy }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Confidentialité</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Contrôle comment tes données sont utilisées.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:24px">Contrôle comment tes données sont utilisées.</div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Améliorer le modèle</div><div style="font-size:12px;color:#767C85;margin-top:2px">Tes conversations peuvent servir à améliorer nos modèles</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;color:#F7F7F8">Améliorer le modèle</div><div style="font-size:12px;color:#898A8B;margin-top:2px">Tes conversations peuvent servir à améliorer nos modèles</div></div>
                 <div onClick="{{ toggleDataTraining }}" style="{{ trainTrackStyle }}"><span style="{{ trainKnobStyle }}"></span></div>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
-                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Partager les analytics</div><div style="font-size:12px;color:#767C85;margin-top:2px">Aide-nous à comprendre comment le produit est utilisé</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;color:#F7F7F8">Partager les analytics</div><div style="font-size:12px;color:#898A8B;margin-top:2px">Aide-nous à comprendre comment le produit est utilisé</div></div>
                 <div onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}"><span style="{{ analyticsKnobStyle }}"></span></div>
               </div>
-              <div style="margin-top:12px"><button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer mes choix</button></div>
+              <div style="margin-top:12px"><button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer mes choix</button></div>
             </sc-if>
 
             <!-- ===== Capabilities placeholder ===== -->
             <sc-if value="{{ modalShowCapabilities }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Capacités</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:20px">Ta marque guide les scripts, les visuels et les campagnes de ce compte.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:20px">Ta marque guide les scripts, les visuels et les campagnes de ce compte.</div>
               <div style="padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025)">
-                <div style="font-size:13px;font-weight:700;color:#F2F3F5">Identité de marque</div>
-                <input value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Nom de ta marque" style="width:100%;box-sizing:border-box;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit"/>
-                <textarea value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Promesse, public, ton et univers visuel" style="width:100%;box-sizing:border-box;min-height:76px;margin-top:8px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;line-height:1.45"></textarea>
-                <div style="margin-top:10px"><button onClick="{{ saveBrand }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer la marque</button></div>
+                <div style="font-size:13px;font-weight:700;color:#F7F7F8">Identité de marque</div>
+                <input value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Nom de ta marque" style="width:100%;box-sizing:border-box;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit"/>
+                <textarea value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Promesse, public, ton et univers visuel" style="width:100%;box-sizing:border-box;min-height:76px;margin-top:8px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;line-height:1.45"></textarea>
+                <div style="margin-top:10px"><button onClick="{{ saveBrand }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer la marque</button></div>
               </div>
               <sc-for list="{{ brandCards }}" as="brand" hint-placeholder-count="1">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                  <div style="width:28px;height:28px;border-radius:8px;background:rgba(214,249,78,.12);color:#D6F94E;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">{{ brand.initial }}</div>
-                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F2F3F5">{{ brand.name }}</div><div style="margin-top:2px;font-size:11.5px;color:#767C85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ brand.description }}</div></div>
-                  <span style="font-size:9px;font-weight:800;color:#D6F94E;letter-spacing:.06em">{{ brand.badge }}</span>
+                  <div style="width:28px;height:28px;border-radius:8px;background:rgba(214,249,78,.12);color:#D1FE17;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">{{ brand.initial }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F7F7F8">{{ brand.name }}</div><div style="margin-top:2px;font-size:11.5px;color:#898A8B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ brand.description }}</div></div>
+                  <span style="font-size:9px;font-weight:800;color:#D1FE17;letter-spacing:.06em">{{ brand.badge }}</span>
                 </div>
               </sc-for>
             </sc-if>
@@ -1247,22 +1249,22 @@ input:focus,textarea:focus{outline:none}
             <!-- ===== Claude Code placeholder ===== -->
             <sc-if value="{{ modalShowClaudeCode }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Claude Code</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Terminal, CLI et authentification depuis l'éditeur.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6">Terminal, CLI et authentification depuis l'éditeur.</div>
             </sc-if>
 
             <!-- ===== Skills placeholder ===== -->
             <sc-if value="{{ modalShowSkills }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Compétences</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:18px">Sauvegarde les recettes qui marchent et relance-les depuis un projet.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:18px">Sauvegarde les recettes qui marchent et relance-les depuis un projet.</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-                <button onClick="{{ saveProjectTemplate }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer ce projet</button>
-                <button onClick="{{ exportProjectPackage }}" style="padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Exporter le pack</button>
+                <button onClick="{{ saveProjectTemplate }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer ce projet</button>
+                <button onClick="{{ exportProjectPackage }}" style="padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Exporter le pack</button>
               </div>
               <sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="2">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
                   <div style="width:30px;height:30px;border-radius:8px;background:rgba(201,168,232,.12);color:#C9A8E8;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ template.kind }}</div>
-                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F2F3F5">{{ template.title }}</div><div style="margin-top:2px;font-size:11.5px;color:#767C85">{{ template.remixes }} remix</div></div>
-                  <button onClick="{{ template.onRemix }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">Remixer</button>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F7F7F8">{{ template.title }}</div><div style="margin-top:2px;font-size:11.5px;color:#898A8B">{{ template.remixes }} remix</div></div>
+                  <button onClick="{{ template.onRemix }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">Remixer</button>
                 </div>
               </sc-for>
             </sc-if>
@@ -1270,12 +1272,12 @@ input:focus,textarea:focus{outline:none}
             <!-- ===== Connectors placeholder ===== -->
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Connecteurs</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:18px">Prépare les destinations de tes créations. Les autorisations restent protégées côté serveur.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:18px">Prépare les destinations de tes créations. Les autorisations restent protégées côté serveur.</div>
               <sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="4">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(214,249,78,.1);color:#D6F94E;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ connector.label }}</div>
-                  <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#F2F3F5">{{ connector.label }}</div><div style="margin-top:2px;font-size:11.5px;color:#767C85">{{ connector.statusLabel }}</div></div>
-                  <button onClick="{{ connector.onConfigure }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">{{ connector.buttonLabel }}</button>
+                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(214,249,78,.1);color:#D1FE17;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ connector.label }}</div>
+                  <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#F7F7F8">{{ connector.label }}</div><div style="margin-top:2px;font-size:11.5px;color:#898A8B">{{ connector.statusLabel }}</div></div>
+                  <button onClick="{{ connector.onConfigure }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">{{ connector.buttonLabel }}</button>
                 </div>
               </sc-for>
             </sc-if>
@@ -1283,52 +1285,52 @@ input:focus,textarea:focus{outline:none}
             <!-- ===== Plugins placeholder ===== -->
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Plugins</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:18px">Dis-nous quelle extension ou automatisation rendrait HuggyFlow plus utile pour toi.</div>
-              <textarea value="{{ feedbackMessage }}" onChange="{{ onFeedbackMessage }}" placeholder="Ex. publier automatiquement ma vidéo sur TikTok" style="width:100%;box-sizing:border-box;min-height:92px;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;line-height:1.5"></textarea>
-              <div style="margin-top:10px"><button onClick="{{ sendFeedback }}" style="padding:9px 15px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Envoyer ma demande</button></div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:18px">Dis-nous quelle extension ou automatisation rendrait HuggyFlow plus utile pour toi.</div>
+              <textarea value="{{ feedbackMessage }}" onChange="{{ onFeedbackMessage }}" placeholder="Ex. publier automatiquement ma vidéo sur TikTok" style="width:100%;box-sizing:border-box;min-height:92px;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;line-height:1.5"></textarea>
+              <div style="margin-top:10px"><button onClick="{{ sendFeedback }}" style="padding:9px 15px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Envoyer ma demande</button></div>
             </sc-if>
 
             <!-- ===== Billing (reuses existing content inline) ===== -->
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Facturation</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Tes factures, ton abonnement et ton moyen de paiement.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:24px">Tes factures, ton abonnement et ton moyen de paiement.</div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Abonnement actuel</div><div style="font-size:12px;color:#767C85;margin-top:2px">{{ billingPlanName }} – {{ billingPlanPrice }}</div></div>
-                <span style="padding:3px 10px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10px;font-weight:800;letter-spacing:.05em">ACTIF</span>
+                <div><div style="font-size:13.5px;font-weight:600;color:#F7F7F8">Abonnement actuel</div><div style="font-size:12px;color:#898A8B;margin-top:2px">{{ billingPlanName }} – {{ billingPlanPrice }}</div></div>
+                <span style="padding:3px 10px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;letter-spacing:.05em">ACTIF</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Moyen de paiement</div><div style="font-size:12px;color:#767C85;margin-top:2px">•••• 4242 – Expire 08/2028</div></div>
-                <button style="padding:7px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Modifier</button>
+                <div><div style="font-size:13.5px;font-weight:600;color:#F7F7F8">Moyen de paiement</div><div style="font-size:12px;color:#898A8B;margin-top:2px">•••• 4242 – Expire 08/2028</div></div>
+                <button style="padding:7px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Modifier</button>
               </div>
-              <div style="margin-top:16px"><button onClick="{{ openPricing }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Changer d'offre</button></div>
+              <div style="margin-top:16px"><button onClick="{{ openPricing }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Changer d'offre</button></div>
             </sc-if>
 
             <!-- ===== Team ===== -->
             <sc-if value="{{ modalShowTeam }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Équipe &amp; collaboration</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Invite ton équipe, gère les rôles et partagez les crédits.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:24px">Invite ton équipe, gère les rôles et partagez les crédits.</div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
-                <span style="font-size:12px;color:#9AA0A8">Sièges</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#E8E9EB">{{ seatsLabel }}</span>
+                <span style="font-size:12px;color:#898A8B">Sièges</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#F7F7F8">{{ seatsLabel }}</span>
               </div>
               <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px">
-                <input value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" type="email" placeholder="collegue@exemple.com" style="flex:1;min-width:200px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit" style-focus="border-color:rgba(255,255,255,.2)"/>
-                <button onClick="{{ sendInvite }}" style="padding:10px 18px;border-radius:10px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Envoyer</button>
+                <input value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" type="email" placeholder="collegue@exemple.com" style="flex:1;min-width:200px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit" style-focus="border-color:rgba(255,255,255,.2)"/>
+                <button onClick="{{ sendInvite }}" style="padding:10px 18px;border-radius:10px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Envoyer</button>
               </div>
             </sc-if>
 
             <!-- ===== API ===== -->
             <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">API &amp; intégrations</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Connecte HuggyFlow à tes outils et automatise tes générations.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:24px">Connecte HuggyFlow à tes outils et automatise tes générations.</div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-                <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#767C85;font-weight:700">Clés API</span>
-                <button onClick="{{ createKey }}" style="padding:7px 14px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">+ Créer une clé</button>
+                <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#898A8B;font-weight:700">Clés API</span>
+                <button onClick="{{ createKey }}" style="padding:7px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">+ Créer une clé</button>
               </div>
               <sc-for list="{{ apiKeys }}" as="k" hint-placeholder-count="2">
                 <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#E8E9EB">{{ k.name }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#767C85;margin-top:2px">{{ k.masked }}</div></div>
-                  <button onClick="{{ k.onCopy }}" style="padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:transparent;color:#BCC0C6;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ k.copyLabel }}</button>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F7F7F8">{{ k.name }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#898A8B;margin-top:2px">{{ k.masked }}</div></div>
+                  <button onClick="{{ k.onCopy }}" style="padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:transparent;color:#A8A8A8;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ k.copyLabel }}</button>
                 </div>
               </sc-for>
             </sc-if>
@@ -1336,12 +1338,12 @@ input:focus,textarea:focus{outline:none}
             <!-- ===== Stats ===== -->
             <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Utilisation</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:24px">Où passent tes crédits et ce que tu produis.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:24px">Où passent tes crédits et ce que tu produis.</div>
               <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
                 <sc-for list="{{ statCards }}" as="sc" hint-placeholder-count="4">
                   <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px">
-                    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#767C85;font-weight:700">{{ sc.label }}</div>
-                    <div style="margin-top:8px;font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:#F2F3F5">{{ sc.value }}</div>
+                    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#898A8B;font-weight:700">{{ sc.label }}</div>
+                    <div style="margin-top:8px;font-family:'Space Grotesk',ui-sans-serif;font-size:26px;line-height:1;color:#F7F7F8">{{ sc.value }}</div>
                     <div style="margin-top:6px;font-size:11px;color:{{ sc.deltaColor }};font-weight:600">{{ sc.delta }}</div>
                   </div>
                 </sc-for>
@@ -1361,7 +1363,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1382,7 +1384,7 @@ input:focus,textarea:focus{outline:none}
         </div>
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px">
           <div>
-            <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">Statistiques d'usage</div>
+            <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">Statistiques d'usage</div>
             <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Où passent tes crédits et ce que tu produis, mois par mois.</div>
           </div>
           <div style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
@@ -1396,7 +1398,7 @@ input:focus,textarea:focus{outline:none}
           <sc-for list="{{ statCards }}" as="sc" hint-placeholder-count="4">
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px">
               <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">{{ sc.label }}</div>
-              <div style="margin-top:10px;font-family:'Instrument Serif',serif;font-size:30px;line-height:1">{{ sc.value }}</div>
+              <div style="margin-top:10px;font-family:'Space Grotesk',ui-sans-serif;font-size:30px;line-height:1">{{ sc.value }}</div>
               <div style="margin-top:8px;font-size:11.5px;color:{{ sc.deltaColor }};font-weight:600">{{ sc.delta }}</div>
             </div>
           </sc-for>
@@ -1406,7 +1408,7 @@ input:focus,textarea:focus{outline:none}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
             <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">Crédits consommés — {{ statsPeriodLabel }}</div>
             <div style="display:flex;align-items:center;gap:14px;font-size:11.5px;color:{{ tText3 }}">
-              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:3px;background:#D6F94E"></span>Ce mois</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:3px;background:#D1FE17"></span>Ce mois</span>
               <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:3px;background:rgba({{ tLineRGB }},.15)"></span>Mois dernier</span>
             </div>
           </div>
@@ -1415,7 +1417,7 @@ input:focus,textarea:focus{outline:none}
               <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end">
                 <div style="width:100%;display:flex;align-items:flex-end;gap:3px;flex:1">
                   <div title="{{ b.prevTitle }}" style="flex:1;height:{{ b.prev }};border-radius:5px 5px 0 0;background:rgba({{ tLineRGB }},.13)"></div>
-                  <div title="{{ b.curTitle }}" style="flex:1;height:{{ b.cur }};border-radius:5px 5px 0 0;background:#D6F94E;transition:height .4s ease"></div>
+                  <div title="{{ b.curTitle }}" style="flex:1;height:{{ b.cur }};border-radius:5px 5px 0 0;background:#D1FE17;transition:height .4s ease"></div>
                 </div>
                 <span style="font-size:10.5px;color:{{ tText4 }};font-family:'JetBrains Mono',monospace">{{ b.label }}</span>
               </div>
@@ -1440,7 +1442,7 @@ input:focus,textarea:focus{outline:none}
             <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText4 }};font-weight:700;margin-bottom:16px">Ce mois en bref</div>
             <sc-for list="{{ highlights }}" as="h" hint-placeholder-count="4">
               <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba({{ tLineRGB }},.06)">
-                <span style="width:7px;height:7px;flex:0 0 auto;margin-top:5px;border-radius:50%;background:#D6F94E"></span>
+                <span style="width:7px;height:7px;flex:0 0 auto;margin-top:5px;border-radius:50%;background:#D1FE17"></span>
                 <span style="font-size:13px;line-height:1.5;color:{{ tText2 }}">{{ h }}</span>
               </div>
             </sc-for>
@@ -1455,7 +1457,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1470,7 +1472,7 @@ input:focus,textarea:focus{outline:none}
         </div>
 
         <div style="margin-bottom:22px">
-          <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">API &amp; intégrations</div>
+          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">API &amp; intégrations</div>
           <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Connecte HuggyFlow à tes outils et automatise tes générations.</div>
         </div>
         <div data-nav-scroll style="display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08);margin-bottom:28px;max-width:max-content;overflow-x:auto">
@@ -1500,16 +1502,16 @@ input:focus,textarea:focus{outline:none}
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;flex-wrap:wrap">
             <span style="font-size:12px;color:{{ tText3 }}">Requêtes ce mois</span>
             <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600">2 418 / 10 000</span>
-            <div style="flex:1;min-width:140px;height:4px;border-radius:4px;background:rgba({{ tLineRGB }},.09);overflow:hidden"><div style="width:24%;height:100%;border-radius:4px;background:#D6F94E"></div></div>
+            <div style="flex:1;min-width:140px;height:4px;border-radius:4px;background:rgba({{ tLineRGB }},.09);overflow:hidden"><div style="width:24%;height:100%;border-radius:4px;background:#D1FE17"></div></div>
           </div>
         </div>
 
-        <div style="background:#1B1C1E;border-radius:18px;padding:20px 22px;margin-bottom:16px">
+        <div style="background:#131517;border-radius:18px;padding:20px 22px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B8E95;font-weight:700">Exemple — générer une image</span>
-            <span style="padding:3px 9px;border-radius:999px;background:rgba(214,249,78,.14);color:#D6F94E;font-size:10px;font-weight:700;letter-spacing:.06em">cURL</span>
+            <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#898A8B;font-weight:700">Exemple — générer une image</span>
+            <span style="padding:3px 9px;border-radius:999px;background:rgba(214,249,78,.14);color:#D1FE17;font-size:10px;font-weight:700;letter-spacing:.06em">cURL</span>
           </div>
-          <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#CCCED2;white-space:pre-wrap;word-break:break-word">curl https://api.huggyflow.com/v1/generate \
+          <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#A8A8A8;white-space:pre-wrap;word-break:break-word">curl https://api.huggyflow.com/v1/generate \
   -H "Authorization: Bearer $HF_API_KEY" \
   -d agent_model="auto" \
   -d prompt="Packshot sur fond crème, lumière douce"</pre>
@@ -1519,7 +1521,7 @@ input:focus,textarea:focus{outline:none}
           <sc-for list="{{ integrations }}" as="ig" hint-placeholder-count="6">
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px">
               <div style="display:flex;align-items:center;justify-content:space-between">
-                <div style="width:34px;height:34px;border-radius:10px;background:{{ ig.bg }};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#1B1C1E">{{ ig.glyph }}</div>
+                <div style="width:34px;height:34px;border-radius:10px;background:{{ ig.bg }};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#131517">{{ ig.glyph }}</div>
                 <div onClick="{{ ig.onToggle }}" style="{{ ig.trackStyle }}"><span style="{{ ig.knobStyle }}"></span></div>
               </div>
               <div>
@@ -1539,7 +1541,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1560,13 +1562,13 @@ input:focus,textarea:focus{outline:none}
         </div>
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px">
           <div>
-            <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">Équipe &amp; collaboration</div>
+            <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">Équipe &amp; collaboration</div>
             <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Invite ton équipe, gère les rôles et partagez les crédits du même espace.</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:14px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10)">
             <span style="font-size:12px;color:{{ tText3 }}">Sièges</span>
             <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">{{ seatsLabel }}</span>
-            <div style="width:70px;height:4px;border-radius:4px;background:rgba({{ tLineRGB }},.09);overflow:hidden"><div style="width:{{ seatsPct }};height:100%;border-radius:4px;background:#D6F94E"></div></div>
+            <div style="width:70px;height:4px;border-radius:4px;background:rgba({{ tLineRGB }},.09);overflow:hidden"><div style="width:{{ seatsPct }};height:100%;border-radius:4px;background:#D1FE17"></div></div>
           </div>
         </div>
 
@@ -1592,7 +1594,7 @@ input:focus,textarea:focus{outline:none}
           <sc-for list="{{ teamMembers }}" as="tm" hint-placeholder-count="4">
             <div style="display:grid;grid-template-columns:2.2fr 1.2fr 1fr 44px;gap:12px;align-items:center;padding:14px 22px;border-bottom:1px solid rgba({{ tLineRGB }},.07);transition:background .15s" style-hover="background:rgba({{ tLineRGB }},.03)">
               <div style="display:flex;align-items:center;gap:12px;min-width:0">
-                <div style="width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:{{ tm.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1B1C1E">{{ tm.initials }}</div>
+                <div style="width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:{{ tm.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#131517">{{ tm.initials }}</div>
                 <div style="min-width:0">
                   <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tm.name }}<sc-if value="{{ tm.isYou }}" hint-placeholder-val="{{ false }}"><span style="margin-left:7px;padding:2px 7px;border-radius:999px;background:rgba(214,249,78,.35);color:#5C6B2A;font-size:9.5px;font-weight:800;letter-spacing:.05em">TOI</span></sc-if></div>
                   <div style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tm.email }}</div>
@@ -1633,7 +1635,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:680px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1648,7 +1650,7 @@ input:focus,textarea:focus{outline:none}
         </div>
 
         <div style="margin-bottom:22px">
-          <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">Paramètres du compte</div>
+          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">Paramètres du compte</div>
           <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Ton profil, tes préférences et la sécurité de ton compte.</div>
         </div>
         <div data-nav-scroll style="display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08);margin-bottom:28px;max-width:max-content;overflow-x:auto">
@@ -1660,7 +1662,7 @@ input:focus,textarea:focus{outline:none}
         <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:24px;margin-bottom:16px">
           <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText4 }};font-weight:700;margin-bottom:18px">Profil</div>
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-            <div style="width:56px;height:56px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D6F94E 55%, #9DBD2A);border:1px solid rgba({{ tLineRGB }},.12)"></div>
+            <div style="width:56px;height:56px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D1FE17 55%, #9DBD2A);border:1px solid rgba({{ tLineRGB }},.12)"></div>
             <div>
               <div style="font-size:15px;font-weight:700">{{ accountName }}</div>
               <div style="font-size:12.5px;color:{{ tText3 }}">{{ planLabel }}</div>
@@ -1742,7 +1744,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:1080px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1758,7 +1760,7 @@ input:focus,textarea:focus{outline:none}
 
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px">
           <div>
-            <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">Galerie de créations</div>
+            <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">Galerie de créations</div>
             <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Tout ce que tu as généré, prêt à retrouver, télécharger ou recréer.</div>
           </div>
           <div style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
@@ -1783,16 +1785,16 @@ input:focus,textarea:focus{outline:none}
                     <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
                   </sc-if>
                   <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}">
-                    <span style="position:absolute;right:10px;top:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.45);font-family:'JetBrains Mono',monospace;font-size:10px;color:#D6F94E;pointer-events:none">▶ {{ g.duration }}</span>
+                    <span style="position:absolute;right:10px;top:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.45);font-family:'JetBrains Mono',monospace;font-size:10px;color:#D1FE17;pointer-events:none">▶ {{ g.duration }}</span>
                   </sc-if>
                 </div>
               </sc-if>
               <sc-if value="{{ g.isVoice }}" hint-placeholder-val="{{ false }}">
                 <div style="position:relative;height:190px;background:linear-gradient(140deg,#1E1F22,#141517 60%,#1B1C1F);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
                   <div style="display:flex;align-items:center;gap:3px;height:44px">
-                    <span style="width:4px;height:30%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:65%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:100%;border-radius:3px;background:#D6F94E"></span><span style="width:4px;height:50%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:80%;border-radius:3px;background:#D6F94E"></span><span style="width:4px;height:35%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:70%;border-radius:3px;background:rgba(214,249,78,.8)"></span><span style="width:4px;height:45%;border-radius:3px;background:rgba(214,249,78,.6)"></span><span style="width:4px;height:90%;border-radius:3px;background:#D6F94E"></span><span style="width:4px;height:40%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:60%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:25%;border-radius:3px;background:rgba(214,249,78,.4)"></span>
+                    <span style="width:4px;height:30%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:65%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:100%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:50%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:80%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:35%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:70%;border-radius:3px;background:rgba(214,249,78,.8)"></span><span style="width:4px;height:45%;border-radius:3px;background:rgba(214,249,78,.6)"></span><span style="width:4px;height:90%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:40%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:60%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:25%;border-radius:3px;background:rgba(214,249,78,.4)"></span>
                   </div>
-                  <button title="Écouter" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.95)">
+                  <button title="Écouter" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.95)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>{{ g.duration }}
                   </button>
                 </div>
@@ -1830,7 +1832,7 @@ input:focus,textarea:focus{outline:none}
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:48px">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:30px;height:30px;border-radius:9px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1845,7 +1847,7 @@ input:focus,textarea:focus{outline:none}
         </div>
 
         <div style="margin-bottom:22px">
-          <div style="font-family:'Instrument Serif',serif;font-size:38px;letter-spacing:-.01em">Historique de facturation</div>
+          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:38px;letter-spacing:-.01em">Historique de facturation</div>
           <div style="margin-top:8px;font-size:14px;color:{{ tText3 }}">Tes factures, ton abonnement et ton moyen de paiement, au même endroit.</div>
         </div>
         <div data-nav-scroll style="display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08);margin-bottom:28px;max-width:max-content;overflow-x:auto">
@@ -1858,7 +1860,7 @@ input:focus,textarea:focus{outline:none}
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:22px">
             <div style="display:flex;align-items:center;justify-content:space-between">
               <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">Abonnement actuel</span>
-              <span style="padding:3px 10px;border-radius:999px;background:#D6F94E;color:#1B1C1E;font-size:10px;font-weight:800;letter-spacing:.05em">ACTIF</span>
+              <span style="padding:3px 10px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;letter-spacing:.05em">ACTIF</span>
             </div>
             <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px">
               <span style="font-size:19px;font-weight:700">{{ billingPlanName }}</span>
@@ -1873,7 +1875,7 @@ input:focus,textarea:focus{outline:none}
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:22px">
             <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">Moyen de paiement</div>
             <div style="margin-top:14px;display:flex;align-items:center;gap:12px">
-              <div style="width:42px;height:28px;border-radius:6px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><span style="font-size:8.5px;font-weight:800;letter-spacing:.08em;color:#D6F94E">VISA</span></div>
+              <div style="width:42px;height:28px;border-radius:6px;background:#131517;display:flex;align-items:center;justify-content:center"><span style="font-size:8.5px;font-weight:800;letter-spacing:.08em;color:#D1FE17">VISA</span></div>
               <div>
                 <div style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace">•••• 4242</div>
                 <div style="font-size:12px;color:{{ tText3 }}">Expire 08/2028</div>
@@ -1925,9 +1927,9 @@ input:focus,textarea:focus{outline:none}
 
         <div style="width:100%;max-width:392px;animation:fadeUp .35s ease both">
           <div style="display:flex;justify-content:center;margin-bottom:22px">
-            <div style="width:44px;height:44px;border-radius:13px;background:#1B1C1E;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#D6F94E" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
+            <div style="width:44px;height:44px;border-radius:13px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
           </div>
-          <div style="text-align:center;font-family:'Instrument Serif',serif;font-size:32px;letter-spacing:-.01em">{{ authTitle }}</div>
+          <div style="text-align:center;font-family:'Space Grotesk',ui-sans-serif;font-size:32px;letter-spacing:-.01em">{{ authTitle }}</div>
           <div style="text-align:center;margin-top:8px;font-size:14px;color:{{ tText3 }}">{{ authSubtitle }}</div>
 
           <div style="margin-top:28px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:26px;box-shadow:0 18px 44px -32px rgba(12,11,9,.35)">
@@ -1976,7 +1978,7 @@ input:focus,textarea:focus{outline:none}
     <div style="position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.54);display:flex;align-items:center;justify-content:center;padding:24px;animation:pageFade .2s ease both">
       <div style="width:100%;max-width:390px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.12);border-radius:20px;padding:22px;box-shadow:0 24px 70px -34px rgba(0,0,0,.75);animation:fadeUp .2s ease both">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px">
-          <div style="font-family:'Instrument Serif',serif;font-size:28px;letter-spacing:-.01em">{{ projectModalTitle }}</div>
+          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:28px;letter-spacing:-.01em">{{ projectModalTitle }}</div>
           <button onClick="{{ closeProjectModal }}" title="Fermer" style="width:34px;height:34px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -1987,7 +1989,7 @@ input:focus,textarea:focus{outline:none}
           </label>
           <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:20px">
             <button onClick="{{ closeProjectModal }}" style="padding:10px 16px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Annuler</button>
-            <button onClick="{{ confirmRenameProject }}" style="padding:10px 17px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Renommer</button>
+            <button onClick="{{ confirmRenameProject }}" style="padding:10px 17px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.96)">Renommer</button>
           </div>
         </sc-if>
         <sc-if value="{{ isDeleteModal }}" hint-placeholder-val="{{ false }}">
@@ -2006,7 +2008,7 @@ input:focus,textarea:focus{outline:none}
       <div style="width:100%;max-width:760px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.12);border-radius:22px;padding:24px;box-shadow:0 24px 70px -34px rgba(0,0,0,.75);animation:fadeUp .2s ease both">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px">
           <div>
-            <div style="font-family:'Instrument Serif',serif;font-size:30px;letter-spacing:-.01em">Comparer les créations</div>
+            <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:30px;letter-spacing:-.01em">Comparer les créations</div>
             <div style="margin-top:4px;font-size:13px;color:{{ tText3 }}">Compare les deux derniers rendus terminés de ton projet.</div>
           </div>
           <button onClick="{{ closeCompare }}" title="Fermer" style="width:34px;height:34px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
@@ -2127,7 +2129,7 @@ class Component extends DCLogic {
     uploadingAttachment: false,
     attachmentNotice: '',
     prefs: { notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false },
-    settingsName: '', settingsEmail: '', settingsCalledName: '', settingsJobDesc: 'Marketing', settingsInstructions: '', settingsFont: 'Instrument Sans',
+    settingsName: '', settingsEmail: '', settingsCalledName: '', settingsJobDesc: 'Marketing', settingsInstructions: '', settingsFont: 'System UI',
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false,
     integrationConnections: [], integrationsLoading: false,
@@ -2136,7 +2138,7 @@ class Component extends DCLogic {
   };
 
   MODELS = [
-    { id:'auto', name:'Auto HuggyFlow', group:'Agent IA', desc:'Choisit le meilleur cerveau pour ta demande', creditsLabel:'Recommandé', dot:'#D6F94E' },
+    { id:'auto', name:'Auto HuggyFlow', group:'Agent IA', desc:'Choisit le meilleur cerveau pour ta demande', creditsLabel:'Recommandé', dot:'#D1FE17' },
     { id:'claude-fable-5', name:'Fable 5', group:'Agent IA', desc:'Création ambitieuse, stratégie et production complexe', creditsLabel:'Max', dot:'#C9A8E8' },
     { id:'claude-opus-4-8', name:'Opus 4.8', group:'Agent IA', desc:'Agent très puissant pour les briefs longs et exigeants', creditsLabel:'Pro', dot:'#BCA7FF' },
     { id:'claude-opus-4-7', name:'Opus 4.7', group:'Agent IA', desc:'Raisonnement premium avec repli automatique si indisponible', creditsLabel:'Pro', dot:'#9BD1E8' },
@@ -2216,12 +2218,12 @@ class Component extends DCLogic {
     const fmtUsd = n => '$' + Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
     const TYPE_LABELS = { image:'images', video:'vidéos', audio:'voix et sons', lipsync:'visages parlants', image_edit:'retouches image', video_edit:'retouches vidéo', voice_clone:'clonage de voix' };
     const feat = (ok, text) => ({ ok, no: !ok, text, color: ok ? T.inkSoft : T.text4 });
-    const allocOn = 'padding:3px 9px;border-radius:999px;background:#D6F94E;color:#191813;font-size:10.5px;font-weight:700;white-space:nowrap';
+    const allocOn = 'padding:3px 9px;border-radius:999px;background:#D1FE17;color:#191813;font-size:10.5px;font-weight:700;white-space:nowrap';
     const allocOff = 'padding:3px 9px;border-radius:999px;background:rgba(' + T.lineRGB + ',.06);color:' + T.text4 + ';font-size:10.5px;font-weight:600;white-space:nowrap';
     const tagStyles = {
       muted: 'padding:3px 9px;border-radius:999px;background:rgba(' + T.lineRGB + ',.07);color:' + T.text3 + ';font-size:10px;font-weight:700;letter-spacing:.06em',
       blue: 'padding:3px 9px;border-radius:999px;background:#DCE6F0;color:#3E5A78;font-size:10px;font-weight:700;letter-spacing:.06em',
-      lime: 'padding:3px 9px;border-radius:999px;background:#D6F94E;color:#191813;font-size:10px;font-weight:700;letter-spacing:.06em'
+      lime: 'padding:3px 9px;border-radius:999px;background:#D1FE17;color:#191813;font-size:10px;font-weight:700;letter-spacing:.06em'
     };
     const apiPlans = (this.state.pricingPlans || []).filter(p=>{
       const id = String(p.id || '');
@@ -2293,7 +2295,7 @@ class Component extends DCLogic {
             ? 'background:' + T.surface + ';border:1.5px solid ' + T.ink + ';box-shadow:0 24px 54px -34px rgba(12,11,9,.5)'
             : 'background:' + T.surfaceSoft + ';border:1px solid rgba(' + T.lineRGB + ',.10)'),
         ctaStyle: 'margin-top:18px;width:100%;padding:12px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;' +
-          (d.popular ? 'border:none;background:#D6F94E;color:#1B1C1E' : 'border:none;background:' + T.ink + ';color:' + T.pageBg),
+          (d.popular ? 'border:none;background:#D1FE17;color:#131517' : 'border:none;background:' + T.ink + ';color:' + T.pageBg),
         onSelect: ()=> this.startCheckout(d.id)
       };
     });
@@ -2320,15 +2322,15 @@ class Component extends DCLogic {
 
   tokens(){
     return this.getResolvedTheme() === 'dark' ? {
-      pageBg:'#0E0F12', surface:'#17181C', surfaceSoft:'rgba(23,24,28,.72)',
-      ink:'#F2F3F5', inkSoft:'#D7DADE', text2:'#BCC0C6', text3:'#9AA0A8', text4:'#767C85',
-      lineRGB:'242,243,245', green:'#D6F94E', xMuted:'#4E535A', strike:'#666C74',
-      mediaGrad:'linear-gradient(135deg,#1B1C21,#212228 55%,#191A1F)'
+      pageBg:'#0F1113', surface:'#1C1E20', surfaceSoft:'rgba(35,38,42,.74)',
+      ink:'#F7F7F8', inkSoft:'#F7F7F8', text2:'#A8A8A8', text3:'#898A8B', text4:'#707174',
+      lineRGB:'46,48,49', green:'#D1FE17', xMuted:'#4E535A', strike:'#6E7074',
+      mediaGrad:'linear-gradient(135deg,#1C1E20,#23262A 55%,#17191B)'
     } : {
-      pageBg:'#FFFFFF', surface:'#FFFFFF', surfaceSoft:'rgba(250,250,251,.85)',
-      ink:'#1B1C1E', inkSoft:'#3B3D42', text2:'#565960', text3:'#787C84', text4:'#A2A6AD',
-      lineRGB:'32,34,38', green:'#7C9B1E', xMuted:'#C4C7CC', strike:'#B3B6BC',
-      mediaGrad:'linear-gradient(135deg,#F4F4F5,#ECEDEF 55%,#F2F2F4)'
+      pageBg:'#F7F7F8', surface:'#FFFFFF', surfaceSoft:'rgba(255,255,255,.88)',
+      ink:'#131517', inkSoft:'#131517', text2:'#565960', text3:'#898A8B', text4:'#77797D',
+      lineRGB:'46,48,49', green:'#D1FE17', xMuted:'#C4C7CC', strike:'#A8A8A8',
+      mediaGrad:'linear-gradient(135deg,#FFFFFF,#F1F2F3 55%,#F7F7F8)'
     };
   }
 
@@ -2683,7 +2685,7 @@ class Component extends DCLogic {
       const data = await res.json();
       const agentModels = Array.isArray(data.agentModels) ? data.agentModels : [];
       if(agentModels.length){
-        const dots = ['#D6F94E','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
+        const dots = ['#D1FE17','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
         this.MODELS = agentModels.map((m,i)=>({
           id:m.id || 'auto',
           name:m.name || 'Auto HuggyFlow',
@@ -3240,7 +3242,7 @@ class Component extends DCLogic {
         calledName:this.state.settingsCalledName || '',
         jobDescription:this.state.settingsJobDesc || '',
         instructions:this.state.settingsInstructions || '',
-        font:this.state.settingsFont || 'Instrument Sans',
+        font:this.state.settingsFont || 'System UI',
         theme:this.state.theme || 'dark',
         shareAnalytics:this.state.shareAnalytics !== false,
         dataTraining:this.state.shareDataTraining === true
@@ -3593,7 +3595,7 @@ class Component extends DCLogic {
   }
 
   TEAM = [
-    { name:'David N.', email:'david@huggyflow.studio', initials:'DN', avatarBg:'#D6F94E', role:'Admin', activity:'En ligne', you:true },
+    { name:'David N.', email:'david@huggyflow.studio', initials:'DN', avatarBg:'#D1FE17', role:'Admin', activity:'En ligne', you:true },
     { name:'Sarah Lemoine', email:'sarah@huggyflow.studio', initials:'SL', avatarBg:'#E8D79B', role:'Éditeur', activity:'Il y a 2 h' },
     { name:'Marc Aubry', email:'marc@huggyflow.studio', initials:'MA', avatarBg:'#C9E8D5', role:'Éditeur', activity:'Hier' },
     { name:'Inès Kader', email:'ines@huggyflow.studio', initials:'IK', avatarBg:'#E8C9B8', role:'Lecteur', activity:'Il y a 4 j' }
@@ -3620,7 +3622,7 @@ class Component extends DCLogic {
     { name:'Studio Marcel', email:'contact@studiomarcel.fr', initials:'SM', avatarBg:'#C9E8D5', plan:'Pro', credits:'3 820 / 5 500', status:'Actif' },
     { name:'Karim Vidal', email:'karim.v@outlook.com', initials:'KV', avatarBg:'#D8DCF2', plan:'Free', credits:'12 / 100', status:'Actif' },
     { name:'Agence Nova', email:'hello@agencenova.com', initials:'AN', avatarBg:'#E8C9B8', plan:'Pro', credits:'890 / 5 500', status:'Actif' },
-    { name:'Sarah Lemoine', email:'sarah@huggyflow.studio', initials:'SL', avatarBg:'#D6F94E', plan:'Creator', credits:'1 105 / 1 600', status:'Actif' },
+    { name:'Sarah Lemoine', email:'sarah@huggyflow.studio', initials:'SL', avatarBg:'#D1FE17', plan:'Creator', credits:'1 105 / 1 600', status:'Actif' },
     { name:'Tom Berger', email:'tom.berger@proton.me', initials:'TB', avatarBg:'#E4D5F0', plan:'Free', credits:'96 / 100', status:'Actif' }
   ];
   ADMIN_REPORTS = [
@@ -3639,21 +3641,21 @@ class Component extends DCLogic {
     { id:'notion', name:'Notion', glyph:'N', bg:'#E6E7E9', desc:'Archive tes créations dans une base Notion.' },
     { id:'make', name:'Make', glyph:'M', bg:'#E4D5F0', desc:'Scénarios d\'automatisation visuels.' },
     { id:'discord', name:'Discord', glyph:'D', bg:'#D8DCF2', desc:'Génère depuis ton serveur avec /huggyflow.' },
-    { id:'webhooks', name:'Webhooks', glyph:'W', bg:'#D6F94E', desc:'Notifie ton backend à chaque rendu terminé.' }
+    { id:'webhooks', name:'Webhooks', glyph:'W', bg:'#D1FE17', desc:'Notifie ton backend à chaque rendu terminé.' }
   ];
 
   obSeg(i){
     const cur = this.state.obStep || 0;
     return 'flex:1;height:4px;border-radius:4px;transition:background .3s;background:' +
-      (i <= cur ? '#D6F94E' : 'rgba(' + this.tokens().lineRGB + ',.12)');
+      (i <= cur ? '#D1FE17' : 'rgba(' + this.tokens().lineRGB + ',.12)');
   }
 
   switchTrack(on){
     return 'width:40px;height:23px;flex:0 0 auto;border-radius:999px;cursor:pointer;position:relative;transition:background .2s;background:' +
-      (on ? '#D6F94E' : 'rgba(' + this.tokens().lineRGB + ',.15)');
+      (on ? '#D1FE17' : 'rgba(' + this.tokens().lineRGB + ',.15)');
   }
   switchKnob(on){
-    return 'position:absolute;top:2.5px;width:18px;height:18px;border-radius:50%;background:' + (on ? '#1B1C1E' : this.tokens().surface) + ';box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;left:' + (on ? '19.5px' : '2.5px');
+    return 'position:absolute;top:2.5px;width:18px;height:18px;border-radius:50%;background:' + (on ? '#131517' : this.tokens().surface) + ';box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;left:' + (on ? '19.5px' : '2.5px');
   }
 
   videoStage(pct){
@@ -3680,9 +3682,9 @@ class Component extends DCLogic {
     const compareItems = this.compareMediaItems();
     const creditMax = Math.max(1, Number(st.creditsMax || 100));
     const creditPct = Math.max(0, Math.min(100, Math.round(100 * Number(st.credits || 0) / creditMax)));
-    const creditColor = creditPct > 45 ? '#D6F94E' : (creditPct > 18 ? '#E8B25C' : '#C45840');
-    const sendColor = '#D6F94E';
-    const sendFg = '#1B1C1E';
+    const creditColor = creditPct > 45 ? '#D1FE17' : (creditPct > 18 ? '#E8B25C' : '#C45840');
+    const sendColor = '#D1FE17';
+    const sendFg = '#131517';
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -3800,30 +3802,30 @@ class Component extends DCLogic {
       clickSkills: ()=> this.setState({ page:'skills', settingsHop:false }),
       clickConnectors: ()=> this.setState({ page:'connectors', settingsHop:false }),
       clickPlugins: ()=> this.setState({ page:'plugins', settingsHop:false }),
-      generalButtonStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      generalButtonIconColor: st.page === 'settings' ? '#FFF' : '#8B8E95',
-      accountButtonStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      accountButtonIconColor: st.page === 'account' ? '#FFF' : '#8B8E95',
-      privacyButtonStyle: st.page === 'privacy' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      privacyButtonIconColor: st.page === 'privacy' ? '#FFF' : '#8B8E95',
-      billingButtonStyle: st.page === 'billing' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      billingButtonIconColor: st.page === 'billing' ? '#FFF' : '#8B8E95',
-      teamButtonStyle: st.page === 'team' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      teamButtonIconColor: st.page === 'team' ? '#FFF' : '#8B8E95',
-      usageButtonStyle: st.page === 'stats' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      usageButtonIconColor: st.page === 'stats' ? '#FFF' : '#8B8E95',
-      capabilitiesButtonStyle: st.page === 'capabilities' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      capabilitiesButtonIconColor: st.page === 'capabilities' ? '#FFF' : '#8B8E95',
-      claudeCodeButtonStyle: st.page === 'claudecode' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      claudeCodeButtonIconColor: st.page === 'claudecode' ? '#FFF' : '#8B8E95',
-      apiButtonStyle: st.page === 'api' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      apiButtonIconColor: st.page === 'api' ? '#FFF' : '#8B8E95',
-      btnSkillsStyle: st.page === 'skills' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnSkillsIconColor: st.page === 'skills' ? '#FFF' : '#8B8E95',
-      btnConnectorsStyle: st.page === 'connectors' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnConnectorsIconColor: st.page === 'connectors' ? '#FFF' : '#8B8E95',
-      btnPluginsStyle: st.page === 'plugins' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnPluginsIconColor: st.page === 'plugins' ? '#FFF' : '#8B8E95',
+      generalButtonStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      generalButtonIconColor: st.page === 'settings' ? '#FFF' : '#898A8B',
+      accountButtonStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      accountButtonIconColor: st.page === 'account' ? '#FFF' : '#898A8B',
+      privacyButtonStyle: st.page === 'privacy' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      privacyButtonIconColor: st.page === 'privacy' ? '#FFF' : '#898A8B',
+      billingButtonStyle: st.page === 'billing' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      billingButtonIconColor: st.page === 'billing' ? '#FFF' : '#898A8B',
+      teamButtonStyle: st.page === 'team' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      teamButtonIconColor: st.page === 'team' ? '#FFF' : '#898A8B',
+      usageButtonStyle: st.page === 'stats' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      usageButtonIconColor: st.page === 'stats' ? '#FFF' : '#898A8B',
+      capabilitiesButtonStyle: st.page === 'capabilities' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      capabilitiesButtonIconColor: st.page === 'capabilities' ? '#FFF' : '#898A8B',
+      claudeCodeButtonStyle: st.page === 'claudecode' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      claudeCodeButtonIconColor: st.page === 'claudecode' ? '#FFF' : '#898A8B',
+      apiButtonStyle: st.page === 'api' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      apiButtonIconColor: st.page === 'api' ? '#FFF' : '#898A8B',
+      btnSkillsStyle: st.page === 'skills' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      btnSkillsIconColor: st.page === 'skills' ? '#FFF' : '#898A8B',
+      btnConnectorsStyle: st.page === 'connectors' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      btnConnectorsIconColor: st.page === 'connectors' ? '#FFF' : '#898A8B',
+      btnPluginsStyle: st.page === 'plugins' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
+      btnPluginsIconColor: st.page === 'plugins' ? '#FFF' : '#898A8B',
       showAccountPlaceholder: st.page === 'account',
       showPrivacyPlaceholder: st.page === 'privacy',
       showCapabilitiesPlaceholder: st.page === 'capabilities',
@@ -3837,7 +3839,7 @@ class Component extends DCLogic {
       onSettingsJobDesc: (e)=> this.setState({ settingsJobDesc: e.target.value, settingsSaved:false }),
       settingsInstructions: st.settingsInstructions ?? '',
       onSettingsInstructions: (e)=> this.setState({ settingsInstructions: e.target.value, settingsSaved:false }),
-      settingsFont: st.settingsFont ?? 'Anthropic Serif',
+      settingsFont: st.settingsFont ?? 'System UI',
       onSettingsFont: (e)=> this.setState({ settingsFont: e.target.value, settingsSaved:false }),
       toggleDataTraining: ()=> this.setState(s=>({ shareDataTraining: !s.shareDataTraining, settingsSaved:false })),
       trainTrackStyle: this.switchTrack(st.shareDataTraining === true),
@@ -3846,9 +3848,9 @@ class Component extends DCLogic {
       analyticsTrackStyle: this.switchTrack(st.shareAnalytics !== false),
       analyticsKnobStyle: this.switchKnob(st.shareAnalytics !== false),
       setSystemTheme: ()=> this.setState({ theme:'system' }, ()=>{ try{ localStorage.setItem('hf-theme','system'); }catch(e){} }),
-      systemTabStyle: st.theme === 'system' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#8B8E95',
-      lightTabStyle: st.theme === 'light' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#8B8E95',
-      darkTabStyle: st.theme === 'dark' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#8B8E95',
+      systemTabStyle: st.theme === 'system' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
+      lightTabStyle: st.theme === 'light' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
+      darkTabStyle: st.theme === 'dark' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
       showApp: st.page === 'app' || (st.page === 'admin' && !this.isAdminUser()) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{
@@ -3918,7 +3920,7 @@ class Component extends DCLogic {
         })
       })),
       settingsAnim: st.settingsHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
-      sidebarStyle: 'width:' + (st.sidebarCollapsed ? '72px' : '258px') + ';flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#E8E9EB;transition:width .24s ease;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both',
+      sidebarStyle: 'width:' + (st.sidebarCollapsed ? '72px' : '258px') + ';flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#F7F7F8;transition:width .24s ease;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both',
       sidebarRail: st.sidebarCollapsed ? 'true' : 'false',
       sidebarToggleTitle: st.sidebarCollapsed ? 'Ouvrir la barre laterale' : 'Replier la barre laterale',
       toggleSidebar: ()=> this.setState(s=>({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -3952,7 +3954,7 @@ class Component extends DCLogic {
       })),
       modelUsage: [
         { name:'Vidéos premium', credits:'759 cr', pct:'37%', dot:'#C9A8E8' },
-        { name:'Images premium', credits:'66 cr', pct:'35%', dot:'#D6F94E' },
+        { name:'Images premium', credits:'66 cr', pct:'35%', dot:'#D1FE17' },
         { name:'Vidéos rapides', credits:'252 cr', pct:'22%', dot:'#E8D79B' },
         { name:'Voix et audio', credits:'63 cr', pct:'6%', dot:'#A8E8C0' }
       ],
@@ -3984,7 +3986,7 @@ class Component extends DCLogic {
           status: on ? 'Connecté' : 'Non connecté',
           statusStyle: 'align-self:flex-start;padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:700;' +
             (on
-              ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+              ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
               : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text4),
           onToggle: ()=> this.setState(s=>{
             const connected = Object.assign({ zapier:true, slack:false, notion:false, make:false, discord:false, webhooks:true }, s.connected);
@@ -4019,7 +4021,7 @@ class Component extends DCLogic {
         role: m.role, activity: m.activity,
         roleStyle: 'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' +
           (m.role === 'Admin'
-            ? 'background:#D6F94E;color:#1B1C1E'
+            ? 'background:#D1FE17;color:#131517'
             : (m.role === 'Éditeur'
               ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2
               : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4))
@@ -4089,7 +4091,7 @@ class Component extends DCLogic {
         status: inv.paid ? 'Payée' : 'Remboursée',
         statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
           (inv.paid
-            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       isEmpty: st.messages.length === 0,
@@ -4105,7 +4107,7 @@ class Component extends DCLogic {
       creditsTrackStyle: 'height:' + (st.sidebarCollapsed ? '28px' : '3px') + ';width:' + (st.sidebarCollapsed ? '28px' : 'auto') + ';border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;margin:' + (st.sidebarCollapsed ? '0' : '0 8px') + ';position:relative;transition:height .2s ease,width .2s ease',
       creditsBarStyle: 'width:' + (st.sidebarCollapsed ? '100%' : (creditPct + '%')) + ';height:' + (st.sidebarCollapsed ? (creditPct + '%') : '100%') + ';position:absolute;left:0;bottom:0;border-radius:999px;background:' + creditColor + ';transition:width .35s ease,height .35s ease,background .25s ease;box-shadow:0 0 14px -8px ' + creditColor,
       projects: [
-        { title:'Packshots — collection été', dot:'#D6F94E', onClick: ()=>{} },
+        { title:'Packshots — collection été', dot:'#D1FE17', onClick: ()=>{} },
         { title:'Teaser lancement juillet', dot:'#C9A8E8', onClick: ()=>{} },
         { title:'Voix off — tutoriel n°3', dot:'#A8E8C0', onClick: ()=>{} },
         { title:'Campagne printemps (archivé)', dot:'#C4C7CC', onClick: ()=> this.setState({ page:'notfound', modelMenu:false }) }
@@ -4172,7 +4174,7 @@ class Component extends DCLogic {
           statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
             (suspended
               ? 'background:rgba(196,88,64,.12);color:#C45840'
-              : (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A')),
+              : (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')),
           action: suspended ? 'Réactiver' : 'Suspendre',
           actionStyle: 'padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;' +
             (suspended ? 'border:1px solid rgba(' + T.lineRGB + ',.16);color:' + T.text2 : 'border:1px solid rgba(196,88,64,.35);color:#C45840'),
@@ -4241,7 +4243,7 @@ class Component extends DCLogic {
         name: r.name, amount: r.amount, status: r.status,
         statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
           (r.paid
-            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       affSteps: [
@@ -4373,7 +4375,7 @@ class Component extends DCLogic {
         return {
           label: t.label, desc: t.desc,
           checkStyle: 'width:20px;height:20px;flex:0 0 auto;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .18s;' +
-            (sel ? 'background:#D6F94E;color:#1B1C1E' : 'border:1.5px solid rgba(' + T.lineRGB + ',.2);color:transparent'),
+            (sel ? 'background:#D1FE17;color:#131517' : 'border:1.5px solid rgba(' + T.lineRGB + ',.2);color:transparent'),
           cardStyle: 'display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:14px;cursor:pointer;transition:all .18s;text-align:left;' +
             (sel ? 'background:' + T.surface + ';border:1.5px solid ' + T.ink : 'background:transparent;border:1px solid rgba(' + T.lineRGB + ',.12)'),
           onClick: ()=> this.setState(s=>{
@@ -4404,7 +4406,7 @@ class Component extends DCLogic {
       ]).map((p,i)=>({
         id:p.id,
         title:p.title || 'Nouveau projet',
-        dot:['#D6F94E','#C9A8E8','#A8E8C0','#C4C7CC'][i % 4],
+        dot:['#D1FE17','#C9A8E8','#A8E8C0','#C4C7CC'][i % 4],
         menuOpen: st.projectMenuId === p.id,
         onClick:()=>this.switchProject(p.id),
         onMenu:(e)=>this.openProjectMenu(p.id, e),
@@ -4432,7 +4434,7 @@ class Component extends DCLogic {
         status: inv.status || 'payée',
         statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
           ((String(inv.status || 'paid').toLowerCase() === 'paid' || String(inv.status || '').toLowerCase() === 'payée')
-            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       plansGridCols: 'repeat(' + this.buildPlans().length + ',1fr)',
@@ -4451,7 +4453,7 @@ class Component extends DCLogic {
       chartBars: (((st.statsData && st.statsData.chart) || []).length ? st.statsData.chart : [{ label:'-', currentPct:0, previousPct:0, credits:0 }]).map(b=>({
         label:b.label, cur:(b.currentPct || 0) + '%', prev:(b.previousPct || 0) + '%', curTitle:(b.credits || 0) + ' credits', prevTitle:'Reference'
       })),
-      modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D6F94E','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
+      modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D1FE17','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
       highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
       openApi: ()=> this.setState({ page:'api', modelMenu:false }, ()=>this.loadApiKeys()),
       apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
@@ -4466,9 +4468,9 @@ class Component extends DCLogic {
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
       sendInvite: ()=> this.sendTeamInvite(),
       teamMembers: (((st.teamData && st.teamData.members) || [])).map((m,i)=>({
-        name:m.name, email:m.email, initials:m.initials, avatarBg:['#D6F94E','#E8D79B','#C9E8D5','#E8C9B8'][i % 4],
+        name:m.name, email:m.email, initials:m.initials, avatarBg:['#D1FE17','#E8D79B','#C9E8D5','#E8C9B8'][i % 4],
         isYou:!!m.isYou, role:this.roleLabel(m.role), activity:m.status === 'active' ? 'Actif' : 'En attente',
-        roleStyle:'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' + ((m.role === 'owner' || m.role === 'admin') ? 'background:#D6F94E;color:#1B1C1E' : (m.role === 'editor' ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4))
+        roleStyle:'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' + ((m.role === 'owner' || m.role === 'admin') ? 'background:#D1FE17;color:#131517' : (m.role === 'editor' ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4))
       })),
       pendingInvites: (((st.teamData && st.teamData.invites) || [])).map(p=>({ email:p.email, sent:p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : 'recent', onRevoke:()=>this.revokeInvite(p.id) })),
       noPending: !((st.teamData && st.teamData.invites && st.teamData.invites.length) || 0),
@@ -4499,7 +4501,7 @@ class Component extends DCLogic {
       ],
       referrals: (((st.affiliateData && st.affiliateData.referrals) || [])).map(r=>({
         name:r.name, amount:Number(r.amountUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), status:r.status,
-        statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D6F94E' : 'background:rgba(214,249,78,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
+        statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       messages: st.messages.map((m,i)=>{
         const media = (m.media && typeof m.media === 'object') ? m.media : null;
