@@ -3402,6 +3402,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
       error_message: !key ? "fal.ai is not configured" : "fal.ai endpoint is missing",
       provider_payload: { provider_configured: false },
     }).eq("id", generation.id);
+    await trackGenerationJob(supabase, generation, "failed", { error: !key ? "provider_not_configured" : "provider_endpoint_missing" });
     return;
   }
   try {
@@ -3415,6 +3416,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
       fal_job_id: request.request_id,
       provider_payload: { submitted: request },
     }).eq("id", generation.id);
+    await trackGenerationJob(supabase, { ...generation, fal_job_id: request.request_id }, "running", { submitted_at: new Date().toISOString() });
   } catch (err) {
     await supabase.from("generations").update({
       status: "failed",
@@ -3423,6 +3425,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
         fal_error: err instanceof Error ? err.message : "fal.ai submission failed",
       },
     }).eq("id", generation.id);
+    await trackGenerationJob(supabase, generation, "failed", { error: err instanceof Error ? err.message : "fal_submission_failed" });
   }
 }
 
@@ -3535,6 +3538,35 @@ function confirmationMessage(model: PricingModel, quote: PricingQuote) {
   const unitLabel = model.pricingUnit === "second" ? `${quote.units}s` : `${quote.units}`;
   const renderLabel = model.type === "video" ? "rendu video" : model.type === "image" || model.type === "image_edit" ? "rendu image" : "rendu media";
   return `Cette action coute ${quote.credits} credits (${renderLabel}, ${unitLabel}). Confirme avec "oui" pour lancer, ou "annule" pour ignorer.`;
+}
+
+async function trackGenerationJob(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  status: "queued" | "running" | "completed" | "failed" | "cancelled",
+  extra: Record<string, unknown> = {},
+) {
+  const generationId = String(generation?.id || "");
+  const userId = String(generation?.user_id || "");
+  if (!isUuid(generationId) || !isUuid(userId)) return;
+  const completedAt = ["completed", "failed", "cancelled"].includes(status) ? new Date().toISOString() : null;
+  const metadata = {
+    model_id: generation.model_id || null,
+    media_type: generation.type || null,
+    provider_job_id: generation.fal_job_id || null,
+    ...extra,
+  };
+  const { error } = await supabase.from("generation_jobs").upsert({
+    generation_id: generationId,
+    user_id: userId,
+    status,
+    attempts: status === "running" ? 1 : 0,
+    next_attempt_at: new Date().toISOString(),
+    completed_at: completedAt,
+    last_error: status === "failed" ? String(extra.error || generation.error_message || "Generation failed") : null,
+    metadata,
+  }, { onConflict: "generation_id" });
+  if (error) console.error("generation job tracking failed", error.message);
 }
 
 async function enforceMessageLimits(supabase: ReturnType<typeof adminClient>, userId: string, plan: PlanLimits) {
@@ -3716,10 +3748,19 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
         watermark_required: plan.watermarkRequired,
         media_retention_days: plan.mediaRetentionDays,
       },
-    })
+  })
     .select("*")
     .single();
   if (error) throw error;
+
+  await trackGenerationJob(supabase, generation, "queued", { queued_at: new Date().toISOString() });
+  void recordProductEvent(supabase, userId, "generation_requested", {
+    generation_id: generation.id,
+    project_id: project.id,
+    model_id: model.id,
+    media_type: type,
+    credits,
+  });
 
   const waitUntil = (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime?.waitUntil;
   if (waitUntil) waitUntil(startFalGeneration(generation, model));
@@ -4005,8 +4046,17 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
       media_retention_days: plan.mediaRetentionDays,
     },
   }));
-  const { error: insertError } = await supabase.from("generations").insert(rows);
+  const { data: batchGenerations, error: insertError } = await supabase.from("generations").insert(rows).select("*");
   if (insertError) throw insertError;
+  await Promise.all((batchGenerations || []).map((generation) => trackGenerationJob(supabase, generation, "queued", { batch_id: batchId })));
+  void recordProductEvent(supabase, userId, "generation_batch_requested", {
+    batch_id: batchId,
+    project_id: project.id,
+    model_id: model.id,
+    media_type: type,
+    count,
+    credits: totalCredits,
+  });
 
   const waitUntil = (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime?.waitUntil;
   const firstWave = launchBatchWave(supabase, userId, batchId);
@@ -4583,6 +4633,27 @@ function bytesFromDataUrl(data: unknown) {
   return bytes;
 }
 
+function hasExpectedUploadSignature(bytes: Uint8Array, contentType: string) {
+  const starts = (...values: number[]) => values.every((value, index) => bytes[index] === value);
+  const at = (offset: number, ...values: number[]) => values.every((value, index) => bytes[offset + index] === value);
+  if (contentType === "image/png") return starts(0x89, 0x50, 0x4e, 0x47);
+  if (contentType === "image/jpeg") return starts(0xff, 0xd8, 0xff);
+  if (contentType === "image/gif") return starts(0x47, 0x49, 0x46, 0x38);
+  if (contentType === "image/webp") return starts(0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50);
+  if (contentType === "application/pdf") return starts(0x25, 0x50, 0x44, 0x46);
+  if (contentType.startsWith("video/") || contentType === "audio/mp4") return at(4, 0x66, 0x74, 0x79, 0x70);
+  if (contentType === "audio/wav" || contentType === "audio/x-wav") return starts(0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x41, 0x56, 0x45);
+  if (contentType === "audio/ogg") return starts(0x4f, 0x67, 0x67, 0x53);
+  if (contentType === "audio/mpeg") return starts(0x49, 0x44, 0x33) || starts(0xff, 0xfb) || starts(0xff, 0xf3) || starts(0xff, 0xf2);
+  if (contentType === "application/json") {
+    const sample = new TextDecoder().decode(bytes.slice(0, 80)).trim();
+    return sample.startsWith("{") || sample.startsWith("[");
+  }
+  if (contentType === "application/msword") return starts(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1);
+  if (contentType.includes("wordprocessingml")) return starts(0x50, 0x4b, 0x03, 0x04);
+  return false;
+}
+
 async function uploadRoute(req: Request) {
   const body = await bodyJson(req);
   const supabase = adminClient();
@@ -4595,6 +4666,9 @@ async function uploadRoute(req: Request) {
     throw new FlowtubeError(415, "Format de fichier non pris en charge.", { code: "UNSUPPORTED_UPLOAD_TYPE" });
   }
   const bytes = bytesFromDataUrl(body.data || body.base64);
+  if (!hasExpectedUploadSignature(bytes, contentType)) {
+    throw new FlowtubeError(415, "Le contenu du fichier ne correspond pas au format annonce.", { code: "UPLOAD_SIGNATURE_INVALID" });
+  }
   const maxBytes = Math.max(1, Number(plan.maxUploadMb || 25)) * 1024 * 1024;
   if (bytes.byteLength > maxBytes) {
     throw new FlowtubeError(413, `Fichier trop lourd pour ton plan (${plan.maxUploadMb} Mo maximum).`, {
@@ -4750,11 +4824,13 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
           completed_at: new Date().toISOString(),
         }).eq("id", generation.id).select("*").single();
         await debitCredits(supabase, data);
+        await trackGenerationJob(supabase, data, "completed", { reconciled_at: new Date().toISOString() });
         await advanceBatch(supabase, data);
         return data;
       }
       const progress = Math.min(95, Math.max(Number(generation.progress || 5), Number(generation.progress || 5) + 8));
       const { data } = await supabase.from("generations").update({ status: "running", progress, provider_payload: status }).eq("id", generation.id).select("*").single();
+      await trackGenerationJob(supabase, data, "running", { reconciled_at: new Date().toISOString() });
       return data;
     } catch (err) {
       const { data } = await supabase.from("generations").update({
@@ -4762,6 +4838,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
         error_message: err instanceof Error ? err.message : "fal.ai status failed",
       }).eq("id", generation.id).select("*").single();
       await refundFailedGeneration(supabase, data);
+      await trackGenerationJob(supabase, data, "failed", { error: data?.error_message || "provider_status_failed" });
       await advanceBatch(supabase, data);
       return data;
     }
@@ -4775,6 +4852,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
     error_message: Deno.env.get("FAL_KEY") ? "fal.ai job id missing" : "fal.ai is not configured",
   }).eq("id", generation.id).select("*").single();
   await refundFailedGeneration(supabase, data);
+  await trackGenerationJob(supabase, data, "failed", { error: data?.error_message || "provider_job_missing" });
   return data;
 }
 
@@ -4898,6 +4976,314 @@ async function profileRoute(req: Request) {
     creditsMax: updated.credits_max,
     preferences: cleanMetadata(cleanMetadata(updated.metadata).preferences),
   });
+}
+
+function compactText(value: unknown, max = 120) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function safeStructuredContent(value: unknown, maxBytes = 100_000) {
+  const content = cleanMetadata(value);
+  if (new TextEncoder().encode(JSON.stringify(content)).byteLength > maxBytes) {
+    throw new FlowtubeError(413, "Ce contenu est trop volumineux.", { code: "CONTENT_TOO_LARGE" });
+  }
+  return content;
+}
+
+async function recordProductEvent(
+  supabase: ReturnType<typeof adminClient>,
+  userId: string | null,
+  eventName: string,
+  metadata: Record<string, unknown> = {},
+  sessionId = "",
+) {
+  const name = compactText(eventName, 100).toLowerCase();
+  if (!/^[a-z0-9_:-]+$/.test(name)) return;
+  const { error } = await supabase.from("product_events").insert({
+    user_id: userId || null,
+    session_id: compactText(sessionId, 120) || null,
+    event_name: name,
+    metadata: safeStructuredContent(metadata, 12_000),
+  });
+  if (error) console.error("product event tracking failed", error.message);
+}
+
+async function brandKitsRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const list = async () => {
+    const { data, error } = await supabase.from("brand_kits").select("*").eq("user_id", userId).order("is_default", { ascending: false }).order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  };
+  if (req.method === "GET") return json({ brands: await list() });
+  const body = await bodyJson(req);
+  const action = String(body.action || "save");
+  if (action === "delete") {
+    const id = String(body.id || "");
+    if (!isUuid(id)) throw new FlowtubeError(400, "Marque introuvable.", { code: "INVALID_BRAND_ID" });
+    const { error } = await supabase.from("brand_kits").delete().eq("id", id).eq("user_id", userId);
+    if (error) throw error;
+    await recordProductEvent(supabase, userId, "brand_deleted", { brand_id: id });
+    return json({ brands: await list() });
+  }
+  const name = compactText(body.name, 80);
+  if (!name) throw new FlowtubeError(400, "Donne un nom a cette marque.", { code: "BRAND_NAME_REQUIRED" });
+  const profile = safeStructuredContent(body.profile || body.details || {}, 30_000);
+  const isDefault = body.isDefault === true || body.is_default === true;
+  if (isDefault) {
+    const { error } = await supabase.from("brand_kits").update({ is_default: false }).eq("user_id", userId);
+    if (error) throw error;
+  }
+  const id = String(body.id || "");
+  if (isUuid(id)) {
+    const { error } = await supabase.from("brand_kits").update({ name, profile, is_default: isDefault }).eq("id", id).eq("user_id", userId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("brand_kits").insert({ user_id: userId, name, profile, is_default: isDefault });
+    if (error) throw error;
+  }
+  await recordProductEvent(supabase, userId, "brand_saved", { default: isDefault });
+  return json({ brands: await list() });
+}
+
+async function templatesRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const list = async () => {
+    const { data, error } = await supabase.from("creative_templates")
+      .select("id,user_id,project_id,brand_kit_id,source_generation_id,title,kind,visibility,content,remix_count,last_remixed_at,created_at,updated_at")
+      .or(`user_id.eq.${userId},visibility.eq.public`)
+      .order("updated_at", { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    return data || [];
+  };
+  if (req.method === "GET") return json({ templates: await list() });
+  const body = await bodyJson(req);
+  const action = String(body.action || "create");
+  if (action === "delete") {
+    const id = String(body.id || "");
+    if (!isUuid(id)) throw new FlowtubeError(400, "Template introuvable.", { code: "INVALID_TEMPLATE_ID" });
+    const { error } = await supabase.from("creative_templates").delete().eq("id", id).eq("user_id", userId);
+    if (error) throw error;
+    await recordProductEvent(supabase, userId, "template_deleted", { template_id: id });
+    return json({ templates: await list() });
+  }
+  if (action === "remix") {
+    const sourceId = String(body.id || body.templateId || "");
+    if (!isUuid(sourceId)) throw new FlowtubeError(400, "Template introuvable.", { code: "INVALID_TEMPLATE_ID" });
+    const { data: source, error } = await supabase.from("creative_templates").select("*").eq("id", sourceId).maybeSingle();
+    if (error) throw error;
+    if (!source || (source.user_id !== userId && source.visibility !== "public")) throw new FlowtubeError(404, "Template indisponible.", { code: "TEMPLATE_NOT_FOUND" });
+    const { data: created, error: createError } = await supabase.from("creative_templates").insert({
+      user_id: userId,
+      project_id: body.projectId && isUuid(String(body.projectId)) ? body.projectId : null,
+      brand_kit_id: body.brandKitId && isUuid(String(body.brandKitId)) ? body.brandKitId : null,
+      source_generation_id: source.source_generation_id || null,
+      title: compactText(body.title || `Remix - ${source.title}`, 120),
+      kind: source.kind || "creative",
+      visibility: "private",
+      content: { ...cleanMetadata(source.content), remixed_from: source.id },
+    }).select("*").single();
+    if (createError) throw createError;
+    await supabase.from("creative_templates").update({ remix_count: Number(source.remix_count || 0) + 1, last_remixed_at: new Date().toISOString() }).eq("id", source.id);
+    await recordProductEvent(supabase, userId, "template_remixed", { source_template_id: source.id, template_id: created.id });
+    return json({ template: created, templates: await list() });
+  }
+  const title = compactText(body.title, 120);
+  if (!title) throw new FlowtubeError(400, "Donne un nom a ce template.", { code: "TEMPLATE_TITLE_REQUIRED" });
+  const kind = ["creative", "ugc", "image", "video", "campaign", "workflow"].includes(String(body.kind)) ? String(body.kind) : "creative";
+  const visibility = body.visibility === "public" ? "public" : "private";
+  const content = safeStructuredContent(body.content || {}, 100_000);
+  const id = String(body.id || "");
+  if (isUuid(id)) {
+    const { error } = await supabase.from("creative_templates").update({ title, kind, visibility, content }).eq("id", id).eq("user_id", userId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("creative_templates").insert({
+      user_id: userId,
+      project_id: body.projectId && isUuid(String(body.projectId)) ? body.projectId : null,
+      brand_kit_id: body.brandKitId && isUuid(String(body.brandKitId)) ? body.brandKitId : null,
+      source_generation_id: body.generationId && isUuid(String(body.generationId)) ? body.generationId : null,
+      title,
+      kind,
+      visibility,
+      content,
+    });
+    if (error) throw error;
+  }
+  await recordProductEvent(supabase, userId, "template_saved", { kind, visibility });
+  return json({ templates: await list() });
+}
+
+async function integrationsRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const providers = ["google_drive", "whatsapp_business", "meta_ads", "tiktok", "slack", "notion", "webhook"];
+  const list = async () => {
+    const { data, error } = await supabase.from("integration_connections").select("id,provider,status,account_label,configuration,last_error,connected_at,updated_at").eq("user_id", userId).order("provider");
+    if (error) throw error;
+    const connected = new Map((data || []).map((item) => [item.provider, item]));
+    return providers.map((provider) => connected.get(provider) || { provider, status: "disconnected", account_label: null, configuration: {} });
+  };
+  if (req.method === "GET") return json({ connections: await list() });
+  const body = await bodyJson(req);
+  const provider = String(body.provider || "");
+  if (!providers.includes(provider)) throw new FlowtubeError(400, "Connecteur invalide.", { code: "INVALID_CONNECTOR" });
+  const action = String(body.action || "configure");
+  if (action === "disconnect") {
+    const { error } = await supabase.from("integration_connections").upsert({ user_id: userId, provider, status: "disconnected", account_label: null, credentials_ref: null, configuration: {}, last_error: null, connected_at: null }, { onConflict: "user_id,provider" });
+    if (error) throw error;
+    await recordProductEvent(supabase, userId, "connector_disconnected", { provider });
+    return json({ connections: await list() });
+  }
+  const configuration = safeStructuredContent(body.configuration || {}, 12_000);
+  const { error } = await supabase.from("integration_connections").upsert({
+    user_id: userId,
+    provider,
+    status: "pending",
+    account_label: compactText(body.accountLabel || "", 120) || null,
+    configuration,
+    last_error: null,
+  }, { onConflict: "user_id,provider" });
+  if (error) throw error;
+  await recordProductEvent(supabase, userId, "connector_configuration_requested", { provider });
+  return json({ connections: await list(), authorizationRequired: true });
+}
+
+async function exportPackageRoute(req: Request) {
+  const body = await bodyJson(req);
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const projectId = String(body.projectId || "");
+  if (!isUuid(projectId)) throw new FlowtubeError(400, "Projet introuvable.", { code: "INVALID_PROJECT_ID" });
+  const { data: project, error: projectError } = await supabase.from("projects").select("id,title,created_at,updated_at").eq("id", projectId).eq("user_id", userId).maybeSingle();
+  if (projectError) throw projectError;
+  if (!project) throw new FlowtubeError(404, "Projet introuvable.", { code: "PROJECT_NOT_FOUND" });
+  const [{ data: generations }, { data: messages }, { data: brands }] = await Promise.all([
+    supabase.from("generations").select("id,type,status,model_label,prompt,aspect_ratio,duration_seconds,result_url,created_at").eq("project_id", projectId).eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("messages").select("role,content,created_at").eq("project_id", projectId).eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("brand_kits").select("id,name,profile,is_default").eq("user_id", userId).order("is_default", { ascending: false }).limit(1),
+  ]);
+  const manifest = {
+    version: "1.0",
+    exported_at: new Date().toISOString(),
+    project,
+    brand: (brands || [])[0] || null,
+    assets: (generations || []).map((item) => ({ id: item.id, type: item.type, status: item.status, model: item.model_label, prompt: item.prompt, aspect_ratio: item.aspect_ratio, duration_seconds: item.duration_seconds, url: item.result_url, created_at: item.created_at })),
+    conversation: (messages || []).map((item) => ({ role: item.role, content: item.content, created_at: item.created_at })),
+  };
+  const { data: record, error } = await supabase.from("export_packages").insert({ user_id: userId, project_id: projectId, status: "ready", format: "campaign_manifest", manifest }).select("id,created_at").single();
+  if (error) throw error;
+  await recordProductEvent(supabase, userId, "project_exported", { project_id: projectId, export_id: record?.id || null, asset_count: manifest.assets.length });
+  return json({ exportId: record?.id || null, fileName: `${compactText(project.title, 48).replace(/[^a-z0-9-_]/gi, "-") || "huggyflow-project"}-package.json`, manifest });
+}
+
+async function feedbackRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  if (req.method === "GET") {
+    const { data, error } = await supabase.from("user_feedback").select("id,kind,message,status,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+    if (error) throw error;
+    return json({ feedback: data || [] });
+  }
+  const body = await bodyJson(req);
+  const message = String(body.message || "").trim().slice(0, 4000);
+  if (message.length < 3) throw new FlowtubeError(400, "Ecris un peu plus de details.", { code: "FEEDBACK_MESSAGE_REQUIRED" });
+  const kind = ["feedback", "bug", "feature_request", "billing"].includes(String(body.kind)) ? String(body.kind) : "feedback";
+  const { data, error } = await supabase.from("user_feedback").insert({ user_id: userId, kind, message, metadata: safeStructuredContent(body.metadata || {}, 8_000) }).select("id,kind,message,status,created_at").single();
+  if (error) throw error;
+  await recordProductEvent(supabase, userId, "feedback_sent", { kind });
+  return json({ feedback: data });
+}
+
+async function productEventRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  await enforceRateLimit(req, supabase, "product_event", userId, 120);
+  const body = await bodyJson(req);
+  const eventName = compactText(body.event || body.eventName, 100).toLowerCase();
+  if (!/^[a-z0-9_:-]+$/.test(eventName)) throw new FlowtubeError(400, "Evenement invalide.", { code: "INVALID_EVENT" });
+  await recordProductEvent(supabase, userId, eventName, safeStructuredContent(body.metadata || {}, 8_000), String(body.sessionId || ""));
+  return json({ ok: true });
+}
+
+async function accountExportRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const [profile, projects, templates, brands, feedback, generations, messages, mediaAssets, connections] = await Promise.all([
+    supabase.from("profiles").select("id,email,billing_email,display_name,plan,credits,credits_max,metadata,created_at,updated_at").eq("id", userId).maybeSingle(),
+    supabase.from("projects").select("id,title,created_at,updated_at,archived").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("creative_templates").select("id,title,kind,visibility,content,created_at,updated_at").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("brand_kits").select("id,name,profile,is_default,created_at,updated_at").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("user_feedback").select("kind,message,status,created_at").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("generations").select("id,project_id,type,status,model_id,model_label,prompt,aspect_ratio,duration_seconds,result_url,created_at,updated_at").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("messages").select("id,project_id,conversation_id,role,content,created_at").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("media_assets").select("id,generation_id,bucket,object_path,content_type,bytes,source_url,public_url,status,created_at,updated_at").eq("user_id", userId).order("created_at", { ascending: true }),
+    supabase.from("integration_connections").select("provider,status,account_label,configuration,connected_at,updated_at").eq("user_id", userId).order("provider"),
+  ]);
+  const exportData = {
+    exported_at: new Date().toISOString(),
+    account: profile.data || null,
+    projects: projects.data || [],
+    templates: templates.data || [],
+    brands: brands.data || [],
+    feedback: feedback.data || [],
+    generations: generations.data || [],
+    messages: messages.data || [],
+    media_assets: mediaAssets.data || [],
+    integrations: connections.data || [],
+  };
+  await recordProductEvent(supabase, userId, "account_data_exported");
+  return json({ fileName: "huggyflow-mon-compte.json", export: exportData });
+}
+
+async function deleteStoragePrefix(
+  supabase: ReturnType<typeof adminClient>,
+  bucket: string,
+  prefix: string,
+  depth = 0,
+): Promise<void> {
+  if (depth > 6) throw new FlowtubeError(500, "Organisation des fichiers invalide.", { code: "STORAGE_DELETE_DEPTH" });
+  let offset = 0;
+  const files: string[] = [];
+  const folders: string[] = [];
+  while (true) {
+    const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 1000, offset });
+    if (error) throw new FlowtubeError(500, "Impossible de preparer la suppression des fichiers.", { code: "STORAGE_LIST_FAILED" });
+    const objects = data || [];
+    for (const object of objects) {
+      const path = `${prefix}/${object.name}`;
+      if (object.id) files.push(path);
+      else folders.push(path);
+    }
+    if (objects.length < 1000) break;
+    offset += objects.length;
+  }
+  for (const folder of folders) await deleteStoragePrefix(supabase, bucket, folder, depth + 1);
+  for (let index = 0; index < files.length; index += 1000) {
+    const { error } = await supabase.storage.from(bucket).remove(files.slice(index, index + 1000));
+    if (error) throw new FlowtubeError(500, "Impossible de supprimer les fichiers du compte.", { code: "STORAGE_REMOVE_FAILED" });
+  }
+}
+
+async function deleteAccountRoute(req: Request) {
+  const body = await bodyJson(req);
+  const confirmation = String(body.confirmation || "").trim().toUpperCase();
+  if (confirmation !== "SUPPRIMER") {
+    throw new FlowtubeError(400, "Ecris SUPPRIMER pour confirmer cette action definitive.", { code: "DELETE_CONFIRMATION_REQUIRED" });
+  }
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  await deleteStoragePrefix(supabase, MEDIA_BUCKET, userId);
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) throw new FlowtubeError(500, "Impossible de supprimer le compte pour le moment.", { code: "ACCOUNT_DELETE_FAILED" });
+  return json({ ok: true });
+}
+
+async function healthRoute() {
+  return json({ ok: true, service: "huggyflow", now: new Date().toISOString() });
 }
 
 async function authRoute(req: Request, action: string) {
@@ -5085,6 +5471,13 @@ async function createCheckout(req: Request) {
   const provider = String(
     body.provider || Deno.env.get("BILLING_PROVIDER") || (moneyFusionCheckoutUrl() ? "moneyfusion" : "stripe"),
   ).toLowerCase();
+  void recordProductEvent(supabase, userId, "checkout_started", {
+    provider,
+    type,
+    interval,
+    plan_id: body.planId || null,
+    credit_pack_id: body.creditPackId || body.packId || null,
+  });
 
   if (provider === "moneyfusion" || provider === "fusionpay") {
     return await createMoneyFusionCheckout(supabase, profile, body as Record<string, unknown>, type, interval, successUrl, cancelUrl);
@@ -5543,6 +5936,7 @@ async function stripeWebhook(req: Request) {
     } else if (metadata.plan_id && userId) {
       await grantPlanCredits(supabase, String(userId), String(metadata.plan_id), String(metadata.interval || "monthly"), object.subscription || undefined);
     }
+    if (userId) void recordProductEvent(supabase, String(userId), "checkout_completed", { provider: "stripe", type: metadata.type || "subscription" });
   }
 
   if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
@@ -5652,6 +6046,7 @@ async function moneyFusionCallback(req: Request) {
     } else if (session.plan_id) {
       await grantPlanCredits(supabase, userId, String(session.plan_id), String(session.billing_interval || "monthly"), `moneyfusion:${eventId}`);
     }
+    void recordProductEvent(supabase, userId, "checkout_completed", { provider: "moneyfusion", type: session.credit_pack_id ? "credits" : "subscription" });
   } else if (!paid && rawStatus) {
     await supabase.from("billing_checkout_sessions").update({
       status: rawStatus.includes("fail") || rawStatus.includes("cancel") ? "failed" : "open",
@@ -5705,6 +6100,7 @@ async function falWebhook(req: Request) {
       provider_payload: body,
     }).eq("id", generation.id).select("*").single();
     await refundFailedGeneration(supabase, data);
+    await trackGenerationJob(supabase, data, "failed", { error: data?.error_message || "provider_webhook_failed" });
     await advanceBatch(supabase, data);
     return json({ ok: true });
   }
@@ -5718,10 +6114,12 @@ async function falWebhook(req: Request) {
       completed_at: new Date().toISOString(),
     }).eq("id", generation.id).select("*").single();
     await debitCredits(supabase, data);
+    await trackGenerationJob(supabase, data, "completed", { completed_via: "webhook" });
     await advanceBatch(supabase, data);
     return json({ ok: true });
   }
   await supabase.from("generations").update({ status: "running", provider_payload: body }).eq("id", generation.id);
+  await trackGenerationJob(supabase, generation, "running", { updated_via: "webhook" });
   return json({ ok: true });
 }
 
@@ -5737,6 +6135,7 @@ Deno.serve(async (req: Request) => {
     const route = fnIndex >= 0 ? parts.slice(fnIndex + 1) : parts;
     const first = route[0] || "bootstrap";
 
+    if (first === "health" && req.method === "GET") return await healthRoute();
     if (first === "bootstrap" && req.method === "GET") return await bootstrap(req);
     if (first === "chat" && req.method === "POST") return await chat(req);
     if (first === "upload" && req.method === "POST") return await uploadRoute(req);
@@ -5746,6 +6145,14 @@ Deno.serve(async (req: Request) => {
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
     if (first === "projects" && route[1] && (req.method === "PATCH" || req.method === "DELETE")) return await projectRoute(req, route[1]);
     if (first === "profile" && (req.method === "GET" || req.method === "POST")) return await profileRoute(req);
+    if (first === "account" && route[1] === "export" && req.method === "GET") return await accountExportRoute(req);
+    if (first === "account" && route[1] === "delete" && req.method === "POST") return await deleteAccountRoute(req);
+    if (first === "brands" && (req.method === "GET" || req.method === "POST")) return await brandKitsRoute(req);
+    if (first === "templates" && (req.method === "GET" || req.method === "POST")) return await templatesRoute(req);
+    if (first === "exports" && req.method === "POST") return await exportPackageRoute(req);
+    if (first === "integrations" && (req.method === "GET" || req.method === "POST")) return await integrationsRoute(req);
+    if (first === "feedback" && (req.method === "GET" || req.method === "POST")) return await feedbackRoute(req);
+    if (first === "events" && req.method === "POST") return await productEventRoute(req);
     if (first === "team" && (req.method === "GET" || req.method === "POST")) return await teamRoute(req);
     if (((first === "api" && route[1] === "keys") || first === "keys") && (req.method === "GET" || req.method === "POST")) return await apiKeysRoute(req);
     if (first === "affiliate" && (req.method === "GET" || req.method === "POST")) return await affiliateRoute(req);

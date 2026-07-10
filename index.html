@@ -1167,13 +1167,25 @@ input:focus,textarea:focus{outline:none}
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Compte</div>
               <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Gère ton e-mail, ta session et la suppression de ton compte.</div>
               <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span style="font-size:13.5px;color:#BCC0C6">E-mail</span>
+                <span style="font-size:13.5px;color:#BCC0C6">E-mail de facturation</span>
                 <input value="{{ settingsEmail }}" onChange="{{ onSettingsEmail }}" type="email" style="width:240px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;text-align:right" style-focus="border-color:rgba(255,255,255,.2)"/>
               </div>
               <div style="margin-top:28px;display:flex;gap:8px">
+                <button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
                 <button onClick="{{ openAuth }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">{{ sessionCta }}</button>
-                <button style="padding:9px 16px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Supprimer le compte</button>
+                <button onClick="{{ exportAccountData }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Exporter mes donnees</button>
+                <button onClick="{{ openAccountDeletion }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Supprimer le compte</button>
               </div>
+              <sc-if value="{{ accountDeletionOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:18px;padding:14px;border-radius:12px;border:1px solid rgba(196,88,64,.3);background:rgba(196,88,64,.06)">
+                  <div style="font-size:12.5px;line-height:1.5;color:#F2F3F5">Cette action est definitive. Ecris SUPPRIMER pour confirmer.</div>
+                  <div style="display:flex;gap:8px;margin-top:12px">
+                    <input value="{{ accountDeletionConfirmation }}" onChange="{{ onAccountDeletionConfirmation }}" placeholder="SUPPRIMER" style="flex:1;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.16);color:#F2F3F5;font-size:12px;font-family:inherit"/>
+                    <button onClick="{{ confirmAccountDeletion }}" style="{{ accountDeletionButtonStyle }}" disabled="{{ accountDeletionBusy }}">Confirmer</button>
+                    <button onClick="{{ closeAccountDeletion }}" style="padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#BCC0C6;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Annuler</button>
+                  </div>
+                </div>
+              </sc-if>
             </sc-if>
 
             <!-- ===== Confidentialité placeholder ===== -->
@@ -1188,12 +1200,26 @@ input:focus,textarea:focus{outline:none}
                 <div><div style="font-size:13.5px;font-weight:600;color:#E8E9EB">Partager les analytics</div><div style="font-size:12px;color:#767C85;margin-top:2px">Aide-nous à comprendre comment le produit est utilisé</div></div>
                 <div onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}"><span style="{{ analyticsKnobStyle }}"></span></div>
               </div>
+              <div style="margin-top:12px"><button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer mes choix</button></div>
             </sc-if>
 
             <!-- ===== Capabilities placeholder ===== -->
             <sc-if value="{{ modalShowCapabilities }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Capacités</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Modèles disponibles, limites et fonctionnalités de ton plan.</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:20px">Ta marque guide les scripts, les visuels et les campagnes de ce compte.</div>
+              <div style="padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025)">
+                <div style="font-size:13px;font-weight:700;color:#F2F3F5">Identité de marque</div>
+                <input value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Nom de ta marque" style="width:100%;box-sizing:border-box;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit"/>
+                <textarea value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Promesse, public, ton et univers visuel" style="width:100%;box-sizing:border-box;min-height:76px;margin-top:8px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;line-height:1.45"></textarea>
+                <div style="margin-top:10px"><button onClick="{{ saveBrand }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer la marque</button></div>
+              </div>
+              <sc-for list="{{ brandCards }}" as="brand" hint-placeholder-count="1">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                  <div style="width:28px;height:28px;border-radius:8px;background:rgba(214,249,78,.12);color:#D6F94E;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">{{ brand.initial }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F2F3F5">{{ brand.name }}</div><div style="margin-top:2px;font-size:11.5px;color:#767C85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ brand.description }}</div></div>
+                  <span style="font-size:9px;font-weight:800;color:#D6F94E;letter-spacing:.06em">{{ brand.badge }}</span>
+                </div>
+              </sc-for>
             </sc-if>
 
             <!-- ===== Claude Code placeholder ===== -->
@@ -1205,19 +1231,39 @@ input:focus,textarea:focus{outline:none}
             <!-- ===== Skills placeholder ===== -->
             <sc-if value="{{ modalShowSkills }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Compétences</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Gère les compétences personnalisées pour enrichir tes interactions.</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:18px">Sauvegarde les recettes qui marchent et relance-les depuis un projet.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+                <button onClick="{{ saveProjectTemplate }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer ce projet</button>
+                <button onClick="{{ exportProjectPackage }}" style="padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Exporter le pack</button>
+              </div>
+              <sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(201,168,232,.12);color:#C9A8E8;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ template.kind }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F2F3F5">{{ template.title }}</div><div style="margin-top:2px;font-size:11.5px;color:#767C85">{{ template.remixes }} remix</div></div>
+                  <button onClick="{{ template.onRemix }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">Remixer</button>
+                </div>
+              </sc-for>
             </sc-if>
 
             <!-- ===== Connectors placeholder ===== -->
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Connecteurs</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Connecte GitHub, Google Drive et d'autres services.</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:18px">Prépare les destinations de tes créations. Les autorisations restent protégées côté serveur.</div>
+              <sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(214,249,78,.1);color:#D6F94E;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ connector.label }}</div>
+                  <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#F2F3F5">{{ connector.label }}</div><div style="margin-top:2px;font-size:11.5px;color:#767C85">{{ connector.statusLabel }}</div></div>
+                  <button onClick="{{ connector.onConfigure }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#BCC0C6;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">{{ connector.buttonLabel }}</button>
+                </div>
+              </sc-for>
             </sc-if>
 
             <!-- ===== Plugins placeholder ===== -->
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Plugins</div>
-              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6">Découvre et installe des extensions tierces.</div>
+              <div style="font-size:13.5px;color:#9AA0A8;line-height:1.6;margin-bottom:18px">Dis-nous quelle extension ou automatisation rendrait HuggyFlow plus utile pour toi.</div>
+              <textarea value="{{ feedbackMessage }}" onChange="{{ onFeedbackMessage }}" placeholder="Ex. publier automatiquement ma vidéo sur TikTok" style="width:100%;box-sizing:border-box;min-height:92px;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F2F3F5;font-size:13px;font-family:inherit;line-height:1.5"></textarea>
+              <div style="margin-top:10px"><button onClick="{{ sendFeedback }}" style="padding:9px 15px;border-radius:999px;border:none;background:#D6F94E;color:#1B1C1E;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Envoyer ma demande</button></div>
             </sc-if>
 
             <!-- ===== Billing (reuses existing content inline) ===== -->
@@ -2056,7 +2102,14 @@ class Component extends DCLogic {
     compareOpen: false,
     attachments: Array.isArray(this.initialUiState.attachments) ? this.initialUiState.attachments : [],
     uploadingAttachment: false,
-    attachmentNotice: ''
+    attachmentNotice: '',
+    prefs: { notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false },
+    settingsName: '', settingsEmail: '', settingsCalledName: '', settingsJobDesc: 'Marketing', settingsInstructions: '', settingsFont: 'Instrument Sans',
+    brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
+    creativeTemplates: [], templatesLoading: false,
+    integrationConnections: [], integrationsLoading: false,
+    feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
+    accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false
   };
 
   MODELS = [
@@ -2623,6 +2676,7 @@ class Component extends DCLogic {
       const projects = this.normalizeProjects(data.projects || []);
       const currentId = this.state.activeProjectId;
       const active = projects.find(p=>p.id === currentId) || projects[0] || null;
+      const prefs = data.user && data.user.preferences ? Object.assign({ notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false }, data.user.preferences) : this.state.prefs;
       this.setState({
         projectsData: projects,
         activeProjectId: active ? active.id : currentId,
@@ -2631,7 +2685,7 @@ class Component extends DCLogic {
         credits: Number(data.credits !== undefined ? data.credits : this.state.credits),
         creditsMax: Number(data.creditsMax || this.state.creditsMax || 100),
         user: data.user || null,
-        prefs: data.user && data.user.preferences ? Object.assign({ notif:true, autoplay:true, sounds:false }, data.user.preferences) : this.state.prefs,
+        prefs,
         pricingPlans: data.plans || [],
         pricingModels: data.models || [],
         creditPacks: data.creditPacks || [],
@@ -2640,6 +2694,15 @@ class Component extends DCLogic {
         usdXofRate: Number((data.pricing && data.pricing.usdXofRate) || (data.billing && data.billing.usdXofRate) || this.state.usdXofRate || 600),
         authEmail: this.state.authEmail || (data.user && data.user.email) || '',
         authName: this.state.authName || (data.user && data.user.name) || '',
+        settingsName: (data.user && data.user.name) || this.state.settingsName,
+        settingsEmail: (data.user && (data.user.billingEmail || data.user.email)) || this.state.settingsEmail,
+        settingsCalledName: prefs.calledName || this.state.settingsCalledName,
+        settingsJobDesc: prefs.jobDescription || this.state.settingsJobDesc,
+        settingsInstructions: prefs.instructions || this.state.settingsInstructions,
+        settingsFont: prefs.font || this.state.settingsFont,
+        theme: prefs.theme || this.state.theme,
+        shareAnalytics: prefs.shareAnalytics !== false,
+        shareDataTraining: prefs.dataTraining === true,
         backendReady:true
       }, ()=>this.resumeGenerationPolling(projects));
     }catch(err){
@@ -2668,6 +2731,11 @@ class Component extends DCLogic {
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
     if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked) this.scrollChatToBottom();
+    if(prevState.page !== this.state.page){
+      if(this.state.page === 'capabilities') this.loadBrands();
+      if(this.state.page === 'skills') this.loadTemplates();
+      if(this.state.page === 'connectors') this.loadIntegrations();
+    }
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
   }
   schedulePersistUiState(){
@@ -3088,7 +3156,15 @@ class Component extends DCLogic {
     if(!this.requireAuth('Connecte-toi pour enregistrer tes reglages.', null)) return;
     this.setState({ settingsSaving:true, settingsSaved:false });
     try{
-      const prefs = Object.assign({ notif:true, autoplay:true, sounds:false }, this.state.prefs || {});
+      const prefs = Object.assign({ notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false }, this.state.prefs || {}, {
+        calledName:this.state.settingsCalledName || '',
+        jobDescription:this.state.settingsJobDesc || '',
+        instructions:this.state.settingsInstructions || '',
+        font:this.state.settingsFont || 'Instrument Sans',
+        theme:this.state.theme || 'dark',
+        shareAnalytics:this.state.shareAnalytics !== false,
+        dataTraining:this.state.shareDataTraining === true
+      });
       const res = await this.apiFetch('/api/profile', {
         method:'POST',
         body:JSON.stringify({
@@ -3105,11 +3181,149 @@ class Component extends DCLogic {
         user:data.user || this.state.user,
         prefs:data.preferences || prefs,
         settingsName:(data.user && data.user.name) || this.state.settingsName,
-        settingsEmail:(data.user && (data.user.billingEmail || data.user.email)) || this.state.settingsEmail
+        settingsEmail:(data.user && (data.user.billingEmail || data.user.email)) || this.state.settingsEmail,
+        shareAnalytics:prefs.shareAnalytics,
+        shareDataTraining:prefs.dataTraining
       });
     }catch(err){
       this.setState({ settingsSaving:false, settingsSaved:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer les reglages pour le moment.') });
     }
+  }
+  async loadBrands(){
+    if(!this.state.authToken) return;
+    try{
+      const res = await this.apiFetch('/api/brands');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'brands');
+      const brands = data.brands || [];
+      const active = brands[0] || null;
+      this.setState({ brandKits:brands, brandName:active ? active.name : this.state.brandName, brandDescription:active && active.profile ? (active.profile.description || '') : this.state.brandDescription });
+    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger ton identite de marque.') }); }
+  }
+  async saveBrand(){
+    if(!this.requireAuth('Connecte-toi pour enregistrer ton identite de marque.', null)) return;
+    const name = String(this.state.brandName || '').trim();
+    if(!name){ this.setState({ pricingNotice:'Donne un nom a ta marque.' }); return; }
+    this.setState({ brandSaving:true });
+    try{
+      const defaultBrand = (this.state.brandKits || []).find(b=>b.is_default) || null;
+      const res = await this.apiFetch('/api/brands', { method:'POST', body:JSON.stringify({
+        id:defaultBrand && defaultBrand.id,
+        name,
+        isDefault:true,
+        profile:{ description:String(this.state.brandDescription || '').trim(), instructions:String(this.state.settingsInstructions || '').trim(), audience:String(this.state.settingsJobDesc || '').trim() }
+      }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'brand');
+      this.setState({ brandKits:data.brands || [], brandSaving:false, pricingNotice:'Identite de marque enregistree.' });
+    }catch(err){ this.setState({ brandSaving:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer la marque.') }); }
+  }
+  async loadTemplates(){
+    if(!this.state.authToken) return;
+    this.setState({ templatesLoading:true });
+    try{
+      const res = await this.apiFetch('/api/templates');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'templates');
+      this.setState({ creativeTemplates:data.templates || [], templatesLoading:false });
+    }catch(err){ this.setState({ templatesLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger tes templates.') }); }
+  }
+  async saveProjectTemplate(){
+    if(!this.requireAuth('Connecte-toi pour enregistrer ce template.', null)) return;
+    const project = (this.state.projectsData || []).find(p=>p.id === this.state.activeProjectId);
+    const title = (project && project.title) || this.state.activeTitle || 'Nouveau template';
+    const lastUserMessage = (this.state.messages || []).slice().reverse().find(m=>m && m.role === 'user');
+    try{
+      const res = await this.apiFetch('/api/templates', { method:'POST', body:JSON.stringify({
+        action:'create', title, kind:'workflow', projectId:this.state.activeProjectId,
+        content:{ prompt:(lastUserMessage && (lastUserMessage.text || lastUserMessage.content)) || '', mode:this.state.mode, modelId:this.state.modelId, aspectRatio:this.state.aspectRatio || '4:5' }
+      }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'template');
+      this.setState({ creativeTemplates:data.templates || [], pricingNotice:'Template enregistre. Tu pourras le remixer a tout moment.' });
+    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer ce template.') }); }
+  }
+  async remixTemplate(id){
+    if(!this.requireAuth('Connecte-toi pour remixer ce template.', null)) return;
+    try{
+      const res = await this.apiFetch('/api/templates', { method:'POST', body:JSON.stringify({ action:'remix', id, projectId:this.state.activeProjectId }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'remix');
+      const template = data.template || {};
+      const content = template.content || {};
+      this.setState({ creativeTemplates:data.templates || [], page:'app', input:content.prompt || ('Remixe le template ' + (template.title || 'selectionne')), pricingNotice:'Template ajoute a ton projet. Ajuste l idee puis lance.' });
+    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de remixer ce template.') }); }
+  }
+  async loadIntegrations(){
+    if(!this.state.authToken) return;
+    this.setState({ integrationsLoading:true });
+    try{
+      const res = await this.apiFetch('/api/integrations');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'integrations');
+      this.setState({ integrationConnections:data.connections || [], integrationsLoading:false });
+    }catch(err){ this.setState({ integrationsLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les connecteurs.') }); }
+  }
+  async configureIntegration(provider){
+    if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
+    try{
+      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
+      this.setState({ integrationConnections:data.connections || [], pricingNotice:'Connecteur en attente. Ajoute les identifiants OAuth du fournisseur pour finaliser la liaison.' });
+    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
+  }
+  downloadJson(fileName, payload){
+    if(typeof window === 'undefined') return;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = fileName || 'huggyflow-export.json';
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 0);
+  }
+  async exportProjectPackage(){
+    if(!this.requireAuth('Connecte-toi pour exporter ce projet.', null)) return;
+    try{
+      const res = await this.apiFetch('/api/exports', { method:'POST', body:JSON.stringify({ projectId:this.state.activeProjectId }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'export');
+      this.downloadJson(data.fileName, data.manifest);
+      this.setState({ pricingNotice:'Pack de campagne telecharge.' });
+    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible d exporter ce projet.') }); }
+  }
+  async exportAccountData(){
+    if(!this.requireAuth('Connecte-toi pour exporter tes donnees.', null)) return;
+    try{
+      const res = await this.apiFetch('/api/account/export');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'account export');
+      this.downloadJson(data.fileName, data.export);
+      this.setState({ pricingNotice:'Tes donnees ont ete preparees.' });
+    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible d exporter tes donnees.') }); }
+  }
+  async confirmAccountDeletion(){
+    if(String(this.state.accountDeletionConfirmation || '').trim().toUpperCase() !== 'SUPPRIMER') return;
+    this.setState({ accountDeleting:true });
+    try{
+      const res = await this.apiFetch('/api/account/delete', { method:'POST', body:JSON.stringify({ confirmation:'SUPPRIMER' }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'account delete');
+      this.clearSession('Ton compte a ete supprime.');
+      this.setState({ page:'auth', authMode:'signup', accountDeleting:false, accountDeletionOpen:false });
+    }catch(err){ this.setState({ accountDeleting:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de supprimer ton compte.') }); }
+  }
+  async sendFeedback(){
+    if(!this.requireAuth('Connecte-toi pour envoyer ton retour.', null)) return;
+    const message = String(this.state.feedbackMessage || '').trim();
+    if(message.length < 3) return;
+    this.setState({ feedbackSending:true });
+    try{
+      const res = await this.apiFetch('/api/feedback', { method:'POST', body:JSON.stringify({ kind:this.state.feedbackKind || 'feedback', message }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'feedback');
+      this.setState({ feedbackMessage:'', feedbackSending:false, pricingNotice:'Merci, ton retour a ete envoye.' });
+    }catch(err){ this.setState({ feedbackSending:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d envoyer ton retour.') }); }
   }
   async newProject(){
     if(!this.requireAuth('Connecte-toi pour creer un projet sauvegarde.', { type:'newProject' })) return;
@@ -3536,10 +3750,10 @@ class Component extends DCLogic {
       onSettingsInstructions: (e)=> this.setState({ settingsInstructions: e.target.value, settingsSaved:false }),
       settingsFont: st.settingsFont ?? 'Anthropic Serif',
       onSettingsFont: (e)=> this.setState({ settingsFont: e.target.value, settingsSaved:false }),
-      toggleDataTraining: ()=> this.setState(s=>({ trainData: !s.trainData })),
-      trainTrackStyle: this.switchTrack(st.trainData !== false),
-      trainKnobStyle: this.switchKnob(st.trainData !== false),
-      toggleAnalyticsSharing: ()=> this.setState(s=>({ shareAnalytics: !s.shareAnalytics })),
+      toggleDataTraining: ()=> this.setState(s=>({ shareDataTraining: !s.shareDataTraining, settingsSaved:false })),
+      trainTrackStyle: this.switchTrack(st.shareDataTraining === true),
+      trainKnobStyle: this.switchKnob(st.shareDataTraining === true),
+      toggleAnalyticsSharing: ()=> this.setState(s=>({ shareAnalytics: !s.shareAnalytics, settingsSaved:false })),
       analyticsTrackStyle: this.switchTrack(st.shareAnalytics !== false),
       analyticsKnobStyle: this.switchKnob(st.shareAnalytics !== false),
       setSystemTheme: ()=> this.setState({ theme:'system' }, ()=>{ try{ localStorage.setItem('hf-theme','system'); }catch(e){} }),
@@ -3570,6 +3784,40 @@ class Component extends DCLogic {
       modalShowSkills: st.page === 'skills',
       modalShowConnectors: st.page === 'connectors',
       modalShowPlugins: st.page === 'plugins',
+      openAccountDeletion: ()=> this.setState({ accountDeletionOpen:true, accountDeletionConfirmation:'' }),
+      closeAccountDeletion: ()=> this.setState({ accountDeletionOpen:false, accountDeletionConfirmation:'' }),
+      accountDeletionOpen: !!st.accountDeletionOpen,
+      accountDeletionConfirmation: st.accountDeletionConfirmation || '',
+      onAccountDeletionConfirmation: (e)=> this.setState({ accountDeletionConfirmation:e.target.value }),
+      accountDeletionReady: String(st.accountDeletionConfirmation || '').trim().toUpperCase() === 'SUPPRIMER',
+      accountDeletionBusy: !!st.accountDeleting,
+      accountDeletionButtonStyle: 'padding:9px 13px;border-radius:8px;border:none;background:#C45840;color:#FFF;font-size:12px;font-weight:700;cursor:' + (String(st.accountDeletionConfirmation || '').trim().toUpperCase() === 'SUPPRIMER' ? 'pointer' : 'not-allowed') + ';font-family:inherit;opacity:' + (String(st.accountDeletionConfirmation || '').trim().toUpperCase() === 'SUPPRIMER' ? '1' : '.45'),
+      confirmAccountDeletion: ()=> this.confirmAccountDeletion(),
+      exportAccountData: ()=> this.exportAccountData(),
+      brandName: st.brandName || '',
+      brandDescription: st.brandDescription || '',
+      onBrandName: (e)=> this.setState({ brandName:e.target.value }),
+      onBrandDescription: (e)=> this.setState({ brandDescription:e.target.value }),
+      saveBrand: ()=> this.saveBrand(),
+      brandSaving: !!st.brandSaving,
+      brandCards: (st.brandKits || []).map(b=>({ name:b.name || 'Marque', initial:String(b.name || 'M').slice(0,1).toUpperCase(), description:(b.profile && b.profile.description) || 'Identite prete a guider tes creations.', badge:b.is_default ? 'PAR DEFAUT' : '' })),
+      saveProjectTemplate: ()=> this.saveProjectTemplate(),
+      exportProjectPackage: ()=> this.exportProjectPackage(),
+      templatesLoading: !!st.templatesLoading,
+      templateCards: (st.creativeTemplates || []).map(t=>({ title:t.title || 'Template', kind:(t.kind || 'creative').toUpperCase(), remixes:Number(t.remix_count || 0), onRemix:()=>this.remixTemplate(t.id) })),
+      connectorCards: (st.integrationConnections || []).map(c=>({
+        provider:c.provider,
+        label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
+        status:c.status || 'disconnected',
+        statusLabel: ({connected:'Connecté',pending:'Prêt à autoriser',error:'À vérifier',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
+        buttonLabel: c.status === 'connected' ? 'Gérer' : 'Configurer',
+        onConfigure:()=>this.configureIntegration(c.provider)
+      })),
+      integrationsLoading: !!st.integrationsLoading,
+      feedbackMessage: st.feedbackMessage || '',
+      onFeedbackMessage: (e)=> this.setState({ feedbackMessage:e.target.value }),
+      feedbackSending: !!st.feedbackSending,
+      sendFeedback: ()=> this.sendFeedback(),
       settingsNav: [['settings','Profil'],['billing','Facturation'],['team','Équipe'],['api','API'],['stats','Statistiques']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.page === p[0]) + ';flex:0 0 auto;white-space:nowrap',
