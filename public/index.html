@@ -189,7 +189,7 @@ input:focus,textarea:focus{outline:none}
       </div>
     </div>
 
-    <div data-screen-label="Interface principale" style="flex:1;overflow-y:auto;display:flex;justify-content:center">
+    <div data-hf-chat-scroll="true" onScroll="{{ onChatScroll }}" style="flex:1;overflow-y:auto;display:flex;justify-content:center">
       <div style="width:100%;max-width:720px;padding:0 26px;display:flex;flex-direction:column">
 
         <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
@@ -983,6 +983,21 @@ input:focus,textarea:focus{outline:none}
     </div>
   </sc-if>
 
+  <!-- ========== CHECKOUT PHONE ========== -->
+  <sc-if value="{{ showCheckoutPhone }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
+      <div onClick="{{ closeCheckoutPhone }}" style="position:absolute;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(4px)"></div>
+      <div style="position:relative;width:390px;max-width:calc(100vw - 32px);padding:24px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.13);border-radius:18px;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
+        <button onClick="{{ closeCheckoutPhone }}" title="Fermer" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.11);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:20px;line-height:1">×</button>
+        <div style="font-size:19px;font-weight:750;color:{{ tInk }}">Paiement sécurisé</div>
+        <div style="margin-top:7px;font-size:13px;line-height:1.5;color:{{ tText3 }}">Entre le numéro Mobile Money qui recevra la demande de paiement.</div>
+        <input value="{{ checkoutPhone }}" onChange="{{ onCheckoutPhoneChange }}" inputmode="tel" autocomplete="tel" placeholder="Ex. +225 07 00 00 00 00" style="margin-top:18px;width:100%;box-sizing:border-box;padding:12px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:{{ tSurfaceSoft }};color:{{ tInk }};font-size:14px;font-family:inherit" style-focus="border-color:#D6F94E"/>
+        <sc-if value="{{ hasPricingNotice }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;color:#D17D64;font-size:12px">{{ pricingNotice }}</div></sc-if>
+        <button onClick="{{ submitCheckoutPhone }}" disabled="{{ checkoutBusy }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D6F94E;color:#1B1C1E;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">{{ checkoutButtonLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- ========== SETTINGS MODAL (Claude-style centered popup with sidebar) ========== -->
   <sc-if value="{{ showSettingsModal }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
@@ -998,61 +1013,68 @@ input:focus,textarea:focus{outline:none}
           </div>
 
           <!-- Section: Paramètres -->
-          <sc-if value="{{ showSectionParamètres }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ showSettingsSection }}" hint-placeholder-val="{{ true }}">
             <div style="padding:0 6px;margin-bottom:4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6B6E75;font-weight:700">Paramètres</div>
 
-            <sc-if value="{{ showGénéralBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickGénéral }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnGénéralStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnGénéralIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <sc-if value="{{ showGeneralButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickGeneral }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ generalButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ generalButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 Général
               </div>
             </sc-if>
 
-            <sc-if value="{{ showCompteBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickCompte }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnCompteStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnCompteIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <sc-if value="{{ showAccountButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickAccount }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ accountButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ accountButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 Compte
               </div>
             </sc-if>
 
-            <sc-if value="{{ showConfidentialitéBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickConfidentialité }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnConfidentialitéStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnConfidentialitéIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <sc-if value="{{ showPrivacyButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickPrivacy }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ privacyButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ privacyButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 Confidentialité
               </div>
             </sc-if>
 
-            <sc-if value="{{ showFacturationBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickFacturation }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnFacturationStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnFacturationIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <sc-if value="{{ showBillingButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickBilling }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ billingButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ billingButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                 Facturation
               </div>
             </sc-if>
 
-            <sc-if value="{{ showUtilisationBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickUtilisation }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnUtilisationStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnUtilisationIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <sc-if value="{{ showTeamButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickTeam }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ teamButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ teamButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Équipe
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showUsageButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickUsage }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ usageButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ usageButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                 Utilisation
               </div>
             </sc-if>
 
-            <sc-if value="{{ showCapacitésBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickCapacités }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnCapacitésStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnCapacitésIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <sc-if value="{{ showCapabilitiesButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickCapabilities }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ capabilitiesButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ capabilitiesButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
                 Capacités
               </div>
             </sc-if>
 
-            <sc-if value="{{ showClaudeCodeBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickClaudeCode }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnClaudeCodeStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnClaudeCodeIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <sc-if value="{{ showClaudeCodeButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickClaudeCode }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ claudeCodeButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ claudeCodeButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 Claude Code
               </div>
             </sc-if>
 
-            <sc-if value="{{ showApiBtn }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ clickApi }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ btnApiStyle }}" style-hover="background:rgba(255,255,255,.06)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ btnApiIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <sc-if value="{{ showApiButton }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ clickApi }}" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;{{ apiButtonStyle }}" style-hover="background:rgba(255,255,255,.06)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ apiButtonIconColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 Claude dans Ch…
               </div>
             </sc-if>
@@ -2090,6 +2112,7 @@ class Component extends DCLogic {
     billingStatus: null,
     billingLoading: false,
     pricingNotice: '',
+    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false,
     backendReady: false,
     sendLocked: false,
     sidebarCollapsed: !!this.initialUiState.sidebarCollapsed,
@@ -2725,6 +2748,7 @@ class Component extends DCLogic {
     clearTimeout(this.bootstrapTimer);
     this.persistUiState();
     if(this.chatAbort) this.chatAbort.abort();
+    this.flushAllAgentText();
   }
   componentDidUpdate(prevProps, prevState){
     const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','attachments','sidebarCollapsed','projectsExpanded'];
@@ -2768,11 +2792,16 @@ class Component extends DCLogic {
     this.bootstrapTimer = setTimeout(()=>this.bootstrap(), delay || 1200);
   }
   scrollChatToBottom(){
-    if(typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+    if(this.chatShouldStick === false || typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
     requestAnimationFrame(()=>{
-      const list = document.querySelector('[data-screen-label="Interface principale"]') || document.querySelector('[data-hf-chat-list="true"]');
+      const list = document.querySelector('[data-hf-chat-scroll="true"]');
       if(list) list.scrollTop = list.scrollHeight;
     });
+  }
+  onChatScroll(e){
+    const el = e && e.currentTarget;
+    if(!el) return;
+    this.chatShouldStick = (el.scrollHeight - el.scrollTop - el.clientHeight) < 96;
   }
   isAdminUser(){
     const email = String((this.state.user && this.state.user.email) || '').trim().toLowerCase();
@@ -2832,7 +2861,28 @@ class Component extends DCLogic {
   }
   appendAgentText(id, delta){
     if(!delta) return;
-    this.setState(s=>({ messages:s.messages.map(m=>m.id === id ? Object.assign({}, m, { typing:false, text:(m.text || '') + delta }) : m) }));
+    this.streamBuffers = this.streamBuffers || {};
+    this.streamFrames = this.streamFrames || {};
+    this.streamBuffers[id] = (this.streamBuffers[id] || '') + delta;
+    if(this.streamFrames[id]) return;
+    this.streamFrames[id] = requestAnimationFrame(()=>{
+      delete this.streamFrames[id];
+      this.flushAgentText(id);
+    });
+  }
+  flushAgentText(id){
+    const pending = this.streamBuffers && this.streamBuffers[id];
+    if(!pending) return;
+    delete this.streamBuffers[id];
+    this.setState(s=>({ messages:s.messages.map(m=>m.id === id ? Object.assign({}, m, { typing:false, text:(m.text || '') + pending }) : m) }));
+  }
+  flushAllAgentText(){
+    const ids = Object.keys(this.streamBuffers || {});
+    ids.forEach(id=>this.flushAgentText(id));
+    Object.keys(this.streamFrames || {}).forEach(id=>{
+      cancelAnimationFrame(this.streamFrames[id]);
+      delete this.streamFrames[id];
+    });
   }
   addGenerationCard(generation, id){
     const media = this.normalizeMedia(generation);
@@ -2903,6 +2953,7 @@ class Component extends DCLogic {
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
     const agentMsg = { id:agentId, role:'agent', typing:true, kind };
+    this.chatShouldStick = true;
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
       input:'',
@@ -2914,6 +2965,7 @@ class Component extends DCLogic {
   stopGeneration(){
     if(this.chatAbort) this.chatAbort.abort();
     this.chatAbort = null;
+    this.flushAllAgentText();
     this.setState(s=>({
       sendLocked:false,
       messages:s.messages.map(m=>m.typing ? Object.assign({}, m, { typing:false, text:'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
@@ -2974,6 +3026,7 @@ class Component extends DCLogic {
       this.updateAgentMessage(agentId, { typing:false, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La creation est indisponible pour le moment. Reessaie dans quelques instants.') });
     }finally{
       this.chatAbort = null;
+      this.flushAgentText(agentId);
       this.setState({ sendLocked:false });
       this.scheduleBootstrap(1400);
     }
@@ -3007,10 +3060,33 @@ class Component extends DCLogic {
       parts.forEach(handle);
     }
     if(buffer.trim()) handle(buffer);
+    this.flushAgentText(agentId);
     return delivered;
   }
   checkoutPlanId(id){ return ({ basic:'creator', max:'studio', scale:'agency' })[id] || id; }
-  async startCheckout(planId){
+  openCheckoutPhone(planId){
+    let storedPhone = '';
+    try{ storedPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
+    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId, checkoutPhone:this.state.checkoutPhone || storedPhone, pricingNotice:'' });
+  }
+  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutBusy:false }); }
+  submitCheckoutPhone(){
+    const phone = String(this.state.checkoutPhone || '').trim();
+    if(!/^[+0-9][0-9 .()\-]{7,23}$/.test(phone)){
+      this.setState({ pricingNotice:'Entre un numero Mobile Money valide.' });
+      return;
+    }
+    try{ localStorage.setItem('huggyflow_checkout_phone', phone); }catch(e){}
+    const planId = this.state.checkoutPlanPending;
+    this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', pricingNotice:'' }, ()=>this.startCheckout(planId, phone));
+  }
+  isTrustedPaymentUrl(value){
+    try{
+      const url = new URL(String(value || ''));
+      return url.protocol === 'https:' && (url.hostname === 'moneyfusion.net' || url.hostname.endsWith('.moneyfusion.net'));
+    }catch(e){ return false; }
+  }
+  async startCheckout(planId, suppliedPhone){
     const checkoutPlanId = this.checkoutPlanId(planId);
     if(checkoutPlanId === 'free'){
       if(!this.requireAuth('Cree un compte gratuit pour recevoir tes credits de depart.', { type:'checkout', planId })) return;
@@ -3018,22 +3094,26 @@ class Component extends DCLogic {
       return;
     }
     if(!this.requireAuth('Connecte-toi pour choisir cette offre et l associer a ton compte.', { type:'checkout', planId })) return;
+    let customerPhone = String(suppliedPhone || this.state.checkoutPhone || '').trim();
+    if(!customerPhone && typeof window !== 'undefined'){
+      try{ customerPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
+    }
+    if(!customerPhone){ this.openCheckoutPhone(planId); return; }
     try{
-      let customerPhone = '';
-      if(this.state.billingStatus && this.state.billingStatus.moneyFusionConfigured && typeof window !== 'undefined'){
-        try{ customerPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
-        if(customerPhone) try{ localStorage.setItem('huggyflow_checkout_phone', customerPhone); }catch(e){}
-      }
+      this.setState({ checkoutBusy:true, pricingNotice:'' });
       const res = await this.apiFetch('/api/billing/checkout', {
         method:'POST',
         body:JSON.stringify({ provider:'moneyfusion', type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone })
       });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
-      if(data.url) window.location.href = data.url;
+      if(!this.isTrustedPaymentUrl(data.url)) throw new Error('La page de paiement securisee est indisponible. Reessaie dans un instant.');
+      window.location.assign(data.url);
     }catch(err){
       const message = this.friendlyError(err && err.message, 'Le paiement est indisponible pour le moment.');
       this.setState({ pricingNotice:message });
+    }finally{
+      this.setState({ checkoutBusy:false });
     }
   }
   async loadBillingStatus(){
@@ -3608,25 +3688,34 @@ class Component extends DCLogic {
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
       isDark: this.getResolvedTheme() === 'dark',
       isLight: this.getResolvedTheme() !== 'dark',
+      showCheckoutPhone: !!st.checkoutPhoneOpen,
+      checkoutPhone: st.checkoutPhone || '',
+      onCheckoutPhoneChange: (e)=> this.setState({ checkoutPhone:e.target.value, pricingNotice:'' }),
+      closeCheckoutPhone: ()=> this.closeCheckoutPhone(),
+      submitCheckoutPhone: ()=> this.submitCheckoutPhone(),
+      checkoutBusy: !!st.checkoutBusy,
+      checkoutButtonLabel: st.checkoutBusy ? 'Ouverture du paiement...' : 'Continuer vers le paiement',
+      hasPricingNotice: !!st.pricingNotice,
       showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       settingsSearchQuery: st.settingsSearchQuery || '',
       onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
       avatarInitial: (st.settingsName || (st.user && st.user.name) || 'D')[0].toUpperCase(),
-      showSectionParamètres: (() => {
+      showSettingsSection: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         const matches = (label, synonyms = []) => {
           if (!query) return true;
           return label.toLowerCase().includes(query) || synonyms.some(s => s.toLowerCase().includes(query));
         };
-        const showGénéral = matches('Général', ['profil', 'preferences', 'apparence', 'police']);
+        const showGeneral = matches('Général', ['profil', 'preferences', 'apparence', 'police']);
         const showCompte = matches('Compte', ['email', 'supprimer', 'deconnexion']);
-        const showConfidentialité = matches('Confidentialité', ['privacy', 'data', 'analytics', 'securite']);
-        const showFacturation = matches('Facturation', ['billing', 'payment', 'carte', 'factures', 'tarifs']);
-        const showUtilisation = matches('Utilisation', ['stats', 'credits', 'charts', 'graphique']);
-        const showCapacités = matches('Capacités', ['limits', 'models', 'features']);
+        const showPrivacy = matches('Confidentialité', ['privacy', 'data', 'analytics', 'securite']);
+        const showBilling = matches('Facturation', ['billing', 'payment', 'carte', 'factures', 'tarifs']);
+        const showUsage = matches('Utilisation', ['stats', 'credits', 'charts', 'graphique']);
+        const showCapabilities = matches('Capacités', ['limits', 'models', 'features']);
         const showClaudeCode = matches('Claude Code', ['terminal', 'cli', 'auth']);
         const showApi = matches('Claude dans Chrome', ['api', 'keys', 'integrations']);
-        return showGénéral || showCompte || showConfidentialité || showFacturation || showUtilisation || showCapacités || showClaudeCode || showApi;
+        const showTeam = matches('Équipe', ['team', 'collaboration', 'membres']);
+        return showGeneral || showCompte || showPrivacy || showBilling || showTeam || showUsage || showCapabilities || showClaudeCode || showApi;
       })(),
       showSectionPersonnaliser: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
@@ -3639,47 +3728,47 @@ class Component extends DCLogic {
         const showPlugins = matches('Plugins', ['store', 'tools']);
         return showSkills || showConnectors || showPlugins;
       })(),
-      showGénéralBtn: (() => {
+      showGeneralButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'général'.includes(query) || 'profil'.includes(query) || 'preferences'.includes(query) || 'apparence'.includes(query) || 'police'.includes(query);
       })(),
-      showCompteBtn: (() => {
+      showAccountButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'compte'.includes(query) || 'email'.includes(query) || 'supprimer'.includes(query) || 'deconnexion'.includes(query);
       })(),
-      showConfidentialitéBtn: (() => {
+      showPrivacyButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'confidentialité'.includes(query) || 'privacy'.includes(query) || 'data'.includes(query) || 'analytics'.includes(query) || 'securite'.includes(query);
       })(),
-      showFacturationBtn: (() => {
+      showBillingButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'facturation'.includes(query) || 'billing'.includes(query) || 'payment'.includes(query) || 'carte'.includes(query) || 'factures'.includes(query) || 'tarifs'.includes(query);
       })(),
-      showTeamBtn: (() => {
+      showTeamButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'équipe'.includes(query) || 'team'.includes(query) || 'collaboration'.includes(query) || 'membres'.includes(query);
       })(),
-      showUtilisationBtn: (() => {
+      showUsageButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'utilisation'.includes(query) || 'stats'.includes(query) || 'credits'.includes(query) || 'charts'.includes(query) || 'graphique'.includes(query);
       })(),
-      showCapacitésBtn: (() => {
+      showCapabilitiesButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'capacités'.includes(query) || 'limits'.includes(query) || 'models'.includes(query) || 'features'.includes(query);
       })(),
-      showClaudeCodeBtn: (() => {
+      showClaudeCodeButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'claude code'.includes(query) || 'terminal'.includes(query) || 'cli'.includes(query) || 'auth'.includes(query);
       })(),
-      showApiBtn: (() => {
+      showApiButton: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
         if (!query) return true;
         return 'claude dans chrome'.includes(query) || 'api'.includes(query) || 'keys'.includes(query) || 'integrations'.includes(query);
@@ -3699,36 +3788,36 @@ class Component extends DCLogic {
         if (!query) return true;
         return 'plugins'.includes(query) || 'store'.includes(query) || 'tools'.includes(query);
       })(),
-      clickGénéral: ()=> this.setState({ page:'settings', settingsSaved:false, settingsHop:false }),
-      clickCompte: ()=> this.setState({ page:'account', settingsHop:false }),
-      clickConfidentialité: ()=> this.setState({ page:'privacy', settingsHop:false }),
-      clickFacturation: ()=> this.setState({ page:'billing', settingsHop:false }, ()=> this.loadBillingStatus()),
+      clickGeneral: ()=> this.setState({ page:'settings', settingsSaved:false, settingsHop:false }),
+      clickAccount: ()=> this.setState({ page:'account', settingsHop:false }),
+      clickPrivacy: ()=> this.setState({ page:'privacy', settingsHop:false }),
+      clickBilling: ()=> this.setState({ page:'billing', settingsHop:false }, ()=> this.loadBillingStatus()),
       clickTeam: ()=> this.setState({ page:'team', settingsHop:false }, ()=> this.loadTeam()),
-      clickUtilisation: ()=> this.setState({ page:'stats', settingsHop:false }, ()=> this.loadStats()),
-      clickCapacités: ()=> this.setState({ page:'capabilities', settingsHop:false }),
+      clickUsage: ()=> this.setState({ page:'stats', settingsHop:false }, ()=> this.loadStats()),
+      clickCapabilities: ()=> this.setState({ page:'capabilities', settingsHop:false }),
       clickClaudeCode: ()=> this.setState({ page:'claudecode', settingsHop:false }),
       clickApi: ()=> this.setState({ page:'api', settingsHop:false }, ()=> this.loadApiKeys()),
       clickSkills: ()=> this.setState({ page:'skills', settingsHop:false }),
       clickConnectors: ()=> this.setState({ page:'connectors', settingsHop:false }),
       clickPlugins: ()=> this.setState({ page:'plugins', settingsHop:false }),
-      btnGénéralStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnGénéralIconColor: st.page === 'settings' ? '#FFF' : '#8B8E95',
-      btnCompteStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnCompteIconColor: st.page === 'account' ? '#FFF' : '#8B8E95',
-      btnConfidentialitéStyle: st.page === 'privacy' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnConfidentialitéIconColor: st.page === 'privacy' ? '#FFF' : '#8B8E95',
-      btnFacturationStyle: st.page === 'billing' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnFacturationIconColor: st.page === 'billing' ? '#FFF' : '#8B8E95',
-      btnTeamStyle: st.page === 'team' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnTeamIconColor: st.page === 'team' ? '#FFF' : '#8B8E95',
-      btnUtilisationStyle: st.page === 'stats' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnUtilisationIconColor: st.page === 'stats' ? '#FFF' : '#8B8E95',
-      btnCapacitésStyle: st.page === 'capabilities' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnCapacitésIconColor: st.page === 'capabilities' ? '#FFF' : '#8B8E95',
-      btnClaudeCodeStyle: st.page === 'claudecode' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnClaudeCodeIconColor: st.page === 'claudecode' ? '#FFF' : '#8B8E95',
-      btnApiStyle: st.page === 'api' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
-      btnApiIconColor: st.page === 'api' ? '#FFF' : '#8B8E95',
+      generalButtonStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      generalButtonIconColor: st.page === 'settings' ? '#FFF' : '#8B8E95',
+      accountButtonStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      accountButtonIconColor: st.page === 'account' ? '#FFF' : '#8B8E95',
+      privacyButtonStyle: st.page === 'privacy' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      privacyButtonIconColor: st.page === 'privacy' ? '#FFF' : '#8B8E95',
+      billingButtonStyle: st.page === 'billing' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      billingButtonIconColor: st.page === 'billing' ? '#FFF' : '#8B8E95',
+      teamButtonStyle: st.page === 'team' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      teamButtonIconColor: st.page === 'team' ? '#FFF' : '#8B8E95',
+      usageButtonStyle: st.page === 'stats' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      usageButtonIconColor: st.page === 'stats' ? '#FFF' : '#8B8E95',
+      capabilitiesButtonStyle: st.page === 'capabilities' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      capabilitiesButtonIconColor: st.page === 'capabilities' ? '#FFF' : '#8B8E95',
+      claudeCodeButtonStyle: st.page === 'claudecode' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      claudeCodeButtonIconColor: st.page === 'claudecode' ? '#FFF' : '#8B8E95',
+      apiButtonStyle: st.page === 'api' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
+      apiButtonIconColor: st.page === 'api' ? '#FFF' : '#8B8E95',
       btnSkillsStyle: st.page === 'skills' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
       btnSkillsIconColor: st.page === 'skills' ? '#FFF' : '#8B8E95',
       btnConnectorsStyle: st.page === 'connectors' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#B0B3B9',
@@ -4428,8 +4517,8 @@ class Component extends DCLogic {
           hasUserAttachments: Array.isArray(m.attachments) && m.attachments.length > 0,
           userAttachments: (m.attachments || []).map(a=>({ name:a.name || 'Fichier joint' })),
           richText: this.markdownBlocks(m.text || ''),
-          isTyping: !!m.typing,
-          showText: !m.typing && !!m.text,
+          isTyping: !!m.typing && !m.text,
+          showText: !!m.text,
           hasMedia: !!m.media,
           imgLoading: status==='loading' && !isVideo && !isVoice,
           vidLoading: status==='loading' && isVideo,

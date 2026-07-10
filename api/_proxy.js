@@ -44,6 +44,7 @@ async function proxy(req, res, path) {
       res.setHeader(key, value);
     }
   });
+  if (typeof res.flushHeaders === "function") res.flushHeaders();
 
   if (!response.body) {
     res.end();
@@ -54,6 +55,7 @@ async function proxy(req, res, path) {
     const { value, done } = await reader.read();
     if (done) break;
     res.write(Buffer.from(value));
+    if (typeof res.flush === "function") res.flush();
   }
   res.end();
 }

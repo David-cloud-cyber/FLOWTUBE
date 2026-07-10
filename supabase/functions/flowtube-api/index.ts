@@ -20,6 +20,7 @@ const QUALITY_MARGIN_MULTIPLIERS: Record<"economy" | "standard" | "premium" | "h
 };
 const EXPENSIVE_CREDIT_THRESHOLD = 200;
 const DEFAULT_MONEYFUSION_CHECKOUT_URL = "https://pay.moneyfusion.net/HuggyFlow/72cdb377014bd232/pay/";
+const DEFAULT_MONEYFUSION_STATUS_URL = "https://www.pay.moneyfusion.net/paiementNotif/{token}";
 const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
 const DEFAULT_BILLING_CURRENCY = (Deno.env.get("MONEYFUSION_CURRENCY") || "XOF").toUpperCase();
 const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true";
@@ -90,10 +91,9 @@ function publicAgentModels() {
 
 function cleanAgentDisplayText(text: string) {
   return String(text || "")
-    .replace(/\*\*/g, "")
-    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/^\s*-{3,}\s*$/gm, "")
-    .replace(/`([^`\n]{1,80})`/g, "$1");
+    .replace(/\r/g, "")
+    .replace(/\u0000/g, "")
+    .replace(/\n{4,}/g, "\n\n\n");
 }
 
 function uniqueStrings(values: string[]) {
@@ -1428,6 +1428,14 @@ function moneyFusionCheckoutUrl() {
   return Deno.env.get("MONEYFUSION_CHECKOUT_URL") || Deno.env.get("MONEYFUSION_API_URL") || DEFAULT_MONEYFUSION_CHECKOUT_URL;
 }
 
+function moneyFusionApiKey() {
+  return Deno.env.get("MONEYFUSION_API_KEY") || Deno.env.get("MONEYFUSION_PRIVATE_KEY") || "";
+}
+
+function moneyFusionConfigured() {
+  return Boolean(moneyFusionCheckoutUrl() && moneyFusionApiKey());
+}
+
 function moneyFusionCallbackUrl() {
   return Deno.env.get("MONEYFUSION_CALLBACK_URL") || `${APP_BASE_URL}/callback`;
 }
@@ -1441,7 +1449,9 @@ function moneyFusionAmount(usd: number) {
   if (currency === "USD") return Number(usd.toFixed(2));
   const rate = DEFAULT_USD_XOF_RATE;
   if (!rate) throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_USD_RATE manque pour convertir les tarifs.", { code: "MONEYFUSION_RATE_MISSING", currency });
-  return Math.round(usd * rate);
+  const amount = Math.round(usd * rate);
+  if (amount < 200) throw new FlowtubeError(400, "Le montant MoneyFusion doit etre au moins de 200 FCFA.", { code: "MONEYFUSION_AMOUNT_TOO_LOW" });
+  return amount;
 }
 
 function usdToXof(usd: number) {
@@ -1493,9 +1503,44 @@ function moneyFusionPaid(data: Record<string, unknown>) {
   return ["paid", "success", "successful", "completed", "complete", "approved", "valid", "valide", "succeeded", "succes", "ok"].some((s) => rawStatus.includes(s));
 }
 
+function moneyFusionDeclined(data: Record<string, unknown>) {
+  return data.statut === false || data.success === false || data.ok === false;
+}
+
+function moneyFusionMessage(data: Record<string, unknown>) {
+  const nested = cleanMetadata(data.data || data.result);
+  return String(data.message || data.error || nested.message || nested.error || "").trim();
+}
+
+function moneyFusionPhone(value: unknown) {
+  const raw = String(value || "").trim();
+  const normalized = raw.replace(/[\s().-]/g, "");
+  if (!/^\+?[0-9]{8,16}$/.test(normalized)) return "";
+  return normalized;
+}
+
+function moneyFusionTrustedPaymentUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && (url.hostname === "moneyfusion.net" || url.hostname.endsWith(".moneyfusion.net"));
+  } catch (_err) {
+    return false;
+  }
+}
+
+function moneyFusionSafeAppUrl(value: unknown, fallback: string) {
+  try {
+    const candidate = new URL(String(value || fallback));
+    const app = new URL(APP_BASE_URL);
+    return candidate.origin === app.origin ? candidate.toString() : fallback;
+  } catch (_err) {
+    return fallback;
+  }
+}
+
 function moneyFusionHeaders() {
   const headers: Record<string, string> = { Accept: "application/json" };
-  const apiKey = Deno.env.get("MONEYFUSION_API_KEY") || Deno.env.get("MONEYFUSION_PRIVATE_KEY") || "";
+  const apiKey = moneyFusionApiKey();
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`;
     headers["moneyfusion-private-key"] = apiKey;
@@ -1504,18 +1549,15 @@ function moneyFusionHeaders() {
 }
 
 function moneyFusionStatusUrl(token: string) {
-  const url = moneyFusionCheckoutUrl();
-  if (!token || !url) return "";
-  if (Deno.env.get("MONEYFUSION_STATUS_URL")) {
-    return String(Deno.env.get("MONEYFUSION_STATUS_URL")).replace("{token}", encodeURIComponent(token));
-  }
-  return url.replace(/\/pay\/?$/i, `/paiementNotif/${encodeURIComponent(token)}`);
+  if (!token) return "";
+  return String(Deno.env.get("MONEYFUSION_STATUS_URL") || DEFAULT_MONEYFUSION_STATUS_URL)
+    .replace("{token}", encodeURIComponent(token));
 }
 
 async function moneyFusionRequest(payload: Record<string, unknown>) {
   const url = moneyFusionCheckoutUrl();
-  if (!url) {
-    throw new FlowtubeError(503, "MoneyFusion est prepare, mais MONEYFUSION_CHECKOUT_URL manque dans les variables Supabase.", { code: "MONEYFUSION_NOT_CONFIGURED" });
+  if (!url || !moneyFusionApiKey()) {
+    throw new FlowtubeError(503, "Le paiement MoneyFusion est en cours de configuration. Reessaie dans quelques instants.", { code: "MONEYFUSION_NOT_CONFIGURED" });
   }
   const headers: Record<string, string> = { ...moneyFusionHeaders(), "Content-Type": "application/json" };
   let response: Response;
@@ -1523,11 +1565,7 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
   const timeout = setTimeout(() => controller.abort(), Math.max(3000, Number(Deno.env.get("MONEYFUSION_TIMEOUT_MS") || 12000)));
   try {
     response = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload), signal: controller.signal });
-  } catch (err) {
-    if (moneyFusionCanFallbackToDirect(url)) {
-      const directUrl = moneyFusionDirectPaymentUrl(payload);
-      return { data: { direct_checkout: true, error: String(err) }, paymentUrl: directUrl, token: String(payload.reference || "") };
-    }
+  } catch (_err) {
     throw new FlowtubeError(503, "MoneyFusion est momentanement sature. Reessaie dans une minute.", { code: "MONEYFUSION_UNAVAILABLE" });
   } finally {
     clearTimeout(timeout);
@@ -1535,25 +1573,27 @@ async function moneyFusionRequest(payload: Record<string, unknown>) {
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
   if (!response.ok) {
-    if (moneyFusionCanFallbackToDirect(url)) {
-      const directUrl = moneyFusionDirectPaymentUrl(payload);
-      return { data: { direct_checkout: true, status: response.status, fallback: true }, paymentUrl: directUrl, token: String(payload.reference || "") };
-    }
     throw new FlowtubeError(response.status === 429 || response.status >= 500 ? 503 : response.status, response.status >= 500 ? "MoneyFusion est momentanement sature. Reessaie dans une minute." : "MoneyFusion a refuse la creation du paiement.", { code: "MONEYFUSION_ERROR", moneyfusion: data, status: response.status });
   }
-  const paymentUrl = moneyFusionPaymentUrl(data) || (moneyFusionCanFallbackToDirect(url) ? moneyFusionDirectPaymentUrl(payload) : "");
+  if (moneyFusionDeclined(data)) {
+    throw new FlowtubeError(502, moneyFusionMessage(data) || "MoneyFusion a refuse la creation du paiement.", { code: "MONEYFUSION_DECLINED" });
+  }
+  const paymentUrl = moneyFusionPaymentUrl(data);
   const token = moneyFusionToken(data);
-  if (!paymentUrl) {
+  if (!paymentUrl || !moneyFusionTrustedPaymentUrl(paymentUrl)) {
     throw new FlowtubeError(502, "MoneyFusion n'a pas renvoye d'URL de paiement.", { code: "MONEYFUSION_URL_MISSING", moneyfusion: data });
   }
-  return { data, paymentUrl, token: token || String(payload.reference || "") };
+  if (!token) throw new FlowtubeError(502, "MoneyFusion n'a pas renvoye de reference de paiement.", { code: "MONEYFUSION_TOKEN_MISSING" });
+  return { data, paymentUrl, token };
 }
 
 async function moneyFusionLookupPayment(token: string): Promise<Record<string, unknown>> {
   const url = moneyFusionStatusUrl(token);
   if (!url) return {};
   const response = await fetch(url, { method: "GET", headers: moneyFusionHeaders() });
-  return await response.json().catch(() => ({}));
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || moneyFusionDeclined(data)) throw new Error(moneyFusionMessage(data) || `MoneyFusion status ${response.status}`);
+  return data;
 }
 
 function formBody(params: Record<string, string | number | boolean | null | undefined>) {
@@ -1872,7 +1912,7 @@ async function bootstrap(req: Request) {
     })),
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
-      moneyFusionConfigured: Boolean(moneyFusionCheckoutUrl()),
+      moneyFusionConfigured: moneyFusionConfigured(),
       moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
@@ -1914,6 +1954,14 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Construire un prompt technique dense, propre et exploitable par les modeles.",
   "- Avancer vite: peu de questions, choix par defaut raisonnables, iterations concretes.",
   "- Livrer quelque chose de directement exploitable: brief, script, prompt, plan, media, devis ou action suivante.",
+  "",
+  "Protocole d'execution non negociable:",
+  "- Classe chaque demande en silence: conseil, recherche, creation, retouche, production multi-etapes, publication ou gestion de compte.",
+  "- Choisis au maximum trois skills utiles. N'enchaine des skills que si chaque etape apporte un resultat concret au livrable.",
+  "- Avant un rendu couteux, verifie les references, le format, les contraintes de marque, le cout et le consentement. Demande une seule information si elle bloque vraiment la qualite ou la legalite.",
+  "- Utilise un outil reel avant d'affirmer qu'une recherche, une analyse, une sauvegarde, une generation ou une publication est terminee. Ne simule jamais un resultat.",
+  "- Apres toute creation, controle le livrable contre le brief: objectif, lisibilite, coherence de marque, produit, realisme, format, CTA et absence d'artefacts. Corrige seulement l'etape en cause.",
+  "- Pour un workflow reutilisable, memorise uniquement une preference stable ou un playbook explicitement demande ou clairement recurrent. Chaque skill appris doit rester court, reversible, sans secret et sans donnee de paiement.",
   "",
   "Principes:",
   "- Avance par defaut. Si une information manque mais peut etre deduite, annonce l'hypothese et continue.",
@@ -2088,6 +2136,14 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "content-strategy", label: "strategie de contenu", triggers: ["strategie", "calendrier", "contenu", "plan editorial", "audience"], use: "transformer l'objectif en themes, formats et prochaines creations." },
   { id: "marketing-ideas", label: "idees marketing", triggers: ["idee marketing", "campagne", "lancement", "promotion", "acquisition"], use: "trouver des concepts simples, vendables et faciles a produire." },
   { id: "marketing-psychology", label: "psychologie marketing", triggers: ["preuve sociale", "urgence", "desir", "confiance", "objection"], use: "renforcer le message avec une motivation claire sans manipulation obscure." },
+  { id: "creative-brief-compiler", label: "brief creatif exploitable", triggers: ["brief", "idee vague", "je veux creer", "campagne", "concept", "aide moi a creer"], use: "transformer une intention courte en objectif, audience, promesse, format, references, livrables et prochaine etape claire." },
+  { id: "brand-sentinel", label: "controle de marque", triggers: ["ma marque", "brand kit", "charte", "identite", "couleurs", "ton de marque", "coherent avec ma marque"], use: "verifier ton, audience, promesse, produit, couleurs et interdits avant de produire une nouvelle creation." },
+  { id: "creative-quality-assurance", label: "controle qualite creatif", triggers: ["qualite", "verifie", "controle", "corrige", "artefact", "ameliore ce rendu", "validation"], use: "evaluer le rendu par rapport au brief, relever les ecarts et relancer uniquement l'etape necessaire." },
+  { id: "cost-aware-production-router", label: "production rentable", triggers: ["budget", "credits", "moins cher", "cout", "rentable", "devis", "qualite prix"], use: "proposer le meilleur niveau de production selon le budget, les credits restants et la qualite attendue." },
+  { id: "file-intelligence", label: "lecture de fichiers", triggers: ["pdf", "document", "fichier", "audio uploade", "video uploadee", "analyse le fichier", "piece jointe"], use: "extraire le contexte utile d'un document, d'une image, d'un audio ou d'une video avant de formuler une recommandation ou une creation." },
+  { id: "campaign-repurposer", label: "declinaisons de campagne", triggers: ["decline", "repurpose", "recycler", "formats", "reels", "shorts", "variantes", "plusieurs plateformes"], use: "transformer un asset ou une campagne en versions adaptees aux reseaux, avec accroches, captions, miniatures et CTA." },
+  { id: "african-market-localizer", label: "adaptation marche africain", triggers: ["afrique", "africain", "fcfa", "xof", "mobile money", "abidjan", "dakar", "lagos", "localiser"], use: "adapter le message, la devise, les exemples, la langue et les freins d'achat au marche cible sans caricature." },
+  { id: "rights-consent-guard", label: "droits et consentement", triggers: ["consentement", "visage", "voix", "clone", "droit", "autorisation", "personne reelle"], use: "verifier les droits d'usage, le consentement et les promesses marketing avant une creation sensible." },
   { id: "prompt-engineering-expert", label: "amelioration de prompt", triggers: ["prompt", "systeme", "instruction", "ameliorer le prompt", "agent"], use: "clarifier role, contexte, contraintes, sortie attendue et criteres de qualite." },
   { id: "nike-air-force-ad", label: "style campagne mode", triggers: ["sneaker", "chaussure", "mode", "streetwear", "campagne produit"], use: "adapter l'energie publicitaire mode a une creation originale, sans copier une marque protegee." },
 ];
@@ -2095,10 +2151,10 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
 const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
   "ugc-15s-production-pipeline": {
     requiredInputs: ["produit nom/URL/image", "video UGC de reference", "2 references faciales", "public cible", "accroche ou Auto"],
-    workflow: ["analyser produit et reference", "ecrire script 0-15s", "creer personnage fictif coherent", "preparer frame createur/produit", "generer clip vertical", "sauvegarder template remixable"],
+    workflow: ["analyser produit et reference", "ecrire trois hooks puis choisir le plus adapte", "ecrire script 0-15s", "creer personnage fictif coherent", "preparer frame createur/produit", "generer clip vertical", "controler naturel, produit, CTA et sous-titres", "sauvegarder template remixable"],
     routing: ["agent pour script", "image premium pour createur/produit", "video humaine realiste", "voix/lipsync si utile"],
     output: "script horodate + devis credits + generation apres confirmation",
-    safeguards: ["ne jamais demander duree/format/modele", "15s vertical 9:16 par defaut", "consentement si visage/voix reels"],
+    safeguards: ["ne jamais demander duree/format/modele", "15s vertical 9:16 par defaut", "consentement si visage/voix reels", "ne jamais inventer une preuve, un avis client ou un resultat medical"],
   },
   "marketing-video-generator": {
     requiredInputs: ["produit ou URL", "audience si disponible", "objectif si disponible"],
@@ -2183,6 +2239,54 @@ const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
     requiredInputs: ["video ou reference"],
     workflow: ["analyser hook", "mesurer rythme", "repere baisse d'attention", "proposer coupes", "decliner version courte"],
     output: "plan d'optimisation video avec timestamps et actions concretes",
+  },
+  "creative-brief-compiler": {
+    requiredInputs: ["objectif ou idee", "format ou canal si connu", "produit ou sujet"],
+    workflow: ["clarifier resultat attendu", "deduire audience et format", "lister contraintes et references", "choisir skills utiles", "produire un plan d'execution court"],
+    output: "brief de production actionnable, avec hypotheses explicites et prochaine action",
+  },
+  "brand-sentinel": {
+    workflow: ["charger memoire de marque", "verifier produit, ton, audience et interdits", "injecter contraintes dans le brief", "signaler seulement les conflits importants"],
+    output: "creation coherente avec la marque sans reexpliquer la charte a l'utilisateur",
+  },
+  "creative-quality-assurance": {
+    workflow: ["comparer au brief", "noter hook, lisibilite, realisme, produit, format et CTA", "identifier un seul correctif prioritaire", "proposer ou lancer une variation ciblee"],
+    output: "validation courte et correction ciblee, jamais une regeneration aveugle",
+  },
+  "cost-aware-production-router": {
+    workflow: ["lire credits et objectif", "estimer cout", "choisir test, standard ou final", "proposer une alternative si la marge ou le solde ne suffit pas"],
+    output: "devis clair et production adaptee au budget, sans exposer les details fournisseur",
+  },
+  "file-intelligence": {
+    requiredInputs: ["fichier ou lien"],
+    workflow: ["identifier type de fichier", "extraire contenu utile", "resumer contraintes et references", "proposer action la plus utile"],
+    output: "brief fiable base sur le contenu fourni, avec limites explicites si le fichier est incomplet",
+  },
+  "campaign-repurposer": {
+    requiredInputs: ["asset, script ou campagne source", "plateformes cibles"],
+    workflow: ["extraire idee forte", "decliner hooks et formats", "adapter captions, CTA et miniatures", "preparer les exports"],
+    output: "kit multi-plateforme coherent et pret a publier",
+  },
+  "african-market-localizer": {
+    requiredInputs: ["pays ou marche cible", "produit et audience"],
+    workflow: ["adapter devise, langue et contexte", "verifier sensibilites", "simplifier l'offre et le CTA", "proposer variantes locales"],
+    output: "message localise, clair et respectueux pour le marche cible",
+  },
+  "rights-consent-guard": {
+    workflow: ["identifier visage, voix, marque ou promesse sensible", "demander consentement seulement si necessaire", "retirer les elements non autorises", "proposer une alternative sure"],
+    output: "creation utilisable avec garde-fous de consentement et de droits",
+  },
+  "gpt-image-2-director": {
+    workflow: ["definir objectif de l'image", "fixer sujet, composition, lumiere et hierarchie", "prevoir zone texte et lisibilite", "controler produit, visage, mains et artefacts"],
+    output: "image ou packshot propre, lisible et pret a decliner",
+  },
+  "kling-3-prompt-director": {
+    workflow: ["decouper scene, action et camera", "verrouiller reference et format", "definir rythme et raccord", "controler mouvement, produit et lisibilite"],
+    output: "brief video court, stable et pret a produire",
+  },
+  "seedance-prompting-skills-for-cinematic-films": {
+    workflow: ["choisir action unique", "decrire mouvement lisible", "garder prompt visuel court", "preparer premiere et derniere image si raccord necessaire"],
+    output: "clip rapide et coherent, utilisable dans une sequence plus longue",
   },
   "cinematic-asset-creator": {
     workflow: ["clarifier sujet", "choisir camera/lumiere", "definir matiere et mouvement", "generer asset premium"],
@@ -2561,7 +2665,7 @@ function autoLearnSkillCandidate(prompt: string, attachments: ReturnType<typeof 
   if (/(token|cle api|clé api|secret|mot de passe|password|carte bancaire|numero de carte|cvv|private key|access token)/i.test(raw)) return null;
   const reusable = /\b(a chaque fois|chaque fois|toujours|repete|repeter|workflow|playbook|template|modele reutilisable|process|pipeline|pour mes pubs|pour mes videos|pour ma marque)\b/.test(text);
   const ugc = isUgcPipelineRequest(raw);
-  if (!reusable && !ugc) return null;
+  if (!reusable) return null;
   const baseName = ugc ? "ugc-15s-production" : "workflow-huggyflow";
   const triggers = uniqueStrings([
     ugc ? "ugc" : "",
@@ -4122,13 +4226,17 @@ async function chat(req: Request) {
 
   const stream = new ReadableStream({
     start: async (controller) => {
+      let eventSequence = 0;
       const send = (event: string, payload: unknown) => {
+        if (req.signal.aborted) return;
         let nextPayload = payload;
         if (event === "text" && payload && typeof payload === "object" && typeof (payload as Record<string, unknown>).delta === "string") {
           nextPayload = { ...(payload as Record<string, unknown>), delta: cleanAgentDisplayText(String((payload as Record<string, unknown>).delta || "")) };
         }
-        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(nextPayload)}\n\n`));
+        eventSequence += 1;
+        controller.enqueue(encoder.encode(`id: ${eventSequence}\nevent: ${event}\ndata: ${JSON.stringify(nextPayload)}\n\n`));
       };
+      const heartbeat = setInterval(() => send("heartbeat", { at: new Date().toISOString() }), 15000);
       try {
         const supabase = adminClient();
         const userId = await userIdFromRequest(req, supabase);
@@ -4489,13 +4597,20 @@ async function chat(req: Request) {
         if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
         else send("error", { message: publicErrorMessage(err instanceof Error ? err.message : "Chat failed") });
       } finally {
+        clearInterval(heartbeat);
         controller.close();
       }
     },
   });
 
   return new Response(stream, {
-    headers: { ...corsHeaders, "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 }
 
@@ -5384,7 +5499,10 @@ async function createMoneyFusionCheckout(
 ) {
   const userId = String(profile.id);
   const profileMetadata = (profile.metadata || {}) as Record<string, unknown>;
-  const phone = String(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "").trim();
+  const phone = moneyFusionPhone(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "");
+  if (!phone) {
+    throw new FlowtubeError(400, "Entre un numero Mobile Money valide pour continuer.", { code: "MONEYFUSION_PHONE_REQUIRED" });
+  }
 
   let amountUsd = 0;
   let article = `${APP_NAME} credits`;
@@ -5412,7 +5530,7 @@ async function createMoneyFusionCheckout(
   const reference = crypto.randomUUID();
   const amountXof = moneyFusionAmount(amountUsd);
   const callbackUrl = moneyFusionCallbackUrl();
-  const returnUrl = String(body.successUrl || successUrl || moneyFusionReturnUrl());
+  const returnUrl = moneyFusionSafeAppUrl(body.successUrl || successUrl, moneyFusionReturnUrl());
   const payload: Record<string, unknown> = {
     totalPrice: amountXof,
     article: [{ nom: article, montant: amountXof }],
@@ -5433,7 +5551,7 @@ async function createMoneyFusionCheckout(
     currency: DEFAULT_BILLING_CURRENCY,
     metadata,
   };
-  if (phone) payload.numeroSend = phone;
+  payload.numeroSend = phone;
   const session = await moneyFusionRequest(payload);
   const providerToken = session.token || reference;
 
@@ -5469,7 +5587,7 @@ async function createCheckout(req: Request) {
   const successUrl = String(body.successUrl || `${APP_BASE_URL}/?checkout=success`);
   const cancelUrl = String(body.cancelUrl || `${APP_BASE_URL}/?checkout=cancelled`);
   const provider = String(
-    body.provider || Deno.env.get("BILLING_PROVIDER") || (moneyFusionCheckoutUrl() ? "moneyfusion" : "stripe"),
+    body.provider || Deno.env.get("BILLING_PROVIDER") || (moneyFusionConfigured() ? "moneyfusion" : "stripe"),
   ).toLowerCase();
   void recordProductEvent(supabase, userId, "checkout_started", {
     provider,
@@ -5565,6 +5683,8 @@ async function billingStatus(req: Request) {
     creditsMax: profile.credits_max,
     currency: DEFAULT_BILLING_CURRENCY,
     usdXofRate: DEFAULT_USD_XOF_RATE,
+    moneyFusionConfigured: moneyFusionConfigured(),
+    paymentPhoneRequired: true,
     subscription,
     invoices: invoices || [],
     transactions: transactions || [],
@@ -5797,7 +5917,7 @@ async function pricingRoute() {
     creditPacks: creditPacks || [],
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
-      moneyFusionConfigured: Boolean(moneyFusionCheckoutUrl()),
+      moneyFusionConfigured: moneyFusionConfigured(),
       moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
@@ -5987,6 +6107,31 @@ async function stripeWebhook(req: Request) {
   return json({ received: true });
 }
 
+function moneyFusionPaymentRecord(value: Record<string, unknown>) {
+  return cleanMetadata(value.data || value.result || value.payment || value);
+}
+
+function moneyFusionPaymentMatchesSession(
+  session: Record<string, unknown>,
+  verified: Record<string, unknown>,
+) {
+  const record = moneyFusionPaymentRecord(verified);
+  const expectedToken = String(session.provider_payment_token || "");
+  const verifiedToken = moneyFusionToken(verified);
+  if (!expectedToken || !verifiedToken || expectedToken !== verifiedToken) return false;
+  const metadata = cleanMetadata(session.metadata);
+  const expectedAmount = Number(metadata.amount_xof || 0);
+  const actualAmount = Number(record.Montant || record.montant || record.amount || record.totalPrice || 0);
+  if (!expectedAmount || !actualAmount || expectedAmount !== actualAmount) return false;
+  const personal = Array.isArray(record.personal_Info) ? cleanMetadata(record.personal_Info[0])
+    : Array.isArray(verified.personal_Info) ? cleanMetadata(verified.personal_Info[0]) : {};
+  const expectedUserId = String(session.user_id || "");
+  const expectedReference = String(session.provider_session_id || "");
+  const receivedUserId = String(personal.userId || personal.user_id || "");
+  const receivedReference = String(personal.orderId || personal.order_id || personal.reference || "");
+  return receivedUserId === expectedUserId && receivedReference === expectedReference;
+}
+
 async function moneyFusionCallback(req: Request) {
   const required = Deno.env.get("MONEYFUSION_CALLBACK_SECRET") || "";
   const url = new URL(req.url);
@@ -5998,25 +6143,7 @@ async function moneyFusionCallback(req: Request) {
   const personalInfo = Array.isArray(body.personal_Info) ? (body.personal_Info[0] || {}) as Record<string, unknown> : {};
   const token = String(body.token || body.tokenPay || body.token_pay || body.payment_token || body.paymentToken || body.transaction_id || body.reference || url.searchParams.get("token") || url.searchParams.get("tokenPay") || url.searchParams.get("reference") || "");
   const reference = String(body.reference || body.order_id || body.orderId || personalInfo.reference || personalInfo.orderId || personalInfo.order_id || url.searchParams.get("reference") || "");
-  const eventId = token || reference || crypto.randomUUID();
-  const { data: existingEvent } = await supabase.from("payment_events").select("processed").eq("provider", "moneyfusion").eq("provider_event_id", eventId).maybeSingle();
-  if (existingEvent?.processed) return json({ received: true, duplicate: true });
-
-  let verified: Record<string, unknown> = {};
-  if (token) {
-    try { verified = await moneyFusionLookupPayment(token); } catch (_err) { verified = {}; }
-  }
-  const mergedStatusSource = { ...verified, ...body, status: body.status || body.statut || url.searchParams.get("status") || moneyFusionStatusValue(verified) };
-  const rawStatus = moneyFusionStatusValue(mergedStatusSource);
-  const paid = moneyFusionPaid(mergedStatusSource);
-
-  await supabase.from("payment_events").upsert({
-    provider: "moneyfusion",
-    provider_event_id: eventId,
-    event_type: rawStatus || "callback",
-    processed: false,
-    metadata: { body, verified, query: Object.fromEntries(url.searchParams.entries()) },
-  }, { onConflict: "provider,provider_event_id" });
+  if (!token && !reference) throw new FlowtubeError(400, "Reference de paiement MoneyFusion manquante.", { code: "MONEYFUSION_CALLBACK_REFERENCE_MISSING" });
 
   let session: Record<string, unknown> | null = null;
   if (token) {
@@ -6028,28 +6155,73 @@ async function moneyFusionCallback(req: Request) {
     session = data as Record<string, unknown> | null;
   }
   if (!session) {
-    await supabase.from("payment_events").update({ processed: true }).eq("provider", "moneyfusion").eq("provider_event_id", eventId);
     return json({ received: true, ignored: true });
   }
 
-  if (paid && session.status !== "completed") {
-    await supabase.from("billing_checkout_sessions").update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
+  let verified: Record<string, unknown>;
+  try {
+    verified = await moneyFusionLookupPayment(String(session.provider_payment_token || token));
+  } catch (_err) {
+    await supabase.from("payment_events").upsert({
+      provider: "moneyfusion",
+      provider_event_id: `${token || reference}:verification_pending`,
+      event_type: "verification_pending",
+      user_id: session.user_id,
+      processed: false,
+      metadata: { body, query: Object.fromEntries(url.searchParams.entries()) },
+    }, { onConflict: "provider,provider_event_id" });
+    return json({ received: true, verificationPending: true }, 503);
+  }
+
+  if (!moneyFusionPaymentMatchesSession(session, verified)) {
+    await supabase.from("payment_events").upsert({
+      provider: "moneyfusion",
+      provider_event_id: `${token || reference}:verification_failed`,
+      event_type: "verification_failed",
+      user_id: session.user_id,
+      processed: true,
+      metadata: { body, verified },
+    }, { onConflict: "provider,provider_event_id" });
+    return json({ received: true, ignored: true, verified: false });
+  }
+
+  const rawStatus = moneyFusionStatusValue(verified) || moneyFusionStatusValue(body) || "callback";
+  const eventType = String(body.event || rawStatus).toLowerCase().slice(0, 90);
+  const eventId = `${String(session.provider_payment_token || token)}:${eventType}`;
+  const { data: existingEvent } = await supabase.from("payment_events").select("processed").eq("provider", "moneyfusion").eq("provider_event_id", eventId).maybeSingle();
+  if (existingEvent?.processed) return json({ received: true, duplicate: true });
+  await supabase.from("payment_events").upsert({
+    provider: "moneyfusion",
+    provider_event_id: eventId,
+    event_type: eventType,
+    user_id: session.user_id,
+    processed: false,
+    metadata: { body, verified, query: Object.fromEntries(url.searchParams.entries()) },
+  }, { onConflict: "provider,provider_event_id" });
+
+  const paid = moneyFusionPaid(verified);
+  if (paid) {
+    const { data: claimed, error: claimError } = await supabase.from("billing_checkout_sessions").update({
+      status: "processing",
       provider_payload: { body, verified },
       metadata: Object.assign({}, session.metadata || {}, { callback: body, verified }),
-    }).eq("id", session.id);
-
-    const userId = String(session.user_id || "");
-    if (session.credit_pack_id) {
-      await grantCreditPack(supabase, userId, String(session.credit_pack_id));
-    } else if (session.plan_id) {
-      await grantPlanCredits(supabase, userId, String(session.plan_id), String(session.billing_interval || "monthly"), `moneyfusion:${eventId}`);
+    }).eq("id", session.id).in("status", ["open", "pending", "failed"]).select("*").maybeSingle();
+    if (claimError) throw claimError;
+    if (claimed) {
+      const userId = String(claimed.user_id || "");
+      try {
+        if (claimed.credit_pack_id) await grantCreditPack(supabase, userId, String(claimed.credit_pack_id));
+        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`);
+        await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", claimed.id);
+        void recordProductEvent(supabase, userId, "checkout_completed", { provider: "moneyfusion", type: claimed.credit_pack_id ? "credits" : "subscription" });
+      } catch (err) {
+        await supabase.from("billing_checkout_sessions").update({ status: "open" }).eq("id", claimed.id);
+        throw err;
+      }
     }
-    void recordProductEvent(supabase, userId, "checkout_completed", { provider: "moneyfusion", type: session.credit_pack_id ? "credits" : "subscription" });
-  } else if (!paid && rawStatus) {
+  } else {
     await supabase.from("billing_checkout_sessions").update({
-      status: rawStatus.includes("fail") || rawStatus.includes("cancel") ? "failed" : "open",
+      status: rawStatus.includes("fail") || rawStatus.includes("cancel") || rawStatus.includes("no paid") ? "failed" : "pending",
       provider_payload: { body, verified },
       metadata: Object.assign({}, session.metadata || {}, { callback: body, verified }),
     }).eq("id", session.id);
