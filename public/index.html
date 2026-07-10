@@ -43,6 +43,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 @keyframes tabFade{from{opacity:.45}to{opacity:1}}
 @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes modalScale{from{transform:scale(.975);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 [data-nav-scroll]{scrollbar-width:none}
 [data-nav-scroll]::-webkit-scrollbar{display:none}
 [data-nav-scroll] button:active{transform:none!important}
@@ -55,7 +56,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-md] strong{font-weight:750;color:inherit}
 [data-hf-md] ul,[data-hf-md] ol{margin:8px 0 10px 20px;padding:0}
 [data-hf-md] li{margin:5px 0}
-[data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(214,249,78,.10);color:#D1FE17}
+[data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(209,254,23,.10);color:#D1FE17}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
 [data-hf-rail="true"]{align-items:center}
@@ -65,11 +66,16 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-rail="true"] [data-hf-rail-item] > span:not([data-hf-rail-icon]){display:none!important}
 [data-hf-rail="true"] [data-hf-rail-list]{align-items:center;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
 [data-hf-rail="true"] [data-hf-rail-bottom]{align-items:center;width:100%}
+[data-hf-toast]{position:fixed;right:24px;bottom:24px;z-index:140;display:flex;align-items:center;gap:10px;max-width:min(390px,calc(100vw - 32px));padding:12px 14px;border:1px solid rgba(209,254,23,.22);border-radius:12px;background:rgba(28,30,32,.94);color:#F7F7F8;box-shadow:0 18px 44px -18px rgba(0,0,0,.62);backdrop-filter:blur(12px);animation:toastIn .24s cubic-bezier(.22,1,.36,1) both}
+[data-hf-toast]::before{content:"";width:7px;height:7px;flex:0 0 auto;border-radius:999px;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.48)}
+[data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+@media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
   <input id="hf-file-input" type="file" accept="image/*,video/*,audio/*,.pdf,.txt,.md,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
+  <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}"><div data-hf-toast="true">{{ toastMessage }}</div></sc-if>
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
   <aside data-hf-rail="{{ sidebarRail }}" style="{{ sidebarStyle }}">
@@ -98,12 +104,12 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <span style="font-size:12px;color:#898A8B;font-weight:500">Créations</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
-      <div data-hf-rail-item="true" onClick="{{ openGallery }}" title="Galerie" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+      <div data-hf-rail-item="true" onClick="{{ openGallery }}" title="Galerie" style="{{ galleryNavStyle }}" style-hover="background:rgba(255,255,255,.06)">
         <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
         <span data-hf-hide-rail="true" style="flex:1">Galerie</span>
       </div>
       <sc-for list="{{ collections }}" as="c" hint-placeholder-count="3">
-        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
+        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="{{ c.style }}" style-hover="background:rgba(255,255,255,.06)">
           <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8">{{ c.icon }}</span>
           <span data-hf-hide-rail="true" style="flex:1">{{ c.name }}</span>
           <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:#D1FE17;color:#131517;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
@@ -151,18 +157,18 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <div data-hf-rail-item="true" onClick="{{ openAdmin }}" title="Admin" style="display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:500;color:#A8A8A8;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
           <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
           <span data-hf-hide-rail="true" style="flex:1">Admin</span>
-          <span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:rgba(214,249,78,.16);color:#D1FE17;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
+          <span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:rgba(209,254,23,.16);color:#D1FE17;font-size:9px;font-weight:800;letter-spacing:.06em">STAFF</span>
         </div>
       </sc-if>
 
-      <div data-hf-rail-item="true" onClick="{{ openPricing }}" title="Tarifs" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(214,249,78,.10);border:1px solid rgba(214,249,78,.14);cursor:pointer;transition:background .18s" style-hover="background:rgba(214,249,78,.16)">
+      <div data-hf-rail-item="true" onClick="{{ openPricing }}" title="Tarifs" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(209,254,23,.10);border:1px solid rgba(209,254,23,.14);cursor:pointer;transition:background .18s" style-hover="background:rgba(209,254,23,.16)">
         <span data-hf-rail-icon="true" style="color:#D1FE17"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"></path></svg></span>
         <span data-hf-hide-rail="true" style="flex:1;font-size:13.5px;font-weight:700;color:#D1FE17">Tarifs</span>
         <span style="padding:3px 8px;border-radius:999px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;letter-spacing:.04em">−20%</span>
       </div>
 
       <div data-hf-rail-item="true" onClick="{{ openSettings }}" title="{{ accountName }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:11px;transition:background .18s" style-hover="background:rgba(255,255,255,.06)">
-        <div data-hf-rail-icon="true" style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D1FE17 55%, #9DBD2A);box-shadow:0 0 0 2px #131517,0 0 0 3.5px rgba(214,249,78,.5)"></div>
+        <div data-hf-rail-icon="true" style="width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%, #EDFCA8, #D1FE17 55%, #9DBD2A);box-shadow:0 0 0 2px #131517,0 0 0 3.5px rgba(209,254,23,.5)"></div>
         <div data-hf-hide-rail="true" style="min-width:0;flex:1">
           <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ accountName }}</div>
           <div style="font-size:11px;color:#898A8B">{{ planLabel }}</div>
@@ -184,10 +190,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
           <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></sc-if>
           <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"></line><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"></line><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"></line></svg></sc-if>
         </button>
-        <button onClick="{{ openPricing }}" style="padding:8px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Tarifs</button>
-        <button onClick="{{ openPricing }}" style="display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:{{ tInkSoft }}">
-          <span style="width:7px;height:7px;border-radius:50%;background:#D1FE17"></span>Passer Pro
-        </button>
+        <div title="Crédits disponibles" style="display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.035);font-size:12px;font-weight:600;color:{{ tText2 }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ creditColor }}"></span>{{ creditsLabel }}</div>
       </div>
     </div>
 
@@ -264,7 +267,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
                   <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
-                    <div onClick="{{ s.onClick }}" style="padding:14px 15px;border-radius:15px;background:{{ tSurfaceSoft }};border:1px solid rgba({{ tLineRGB }},.09);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:9px" style-hover="background:{{ tSurface }};border-color:rgba({{ tLineRGB }},.22);transform:translateY(-2px)">
+                    <div data-hf-card="true" onClick="{{ s.onClick }}" style="padding:14px 15px;border-radius:15px;background:{{ tSurfaceSoft }};border:1px solid rgba({{ tLineRGB }},.09);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:9px" style-hover="background:{{ tSurface }};border-color:rgba({{ tLineRGB }},.22);transform:translateY(-2px)">
                       <span style="align-self:flex-start;padding:3px 9px;border-radius:999px;background:{{ s.tagBg }};font-size:10.5px;font-weight:600;color:#3A372F">{{ s.tag }}</span>
                       <span style="font-size:13px;line-height:1.5;color:{{ tText2 }}">{{ s.text }}</span>
                     </div>
@@ -299,10 +302,11 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:13px;padding-top:4px">
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
-                          <div style="display:inline-flex;align-items:center;gap:5px">
+                          <div style="display:inline-flex;align-items:center;gap:7px">
                             <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease infinite"></span>
                             <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .18s infinite"></span>
                             <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .36s infinite"></span>
+                            <span style="font-size:12px;color:{{ tText3 }}">{{ m.activityLabel }}</span>
                           </div>
                           <div data-hf-skeleton="true" style="height:10px;width:100%"></div>
                           <div data-hf-skeleton="true" style="height:10px;width:72%"></div>
@@ -323,7 +327,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                             </sc-if>
                             <sc-if value="{{ m.vidLoading }}" hint-placeholder-val="{{ false }}">
                               <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:16px 18px;overflow:hidden">
-                                <div style="position:absolute;top:0;bottom:0;left:0;width:45%;background:linear-gradient(100deg,transparent,rgba(214,249,78,.07),transparent);animation:shimmer 2.2s linear infinite"></div>
+                                <div style="position:absolute;top:0;bottom:0;left:0;width:45%;background:linear-gradient(100deg,transparent,rgba(209,254,23,.07),transparent);animation:shimmer 2.2s linear infinite"></div>
                                 <div style="display:flex;align-items:center;justify-content:space-between;z-index:1">
                                   <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px;font-weight:600;color:#F7F7F8">
                                     <span style="width:6px;height:6px;border-radius:50%;background:#D1FE17;animation:typingDot 1.2s ease infinite"></span>{{ m.caption }}
@@ -367,7 +371,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                             </sc-if>
                             <sc-if value="{{ m.vidDone }}" hint-placeholder-val="{{ false }}">
                               <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:pageFade .5s both">
-                                <button title="Lire" style="width:58px;height:58px;border-radius:999px;border:none;background:#D1FE17;color:#131517;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)" style-hover="transform:scale(1.06)">
+                                <button onClick="{{ m.onRecreate }}" title="Créer une variante" style="width:58px;height:58px;border-radius:999px;border:none;background:#D1FE17;color:#131517;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)" style-hover="transform:scale(1.06)">
                                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                                 </button>
                               </div>
@@ -385,8 +389,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                           <sc-if value="{{ m.mediaDone }}" hint-placeholder-val="{{ false }}">
                             <div style="display:flex;gap:7px;flex-wrap:wrap">
                               <button onClick="{{ m.onDownload }}" style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;background:{{ tInk }};border:none;color:{{ tPageBg }};font-family:inherit" style-hover="background:{{ tInkSoft }}">Télécharger</button>
-                              <button style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:1px solid rgba({{ tLineRGB }},.16);color:{{ tInkSoft }};font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Modifier</button>
-                              <button onClick="{{ m.onRecreate }}" style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:1px solid rgba({{ tLineRGB }},.16);color:{{ tInkSoft }};font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Recréer</button>
+                              <button onClick="{{ m.onRemix }}" style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:1px solid rgba({{ tLineRGB }},.16);color:{{ tInkSoft }};font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Remixer</button>
+                              <button onClick="{{ m.onRecreate }}" style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:1px solid rgba({{ tLineRGB }},.16);color:{{ tInkSoft }};font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Nouvelle variante</button>
                             </div>
                           </sc-if>
                         </div>
@@ -436,7 +440,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
   </sc-if>
 
   <sc-if value="{{ showPricing }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Pricing" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
+    <div data-screen-label="Pricing" style="position:absolute;top:0;right:0;bottom:0;left:{{ contentInset }};z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
       <div style="max-width:1080px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:52px">
           <div style="display:flex;align-items:center;gap:10px">
@@ -602,7 +606,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
   </sc-if>
 
   <sc-if value="{{ showAdmin }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Panel admin" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ adminAnim }}">
+    <div data-screen-label="Panel admin" style="position:absolute;top:0;right:0;bottom:0;left:{{ contentInset }};z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ adminAnim }}">
       <div style="max-width:1020px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px">
           <div style="display:flex;align-items:center;gap:10px">
@@ -787,7 +791,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
   </sc-if>
 
   <sc-if value="{{ showAffiliate }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Affiliation" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
+    <div data-screen-label="Affiliation" style="position:absolute;top:0;right:0;bottom:0;left:{{ contentInset }};z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
@@ -860,7 +864,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             </div>
             <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba({{ tLineRGB }},.08);display:flex;align-items:center;justify-content:space-between;gap:10px">
               <span style="font-size:12px;color:{{ tText3 }}">Prochain versement le 1<sup>er</sup> août</span>
-              <button style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">Configurer le paiement</button>
+              <button onClick="{{ configureAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">Configurer le paiement</button>
             </div>
           </div>
         </div>
@@ -1239,7 +1243,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               </div>
               <sc-for list="{{ brandCards }}" as="brand" hint-placeholder-count="1">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                  <div style="width:28px;height:28px;border-radius:8px;background:rgba(214,249,78,.12);color:#D1FE17;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">{{ brand.initial }}</div>
+                  <div style="width:28px;height:28px;border-radius:8px;background:rgba(209,254,23,.12);color:#D1FE17;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">{{ brand.initial }}</div>
                   <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#F7F7F8">{{ brand.name }}</div><div style="margin-top:2px;font-size:11.5px;color:#898A8B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ brand.description }}</div></div>
                   <span style="font-size:9px;font-weight:800;color:#D1FE17;letter-spacing:.06em">{{ brand.badge }}</span>
                 </div>
@@ -1275,7 +1279,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:18px">Prépare les destinations de tes créations. Les autorisations restent protégées côté serveur.</div>
               <sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="4">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(214,249,78,.1);color:#D1FE17;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ connector.label }}</div>
+                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(209,254,23,.1);color:#D1FE17;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">{{ connector.label }}</div>
                   <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#F7F7F8">{{ connector.label }}</div><div style="margin-top:2px;font-size:11.5px;color:#898A8B">{{ connector.statusLabel }}</div></div>
                   <button onClick="{{ connector.onConfigure }}" style="padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit">{{ connector.buttonLabel }}</button>
                 </div>
@@ -1300,7 +1304,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
                 <div><div style="font-size:13.5px;font-weight:600;color:#F7F7F8">Moyen de paiement</div><div style="font-size:12px;color:#898A8B;margin-top:2px">•••• 4242 – Expire 08/2028</div></div>
-                <button style="padding:7px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Modifier</button>
+                <button onClick="{{ openBillingHelp }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#A8A8A8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(255,255,255,.04)">Informations</button>
               </div>
               <div style="margin-top:16px"><button onClick="{{ openPricing }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Changer d'offre</button></div>
             </sc-if>
@@ -1509,7 +1513,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <div style="background:#131517;border-radius:18px;padding:20px 22px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#898A8B;font-weight:700">Exemple — générer une image</span>
-            <span style="padding:3px 9px;border-radius:999px;background:rgba(214,249,78,.14);color:#D1FE17;font-size:10px;font-weight:700;letter-spacing:.06em">cURL</span>
+            <span style="padding:3px 9px;border-radius:999px;background:rgba(209,254,23,.14);color:#D1FE17;font-size:10px;font-weight:700;letter-spacing:.06em">cURL</span>
           </div>
           <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#A8A8A8;white-space:pre-wrap;word-break:break-word">curl https://api.huggyflow.com/v1/generate \
   -H "Authorization: Bearer $HF_API_KEY" \
@@ -1596,13 +1600,13 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <div style="display:flex;align-items:center;gap:12px;min-width:0">
                 <div style="width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:{{ tm.avatarBg }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#131517">{{ tm.initials }}</div>
                 <div style="min-width:0">
-                  <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tm.name }}<sc-if value="{{ tm.isYou }}" hint-placeholder-val="{{ false }}"><span style="margin-left:7px;padding:2px 7px;border-radius:999px;background:rgba(214,249,78,.35);color:#5C6B2A;font-size:9.5px;font-weight:800;letter-spacing:.05em">TOI</span></sc-if></div>
+                  <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tm.name }}<sc-if value="{{ tm.isYou }}" hint-placeholder-val="{{ false }}"><span style="margin-left:7px;padding:2px 7px;border-radius:999px;background:rgba(209,254,23,.35);color:#5C6B2A;font-size:9.5px;font-weight:800;letter-spacing:.05em">TOI</span></sc-if></div>
                   <div style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tm.email }}</div>
                 </div>
               </div>
               <span><span style="{{ tm.roleStyle }}">{{ tm.role }}</span></span>
               <span style="font-size:12px;color:{{ tText3 }}">{{ tm.activity }}</span>
-              <button title="Options" style="width:30px;height:30px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
+              <button onClick="{{ tm.onOptions }}" title="Options" style="width:30px;height:30px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
               </button>
             </div>
@@ -1668,7 +1672,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <div style="font-size:12.5px;color:{{ tText3 }}">{{ planLabel }}</div>
             </div>
             <div style="flex:1"></div>
-            <button style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Changer l'avatar</button>
+            <span style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);color:{{ tText3 }};font-size:12px;font-weight:600">Initiales du profil</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
             <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:{{ tText2 }}">Nom
@@ -1714,7 +1718,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <div style="font-size:13.5px;font-weight:600">Mot de passe</div>
               <div style="margin-top:2px;font-size:12px;color:{{ tText3 }}">Dernière modification il y a 3 mois</div>
             </div>
-            <button style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Modifier</button>
+            <button onClick="{{ requestPasswordReset }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Modifier</button>
           </div>
           <div style="display:flex;align-items:center;gap:14px;padding-top:14px">
             <div style="flex:1">
@@ -1732,7 +1736,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
           </div>
           <div style="display:flex;gap:8px">
             <button onClick="{{ openAuth }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">{{ sessionCta }}</button>
-            <button style="padding:9px 16px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Supprimer le compte</button>
+            <button onClick="{{ openAccountDeletion }}" style="padding:9px 16px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Supprimer le compte</button>
           </div>
         </div>
       </div>
@@ -1740,7 +1744,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
   </sc-if>
 
   <sc-if value="{{ showGallery }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Galerie de créations" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
+    <div data-screen-label="Galerie de créations" style="position:absolute;top:0;right:0;bottom:0;left:{{ contentInset }};z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
       <div style="max-width:1080px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
           <div style="display:flex;align-items:center;gap:10px">
@@ -1772,7 +1776,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
           <sc-for list="{{ galleryItems }}" as="g" hint-placeholder-count="6">
-            <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;overflow:hidden;transition:all .18s;animation:fadeUp .35s ease both" style-hover="border-color:rgba({{ tLineRGB }},.24);transform:translateY(-2px)">
+            <div data-hf-card="true" style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;overflow:hidden;transition:all .18s;animation:fadeUp .35s ease both" style-hover="border-color:rgba({{ tLineRGB }},.24);transform:translateY(-2px)">
               <sc-if value="{{ g.isVisual }}" hint-placeholder-val="{{ true }}">
                 <div style="position:relative;height:190px">
                   <sc-if value="{{ g.hasImageResult }}" hint-placeholder-val="{{ false }}">
@@ -1792,9 +1796,9 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <sc-if value="{{ g.isVoice }}" hint-placeholder-val="{{ false }}">
                 <div style="position:relative;height:190px;background:linear-gradient(140deg,#1E1F22,#141517 60%,#1B1C1F);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
                   <div style="display:flex;align-items:center;gap:3px;height:44px">
-                    <span style="width:4px;height:30%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:65%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:100%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:50%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:80%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:35%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:70%;border-radius:3px;background:rgba(214,249,78,.8)"></span><span style="width:4px;height:45%;border-radius:3px;background:rgba(214,249,78,.6)"></span><span style="width:4px;height:90%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:40%;border-radius:3px;background:rgba(214,249,78,.5)"></span><span style="width:4px;height:60%;border-radius:3px;background:rgba(214,249,78,.7)"></span><span style="width:4px;height:25%;border-radius:3px;background:rgba(214,249,78,.4)"></span>
+                    <span style="width:4px;height:30%;border-radius:3px;background:rgba(209,254,23,.5)"></span><span style="width:4px;height:65%;border-radius:3px;background:rgba(209,254,23,.7)"></span><span style="width:4px;height:100%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:50%;border-radius:3px;background:rgba(209,254,23,.7)"></span><span style="width:4px;height:80%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:35%;border-radius:3px;background:rgba(209,254,23,.5)"></span><span style="width:4px;height:70%;border-radius:3px;background:rgba(209,254,23,.8)"></span><span style="width:4px;height:45%;border-radius:3px;background:rgba(209,254,23,.6)"></span><span style="width:4px;height:90%;border-radius:3px;background:#D1FE17"></span><span style="width:4px;height:40%;border-radius:3px;background:rgba(209,254,23,.5)"></span><span style="width:4px;height:60%;border-radius:3px;background:rgba(209,254,23,.7)"></span><span style="width:4px;height:25%;border-radius:3px;background:rgba(209,254,23,.4)"></span>
                   </div>
-                  <button title="Écouter" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.95)">
+                  <button onClick="{{ g.onPlay }}" title="Écouter" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" style-hover="filter:brightness(.95)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>{{ g.duration }}
                   </button>
                 </div>
@@ -1821,7 +1825,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         </div>
 
         <sc-if value="{{ galleryEmpty }}" hint-placeholder-val="{{ false }}">
-          <div style="text-align:center;padding:70px 0;color:{{ tText4 }};font-size:14px">Aucune création dans cette catégorie pour l'instant.</div>
+          <div style="text-align:center;padding:70px 0;color:{{ tText4 }};font-size:14px"><div>Aucune création dans cette catégorie pour l'instant.</div><button onClick="{{ newProject }}" style="margin-top:14px;padding:9px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Créer la première</button></div>
         </sc-if>
       </div>
     </div>
@@ -1869,7 +1873,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             <div style="margin-top:6px;font-size:12.5px;color:{{ tText3 }}">Prochain renouvellement le {{ billingNextDate }}</div>
             <div style="margin-top:16px;display:flex;gap:8px">
               <button onClick="{{ openPricing }}" style="padding:8px 14px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Changer d'offre</button>
-              <button style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Annuler</button>
+            <button onClick="{{ openBillingHelp }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Infos paiement</button>
             </div>
           </div>
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:22px">
@@ -1882,7 +1886,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               </div>
             </div>
             <div style="margin-top:18px">
-              <button style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Mettre à jour la carte</button>
+              <button onClick="{{ openBillingHelp }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Voir les options</button>
             </div>
           </div>
         </div>
@@ -1897,14 +1901,14 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <span style="font-size:13.5px;font-weight:500">{{ inv.label }}</span>
               <span style="font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600">{{ inv.amount }}</span>
               <span><span style="{{ inv.statusStyle }}">{{ inv.status }}</span></span>
-              <button title="Télécharger la facture" style="width:30px;height:30px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
+              <button onClick="{{ inv.onDownload }}" title="Télécharger la facture" style="width:30px;height:30px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               </button>
             </div>
           </sc-for>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px">
             <span style="font-size:12.5px;color:{{ tText4 }}">6 factures sur les 12 derniers mois</span>
-            <button style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">
+            <button onClick="{{ downloadBillingExport }}" style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               Tout exporter
             </button>
@@ -1933,15 +1937,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
           <div style="text-align:center;margin-top:8px;font-size:14px;color:{{ tText3 }}">{{ authSubtitle }}</div>
 
           <div style="margin-top:28px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:26px;box-shadow:0 18px 44px -32px rgba(12,11,9,.35)">
-            <button style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border-radius:12px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.04)">
-              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"></path><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"></path><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"></path><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A11 11 0 0 0 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"></path></svg>
-              Continuer avec Google
-            </button>
-            <div style="display:flex;align-items:center;gap:12px;margin:18px 0">
-              <span style="flex:1;height:1px;background:rgba({{ tLineRGB }},.10)"></span>
-              <span style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">ou par e-mail</span>
-              <span style="flex:1;height:1px;background:rgba({{ tLineRGB }},.10)"></span>
-            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:12px;color:{{ tText3 }}"><span style="width:6px;height:6px;border-radius:999px;background:#D1FE17"></span>Connexion sécurisée par e-mail</div>
 
             <div style="display:flex;flex-direction:column;gap:13px">
               <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
@@ -2114,6 +2110,7 @@ class Component extends DCLogic {
     billingStatus: null,
     billingLoading: false,
     pricingNotice: '',
+    toast: '',
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false,
     backendReady: false,
     sendLocked: false,
@@ -2511,6 +2508,7 @@ class Component extends DCLogic {
         textPreview:data.textPreview || textPreview || ''
       };
       this.setState(s=>({ attachments:(s.attachments || []).concat([attachment]).slice(-4), uploadingAttachment:false, attachmentNotice:'Fichier ajoute.' }));
+      this.notify('Fichier ajoute au projet. HuggyFlow peut maintenant l analyser.');
       setTimeout(()=>this.setState({ attachmentNotice:'' }), 1600);
     }catch(err){
       this.setState({ uploadingAttachment:false, attachmentNotice:this.friendlyError(err && err.message, 'Impossible d ajouter ce fichier pour le moment.') });
@@ -2518,6 +2516,7 @@ class Component extends DCLogic {
   }
   removeAttachment(id){
     this.setState(s=>({ attachments:(s.attachments || []).filter(a=>a.id !== id) }));
+    this.notify('Fichier retire du message.');
   }
   attachmentPayload(){
     const items = (this.state.attachments || []).filter(a=>a && a.url);
@@ -2748,8 +2747,10 @@ class Component extends DCLogic {
     Object.keys(this.batchPolls || {}).forEach(id=>clearTimeout(this.batchPolls[id]));
     clearTimeout(this.persistTimer);
     clearTimeout(this.bootstrapTimer);
+    clearTimeout(this.toastTimer);
     this.persistUiState();
     if(this.chatAbort) this.chatAbort.abort();
+    if(this.activeAudio) this.activeAudio.pause();
     this.flushAllAgentText();
   }
   componentDidUpdate(prevProps, prevState){
@@ -2799,6 +2800,12 @@ class Component extends DCLogic {
       const list = document.querySelector('[data-hf-chat-scroll="true"]');
       if(list) list.scrollTop = list.scrollHeight;
     });
+  }
+  notify(message){
+    if(!message) return;
+    clearTimeout(this.toastTimer);
+    this.setState({ toast:String(message) });
+    this.toastTimer = setTimeout(()=>this.setState({ toast:'' }), 3400);
   }
   onChatScroll(e){
     const el = e && e.currentTarget;
@@ -2891,7 +2898,7 @@ class Component extends DCLogic {
     if(!media) return;
     const text = generation && generation.text ? generation.text : (media.type === 'video' ? 'Je lance la video. Tu peux suivre la progression ici.' : 'Je lance la creation. Tu peux suivre la progression ici.');
     const msgId = id || (generation && generation.messageId) || ('g'+(media.generationId || Date.now()));
-    const patch = { id:msgId, role:'agent', typing:false, text, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image', media };
+    const patch = { id:msgId, role:'agent', typing:false, activity:media.status === 'loading' ? 'HuggyFlow prepare la creation' : 'Creation prete', text, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image', media };
     this.setState(s=>{
       const exists = s.messages.some(m=>m.id === msgId);
       return { messages: exists ? s.messages.map(m=>m.id === msgId ? Object.assign({}, m, patch) : m) : s.messages.concat([patch]) };
@@ -2928,6 +2935,7 @@ class Component extends DCLogic {
         const media = this.normalizeMedia(data.generation || data);
         if(media) this.updateAgentMessage(messageId, { media, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image' });
         this.applyCreditPayload(data);
+        if(media && media.status === 'done') this.notify(media.type === 'video' ? 'Video prete a etre visionnee.' : (media.type === 'voice' ? 'Voix prete a etre ecoutee.' : 'Creation prete a etre utilisee.'));
         if(media && media.status === 'loading') this.polls[generationId] = setTimeout(run, 2400);
         else delete this.polls[generationId];
       }catch(err){
@@ -2954,7 +2962,7 @@ class Component extends DCLogic {
     const kind = mode === 'video' ? 'video' : mode === 'audio' ? 'voice' : 'image';
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
-    const agentMsg = { id:agentId, role:'agent', typing:true, kind };
+    const agentMsg = { id:agentId, role:'agent', typing:true, kind, activity:'HuggyFlow analyse ton brief' };
     this.chatShouldStick = true;
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
@@ -3048,6 +3056,7 @@ class Component extends DCLogic {
       let payload; try{ payload = JSON.parse(data); }catch(e){ return; }
       if(type === 'text'){ this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true; }
       if(type === 'message'){ this.appendAgentText(agentId, payload.text || ''); delivered = true; }
+      if(type === 'status'){ this.updateAgentMessage(agentId, { activity:payload.label || payload.message || 'HuggyFlow poursuit la preparation' }); delivered = true; }
       if(type === 'generation'){ this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
       if(type === 'done'){ this.bindProjectFromApi(payload); delivered = true; }
       if(type === 'credits') this.applyCreditPayload(payload);
@@ -3407,6 +3416,33 @@ class Component extends DCLogic {
       this.setState({ feedbackMessage:'', feedbackSending:false, pricingNotice:'Merci, ton retour a ete envoye.' });
     }catch(err){ this.setState({ feedbackSending:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d envoyer ton retour.') }); }
   }
+  async configureAffiliatePayout(){
+    if(!this.requireAuth('Connecte-toi pour configurer tes versements.', null)) return;
+    const payoutEmail = String((this.state.user && (this.state.user.billingEmail || this.state.user.email)) || this.state.settingsEmail || '').trim();
+    if(!payoutEmail){ this.notify('Ajoute d abord un e-mail de facturation dans ton profil.'); return; }
+    try{
+      const res = await this.apiFetch('/api/affiliate', { method:'POST', body:JSON.stringify({ payoutEmail }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'affiliate');
+      this.setState({ affiliateData:data }, ()=>this.notify('E-mail de versement enregistre.'));
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Impossible de configurer le versement.')); }
+  }
+  requestPasswordReset(){
+    const email = String((this.state.user && this.state.user.email) || this.state.settingsEmail || '').trim();
+    if(!email){ this.notify('Ajoute ton e-mail avant de demander un lien.'); return; }
+    this.setState({ page:'auth', authMode:'login', authEmail:email, authStatus:'' }, ()=>this.authRecover());
+  }
+  openBillingHelp(){ this.notify('Le moyen de paiement est choisi et sécurisé dans le checkout MoneyFusion.'); }
+  teamMemberOptions(member){ this.notify('Les rôles de ' + String((member && member.name) || 'ce membre') + ' se gèrent depuis l espace Équipe.'); }
+  downloadInvoice(invoice){
+    const stamp = String((invoice && invoice.date) || new Date().toISOString().slice(0,10)).replace(/[^a-z0-9]+/gi, '-');
+    this.downloadJson('facture-huggyflow-' + stamp + '.json', invoice || {});
+    this.notify('Reçu de facturation préparé.');
+  }
+  downloadBillingExport(){
+    this.downloadJson('facturation-huggyflow.json', { exportedAt:new Date().toISOString(), invoices:(this.state.billingStatus && this.state.billingStatus.invoices) || [], transactions:(this.state.billingStatus && this.state.billingStatus.transactions) || [] });
+    this.notify('Historique de facturation exporté.');
+  }
   async newProject(){
     if(!this.requireAuth('Connecte-toi pour creer un projet sauvegarde.', { type:'newProject' })) return;
     try{
@@ -3423,7 +3459,7 @@ class Component extends DCLogic {
         input:'',
         page:'app',
         modelMenu:false
-      }));
+      }), ()=>this.notify('Nouveau projet pret. Decris ce que tu veux creer.'));
     }catch(err){
       this.setState({ pricingNotice:'Impossible de creer le projet pour le moment.' });
     }
@@ -3431,7 +3467,7 @@ class Component extends DCLogic {
   switchProject(id){
     const project = (this.state.projectsData || []).find(p=>p.id === id);
     if(!project) return;
-    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'' });
+    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'' }, ()=>this.notify('Projet ouvert. Ton contexte est restaure.'));
   }
   openProjectMenu(id, event){
     if(event && event.stopPropagation) event.stopPropagation();
@@ -3473,7 +3509,7 @@ class Component extends DCLogic {
         projectModal:null,
         renameProjectId:'',
         renameTitle:''
-      }));
+      }), ()=>this.notify('Nom du projet mis a jour.'));
     };
     if(String(id).indexOf('local-') === 0){ applyLocal(); return; }
     try{
@@ -3501,7 +3537,7 @@ class Component extends DCLogic {
           deleteProjectId:'',
           projectMenuId:''
         };
-      });
+      }, ()=>this.notify('Projet supprime.'));
     };
     if(String(id).indexOf('local-') === 0){ applyLocal(); return; }
     try{
@@ -3536,6 +3572,26 @@ class Component extends DCLogic {
     if(!url || typeof window === 'undefined') return;
     window.open(url, '_blank', 'noopener,noreferrer');
   }
+  playMedia(url){
+    if(!url || typeof window === 'undefined'){
+      this.notify('Aucun apercu audio disponible pour le moment.');
+      return;
+    }
+    try{
+      if(this.activeAudio) this.activeAudio.pause();
+      this.activeAudio = new Audio(url);
+      this.activeAudio.play().then(()=>this.notify('Lecture audio en cours.')).catch(()=>this.downloadMedia(url));
+    }catch(err){ this.downloadMedia(url); }
+  }
+  remixCreation(source, type){
+    const prompt = String(source || 'cette creation').replace(/\s+/g, ' ').trim();
+    this.setState({
+      page:'app',
+      mode:type === 'video' ? 'video' : (type === 'voice' ? 'audio' : 'image'),
+      input:'Remixe cette creation en gardant l intention principale : ' + prompt,
+      modelMenu:false
+    }, ()=>this.notify('Creation prete a etre remixee. Ajuste la consigne puis envoie.'));
+  }
   galleryItems(){
     const f = this.state.galleryFilter || 'all';
     const items = [];
@@ -3563,7 +3619,8 @@ class Component extends DCLogic {
           isVideo:type === 'video',
           isVoice:type === 'voice',
           onDownload:()=>this.downloadMedia(media.resultUrl),
-          onRecreate:()=>{ this.setState({ page:'app', input:'Recree une variante de '+(media.prompt || msg.text || 'cette creation') }); }
+          onPlay:()=>this.playMedia(media.resultUrl),
+          onRecreate:()=>this.remixCreation(media.prompt || msg.text || 'cette creation', type)
         });
       });
     });
@@ -3688,6 +3745,9 @@ class Component extends DCLogic {
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
+      creditColor,
+      showToast: !!st.toast,
+      toastMessage: st.toast || '',
       isDark: this.getResolvedTheme() === 'dark',
       isLight: this.getResolvedTheme() !== 'dark',
       showCheckoutPhone: !!st.checkoutPhoneOpen,
@@ -3851,7 +3911,8 @@ class Component extends DCLogic {
       systemTabStyle: st.theme === 'system' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
       lightTabStyle: st.theme === 'light' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
       darkTabStyle: st.theme === 'dark' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
-      showApp: st.page === 'app' || (st.page === 'admin' && !this.isAdminUser()) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{
         const t = s.theme === 'dark' ? 'light' : 'dark';
@@ -3986,7 +4047,7 @@ class Component extends DCLogic {
           status: on ? 'Connecté' : 'Non connecté',
           statusStyle: 'align-self:flex-start;padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:700;' +
             (on
-              ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+              ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
               : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text4),
           onToggle: ()=> this.setState(s=>{
             const connected = Object.assign({ zapier:true, slack:false, notion:false, make:false, discord:false, webhooks:true }, s.connected);
@@ -4067,7 +4128,8 @@ class Component extends DCLogic {
       tfaTrackStyle: this.switchTrack(!!st.tfa),
       tfaKnobStyle: this.switchKnob(!!st.tfa),
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
-      openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }),
+      galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
+      openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),
       galleryTabs: [['all','Tout'],['image','Images'],['video','Vidéos'],['voice','Voix']].map(p=>({
         label: p[1],
         style: this.tabStyle((st.galleryFilter || 'all') === p[0]),
@@ -4091,8 +4153,9 @@ class Component extends DCLogic {
         status: inv.paid ? 'Payée' : 'Remboursée',
         statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
           (inv.paid
-            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
-            : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
+            ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
+            : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3),
+        onDownload:()=>this.downloadInvoice(inv)
       })),
       isEmpty: st.messages.length === 0,
       hasMessages: st.messages.length > 0,
@@ -4174,7 +4237,7 @@ class Component extends DCLogic {
           statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
             (suspended
               ? 'background:rgba(196,88,64,.12);color:#C45840'
-              : (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')),
+              : (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')),
           action: suspended ? 'Réactiver' : 'Suspendre',
           actionStyle: 'padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;' +
             (suspended ? 'border:1px solid rgba(' + T.lineRGB + ',.16);color:' + T.text2 : 'border:1px solid rgba(196,88,64,.35);color:#C45840'),
@@ -4243,7 +4306,7 @@ class Component extends DCLogic {
         name: r.name, amount: r.amount, status: r.status,
         statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
           (r.paid
-            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+            ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       affSteps: [
@@ -4256,9 +4319,12 @@ class Component extends DCLogic {
         { name:'Images', filter:'image', isNew:true, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8},React.createElement('rect',{x:3,y:3,width:18,height:18,rx:3}),React.createElement('path',{d:'M21 15l-5-5L5 21'})) },
         { name:'Vidéos', filter:'video', isNew:false, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8},React.createElement('rect',{x:2,y:5,width:14,height:14,rx:3}),React.createElement('path',{d:'M22 8l-6 4 6 4z'})) },
         { name:'Voix', filter:'voice', isNew:false, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round'},React.createElement('rect',{x:9,y:3,width:6,height:11,rx:3}),React.createElement('path',{d:'M5 11a7 7 0 0 0 14 0'}),React.createElement('line',{x1:12,y1:18,x2:12,y2:21})) }
-      ].map(c=>Object.assign({}, c, { onOpen: ()=> this.setState({ page:'gallery', galleryFilter: c.filter, modelMenu:false }) })),
+      ].map(c=>Object.assign({}, c, {
+        style:'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === c.filter ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === c.filter ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === c.filter ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
+        onOpen: ()=> this.setState({ page:'gallery', galleryFilter: c.filter, modelMenu:false }, ()=>this.notify(c.name + ' affichees.'))
+      })),
       newProject: ()=> this.newProject(),
-      openPricing: ()=> this.setState({ page:'pricing', modelMenu:false }),
+      openPricing: ()=> this.setState({ page:'pricing', modelMenu:false }, ()=>this.notify('Offres et credits disponibles.')),
       openAuth: ()=> this.setState({ page:'auth', modelMenu:false }),
       backToApp: ()=> this.setState({ page:'app' }),
       onInput: (e)=> this.setState({ input: e.target.value }),
@@ -4276,8 +4342,8 @@ class Component extends DCLogic {
       sendHint: st.uploadingAttachment ? (st.attachmentNotice || 'ajout...') : (st.sendLocked ? 'stop' : '↵ envoyer'),
       isSending: !!st.sendLocked,
       isIdle: !st.sendLocked,
-      sendButtonStyleLarge: 'width:48px;height:48px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px -14px rgba(214,249,78,.8)',
-      sendButtonStyleSmall: 'width:38px;height:38px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -14px rgba(214,249,78,.75)',
+      sendButtonStyleLarge: 'width:48px;height:48px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px -14px rgba(209,254,23,.8)',
+      sendButtonStyleSmall: 'width:38px;height:38px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -14px rgba(209,254,23,.75)',
       toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu })),
       modelMenu: st.modelMenu,
       curModelName: this.curModel().name,
@@ -4424,6 +4490,10 @@ class Component extends DCLogic {
       planLabel: st.user ? ('Offre ' + (st.user.plan || 'Free')) : 'Offre gratuite',
       billingPlanName: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.plan) || (st.user && st.user.plan) || 'Free',
       billingPlanPrice: st.billingLoading ? 'Chargement...' : ((st.billingStatus && st.billingStatus.subscription) ? 'Abonnement actif' : 'Aucun abonnement actif'),
+      openBillingHelp: ()=>this.openBillingHelp(),
+      requestPasswordReset: ()=>this.requestPasswordReset(),
+      configureAffiliatePayout: ()=>this.configureAffiliatePayout(),
+      downloadBillingExport: ()=>this.downloadBillingExport(),
       billingNextDate: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.currentPeriodEnd)
         ? new Date(st.billingStatus.user.currentPeriodEnd).toLocaleDateString('fr-FR')
         : 'non planifié',
@@ -4434,7 +4504,7 @@ class Component extends DCLogic {
         status: inv.status || 'payée',
         statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
           ((String(inv.status || 'paid').toLowerCase() === 'paid' || String(inv.status || '').toLowerCase() === 'payée')
-            ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A')
+            ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       plansGridCols: 'repeat(' + this.buildPlans().length + ',1fr)',
@@ -4470,7 +4540,8 @@ class Component extends DCLogic {
       teamMembers: (((st.teamData && st.teamData.members) || [])).map((m,i)=>({
         name:m.name, email:m.email, initials:m.initials, avatarBg:['#D1FE17','#E8D79B','#C9E8D5','#E8C9B8'][i % 4],
         isYou:!!m.isYou, role:this.roleLabel(m.role), activity:m.status === 'active' ? 'Actif' : 'En attente',
-        roleStyle:'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' + ((m.role === 'owner' || m.role === 'admin') ? 'background:#D1FE17;color:#131517' : (m.role === 'editor' ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4))
+        roleStyle:'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' + ((m.role === 'owner' || m.role === 'admin') ? 'background:#D1FE17;color:#131517' : (m.role === 'editor' ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4)),
+        onOptions:()=>this.teamMemberOptions(m)
       })),
       pendingInvites: (((st.teamData && st.teamData.invites) || [])).map(p=>({ email:p.email, sent:p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : 'recent', onRevoke:()=>this.revokeInvite(p.id) })),
       noPending: !((st.teamData && st.teamData.invites && st.teamData.invites.length) || 0),
@@ -4501,7 +4572,7 @@ class Component extends DCLogic {
       ],
       referrals: (((st.affiliateData && st.affiliateData.referrals) || [])).map(r=>({
         name:r.name, amount:Number(r.amountUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), status:r.status,
-        statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(214,249,78,.14);color:#D1FE17' : 'background:rgba(214,249,78,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
+        statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       messages: st.messages.map((m,i)=>{
         const media = (m.media && typeof m.media === 'object') ? m.media : null;
@@ -4520,6 +4591,7 @@ class Component extends DCLogic {
           userAttachments: (m.attachments || []).map(a=>({ name:a.name || 'Fichier joint' })),
           richText: this.markdownBlocks(m.text || ''),
           isTyping: !!m.typing && !m.text,
+          activityLabel: m.activity || 'HuggyFlow prepare ta demande',
           showText: !!m.text,
           hasMedia: !!m.media,
           imgLoading: status==='loading' && !isVideo && !isVoice,
@@ -4539,7 +4611,8 @@ class Component extends DCLogic {
           resultUrl,
           mediaDone: status==='done',
           onDownload: ()=> this.downloadMedia(resultUrl),
-          onRecreate: ()=> this.sendPrompt(isVideo ? 'Recrée une variante de la dernière vidéo' : 'Recrée une variante de la dernière image')
+          onRemix: ()=> this.remixCreation((media && media.prompt) || m.text || 'cette creation', isVideo ? 'video' : (isVoice ? 'voice' : 'image')),
+          onRecreate: ()=> this.remixCreation((media && media.prompt) || m.text || (isVideo ? 'la derniere video' : 'la derniere image'), isVideo ? 'video' : (isVoice ? 'voice' : 'image'))
         };
       })
     };
