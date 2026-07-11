@@ -83,6 +83,66 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-plan-panel]{background:transparent!important;border:0!important;border-top:1px solid rgba(46,48,49,.42)!important;border-radius:0!important;padding:16px 0 0!important}
 [data-hf-plan-panel] + [data-hf-plan-panel]{margin-top:16px!important}
 @media (max-width:900px){.hf-pricing-grid{grid-template-columns:1fr!important}}
+.hf-settings-backdrop{position:fixed;inset:0;z-index:100;background:rgba(5,6,8,.72);backdrop-filter:blur(18px);animation:modalFadeIn .22s ease both}
+.hf-settings-shell{position:fixed;inset:0;margin:auto;z-index:101;width:min(1180px,calc(100vw - 48px));height:min(820px,calc(100vh - 48px));display:flex;overflow:hidden;background:#131517;border:1px solid rgba(247,247,248,.12);border-radius:20px;box-shadow:0 32px 110px -32px rgba(0,0,0,.82);animation:modalScale .28s cubic-bezier(.22,1,.36,1) both}
+.hf-settings-rail{width:264px;flex:0 0 264px;display:flex;flex-direction:column;background:#17191c;border-right:1px solid rgba(247,247,248,.08);overflow:hidden}
+.hf-settings-brand{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid rgba(247,247,248,.07)}
+.hf-settings-brand-mark{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#D1FE17;color:#131517;font-weight:800;box-shadow:0 0 24px rgba(209,254,23,.18)}
+.hf-settings-search{margin:16px 16px 12px;position:relative}
+.hf-settings-search input{width:100%;box-sizing:border-box;height:40px;padding:0 12px 0 38px;border-radius:10px;border:1px solid rgba(247,247,248,.10);background:#202327;color:#F7F7F8;font:500 13px ui-sans-serif,system-ui,sans-serif;transition:border-color .18s,background .18s,box-shadow .18s}
+.hf-settings-search input:focus{outline:none;border-color:rgba(209,254,23,.7);background:#24272b;box-shadow:0 0 0 3px rgba(209,254,23,.09)}
+.hf-settings-nav{flex:1;overflow:auto;padding:0 12px 16px;scrollbar-width:thin}
+.hf-settings-nav-group{margin:18px 8px 7px;color:#70747b;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.hf-settings-nav-item{width:100%;min-height:40px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#A8A8A8;text-align:left;font:600 13px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-settings-nav-item:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
+.hf-settings-nav-item:active{transform:scale(.985)}
+.hf-settings-nav-item.is-active{background:rgba(209,254,23,.12);color:#D1FE17;box-shadow:inset 3px 0 0 #D1FE17}
+.hf-settings-nav-icon{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:rgba(247,247,248,.06);color:inherit;font-size:10px;font-weight:800}
+.hf-settings-nav-item.is-active .hf-settings-nav-icon{background:#D1FE17;color:#131517}
+.hf-settings-account{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid rgba(247,247,248,.07);color:#A8A8A8}
+.hf-settings-avatar{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:#D1FE17;color:#131517;font-weight:800;font-size:12px}
+.hf-settings-main{min-width:0;flex:1;display:flex;flex-direction:column;background:#131517}
+.hf-settings-topbar{height:72px;flex:0 0 72px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 28px;border-bottom:1px solid rgba(247,247,248,.08)}
+.hf-settings-kicker{color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.hf-settings-title{margin-top:5px;color:#F7F7F8;font:700 25px/1.2 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-settings-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(247,247,248,.12);border-radius:10px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-settings-close:hover{background:rgba(247,247,248,.08);color:#F7F7F8}
+.hf-settings-close:active{transform:scale(.94)}
+.hf-settings-content{flex:1;overflow:auto;padding:28px 34px 42px;scroll-behavior:smooth}
+.hf-settings-content-inner{width:min(760px,100%);margin:0 auto;animation:pageRise .26s cubic-bezier(.22,1,.36,1) both}
+.hf-settings-intro{margin-bottom:22px;color:#898A8B;font-size:13px;line-height:1.6}
+.hf-settings-card{border:1px solid rgba(247,247,248,.10);border-radius:14px;background:#1C1E20;overflow:hidden}
+.hf-settings-card + .hf-settings-card{margin-top:14px}
+.hf-settings-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:66px;padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07)}
+.hf-settings-row:last-child{border-bottom:0}
+.hf-settings-row-label{min-width:0;color:#F7F7F8;font-size:13.5px;font-weight:650}
+.hf-settings-row-hint{margin-top:4px;color:#898A8B;font-size:12px;line-height:1.45}
+.hf-settings-control{min-width:190px;max-width:58%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(247,247,248,.11);border-radius:9px;background:#23262A;color:#F7F7F8;font:500 13px ui-sans-serif,system-ui,sans-serif}
+.hf-settings-control:focus{outline:none;border-color:rgba(209,254,23,.7);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
+.hf-settings-textarea{width:100%;min-height:120px;box-sizing:border-box;resize:vertical;padding:12px;border:1px solid rgba(247,247,248,.11);border-radius:10px;background:#23262A;color:#F7F7F8;font:500 13px/1.55 ui-sans-serif,system-ui,sans-serif}
+.hf-settings-textarea:focus{outline:none;border-color:rgba(209,254,23,.7);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
+.hf-settings-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.hf-settings-section-head h3{margin:0;color:#F7F7F8;font:700 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-settings-section-head p{margin:6px 0 0;color:#898A8B;font-size:13px;line-height:1.5}
+.hf-settings-primary{min-height:40px;padding:0 15px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font:750 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s}
+.hf-settings-primary:hover{filter:brightness(1.05);box-shadow:0 8px 24px -12px rgba(209,254,23,.72)}
+.hf-settings-primary:active{transform:scale(.96)}
+.hf-settings-secondary{min-height:40px;padding:0 15px;border:1px solid rgba(247,247,248,.13);border-radius:9px;background:transparent;color:#A8A8A8;font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-settings-secondary:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
+.hf-settings-secondary:active{transform:scale(.96)}
+.hf-settings-danger{color:#F08B72!important;border-color:rgba(196,88,64,.35)!important}
+.hf-settings-danger:hover{background:rgba(196,88,64,.11)!important}
+.hf-settings-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:rgba(209,254,23,.13);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.hf-settings-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.hf-settings-metric{padding:16px;border:1px solid rgba(247,247,248,.09);border-radius:12px;background:#1C1E20}
+.hf-settings-metric-label{color:#898A8B;font-size:11px;font-weight:650}
+.hf-settings-metric-value{margin-top:8px;color:#F7F7F8;font:700 23px/1 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-settings-table-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#A8A8A8;font-size:12.5px}
+.hf-settings-table-row:last-child{border-bottom:0}
+.hf-settings-empty{padding:28px 18px;text-align:center;color:#898A8B;font-size:13px;line-height:1.55}
+.hf-settings-progress{height:6px;overflow:hidden;border-radius:999px;background:rgba(247,247,248,.09)}
+.hf-settings-progress span{display:block;height:100%;border-radius:inherit;background:#D1FE17;transition:width .35s ease}
+@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </helmet>
@@ -1026,7 +1086,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
   </sc-if>
 
   <!-- ========== SETTINGS MODAL (Claude-style centered popup with sidebar) ========== -->
-  <sc-if value="{{ showSettingsModal }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ showLegacySettingsModal }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
       <div onClick="{{ backToApp }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)"></div>
       <div style="position:relative;width:820px;max-width:92vw;height:580px;max-height:85vh;background:#1E1F23;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;overflow:hidden;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
@@ -1380,6 +1440,148 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 
       </div>
     </div>
+  </sc-if>
+  <!-- ========== HUGGYFLOW SETTINGS EXPERIENCE ========== -->
+  <sc-if value="{{ showSettingsModal }}" hint-placeholder-val="{{ false }}">
+    <div class="hf-settings-backdrop" onClick="{{ closeSettings }}"></div>
+    <section class="hf-settings-shell" role="dialog" aria-modal="true" aria-label="Paramètres HuggyFlow">
+      <aside class="hf-settings-rail">
+        <div class="hf-settings-brand">
+          <div class="hf-settings-brand-mark">»</div>
+          <div style="min-width:0;flex:1">
+            <div style="color:#F7F7F8;font-size:14px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">HuggyFlow</div>
+            <div style="margin-top:3px;color:#70747B;font-size:11px">Centre de contrôle</div>
+          </div>
+          <button class="hf-settings-close" onClick="{{ closeSettings }}" title="Fermer les paramètres" aria-label="Fermer les paramètres">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="hf-settings-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2" stroke-linecap="round" style="position:absolute;left:13px;top:12px"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.5" y2="16.5"></line></svg>
+          <input value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher un réglage" aria-label="Rechercher un réglage"/>
+        </div>
+        <nav class="hf-settings-nav" aria-label="Navigation des paramètres">
+          <div class="hf-settings-nav-group">Paramètres</div>
+          <sc-for list="{{ settingsPrimaryItems }}" as="item" hint-placeholder-count="9">
+            <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}">
+              <span class="hf-settings-nav-icon">{{ item.short }}</span><span>{{ item.label }}</span>
+            </button>
+          </sc-for>
+          <div class="hf-settings-nav-group">Personnaliser</div>
+          <sc-for list="{{ settingsCustomItems }}" as="item" hint-placeholder-count="3">
+            <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}">
+              <span class="hf-settings-nav-icon">{{ item.short }}</span><span>{{ item.label }}</span>
+            </button>
+          </sc-for>
+        </nav>
+        <div class="hf-settings-account">
+          <div class="hf-settings-avatar">{{ avatarInitial }}</div>
+          <div style="min-width:0;flex:1">
+            <div style="color:#F7F7F8;font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ settingsAccountLabel }}</div>
+            <div style="margin-top:3px;color:#898A8B;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ settingsAccountEmail }}</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="hf-settings-main">
+        <header class="hf-settings-topbar">
+          <div>
+            <div class="hf-settings-kicker">{{ settingsKicker }}</div>
+            <div class="hf-settings-title">{{ settingsPageTitle }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="hf-settings-badge">{{ settingsPlanBadge }}</span>
+          </div>
+        </header>
+        <div class="hf-settings-content">
+          <div class="hf-settings-content-inner" style="animation:{{ settingsAnim }}">
+
+            <sc-if value="{{ modalShowSettings }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Ton profil de travail</h3><p>Ces informations personnalisent les réponses et les créations de HuggyFlow.</p></div><button class="hf-settings-primary" onClick="{{ saveSettings }}" disabled="{{ settingsSaving }}">{{ settingsSavingLabel }}</button></div>
+              <div class="hf-settings-card">
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Nom complet</div><div class="hf-settings-row-hint">Le nom affiché dans ton espace.</div></div><input class="hf-settings-control" value="{{ settingsName }}" onChange="{{ onSettingsName }}" placeholder="Ton nom"/></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Nom d’usage</div><div class="hf-settings-row-hint">Le prénom ou surnom utilisé par l’agent.</div></div><input class="hf-settings-control" value="{{ settingsCalledName }}" onChange="{{ onSettingsCalledName }}" placeholder="Comment t’appeler ?"/></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Activité</div><div class="hf-settings-row-hint">Aide HuggyFlow à choisir le bon ton.</div></div><select class="hf-settings-control" value="{{ settingsJobDesc }}" onChange="{{ onSettingsJobDesc }}"><option>Marketing</option><option>Développeur</option><option>Designer</option><option>Créateur</option><option>Autre</option></select></div>
+              </div>
+              <div class="hf-settings-card" style="padding:18px">
+                <div class="hf-settings-row-label">Instructions permanentes</div><div class="hf-settings-row-hint" style="margin-bottom:12px">HuggyFlow gardera ces préférences à l’esprit dans tes conversations.</div>
+                <textarea class="hf-settings-textarea" value="{{ settingsInstructions }}" onChange="{{ onSettingsInstructions }}" placeholder="Ex. Réponds en français, sois direct et propose toujours une prochaine action."></textarea>
+              </div>
+              <div class="hf-settings-card">
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Apparence</div><div class="hf-settings-row-hint">Choisis le thème de ton espace.</div></div><div style="display:flex;gap:6px"><button class="hf-settings-secondary" onClick="{{ setSystemTheme }}">Système</button><button class="hf-settings-secondary" onClick="{{ setLightTheme }}">Clair</button><button class="hf-settings-secondary" onClick="{{ setDarkTheme }}">Sombre</button></div></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Police d’interface</div><div class="hf-settings-row-hint">Préférence mémorisée avec ton profil.</div></div><select class="hf-settings-control" value="{{ settingsFont }}" onChange="{{ onSettingsFont }}"><option>System UI</option><option>Inter</option><option>Space Grotesk</option></select></div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowAccount }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Compte et sécurité</h3><p>Contrôle tes informations d’accès et tes données personnelles.</p></div></div>
+              <div class="hf-settings-card">
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Adresse e-mail</div><div class="hf-settings-row-hint">Utilisée pour la connexion et les reçus.</div></div><input class="hf-settings-control" type="email" value="{{ settingsEmail }}" onChange="{{ onSettingsEmail }}"/></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Mot de passe</div><div class="hf-settings-row-hint">Recevoir un lien sécurisé de modification.</div></div><button class="hf-settings-secondary" onClick="{{ requestPasswordReset }}">Modifier</button></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Session actuelle</div><div class="hf-settings-row-hint">Déconnecte cet appareil et invalide la session.</div></div><button class="hf-settings-secondary" onClick="{{ logout }}">Se déconnecter</button></div>
+              </div>
+              <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Zone sensible</div><div class="hf-settings-row-hint">Télécharge tes données ou supprime définitivement ton compte.</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="hf-settings-secondary" onClick="{{ exportAccountData }}">Exporter mes données</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ openAccountDeletion }}">Supprimer le compte</button></div></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowPrivacy }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Confidentialité</h3><p>Choisis comment HuggyFlow utilise les données de ton espace.</p></div><button class="hf-settings-primary" onClick="{{ saveSettings }}" disabled="{{ settingsSaving }}">{{ settingsSavingLabel }}</button></div>
+              <div class="hf-settings-card">
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Amélioration des modèles</div><div class="hf-settings-row-hint">Autoriser l’utilisation contrôlée de données dépersonnalisées pour améliorer les résultats.</div></div><button onClick="{{ toggleDataTraining }}" style="{{ trainTrackStyle }}" aria-label="Basculer l’amélioration des modèles"><span style="{{ trainKnobStyle }}"></span></button></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Analyses produit</div><div class="hf-settings-row-hint">Partager des événements anonymisés pour améliorer la fluidité et la fiabilité.</div></div><button onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}" aria-label="Basculer les analyses produit"><span style="{{ analyticsKnobStyle }}"></span></button></div>
+                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Notifications, lecture et sons</div><div class="hf-settings-row-hint">Préférences locales de ton expérience.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ prefItems }}" as="pref" hint-placeholder-count="3"><button class="hf-settings-secondary" onClick="{{ pref.onToggle }}">{{ pref.label }}</button></sc-for></div></div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Facturation</h3><p>Paiements MoneyFusion, crédits réels et historique de ton compte.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les offres</button></div>
+              <div class="hf-settings-metric-grid"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Offre actuelle</div><div class="hf-settings-metric-value" style="font-size:20px">{{ billingPlanName }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits disponibles</div><div class="hf-settings-metric-value">{{ creditsLabel }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Prochain renouvellement</div><div class="hf-settings-metric-value" style="font-size:17px">{{ billingNextDate }}</div></div></div>
+              <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Statut de l’abonnement</div><div class="hf-settings-row-hint">{{ billingPlanPrice }} · Paiement en {{ billingCurrency }}</div></div><span class="hf-settings-badge">{{ billingProviderLabel }}</span></div><div class="hf-settings-row"><div><div class="hf-settings-row-label">E-mail de facturation</div><div class="hf-settings-row-hint">Les confirmations sont envoyées à cette adresse.</div></div><span style="color:#F7F7F8;font-size:13px">{{ settingsEmail }}</span></div></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Historique</span><button class="hf-settings-secondary" onClick="{{ downloadBillingExport }}">Exporter</button></div><sc-if value="{{ billingLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Chargement de l’historique…</div></sc-if><sc-if value="{{ billingEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucun paiement enregistré pour le moment.</div></sc-if><sc-for list="{{ invoices }}" as="invoice" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ invoice.label }}</div><div style="margin-top:4px;font-size:11px">{{ invoice.date }}</div></div><div style="text-align:right"><div style="color:#F7F7F8">{{ invoice.amount }}</div><div style="margin-top:4px;color:#D1FE17;font-size:11px">{{ invoice.status }}</div></div></div></sc-for></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowTeam }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Équipe</h3><p>Invite des collaborateurs et garde le contrôle de ton espace partagé.</p></div><span class="hf-settings-badge">{{ seatsLabel }} places</span></div>
+              <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Utilisation des places</div><div style="margin:10px 0 5px" class="hf-settings-progress"><span style="width:{{ seatsPct }}"></span></div><div class="hf-settings-row-hint">{{ seatsLabel }} utilisées sur ton forfait.</div><div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><input class="hf-settings-control" value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" placeholder="collegue@entreprise.com"/><button class="hf-settings-primary" onClick="{{ sendInvite }}">Inviter</button></div></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Membres</span><span style="color:#898A8B">Rôles gérés par propriétaire</span></div><sc-for list="{{ teamMembers }}" as="member" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ member.name }} {{ member.isYou ? '(toi)' : '' }}</div><div style="margin-top:4px;font-size:11px">{{ member.email }} · {{ member.activity }}</div></div><span class="hf-settings-badge">{{ member.role }}</span></div></sc-for><sc-if value="{{ noPending }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune invitation en attente.</div></sc-if><sc-for list="{{ pendingInvites }}" as="pending" hint-placeholder-count="3"><div class="hf-settings-table-row"><span>{{ pending.email }}</span><button class="hf-settings-secondary" onClick="{{ pending.onRevoke }}">Révoquer</button></div></sc-for></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>API</h3><p>Crée des clés personnelles pour connecter HuggyFlow à tes outils.</p></div><button class="hf-settings-primary" onClick="{{ createKey }}">Nouvelle clé</button></div>
+              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px">Copie cette clé maintenant : {{ apiCreatedKey }}</div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></sc-for></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Utilisation</h3><p>Une vue claire de tes créations et de tes crédits réellement consommés.</p></div><div style="display:flex;gap:6px"><sc-for list="{{ statsTabs }}" as="tab" hint-placeholder-count="3"><button class="hf-settings-secondary" onClick="{{ tab.onClick }}">{{ tab.label }}</button></sc-for></div></div>
+              <div class="hf-settings-metric-grid"><sc-for list="{{ statCards }}" as="stat" hint-placeholder-count="4"><div class="hf-settings-metric"><div class="hf-settings-metric-label">{{ stat.label }}</div><div class="hf-settings-metric-value">{{ stat.value }}</div><div style="margin-top:7px;color:#898A8B;font-size:11px">{{ stat.delta }}</div></div></sc-for></div>
+              <div class="hf-settings-card"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Consommation par modèle</span></div><sc-if value="{{ modelUsageEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les données apparaîtront après tes premières créations.</div></sc-if><sc-for list="{{ modelUsage }}" as="model" hint-placeholder-count="6"><div class="hf-settings-table-row"><span>{{ model.name }}</span><span style="color:#D1FE17">{{ model.credits }}</span></div></sc-for></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowCapabilities }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Capacités</h3><p>Configure l’identité de marque qui guide tes workflows créatifs.</p></div><button class="hf-settings-primary" onClick="{{ saveBrand }}" disabled="{{ brandSaving }}">{{ brandSaving ? 'Enregistrement…' : 'Enregistrer' }}</button></div>
+              <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Nom de la marque</div><div class="hf-settings-row-hint">Utilisé dans les briefs et les scripts.</div></div><input class="hf-settings-control" value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Ma marque"/></div><div style="padding:18px"><div class="hf-settings-row-label">Positionnement</div><div class="hf-settings-row-hint" style="margin-bottom:12px">Décris les codes, le ton et le public à respecter.</div><textarea class="hf-settings-textarea" value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Ex. Une marque moderne, accessible et audacieuse…"></textarea></div></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Modèles disponibles</span><span style="color:#898A8B">Selon ton forfait et tes crédits</span></div><div class="hf-settings-empty">L’orchestrateur choisit automatiquement le meilleur modèle pour chaque tâche.</div></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowClaudeCode }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Claude Code</h3><p>Un espace réservé aux connexions développeur, séparé de tes clés HuggyFlow.</p></div><span class="hf-settings-badge">Non connecté</span></div><div class="hf-settings-card"><div class="hf-settings-empty">Aucune session Claude Code n’est connectée à ce compte. Tes clés HuggyFlow restent séparées et ne sont jamais exposées dans le navigateur.</div></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowSkills }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Compétences</h3><p>Transforme tes workflows récurrents en templates réutilisables.</p></div><button class="hf-settings-secondary" onClick="{{ saveProjectTemplate }}">Sauvegarder le projet actif</button></div><div class="hf-settings-card"><sc-if value="{{ templatesEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune compétence sauvegardée pour le moment.</div></sc-if><sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ template.title }}</div><div style="margin-top:4px;font-size:11px">{{ template.kind }} · {{ template.remixes }} remixes</div></div><button class="hf-settings-secondary" onClick="{{ template.onRemix }}">Remixer</button></div></sc-for></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div class="hf-settings-card"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button></div></sc-for></div>
+            </sc-if>
+
+            <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
+              <div class="hf-settings-section-head"><div><h3>Plugins</h3><p>Les extensions sont activées progressivement selon ton espace et ton forfait.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les forfaits</button></div><div class="hf-settings-card"><div class="hf-settings-empty">Le catalogue de plugins HuggyFlow sera disponible ici. Les connecteurs et compétences actuels restent accessibles immédiatement.</div></div>
+            </sc-if>
+
+          </div>
+        </div>
+      </main>
+    </section>
   </sc-if>
   <!-- ========== END SETTINGS MODAL ========== -->
 
@@ -2676,6 +2878,12 @@ class Component extends DCLogic {
     }
   }
   componentDidMount(){
+    this.settingsKeydown = (event)=>{
+      if(event && event.key === 'Escape' && ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'].includes(this.state.page)){
+        this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false });
+      }
+    };
+    if(typeof document !== 'undefined') document.addEventListener('keydown', this.settingsKeydown);
     try{
       const storedTheme = localStorage.getItem('huggyflow_theme') || localStorage.getItem('hf-theme');
       if(storedTheme === 'light') this.setState({ theme:'light' });
@@ -2684,6 +2892,7 @@ class Component extends DCLogic {
     this.restoreAuthSession();
   }
   componentWillUnmount(){
+    if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     clearInterval(this._ph);
     Object.keys(this.polls || {}).forEach(id=>clearTimeout(this.polls[id]));
     Object.keys(this.batchPolls || {}).forEach(id=>clearTimeout(this.batchPolls[id]));
@@ -3719,6 +3928,26 @@ class Component extends DCLogic {
     const creditColor = creditPct > 45 ? '#D1FE17' : (creditPct > 18 ? '#E8B25C' : '#C45840');
     const sendColor = '#D1FE17';
     const sendFg = '#131517';
+    const settingsQuery = String(st.settingsSearchQuery || '').trim().toLowerCase();
+    const settingsMatch = (label, terms=[]) => !settingsQuery || [label].concat(terms).some(value=>String(value).toLowerCase().includes(settingsQuery));
+    const settingItem = (id, label, short, terms, onClick) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', onClick, visible:settingsMatch(label, terms) });
+    const settingsPrimaryItems = [
+      settingItem('settings','Profil','P',['general','personnalisation','apparence'],()=>this.setState({ page:'settings', settingsSaved:false, settingsHop:false })),
+      settingItem('account','Compte','C',['email','securite','mot de passe'],()=>this.setState({ page:'account', settingsHop:true })),
+      settingItem('privacy','Confidentialité','C',['privacy','analytics','données'],()=>this.setState({ page:'privacy', settingsHop:true })),
+      settingItem('billing','Facturation','F',['paiement','prix','abonnement','moneyfusion'],()=>this.setState({ page:'billing', settingsHop:true },()=>this.loadBillingStatus())),
+      settingItem('team','Équipe','E',['membres','collaboration','invitation'],()=>this.setState({ page:'team', settingsHop:true },()=>this.loadTeam())),
+      settingItem('stats','Utilisation','U',['statistiques','crédits','activité'],()=>this.setState({ page:'stats', settingsHop:true },()=>this.loadStats())),
+      settingItem('capabilities','Capacités','K',['marque','modèles','limites'],()=>this.setState({ page:'capabilities', settingsHop:true },()=>this.loadBrands())),
+      settingItem('api','API','A',['clés','intégrations','développeur'],()=>this.setState({ page:'api', settingsHop:true },()=>this.loadApiKeys())),
+      settingItem('claudecode','Claude Code','< >',['terminal','cli'],()=>this.setState({ page:'claudecode', settingsHop:true }))
+    ].filter(item=>item.visible);
+    const settingsCustomItems = [
+      settingItem('skills','Compétences','S',['templates','workflows'],()=>this.setState({ page:'skills', settingsHop:true },()=>this.loadTemplates())),
+      settingItem('connectors','Connecteurs','C',['drive','slack','notion','outils'],()=>this.setState({ page:'connectors', settingsHop:true },()=>this.loadIntegrations())),
+      settingItem('plugins','Plugins','P',['extensions','catalogue'],()=>this.setState({ page:'plugins', settingsHop:true }))
+    ].filter(item=>item.visible);
+    const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -3738,6 +3967,16 @@ class Component extends DCLogic {
       pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
       pricingEmpty: !!st.backendError && renderedPlans.length === 0,
       showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      showLegacySettingsModal: false,
+      closeSettings: ()=> this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false }),
+      settingsPrimaryItems,
+      settingsCustomItems,
+      settingsPageTitle: settingsTitles[st.page] || 'Paramètres',
+      settingsKicker: 'HuggyFlow / Centre de contrôle',
+      settingsPlanBadge: st.user ? String(st.user.plan || 'FREE').toUpperCase() : 'INVITÉ',
+      settingsAccountLabel: st.user ? (st.user.name || 'Utilisateur HuggyFlow') : 'Visiteur',
+      settingsAccountEmail: st.user ? (st.user.email || st.settingsEmail || '') : 'Connecte-toi pour synchroniser tes réglages',
+      settingsSavingLabel: st.settingsSaving ? 'Enregistrement…' : (st.settingsSaved ? 'Enregistré' : 'Enregistrer'),
       settingsSearchQuery: st.settingsSearchQuery || '',
       onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
       avatarInitial: (st.settingsName || (st.user && st.user.name) || 'D')[0].toUpperCase(),
@@ -3936,6 +4175,7 @@ class Component extends DCLogic {
       exportProjectPackage: ()=> this.exportProjectPackage(),
       templatesLoading: !!st.templatesLoading,
       templateCards: (st.creativeTemplates || []).map(t=>({ title:t.title || 'Template', kind:(t.kind || 'creative').toUpperCase(), remixes:Number(t.remix_count || 0), onRemix:()=>this.remixTemplate(t.id) })),
+      templatesEmpty: !(st.creativeTemplates || []).length,
       connectorCards: (st.integrationConnections || []).map(c=>({
         provider:c.provider,
         label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
@@ -3944,6 +4184,7 @@ class Component extends DCLogic {
         buttonLabel: c.status === 'connected' ? 'Gérer' : 'Configurer',
         onConfigure:()=>this.configureIntegration(c.provider)
       })),
+      connectorsEmpty: !(st.integrationConnections || []).length,
       integrationsLoading: !!st.integrationsLoading,
       feedbackMessage: st.feedbackMessage || '',
       onFeedbackMessage: (e)=> this.setState({ feedbackMessage:e.target.value }),
@@ -4366,8 +4607,11 @@ class Component extends DCLogic {
       planLabel: st.user ? ('Offre ' + (st.user.plan || 'Free')) : 'Offre gratuite',
       billingPlanName: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.plan) || (st.user && st.user.plan) || 'Free',
       billingPlanPrice: st.billingLoading ? 'Chargement...' : ((st.billingStatus && st.billingStatus.subscription) ? 'Abonnement actif' : 'Aucun abonnement actif'),
+      billingProviderLabel: (st.billingStatus && st.billingStatus.moneyFusionConfigured) ? 'MONEYFUSION ACTIF' : 'PAIEMENT SÉCURISÉ',
+      billingEmpty: !((st.billingStatus && st.billingStatus.invoices && st.billingStatus.invoices.length) || 0),
       openBillingHelp: ()=>this.openBillingHelp(),
       requestPasswordReset: ()=>this.requestPasswordReset(),
+      logout: ()=>this.logout(),
       configureAffiliatePayout: ()=>this.configureAffiliatePayout(),
       downloadBillingExport: ()=>this.downloadBillingExport(),
       billingNextDate: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.currentPeriodEnd)
@@ -4400,6 +4644,7 @@ class Component extends DCLogic {
         label:b.label, cur:(b.currentPct || 0) + '%', prev:(b.previousPct || 0) + '%', curTitle:(b.credits || 0) + ' credits', prevTitle:'Reference'
       })),
       modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D1FE17','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
+      modelUsageEmpty: !((st.statsData && st.statsData.models && st.statsData.models.length) || 0),
       highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
       openApi: ()=> this.setState({ page:'api', modelMenu:false }, ()=>this.loadApiKeys()),
       apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
@@ -4408,6 +4653,8 @@ class Component extends DCLogic {
         onCopy:()=>{ if(st.apiCreatedKey && navigator.clipboard) navigator.clipboard.writeText(st.apiCreatedKey).catch(()=>{}); this.setState({ copiedKey:i }); setTimeout(()=>this.setState({ copiedKey:null }), 1600); },
         onRevoke:()=>this.revokeApiKey(k.id)
       })),
+      apiCreatedKey: st.apiCreatedKey || '',
+      apiEmpty: !((st.apiData && st.apiData.keys && st.apiData.keys.length) || 0),
       createKey: ()=> this.createApiKey(),
       openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }, ()=>this.loadTeam()),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
