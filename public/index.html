@@ -91,7 +91,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 .hf-settings-search{margin:16px 16px 12px;position:relative}
 .hf-settings-search input{width:100%;box-sizing:border-box;height:40px;padding:0 12px 0 38px;border-radius:10px;border:1px solid rgba(247,247,248,.10);background:#202327;color:#F7F7F8;font:500 13px ui-sans-serif,system-ui,sans-serif;transition:border-color .18s,background .18s,box-shadow .18s}
 .hf-settings-search input:focus{outline:none;border-color:rgba(209,254,23,.7);background:#24272b;box-shadow:0 0 0 3px rgba(209,254,23,.09)}
-.hf-settings-nav{flex:1;overflow:auto;padding:0 12px 16px;scrollbar-width:thin}
+.hf-settings-nav{flex:1;overflow:auto;padding:0 12px 16px;scrollbar-width:none}
+.hf-settings-nav::-webkit-scrollbar,.hf-settings-content::-webkit-scrollbar{width:0;height:0}
 .hf-settings-nav-group{margin:18px 8px 7px;color:#70747b;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
 .hf-settings-nav-item{width:100%;min-height:40px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#A8A8A8;text-align:left;font:600 13px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-nav-item:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
@@ -108,7 +109,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 .hf-settings-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(247,247,248,.12);border-radius:10px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-close:hover{background:rgba(247,247,248,.08);color:#F7F7F8}
 .hf-settings-close:active{transform:scale(.94)}
-.hf-settings-content{flex:1;overflow:auto;padding:28px 34px 42px;scroll-behavior:smooth}
+.hf-settings-content{flex:1;overflow:auto;padding:28px 34px 42px;scroll-behavior:smooth;scrollbar-width:none}
 .hf-settings-content-inner{width:min(760px,100%);margin:0 auto;animation:pageRise .26s cubic-bezier(.22,1,.36,1) both}
 .hf-settings-intro{margin-bottom:22px;color:#898A8B;font-size:13px;line-height:1.6}
 .hf-settings-card{border:1px solid rgba(247,247,248,.10);border-radius:14px;background:#1C1E20;overflow:hidden}
@@ -1473,6 +1474,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <span class="hf-settings-nav-icon">{{ item.short }}</span><span>{{ item.label }}</span>
             </button>
           </sc-for>
+          <sc-if value="{{ settingsNavEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty" style="padding:22px 8px;text-align:left">Aucun réglage trouvé.</div></sc-if>
         </nav>
         <div class="hf-settings-account">
           <div class="hf-settings-avatar">{{ avatarInitial }}</div>
@@ -1528,7 +1530,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <div class="hf-settings-card">
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Amélioration des modèles</div><div class="hf-settings-row-hint">Autoriser l’utilisation contrôlée de données dépersonnalisées pour améliorer les résultats.</div></div><button onClick="{{ toggleDataTraining }}" style="{{ trainTrackStyle }}" aria-label="Basculer l’amélioration des modèles"><span style="{{ trainKnobStyle }}"></span></button></div>
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Analyses produit</div><div class="hf-settings-row-hint">Partager des événements anonymisés pour améliorer la fluidité et la fiabilité.</div></div><button onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}" aria-label="Basculer les analyses produit"><span style="{{ analyticsKnobStyle }}"></span></button></div>
-                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Notifications, lecture et sons</div><div class="hf-settings-row-hint">Préférences locales de ton expérience.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ prefItems }}" as="pref" hint-placeholder-count="3"><button class="hf-settings-secondary" onClick="{{ pref.onToggle }}">{{ pref.label }}</button></sc-for></div></div>
+                <sc-for list="{{ prefItems }}" as="pref" hint-placeholder-count="3"><div class="hf-settings-row"><div><div class="hf-settings-row-label">{{ pref.label }}</div><div class="hf-settings-row-hint">{{ pref.hint }}</div></div><button onClick="{{ pref.onToggle }}" style="{{ pref.trackStyle }}" aria-label="Modifier {{ pref.label }}"><span style="{{ pref.knobStyle }}"></span></button></div></sc-for>
               </div>
             </sc-if>
 
@@ -1542,12 +1544,12 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             <sc-if value="{{ modalShowTeam }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>Équipe</h3><p>Invite des collaborateurs et garde le contrôle de ton espace partagé.</p></div><span class="hf-settings-badge">{{ seatsLabel }} places</span></div>
               <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Utilisation des places</div><div style="margin:10px 0 5px" class="hf-settings-progress"><span style="width:{{ seatsPct }}"></span></div><div class="hf-settings-row-hint">{{ seatsLabel }} utilisées sur ton forfait.</div><div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><input class="hf-settings-control" value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" placeholder="collegue@entreprise.com"/><button class="hf-settings-primary" onClick="{{ sendInvite }}">Inviter</button></div></div>
-              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Membres</span><span style="color:#898A8B">Rôles gérés par propriétaire</span></div><sc-for list="{{ teamMembers }}" as="member" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ member.name }} {{ member.isYou ? '(toi)' : '' }}</div><div style="margin-top:4px;font-size:11px">{{ member.email }} · {{ member.activity }}</div></div><span class="hf-settings-badge">{{ member.role }}</span></div></sc-for><sc-if value="{{ noPending }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune invitation en attente.</div></sc-if><sc-for list="{{ pendingInvites }}" as="pending" hint-placeholder-count="3"><div class="hf-settings-table-row"><span>{{ pending.email }}</span><button class="hf-settings-secondary" onClick="{{ pending.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Membres</span><span style="color:#898A8B">Rôles gérés par propriétaire</span></div><sc-for list="{{ teamMembers }}" as="member" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ member.name }} {{ member.isYou ? '(toi)' : '' }}</div><div style="margin-top:4px;font-size:11px">{{ member.email }} · {{ member.activity }}</div></div><sc-if value="{{ member.isYou }}" hint-placeholder-val="{{ false }}"><select class="hf-settings-control" style="min-width:120px;max-width:150px;padding:7px 9px" value="{{ member.roleValue }}" onChange="{{ member.onRoleChange }}"><option value="admin">Admin</option><option value="editor">Editeur</option><option value="viewer">Lecteur</option></select></sc-if><sc-if value="{{ member.isYou }}" hint-placeholder-val="{{ true }}"><span class="hf-settings-badge">{{ member.role }}</span></sc-if></div></sc-for><sc-if value="{{ noPending }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune invitation en attente.</div></sc-if><sc-for list="{{ pendingInvites }}" as="pending" hint-placeholder-count="3"><div class="hf-settings-table-row"><span>{{ pending.email }}</span><button class="hf-settings-secondary" onClick="{{ pending.onRevoke }}">Révoquer</button></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>API</h3><p>Crée des clés personnelles pour connecter HuggyFlow à tes outils.</p></div><button class="hf-settings-primary" onClick="{{ createKey }}">Nouvelle clé</button></div>
-              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px">Copie cette clé maintenant : {{ apiCreatedKey }}</div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
@@ -2302,7 +2304,7 @@ class Component extends DCLogic {
 
   state = {
     theme: 'dark',
-    page: this.initialUiState.page || 'app',
+    page: ['claudecode','plugins'].includes(this.initialUiState.page) ? 'settings' : (this.initialUiState.page || 'app'),
     input: this.initialUiState.input || '',
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
@@ -2334,7 +2336,7 @@ class Component extends DCLogic {
     billingLoading: false,
     pricingNotice: '',
     toast: '',
-    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false,
+    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
     sidebarCollapsed: !!this.initialUiState.sidebarCollapsed,
@@ -3261,9 +3263,9 @@ class Component extends DCLogic {
   openCheckoutPhone(planId){
     let storedPhone = '';
     try{ storedPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
-    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId, checkoutPhone:this.state.checkoutPhone || storedPhone, pricingNotice:'' });
+    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId, checkoutPhone:this.state.checkoutPhone || storedPhone, checkoutRequestId:'', pricingNotice:'' });
   }
-  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutBusy:false }); }
+  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutBusy:false, checkoutRequestId:'' }); }
   submitCheckoutPhone(){
     const phone = String(this.state.checkoutPhone || '').trim();
     if(!/^[+0-9][0-9 .()\-]{7,23}$/.test(phone)){
@@ -3294,10 +3296,11 @@ class Component extends DCLogic {
     }
     if(!customerPhone){ this.openCheckoutPhone(planId); return; }
     try{
-      this.setState({ checkoutBusy:true, pricingNotice:'' });
+      const checkoutRequestId = this.state.checkoutRequestId || ('hf-checkout-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9));
+      this.setState({ checkoutBusy:true, checkoutRequestId, pricingNotice:'' });
       const res = await this.apiFetch('/api/billing/checkout', {
         method:'POST',
-        body:JSON.stringify({ provider:'moneyfusion', type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone })
+        body:JSON.stringify({ provider:'moneyfusion', type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone, idempotencyKey:checkoutRequestId })
       });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
@@ -3462,6 +3465,28 @@ class Component extends DCLogic {
     }catch(err){
       this.setState({ settingsSaving:false, settingsSaved:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer les reglages pour le moment.') });
     }
+  }
+  scheduleSettingsSave(){
+    if(!this.state.authToken) return;
+    clearTimeout(this.settingsSaveTimer);
+    this.settingsSaveTimer = setTimeout(()=>this.saveSettings(), 900);
+  }
+  copyApiCreatedKey(){
+    const key = String(this.state.apiCreatedKey || '');
+    if(!key) return;
+    if(typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(key).catch(()=>{});
+    this.notify('Clé API copiée. Elle ne sera plus affichée après cette session.');
+  }
+  async changeTeamRole(member, event){
+    if(!member || !member.id || member.isYou) return;
+    const role = String(event && event.target && event.target.value || 'editor');
+    try{
+      const res = await this.apiFetch('/api/team', { method:'POST', body:JSON.stringify({ action:'role', memberId:member.id, role }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'role');
+      this.setState({ teamData:data });
+      this.notify('Rôle de l’équipe mis à jour.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Impossible de modifier ce rôle.')); }
   }
   async loadAdminDashboard(){
     if(!this.isAdminUser() || !this.state.authToken) return;
@@ -3932,22 +3957,21 @@ class Component extends DCLogic {
     const settingsMatch = (label, terms=[]) => !settingsQuery || [label].concat(terms).some(value=>String(value).toLowerCase().includes(settingsQuery));
     const settingItem = (id, label, short, terms, onClick) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', onClick, visible:settingsMatch(label, terms) });
     const settingsPrimaryItems = [
-      settingItem('settings','Profil','P',['general','personnalisation','apparence'],()=>this.setState({ page:'settings', settingsSaved:false, settingsHop:false })),
-      settingItem('account','Compte','C',['email','securite','mot de passe'],()=>this.setState({ page:'account', settingsHop:true })),
-      settingItem('privacy','Confidentialité','C',['privacy','analytics','données'],()=>this.setState({ page:'privacy', settingsHop:true })),
-      settingItem('billing','Facturation','F',['paiement','prix','abonnement','moneyfusion'],()=>this.setState({ page:'billing', settingsHop:true },()=>this.loadBillingStatus())),
-      settingItem('team','Équipe','E',['membres','collaboration','invitation'],()=>this.setState({ page:'team', settingsHop:true },()=>this.loadTeam())),
-      settingItem('stats','Utilisation','U',['statistiques','crédits','activité'],()=>this.setState({ page:'stats', settingsHop:true },()=>this.loadStats())),
-      settingItem('capabilities','Capacités','K',['marque','modèles','limites'],()=>this.setState({ page:'capabilities', settingsHop:true },()=>this.loadBrands())),
-      settingItem('api','API','A',['clés','intégrations','développeur'],()=>this.setState({ page:'api', settingsHop:true },()=>this.loadApiKeys())),
-      settingItem('claudecode','Claude Code','< >',['terminal','cli'],()=>this.setState({ page:'claudecode', settingsHop:true }))
+      settingItem('settings','Profil','◉',['general','personnalisation','apparence'],()=>this.setState({ page:'settings', settingsSaved:false, settingsHop:false })),
+      settingItem('account','Compte','◎',['email','securite','mot de passe'],()=>this.setState({ page:'account', settingsHop:true })),
+      settingItem('privacy','Confidentialité','◈',['privacy','analytics','données'],()=>this.setState({ page:'privacy', settingsHop:true })),
+      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion'],()=>this.setState({ page:'billing', settingsHop:true },()=>this.loadBillingStatus())),
+      settingItem('team','Équipe','♧',['membres','collaboration','invitation'],()=>this.setState({ page:'team', settingsHop:true },()=>this.loadTeam())),
+      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité'],()=>this.setState({ page:'stats', settingsHop:true },()=>this.loadStats())),
+      settingItem('capabilities','Capacités','✦',['marque','modèles','limites'],()=>this.setState({ page:'capabilities', settingsHop:true },()=>this.loadBrands())),
+      settingItem('api','API','<>',['clés','intégrations','développeur'],()=>this.setState({ page:'api', settingsHop:true },()=>this.loadApiKeys()))
     ].filter(item=>item.visible);
     const settingsCustomItems = [
-      settingItem('skills','Compétences','S',['templates','workflows'],()=>this.setState({ page:'skills', settingsHop:true },()=>this.loadTemplates())),
-      settingItem('connectors','Connecteurs','C',['drive','slack','notion','outils'],()=>this.setState({ page:'connectors', settingsHop:true },()=>this.loadIntegrations())),
-      settingItem('plugins','Plugins','P',['extensions','catalogue'],()=>this.setState({ page:'plugins', settingsHop:true }))
+      settingItem('skills','Compétences','✧',['templates','workflows'],()=>this.setState({ page:'skills', settingsHop:true },()=>this.loadTemplates())),
+      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'],()=>this.setState({ page:'connectors', settingsHop:true },()=>this.loadIntegrations()))
     ].filter(item=>item.visible);
-    const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
+    const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
+    const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -3966,11 +3990,12 @@ class Component extends DCLogic {
       hasPricingNotice: !!st.pricingNotice,
       pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
       pricingEmpty: !!st.backendError && renderedPlans.length === 0,
-      showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'skills', 'connectors'].includes(st.page),
       showLegacySettingsModal: false,
       closeSettings: ()=> this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false }),
       settingsPrimaryItems,
       settingsCustomItems,
+      settingsNavEmpty,
       settingsPageTitle: settingsTitles[st.page] || 'Paramètres',
       settingsKicker: 'HuggyFlow / Centre de contrôle',
       settingsPlanBadge: st.user ? String(st.user.plan || 'FREE').toUpperCase() : 'INVITÉ',
@@ -4112,24 +4137,24 @@ class Component extends DCLogic {
       showConnectorsPlaceholder: st.page === 'connectors',
       showPluginsPlaceholder: st.page === 'plugins',
       settingsCalledName: st.settingsCalledName ?? (st.settingsName || (st.user ? st.user.name : '') || 'David'),
-      onSettingsCalledName: (e)=> this.setState({ settingsCalledName: e.target.value, settingsSaved:false }),
+      onSettingsCalledName: (e)=> this.setState({ settingsCalledName: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
       settingsJobDesc: st.settingsJobDesc ?? 'Autre',
-      onSettingsJobDesc: (e)=> this.setState({ settingsJobDesc: e.target.value, settingsSaved:false }),
+      onSettingsJobDesc: (e)=> this.setState({ settingsJobDesc: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
       settingsInstructions: st.settingsInstructions ?? '',
-      onSettingsInstructions: (e)=> this.setState({ settingsInstructions: e.target.value, settingsSaved:false }),
+      onSettingsInstructions: (e)=> this.setState({ settingsInstructions: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
       settingsFont: st.settingsFont ?? 'System UI',
-      onSettingsFont: (e)=> this.setState({ settingsFont: e.target.value, settingsSaved:false }),
-      toggleDataTraining: ()=> this.setState(s=>({ shareDataTraining: !s.shareDataTraining, settingsSaved:false })),
+      onSettingsFont: (e)=> this.setState({ settingsFont: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
+      toggleDataTraining: ()=> this.setState(s=>({ shareDataTraining: !s.shareDataTraining, settingsSaved:false }),()=>this.scheduleSettingsSave()),
       trainTrackStyle: this.switchTrack(st.shareDataTraining === true),
       trainKnobStyle: this.switchKnob(st.shareDataTraining === true),
-      toggleAnalyticsSharing: ()=> this.setState(s=>({ shareAnalytics: !s.shareAnalytics, settingsSaved:false })),
+      toggleAnalyticsSharing: ()=> this.setState(s=>({ shareAnalytics: !s.shareAnalytics, settingsSaved:false }),()=>this.scheduleSettingsSave()),
       analyticsTrackStyle: this.switchTrack(st.shareAnalytics !== false),
       analyticsKnobStyle: this.switchKnob(st.shareAnalytics !== false),
-      setSystemTheme: ()=> this.setState({ theme:'system' }, ()=>{ try{ localStorage.setItem('hf-theme','system'); }catch(e){} }),
+      setSystemTheme: ()=> this.setState({ theme:'system', settingsSaved:false }, ()=>{ try{ localStorage.setItem('hf-theme','system'); }catch(e){} this.scheduleSettingsSave(); }),
       systemTabStyle: st.theme === 'system' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
       lightTabStyle: st.theme === 'light' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
       darkTabStyle: st.theme === 'dark' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
-      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'skills', 'connectors'].includes(st.page),
       contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{
@@ -4302,8 +4327,8 @@ class Component extends DCLogic {
       openSettings: ()=> this.setState({ page:'settings', modelMenu:false, settingsSaved:false, settingsHop:false }),
       settingsName: st.settingsName ?? (st.user ? st.user.name : ''),
       settingsEmail: st.settingsEmail ?? (st.user ? (st.user.billingEmail || st.user.email || '') : ''),
-      onSettingsName: (e)=> this.setState({ settingsName: e.target.value, settingsSaved:false }),
-      onSettingsEmail: (e)=> this.setState({ settingsEmail: e.target.value, settingsSaved:false }),
+      onSettingsName: (e)=> this.setState({ settingsName: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
+      onSettingsEmail: (e)=> this.setState({ settingsEmail: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
       saveSettings: ()=> this.saveSettings(),
       settingsSaved: !!st.settingsSaved,
       settingsSaving: !!st.settingsSaving,
@@ -4320,11 +4345,11 @@ class Component extends DCLogic {
             const prefs = Object.assign({ notif:true, autoplay:true, sounds:false }, s.prefs);
             prefs[p.key] = !prefs[p.key];
             return { prefs, settingsSaved:false };
-          })
+          },()=>this.scheduleSettingsSave())
         };
       }),
-      setLightTheme: ()=>{ try{ localStorage.setItem('hf-theme','light'); }catch(e){} this.setState({ theme:'light' }); },
-      setDarkTheme: ()=>{ try{ localStorage.setItem('hf-theme','dark'); }catch(e){} this.setState({ theme:'dark' }); },
+      setLightTheme: ()=>{ try{ localStorage.setItem('hf-theme','light'); }catch(e){} this.setState({ theme:'light', settingsSaved:false },()=>this.scheduleSettingsSave()); },
+      setDarkTheme: ()=>{ try{ localStorage.setItem('hf-theme','dark'); }catch(e){} this.setState({ theme:'dark', settingsSaved:false },()=>this.scheduleSettingsSave()); },
       lightTabStyle: this.tabStyle(st.theme !== 'dark'),
       darkTabStyle: this.tabStyle(st.theme === 'dark'),
       toggle2fa: ()=> this.setState(s=>({ tfa: !s.tfa })),
@@ -4654,6 +4679,7 @@ class Component extends DCLogic {
         onRevoke:()=>this.revokeApiKey(k.id)
       })),
       apiCreatedKey: st.apiCreatedKey || '',
+      copyApiCreatedKey: ()=>this.copyApiCreatedKey(),
       apiEmpty: !((st.apiData && st.apiData.keys && st.apiData.keys.length) || 0),
       createKey: ()=> this.createApiKey(),
       openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }, ()=>this.loadTeam()),
@@ -4663,6 +4689,7 @@ class Component extends DCLogic {
       teamMembers: (((st.teamData && st.teamData.members) || [])).map((m,i)=>({
         name:m.name, email:m.email, initials:m.initials, avatarBg:['#D1FE17','#E8D79B','#C9E8D5','#E8C9B8'][i % 4],
         isYou:!!m.isYou, role:this.roleLabel(m.role), activity:m.status === 'active' ? 'Actif' : 'En attente',
+        roleValue:m.role || 'editor', onRoleChange:(e)=>this.changeTeamRole(m,e),
         roleStyle:'display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;' + ((m.role === 'owner' || m.role === 'admin') ? 'background:#D1FE17;color:#131517' : (m.role === 'editor' ? 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 : 'background:rgba(' + T.lineRGB + ',.05);color:' + T.text4)),
         onOptions:()=>this.teamMemberOptions(m)
       })),

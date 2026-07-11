@@ -4978,6 +4978,16 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
   if (generation.debited_at || generation.status !== "completed") return;
   const userId = String(generation.user_id);
   const credits = Number(generation.credits || 0);
+  const debitAt = new Date().toISOString();
+  const { data: debitClaim, error: debitClaimError } = await supabase.from("generations")
+    .update({ debited_at: debitAt })
+    .eq("id", generation.id)
+    .eq("status", "completed")
+    .is("debited_at", null)
+    .select("id")
+    .maybeSingle();
+  if (debitClaimError) throw debitClaimError;
+  if (!debitClaim?.id) return;
   const { data: profile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
   const nextCredits = Math.max(0, Number(profile?.credits || 0) - credits);
   const creditFloorUsd = Number(generation.credit_floor_usd || CREDIT_FLOOR_USD);
@@ -5021,7 +5031,6 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
     },
   });
   await supabase.from("generations").update({
-    debited_at: new Date().toISOString(),
     revenue_floor_usd: revenueFloorUsd,
     gross_margin_floor_usd: grossMarginFloorUsd,
   }).eq("id", generation.id);
@@ -5612,6 +5621,19 @@ async function createMoneyFusionCheckout(
 ) {
   const userId = String(profile.id);
   const profileMetadata = (profile.metadata || {}) as Record<string, unknown>;
+  const idempotencyKey = String(body.idempotencyKey || body.idempotency_key || "").trim().slice(0, 120);
+  if (idempotencyKey) {
+    const { data: existing } = await supabase.from("billing_checkout_sessions")
+      .select("checkout_url,provider_session_id,provider_payment_token,status")
+      .eq("user_id", userId)
+      .eq("provider", "moneyfusion")
+      .eq("status", "open")
+      .contains("metadata", { idempotency_key: idempotencyKey })
+      .maybeSingle();
+    if (existing?.checkout_url) {
+      return json({ url: existing.checkout_url, sessionId: existing.provider_session_id, provider: "moneyfusion", token: existing.provider_payment_token, reused: true });
+    }
+  }
   const phone = moneyFusionPhone(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "");
   if (!phone) {
     throw new FlowtubeError(400, "Entre un numero Mobile Money valide pour continuer.", { code: "MONEYFUSION_PHONE_REQUIRED" });
@@ -5621,7 +5643,7 @@ async function createMoneyFusionCheckout(
   let article = `${APP_NAME} credits`;
   let plan: PlanLimits | null = null;
   let pack: Record<string, unknown> | null = null;
-  const metadata: Record<string, unknown> = { provider: "moneyfusion", type, interval };
+  const metadata: Record<string, unknown> = { provider: "moneyfusion", type, interval, ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}) };
 
   if (type === "credits") {
     const packId = String(body.creditPackId || body.packId || "");
