@@ -30,7 +30,7 @@ const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") ||
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
 
 const AGENT_MODELS = [
-  { id: "auto", name: "Auto HuggyFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended" },
+  { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended" },
   { id: "claude-fable-5", name: "Fable 5", description: "Creation ambitieuse, strategie et production complexe.", tier: "max" },
   { id: "claude-mythos-5", name: "Mythos 5", description: "Raisonnement profond avec repli automatique si indisponible.", tier: "max" },
   { id: "claude-opus-4-8", name: "Opus 4.8", description: "Agent premium pour les briefs longs et exigeants.", tier: "pro" },
@@ -117,6 +117,8 @@ function publicAgentModels() {
   return AGENT_MODELS.map((model) => ({
     ...model,
     provider: "anthropic",
+    inputUsdPerMillionTokens: agentTokenPriceForModel(model.id).input,
+    outputUsdPerMillionTokens: agentTokenPriceForModel(model.id).output,
     creditsPerMessage: agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
     creditsLabel: model.id === "auto" ? "Selon les tokens" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`,
     billingMode: "token_based",
@@ -1255,8 +1257,9 @@ function modelCapabilities(model: PricingModel) {
 function requestTypeFromBody(body: Record<string, unknown>, prompt: string) {
   const explicitType = String(body.type || "").toLowerCase();
   const raw = String(body.mode || "").toLowerCase();
-  const allowedTypes = ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"];
+  const allowedTypes = ["image", "video", "audio", "document", "lipsync", "image_edit", "video_edit", "voice_clone"];
   if (allowedTypes.includes(explicitType)) return explicitType;
+  if (raw === "document") return "document";
   const text = stripAccents(prompt.toLowerCase());
   if (/lip[-\s]?sync|synchronise.*l[eè]vres|doublage.*l[eè]vres/.test(text)) return "lipsync";
   if (/clone.*voix|clonage.*voix|voice clone|digital twin/.test(text)) return "voice_clone";
@@ -1402,6 +1405,61 @@ function creditsFor(model: PricingModel, duration?: number) {
   return quoteFor(model, duration).credits;
 }
 
+function publicPricingModels(catalog: PricingModel[]) {
+  const media = catalog.filter((model) => Boolean(model.endpoint)).map((model) => {
+    const quote = quoteFor(model);
+    const costPerUnitXof = usdToXof(model.costPerUnitUsd);
+    return {
+      id: model.id,
+      name: model.name,
+      type: model.type,
+      provider: model.provider || "fal",
+      pricingUnit: model.pricingUnit,
+      defaultUnits: model.defaultUnits,
+      minimumUnits: model.minimumUnits,
+      maximumUnits: model.maximumUnits || null,
+      costPerUnitUsd: model.costPerUnitUsd,
+      costPerUnitXof,
+      creditsPerDefaultUnit: quote.credits,
+      defaultCostUsd: quote.providerCostUsd,
+      defaultCostXof: usdToXof(quote.providerCostUsd),
+      creditFloorUsd: model.creditFloorUsd,
+      retailCreditUsd: model.retailCreditUsd,
+      qualityTier: String(model.metadata?.quality_tier || "standard"),
+      marginClass: String(model.metadata?.margin_class || "standard"),
+      costLabel: `${model.costPerUnitUsd.toFixed(model.costPerUnitUsd < 0.1 ? 3 : 2)} USD / ${model.pricingUnit}`,
+    };
+  });
+  const agent = publicAgentModels().map((model) => {
+    const price = agentTokenPriceForModel(model.id);
+    const resolved = resolveAgentModelId(model.id);
+    const exampleCredits = agentCreditsForUsage(resolved, { inputTokens: 2000, outputTokens: 800 }).credits;
+    return {
+      id: `agentflow:${model.id}`,
+      name: `AgentFlow · ${model.name}`,
+      type: "document",
+      provider: "anthropic",
+      pricingUnit: "1M tokens",
+      defaultUnits: 1,
+      minimumUnits: 1,
+      maximumUnits: null,
+      costPerUnitUsd: price.input,
+      costPerUnitXof: usdToXof(price.input),
+      outputCostPerUnitUsd: price.output,
+      outputCostPerUnitXof: usdToXof(price.output),
+      creditsPerDefaultUnit: exampleCredits,
+      defaultCostUsd: Number(((2000 * price.input + 800 * price.output) / 1_000_000).toFixed(6)),
+      defaultCostXof: usdToXof((2000 * price.input + 800 * price.output) / 1_000_000),
+      creditFloorUsd: CREDIT_FLOOR_USD,
+      retailCreditUsd: RETAIL_CREDIT_USD,
+      qualityTier: String(model.tier || "standard"),
+      marginClass: String(model.costClass || "standard"),
+      costLabel: `${price.input} USD / MTok entree · ${price.output} USD / MTok sortie`,
+    };
+  });
+  return [...media, ...agent];
+}
+
 function normalizePlanId(plan: string | null | undefined) {
   const id = String(plan || "free").toLowerCase();
   if (id === "starter") return "basic";
@@ -1475,8 +1533,12 @@ function planAmountXof(plan: PlanLimits, interval: "monthly" | "annual") {
 }
 
 function planPublic(plan: PlanLimits) {
-  const monthlyXof = plan.monthlyPriceUsd > 0 ? planAmountXof(plan, "monthly") : 0;
-  const annualXof = plan.annualPriceUsd > 0 ? planAmountXof(plan, "annual") : 0;
+  const monthlyBaseXof = plan.monthlyPriceUsd > 0 ? planAmountXof(plan, "monthly") : 0;
+  const annualBaseXof = plan.annualPriceUsd > 0 ? planAmountXof(plan, "annual") : 0;
+  const monthlyFeeXof = moneyFusionFeeXof(monthlyBaseXof);
+  const annualFeeXof = moneyFusionFeeXof(annualBaseXof);
+  const monthlyXof = monthlyBaseXof + monthlyFeeXof;
+  const annualXof = annualBaseXof + annualFeeXof;
   return {
     id: plan.id,
     displayName: plan.displayName,
@@ -1485,6 +1547,10 @@ function planPublic(plan: PlanLimits) {
     annualPriceUsd: plan.annualPriceUsd,
     monthlyPriceXof: monthlyXof,
     annualPriceXof: annualXof,
+    baseMonthlyPriceXof: monthlyBaseXof,
+    baseAnnualPriceXof: annualBaseXof,
+    moneyFusionMonthlyFeeXof: monthlyFeeXof,
+    moneyFusionAnnualFeeXof: annualFeeXof,
     pricingVersion: plan.pricingVersion,
     currency: DEFAULT_BILLING_CURRENCY,
     usdXofRate: DEFAULT_USD_XOF_RATE,
@@ -1502,6 +1568,8 @@ function planPublic(plan: PlanLimits) {
     supportLevel: plan.supportLevel,
     priorityQueue: plan.priorityQueue,
     checkoutEnabled: Boolean(plan.metadata.checkout !== false && (plan.monthlyPriceUsd > 0 || plan.annualPriceUsd > 0)),
+    checkoutAmounts: { monthlyXof, annualXof },
+    moneyFusionFees: moneyFusionFeeConfig(),
     stripeConfigured: Boolean(plan.stripeMonthlyPriceId || plan.stripeAnnualPriceId),
     metadata: plan.metadata,
   };
@@ -1530,6 +1598,29 @@ function moneyFusionApiKey() {
 
 function moneyFusionConfigured() {
   return Boolean(moneyFusionCheckoutUrl() && moneyFusionApiKey());
+}
+
+function moneyFusionFeeConfig() {
+  const percentRaw = Deno.env.get("MONEYFUSION_FEE_PERCENT");
+  const fixedRaw = Deno.env.get("MONEYFUSION_FEE_FIXED_XOF");
+  const percent = percentRaw === undefined ? 0 : Math.max(0, Number(percentRaw) || 0);
+  const fixedXof = fixedRaw === undefined ? 0 : Math.max(0, Math.round(Number(fixedRaw) || 0));
+  return {
+    percent,
+    fixedXof,
+    configured: percentRaw !== undefined || fixedRaw !== undefined,
+    source: "MONEYFUSION_FEE_PERCENT + MONEYFUSION_FEE_FIXED_XOF",
+  };
+}
+
+function moneyFusionFeeXof(baseXof: number) {
+  const base = Math.max(0, Math.round(Number(baseXof) || 0));
+  const config = moneyFusionFeeConfig();
+  return base > 0 ? Math.ceil(base * config.percent / 100) + config.fixedXof : 0;
+}
+
+function moneyFusionCheckoutAmountXof(baseXof: number) {
+  return Math.max(0, Math.round(Number(baseXof) || 0) + moneyFusionFeeXof(baseXof));
 }
 
 function moneyFusionCallbackUrl() {
@@ -1815,7 +1906,7 @@ const QUESTION_OPENERS = /^(comment|pourquoi|combien|quand|qui|que\b|quoi\b|quel
 const CAPABILITY_QUESTION = /\b(que sais[- ]tu faire|tu sais faire quoi|que peux[- ]tu faire|tu peux faire quoi|qu[' ]?est[- ]ce que tu peux faire|tes capacites|tes competences|aide[- ]moi|comment ca marche|comment fonctionne huggyflow|on cree quoi|on cree quoi aujourd'hui)\b/;
 
 function shouldGenerateMedia(prompt: string, mode: string) {
-  void mode;
+  if (String(mode || '').toLowerCase() === 'document') return false;
   const text = stripAccents(prompt.toLowerCase().trim());
   if (!text) return false;
   // Politesses et acquiescements: on discute, on ne genere pas.
@@ -1958,7 +2049,7 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
 async function bootstrap(req: Request) {
   const supabase = adminClient();
   const userId = await optionalUserIdFromRequest(req, supabase);
-  const [profile, projects, plans, creditPacksResult, subscriptionResult, generationCountResult] = await Promise.all([
+  const [profile, projects, plans, creditPacksResult, subscriptionResult, generationCountResult, catalog] = await Promise.all([
     userId ? ensureProfile(supabase, userId) : Promise.resolve(null),
     userId ? listProjectData(supabase, userId) : Promise.resolve([]),
     publicPricingPlans(supabase),
@@ -1969,6 +2060,7 @@ async function bootstrap(req: Request) {
     userId
       ? supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)
       : Promise.resolve({ count: 0, error: null }),
+    pricingCatalog(supabase),
   ]);
   if (creditPacksResult.error) throw creditPacksResult.error;
   if (subscriptionResult.error) throw subscriptionResult.error;
@@ -2004,6 +2096,7 @@ async function bootstrap(req: Request) {
       usdXofRate: DEFAULT_USD_XOF_RATE,
       agentCreditRates: AGENT_CREDIT_RATES,
       agentDefaultModel: DEFAULT_MODEL,
+      moneyFusionFees: moneyFusionFeeConfig(),
       providers: {
         mediaPrivatePipeline: Boolean(Deno.env.get("FAL_KEY")),
         openRouterPrepared: true,
@@ -2012,8 +2105,7 @@ async function bootstrap(req: Request) {
       },
     },
     agentModels: publicAgentModels(),
-    // Les moteurs media fal.ai restent backend-only. Le frontend affiche seulement les modeles agent.
-    models: [],
+    models: publicPricingModels(catalog),
     plans,
     creditPacks: (creditPacks || []).map((pack) => ({
       id: pack.id,
@@ -2040,7 +2132,7 @@ async function bootstrap(req: Request) {
     },
     production: {
       auth: true,
-      aiAssistant: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
+      agentFlow: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
       aiModel: DEFAULT_MODEL,
       aiModels: publicAgentModels(),
       billing: true,
@@ -2054,8 +2146,8 @@ async function bootstrap(req: Request) {
 }
 
 const HUGGYFLOW_SYSTEM_PROMPT = [
-  "Tu es HuggyFlow, super-agent autonome de creation et d'execution de niveau mondial, concurrent direct des meilleurs agents de production.",
-  "HuggyFlow est un SaaS de creation media par IA: strategie, code, images, videos, retouches, avatars, lipsync, voix, musique, storyboards, campagnes visuelles et deploiement de workflows.",
+  "Tu es AgentFlow, l'agent autonome de HuggyFlow pour la creation et l'execution de niveau mondial.",
+  "HuggyFlow est le SaaS de creation media et de documents: strategie, code, images, videos, retouches, avatars, lipsync, voix, musique, storyboards, campagnes visuelles et deploiement de workflows.",
   "Tu es l'orchestrateur creatif et operationnel qui transforme une intention simple en livrable professionnel sans demander a l'utilisateur de faire du prompt engineering.",
   "Tu reponds en francais, avec un ton amical, direct, pragmatique et utile. Tu es un partenaire de travail chaleureux mais tres oriente execution.",
   "Style strict: reponse directe d'abord, phrases courtes, listes a puces ultra-courtes pour toute reponse multi-idee, zero bloc dense, zero jargon inutile.",
@@ -2067,6 +2159,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Construire un prompt technique dense, propre et exploitable par les modeles.",
   "- Avancer vite: peu de questions, choix par defaut raisonnables, iterations concretes.",
   "- Livrer quelque chose de directement exploitable: brief, script, prompt, plan, media, devis ou action suivante.",
+  "- En mode document, produire un livrable structure et editable: rapport, note, cahier des charges, tableau, CSV, plan de presentation, contenu PDF ou document bureautique. Utilise des titres courts, tableaux lisibles, hypotheses explicites et une section prochaines actions.",
   "",
   "Protocole d'execution non negociable:",
   "- Classe chaque demande en silence: conseil, recherche, creation, retouche, production multi-etapes, publication ou gestion de compte.",
@@ -2090,6 +2183,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Videos: text-to-video, image-to-video, reference-to-video, first-last-frame, extend-video, video-to-video, reframe, upscale.",
   "- Lecture video uploadee: resume, timestamps, hook, rythme, audio, scenes, moments forts, remix, critique creative et recommandations 9:16.",
   "- Audio: voix off, TTS, dialogue, musique, doublage, transcription.",
+  "- Documents: rapports, briefs, contrats de travail non juridiques, notes, tableaux, CSV, plans de presentation, comptes rendus, checklists, dossiers marketing et formats exportables.",
   "- Avatars: lipsync, personnage parlant, clone vocal uniquement avec consentement explicite.",
   "- Production: scripts courts, storyboards, variations, templates remixables, coherence personnage/marque/campagne.",
   "- Recherche: analyse d'URLs/pages produits fournies, synthese fiable avec labels de confiance, benchmark marche via connecteur de recherche quand disponible.",
@@ -2101,11 +2195,12 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "4. Pour une video: duree + format + mouvement camera + rythme + action principale + ambiance + reference si presente.",
   "5. Pour une retouche: conserve ce qui doit rester stable, modifie seulement ce qui est demande.",
   "6. Apres resultat: propose une ou deux iterations nettes: plus premium, autre cadrage, autre lumiere, version pub, format social, remix template.",
-  "7. Pour une pub UGC realiste: collecte obligatoirement produit, video UGC de reference, au moins deux references faciales, public cible et type d'accroche. Ne demande jamais la duree, le format, l'outil de montage, le modele image ou le modele video: HuggyFlow choisit et produit en 15s vertical 9:16.",
+  "7. Pour un document: clarifie seulement le format si cela change vraiment le rendu, puis livre une version complete en Markdown structure, avec tableaux ou listes lorsque cela aide. Propose ensuite une variante PDF, tableur ou presentation sans prétendre avoir exporte un fichier si l'export n'a pas ete lance.",
+  "8. Pour une pub UGC realiste: collecte obligatoirement produit, video UGC de reference, au moins deux references faciales, public cible et type d'accroche. Ne demande jamais la duree, le format, l'outil de montage, le modele image ou le modele video: HuggyFlow choisit et produit en 15s vertical 9:16.",
   "",
   "Selection modele:",
   "- Tous les modeles media passent par le pipeline prive HuggyFlow. Ne cite jamais les fournisseurs, endpoints, couts internes ou details d'infrastructure a l'utilisateur.",
-  "- Utilise Auto HuggyFlow par defaut: le backend choisit le meilleur moteur selon type, reference, cout, qualite, vitesse et credits.",
+  "- Utilise Auto AgentFlow par defaut: le backend choisit le meilleur moteur selon type, reference, cout, qualite, vitesse et credits.",
   "- Modeles a privilegier quand pertinents: GPT Image 2 pour image propre, GPT Image Edit/Nano/Flux pour retouche, Veo 3 ou Kling 3 pour video premium, Seedance 2 pour vitesse/qualite, Ray/PixVerse pour variations et mouvement, MiniMax/Gemini pour voix, Lyria/Sonilo pour musique, HeyGen/Sync pour lipsync.",
   "- Premium/final commercial: prefere Veo 3, Kling 3 Pro/4K, GPT Image 2, Nano Pro, Lyria Pro, HeyGen Precision.",
   "- Pub UGC 15s: cree d'abord un script horodate, puis un createur fictif coherent depuis les references faciales, puis un clip vertical realiste avec coupes controlees. Si un element obligatoire manque, demande-le avant de lancer.",
@@ -2123,7 +2218,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "- Formule courte: Cette option coute environ [X] credits. Je recommande ce rendu car [raison]. Tu confirmes ?",
   "- Si l'utilisateur semble economiser, propose une version moins chere: image cle, draft, duree courte ou modele fast.",
   "- Ne debite jamais mentalement des credits: attends le devis backend et le resultat confirme.",
-  "- Pour les modeles agent couteux, protege la marge: utilise la grille credits backend, reserve les cerveaux premium aux briefs complexes, et privilegie Auto HuggyFlow quand le besoin est simple.",
+  "- Pour les modeles agent couteux, protege la marge: utilise la grille credits backend, reserve les cerveaux premium aux briefs complexes, et privilegie Auto AgentFlow quand le besoin est simple.",
   "",
   "Style de reponse:",
   "- Commence par le resultat ou l'information critique.",
@@ -2277,7 +2372,7 @@ const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
   },
   "media-orchestrator-private": {
     workflow: ["classifier la demande", "choisir type media", "estimer cout", "selectionner moteur prive", "generer ou demander confirmation"],
-    routing: ["Auto HuggyFlow", "draft economique si test", "premium si usage commercial final"],
+    routing: ["Auto AgentFlow", "draft economique si test", "premium si usage commercial final"],
     output: "media cree via pipeline prive, sans exposer fournisseurs ni endpoints",
     safeguards: ["ne jamais afficher les fournisseurs media au frontend", "confirmer avant operation couteuse"],
   },
@@ -3825,7 +3920,7 @@ async function enforceGenerationGuards(
     });
   }
   if (!quote.profitable) {
-    throw new FlowtubeError(409, "Ce rendu est temporairement indisponible : son tarif doit etre ajuste avant lancement. Essaie Auto HuggyFlow ou une duree plus courte.", {
+    throw new FlowtubeError(409, "Ce rendu est temporairement indisponible : son tarif doit etre ajuste avant lancement. Essaie Auto AgentFlow ou une duree plus courte.", {
       code: "MARGIN_GUARD",
       credits: quote.credits,
       providerCostUsd: quote.providerCostUsd,
@@ -5663,9 +5758,13 @@ async function createMoneyFusionCheckout(
   }
 
   const reference = crypto.randomUUID();
-  const amountXof = plan
+  const baseAmountXof = plan
     ? planAmountXof(plan, interval === "annual" ? "annual" : "monthly")
     : moneyFusionAmount(amountUsd);
+  const amountXof = moneyFusionCheckoutAmountXof(baseAmountXof);
+  metadata.base_amount_xof = baseAmountXof;
+  metadata.moneyfusion_fee_xof = amountXof - baseAmountXof;
+  metadata.moneyfusion_fee_config = moneyFusionFeeConfig();
   const pricingVersion = plan?.pricingVersion || String((pack?.metadata as Record<string, unknown> | undefined)?.pricing_version || "credit-pack");
   const callbackUrl = moneyFusionCallbackUrl();
   const returnUrl = moneyFusionSafeAppUrl(body.successUrl || successUrl, moneyFusionReturnUrl());
@@ -5714,7 +5813,7 @@ async function createMoneyFusionCheckout(
     provider_payload: session.data,
   });
 
-  return json({ url: session.paymentUrl, sessionId: reference, provider: "moneyfusion", token: providerToken });
+  return json({ url: session.paymentUrl, sessionId: reference, provider: "moneyfusion", token: providerToken, amountXof, baseAmountXof, moneyFusionFeeXof: amountXof - baseAmountXof });
 }
 
 async function createCheckout(req: Request) {
