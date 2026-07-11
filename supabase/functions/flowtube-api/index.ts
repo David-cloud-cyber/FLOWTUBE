@@ -6151,10 +6151,18 @@ async function statsRoute(req: Request) {
 
 async function pricingRoute() {
   const supabase = adminClient();
-  const plans = await publicPricingPlans(supabase);
+  const [plans, catalog] = await Promise.all([publicPricingPlans(supabase), pricingCatalog(supabase)]);
   const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
   return json({
     plans,
+    models: publicPricingModels(catalog),
+    pricing: {
+      creditFloorUsd: CREDIT_FLOOR_USD,
+      retailCreditUsd: RETAIL_CREDIT_USD,
+      currency: DEFAULT_BILLING_CURRENCY,
+      usdXofRate: DEFAULT_USD_XOF_RATE,
+      moneyFusionFees: moneyFusionFeeConfig(),
+    },
     creditPacks: creditPacks || [],
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
