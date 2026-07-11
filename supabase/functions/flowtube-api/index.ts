@@ -61,6 +61,41 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
   "claude-mythos-5": { credits: 18, label: "18 cr", margin: "max" },
 };
 
+const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
+  "claude-haiku-4-5-20251001": { input: 1, output: 5 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+  "claude-sonnet-5": { input: 2, output: 10 },
+  "claude-opus-4-6": { input: 5, output: 25 },
+  "claude-opus-4-7": { input: 5, output: 25 },
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-fable-5": { input: 10, output: 50 },
+  "claude-mythos-5": { input: 10, output: 50 },
+};
+
+type AgentUsage = { inputTokens?: number; outputTokens?: number };
+
+function agentTokenPriceForModel(modelId: string) {
+  const resolved = resolveAgentModelId(modelId);
+  return AGENT_TOKEN_PRICES[resolved] || AGENT_TOKEN_PRICES[DEFAULT_MODEL] || AGENT_TOKEN_PRICES["claude-sonnet-4-6"];
+}
+
+function agentCreditsForUsage(modelId: string, usage: AgentUsage, multiplier = 1) {
+  const inputTokens = Math.max(0, Number(usage.inputTokens || 0));
+  const outputTokens = Math.max(0, Number(usage.outputTokens || 0));
+  const price = agentTokenPriceForModel(modelId);
+  const providerCostUsd = Number(((inputTokens * price.input + outputTokens * price.output) / 1_000_000).toFixed(6));
+  const protectedCostUsd = Math.max(providerCostUsd, 0.0005);
+  const credits = Math.max(1, Math.ceil((protectedCostUsd * agentMarginMultiplierForModel(modelId) * Math.max(1, multiplier)) / CREDIT_FLOOR_USD));
+  return { credits, providerCostUsd, inputTokens, outputTokens };
+}
+
+function estimatedAgentCreditsForPayload(modelId: string, payload: Record<string, unknown>, multiplier = 1) {
+  const serialized = JSON.stringify(payload || {});
+  const inputTokens = Math.max(1, Math.ceil((serialized.length / 3) * 1.15));
+  const outputTokens = Math.max(1, Number(payload.max_tokens || 1200));
+  return agentCreditsForUsage(modelId, { inputTokens, outputTokens }, multiplier).credits;
+}
+
 function agentCreditRateForModel(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
   if (AGENT_CREDIT_RATES[resolved]) return AGENT_CREDIT_RATES[resolved];
@@ -82,8 +117,9 @@ function publicAgentModels() {
   return AGENT_MODELS.map((model) => ({
     ...model,
     provider: "anthropic",
-    creditsPerMessage: agentCreditRateForModel(model.id).credits,
-    creditsLabel: model.id === "auto" ? `${agentCreditRateForModel(model.id).label} auto` : agentCreditRateForModel(model.id).label,
+    creditsPerMessage: agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
+    creditsLabel: model.id === "auto" ? "Selon les tokens" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`,
+    billingMode: "token_based",
     costClass: agentCreditRateForModel(model.id).margin,
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
   }));
@@ -137,9 +173,9 @@ function agentCreditsForTurn(modelId: string, multiplier = 1) {
   return Math.max(1, Math.ceil(agentCreditRateForModel(modelId).credits * Math.max(1, multiplier)));
 }
 
-async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefined, modelId: string) {
+async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefined, modelId: string, requiredOverride?: number) {
   if (!billing) return;
-  const creditsRequired = agentCreditsForTurn(modelId, billing.multiplier);
+  const creditsRequired = requiredOverride || agentCreditsForTurn(modelId, billing.multiplier);
   const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
@@ -153,10 +189,13 @@ async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefi
   }
 }
 
-async function chargeAgentCredits(billing: AgentBillingContext | undefined, modelId: string) {
+async function chargeAgentCredits(billing: AgentBillingContext | undefined, modelId: string, usage?: AgentUsage) {
   if (!billing) return { charged: 0, balance: undefined as number | undefined };
   const rate = agentCreditRateForModel(modelId);
-  const credits = agentCreditsForTurn(modelId, billing.multiplier);
+  const usagePricing = usage
+    ? agentCreditsForUsage(modelId, usage, billing.multiplier)
+    : { credits: agentCreditsForTurn(modelId, billing.multiplier), providerCostUsd: 0, inputTokens: 0, outputTokens: 0 };
+  const credits = usagePricing.credits;
   const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
@@ -185,7 +224,6 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
   }
   const balanceAfter = Number(updated.credits || nextCredits);
   const agentMarginMultiplier = agentMarginMultiplierForModel(modelId);
-  const providerCostEstimateUsd = Number(((credits * CREDIT_FLOOR_USD) / agentMarginMultiplier).toFixed(4));
   await billing.supabase.from("credit_transactions").insert({
     user_id: billing.userId,
     amount: -credits,
@@ -198,6 +236,9 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
       cost_class: rate.margin,
       reason: billing.reason,
       multiplier: Math.max(1, billing.multiplier || 1),
+      input_tokens: usagePricing.inputTokens,
+      output_tokens: usagePricing.outputTokens,
+      billing_mode: usage ? "actual_tokens" : "legacy_fallback",
     },
   });
   await billing.supabase.from("pricing_audit_logs").insert({
@@ -205,7 +246,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     credits_charged: credits,
     credit_floor_usd: CREDIT_FLOOR_USD,
     retail_credit_usd: RETAIL_CREDIT_USD,
-    provider_cost_usd: providerCostEstimateUsd,
+    provider_cost_usd: usagePricing.providerCostUsd,
     status: "completed",
     metadata: {
       kind: "agent_message",
@@ -215,6 +256,9 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
       cost_class: rate.margin,
       reason: billing.reason,
       margin_multiplier: agentMarginMultiplier,
+      input_tokens: usagePricing.inputTokens,
+      output_tokens: usagePricing.outputTokens,
+      billing_mode: usage ? "actual_tokens" : "legacy_fallback",
     },
   });
   if (billing.send) billing.send("credits", { credits: balanceAfter, creditsMax: Number(updated.credits_max || profile?.credits_max || 100) });
@@ -232,7 +276,7 @@ async function anthropicMessages(payload: Record<string, unknown>, preferredMode
   let lastText = "";
   const models = agentModelFallbacks(preferredModel);
   for (const model of models) {
-    await ensureAgentCreditsAvailable(billing, model);
+    await ensureAgentCreditsAvailable(billing, model, estimatedAgentCreditsForPayload(model, payload, billing?.multiplier));
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -243,8 +287,23 @@ async function anthropicMessages(payload: Record<string, unknown>, preferredMode
       body: JSON.stringify({ ...payload, model }),
     });
     if (response.ok) {
-      await chargeAgentCredits(billing, model);
-      return { response, model };
+      const raw = await response.text();
+      let usage: AgentUsage | undefined;
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        const rawUsage = (parsed.usage || {}) as Record<string, unknown>;
+        usage = {
+          inputTokens: Number(rawUsage.input_tokens || 0),
+          outputTokens: Number(rawUsage.output_tokens || 0),
+        };
+      } catch (_err) {
+        usage = undefined;
+      }
+      await chargeAgentCredits(billing, model, usage);
+      return {
+        response: new Response(raw, { status: response.status, headers: response.headers }),
+        model,
+      };
     }
     lastStatus = response.status;
     lastText = await response.text().catch(() => "");
@@ -308,6 +367,9 @@ type PlanLimits = {
   includedCredits: number;
   monthlyPriceUsd: number;
   annualPriceUsd: number;
+  monthlyPriceXof: number;
+  annualPriceXof: number;
+  pricingVersion: string;
   monthlyMessageLimit: number;
   dailyMessageLimit: number;
   dailyVideoLimit: number;
@@ -925,6 +987,9 @@ const FREE_FALLBACK_PLAN: PlanLimits = {
   includedCredits: 100,
   monthlyPriceUsd: 0,
   annualPriceUsd: 0,
+  monthlyPriceXof: 0,
+  annualPriceXof: 0,
+  pricingVersion: "2026-07-launch-v1",
   monthlyMessageLimit: 60,
   dailyMessageLimit: 10,
   dailyVideoLimit: 0,
@@ -1156,17 +1221,18 @@ async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
       if (!dbModel) return registryModel;
       dbById.delete(registryModel.id);
       return {
-        ...dbModel,
         ...registryModel,
-        name: registryModel.name || dbModel.name,
-        endpoint: registryModel.endpoint || dbModel.endpoint,
-        requiresConfirmation: registryModel.requiresConfirmation || dbModel.requiresConfirmation,
+        // Supabase is the single pricing source. The static registry only fills
+        // capabilities and endpoint metadata when the database has no value.
+        ...dbModel,
+        name: dbModel.name || registryModel.name,
+        endpoint: dbModel.endpoint || registryModel.endpoint,
         metadata: {
-          ...(dbModel.metadata || {}),
           ...registryModel.metadata,
+          ...(dbModel.metadata || {}),
           provider: "fal.ai",
           fal_only: true,
-          pricing_source: "verified_fal_registry",
+          pricing_source: "supabase_pricing_models",
         },
       };
     });
@@ -1346,23 +1412,28 @@ function normalizePlanId(plan: string | null | undefined) {
 function normalizePlan(row: Record<string, unknown>): PlanLimits {
   const id = normalizePlanId(String(row.id || "free"));
   const envKey = (suffix: string) => Deno.env.get(`STRIPE_PRICE_${id.toUpperCase()}_${suffix}`);
+  const numeric = (value: unknown, fallback: number) => value === null || value === undefined || value === "" ? fallback : Number(value);
+  const metadata = (row.metadata as Record<string, unknown> | undefined) || {};
   return {
     id,
     displayName: String(row.display_name || row.displayName || id),
-    includedCredits: Number(row.included_credits || 0),
-    monthlyPriceUsd: Number(row.monthly_price_usd || 0),
-    annualPriceUsd: Number(row.annual_price_usd || 0),
-    monthlyMessageLimit: Number(row.monthly_message_limit || 300),
-    dailyMessageLimit: Number(row.daily_message_limit || 50),
-    dailyVideoLimit: Number(row.daily_video_limit || 1),
-    concurrentImageJobs: Number(row.concurrent_image_jobs || 1),
-    concurrentVideoJobs: Number(row.concurrent_video_jobs || 0),
+    includedCredits: numeric(row.included_credits, 0),
+    monthlyPriceUsd: numeric(row.monthly_price_usd, 0),
+    annualPriceUsd: numeric(row.annual_price_usd, 0),
+    monthlyPriceXof: numeric(row.monthly_price_xof ?? metadata.monthly_price_xof, 0),
+    annualPriceXof: numeric(row.annual_price_xof ?? metadata.annual_price_xof, 0),
+    pricingVersion: String(row.pricing_version ?? metadata.pricing_version ?? "legacy"),
+    monthlyMessageLimit: numeric(row.monthly_message_limit, 300),
+    dailyMessageLimit: numeric(row.daily_message_limit, 50),
+    dailyVideoLimit: numeric(row.daily_video_limit, 1),
+    concurrentImageJobs: numeric(row.concurrent_image_jobs, 1),
+    concurrentVideoJobs: numeric(row.concurrent_video_jobs, 0),
     allowedMediaTypes: (row.allowed_media_types as string[]) || ["image"],
     watermarkRequired: Boolean(row.watermark_required),
-    mediaRetentionDays: Number(row.media_retention_days || 30),
-    storageGb: Number(row.storage_gb || 1),
-    maxUploadMb: Number(row.max_upload_mb || 25),
-    seatLimit: Number(row.seat_limit || 1),
+    mediaRetentionDays: numeric(row.media_retention_days, 30),
+    storageGb: numeric(row.storage_gb, 1),
+    maxUploadMb: numeric(row.max_upload_mb, 25),
+    seatLimit: numeric(row.seat_limit, 1),
     supportLevel: String(row.support_level || "community"),
     priorityQueue: Boolean(row.priority_queue),
     stripeMonthlyPriceId: String(row.stripe_monthly_price_id || envKey("MONTHLY") || ""),
@@ -1398,8 +1469,7 @@ async function publicPricingPlans(supabase: ReturnType<typeof adminClient>) {
 }
 
 function planAmountXof(plan: PlanLimits, interval: "monthly" | "annual") {
-  const metadataKey = interval === "annual" ? "annual_price_xof" : "monthly_price_xof";
-  const explicit = Number(plan.metadata[metadataKey] || 0);
+  const explicit = interval === "annual" ? plan.annualPriceXof : plan.monthlyPriceXof;
   if (Number.isFinite(explicit) && explicit > 0) return Math.round(explicit);
   return usdToXof(interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd);
 }
@@ -1415,6 +1485,7 @@ function planPublic(plan: PlanLimits) {
     annualPriceUsd: plan.annualPriceUsd,
     monthlyPriceXof: monthlyXof,
     annualPriceXof: annualXof,
+    pricingVersion: plan.pricingVersion,
     currency: DEFAULT_BILLING_CURRENCY,
     usdXofRate: DEFAULT_USD_XOF_RATE,
     monthlyMessageLimit: plan.monthlyMessageLimit,
@@ -5573,6 +5644,7 @@ async function createMoneyFusionCheckout(
   const amountXof = plan
     ? planAmountXof(plan, interval === "annual" ? "annual" : "monthly")
     : moneyFusionAmount(amountUsd);
+  const pricingVersion = plan?.pricingVersion || String((pack?.metadata as Record<string, unknown> | undefined)?.pricing_version || "credit-pack");
   const callbackUrl = moneyFusionCallbackUrl();
   const returnUrl = moneyFusionSafeAppUrl(body.successUrl || successUrl, moneyFusionReturnUrl());
   const payload: Record<string, unknown> = {
@@ -5611,9 +5683,12 @@ async function createMoneyFusionCheckout(
     billing_interval: type === "credits" ? null : interval,
     status: "open",
     amount_usd: amountUsd,
+    amount_xof: amountXof,
     currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
     checkout_url: session.paymentUrl,
-    metadata: { moneyfusion: session.data, payload, amount_xof: amountXof, usd_xof_rate: DEFAULT_USD_XOF_RATE, plan: plan ? planPublic(plan) : null, pack },
+    pricing_version: pricingVersion,
+    pricing_snapshot: plan ? planPublic(plan) : { pack },
+    metadata: { moneyfusion: session.data, payload, amount_xof: amountXof, usd_xof_rate: DEFAULT_USD_XOF_RATE, pricing_version: pricingVersion, plan: plan ? planPublic(plan) : null, pack },
     provider_payload: session.data,
   });
 
@@ -6320,7 +6395,7 @@ function moneyFusionPaymentMatchesSession(
   const verifiedToken = moneyFusionToken(verified);
   if (!expectedToken || !verifiedToken || expectedToken !== verifiedToken) return false;
   const metadata = cleanMetadata(session.metadata);
-  const expectedAmount = Number(metadata.amount_xof || 0);
+  const expectedAmount = Number(session.amount_xof || metadata.amount_xof || 0);
   const actualAmount = Number(record.Montant || record.montant || record.amount || record.totalPrice || 0);
   if (!expectedAmount || !actualAmount || expectedAmount !== actualAmount) return false;
   const personal = Array.isArray(record.personal_Info) ? cleanMetadata(record.personal_Info[0])
