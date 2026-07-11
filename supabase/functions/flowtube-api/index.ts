@@ -919,27 +919,27 @@ function planMeta(extra: Record<string, unknown> = {}) {
   return { ...PRICING_MARGIN_METADATA, ...extra };
 }
 
-const fallbackPlans: Record<string, PlanLimits> = {
-  free: { id: "free", displayName: "Free", includedCredits: 100, monthlyPriceUsd: 0, annualPriceUsd: 0, monthlyMessageLimit: 60, dailyMessageLimit: 10, dailyVideoLimit: 0, concurrentImageJobs: 1, concurrentVideoJobs: 0, allowedMediaTypes: ["image"], watermarkRequired: true, mediaRetentionDays: 7, storageGb: 1, maxUploadMb: 25, seatLimit: 1, supportLevel: "community", priorityQueue: false, metadata: planMeta({ checkout: false, badge: "GRATUIT", tagline: "Pour essayer HuggyFlow sans risque", cta: "Creer gratuitement" }) },
-  starter: { id: "starter", displayName: "Starter", includedCredits: 550, monthlyPriceUsd: 6.99, annualPriceUsd: 67, monthlyMessageLimit: 300, dailyMessageLimit: 45, dailyVideoLimit: 1, concurrentImageJobs: 1, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "image_edit"], watermarkRequired: false, mediaRetentionDays: 30, storageGb: 5, maxUploadMb: 80, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: planMeta({ badge: "DEPART", tagline: "Pour publier quelques contenus chaque semaine", cta: "Commencer" }) },
-  creator: { id: "creator", displayName: "Creator", includedCredits: 1300, monthlyPriceUsd: 14.99, annualPriceUsd: 144, monthlyMessageLimit: 900, dailyMessageLimit: 90, dailyVideoLimit: 3, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "audio", "image_edit"], watermarkRequired: false, mediaRetentionDays: 45, storageGb: 30, maxUploadMb: 150, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: planMeta({ badge: "CREATEUR", tagline: "Pour creer regulierement avec un budget maitrise", cta: "Choisir Creator" }) },
-  basic: { id: "basic", displayName: "Creator", includedCredits: 1300, monthlyPriceUsd: 14.99, annualPriceUsd: 144, monthlyMessageLimit: 900, dailyMessageLimit: 90, dailyVideoLimit: 3, concurrentImageJobs: 2, concurrentVideoJobs: 1, allowedMediaTypes: ["image", "video", "audio", "image_edit"], watermarkRequired: false, mediaRetentionDays: 45, storageGb: 30, maxUploadMb: 150, seatLimit: 1, supportLevel: "standard", priorityQueue: false, metadata: planMeta({ canonical: "creator", hidden: true }) },
-  pro: { id: "pro", displayName: "Pro", includedCredits: 3500, monthlyPriceUsd: 39, annualPriceUsd: 374, monthlyMessageLimit: 2500, dailyMessageLimit: 180, dailyVideoLimit: 10, concurrentImageJobs: 5, concurrentVideoJobs: 2, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit"], watermarkRequired: false, mediaRetentionDays: 90, storageGb: 150, maxUploadMb: 300, seatLimit: 2, supportLevel: "priority", priorityQueue: false, metadata: planMeta({ badge: "POPULAIRE", tagline: "Pour produire vite et sans exploser les couts", cta: "Passer Pro" }) },
-  studio: { id: "studio", displayName: "Studio", includedCredits: 9000, monthlyPriceUsd: 99, annualPriceUsd: 950, monthlyMessageLimit: 6000, dailyMessageLimit: 420, dailyVideoLimit: 30, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 600, seatLimit: 3, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ badge: "STUDIO", tagline: "Pour une petite equipe qui publie chaque jour", cta: "Choisir Studio", team: true }) },
-  business: { id: "business", displayName: "Business", includedCredits: 18000, monthlyPriceUsd: 199, annualPriceUsd: 1910, monthlyMessageLimit: 15000, dailyMessageLimit: 850, dailyVideoLimit: 70, concurrentImageJobs: 12, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1200, maxUploadMb: 1000, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ badge: "BUSINESS", tagline: "Pour equipes, marques et boutiques en volume", cta: "Choisir Business", team: true, api_access: true }) },
-  agency: { id: "agency", displayName: "Agency", includedCredits: 36000, monthlyPriceUsd: 399, annualPriceUsd: 3830, monthlyMessageLimit: 35000, dailyMessageLimit: 1500, dailyVideoLimit: 150, concurrentImageJobs: 20, concurrentVideoJobs: 12, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 2500, maxUploadMb: 1500, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ badge: "AGENCE", tagline: "Pour servir plusieurs clients avec une marge stable", cta: "Choisir Agency", business: true, api_access: true }) },
-  enterprise: { id: "enterprise", displayName: "Enterprise", includedCredits: 80000, monthlyPriceUsd: 799, annualPriceUsd: 7670, monthlyMessageLimit: 90000, dailyMessageLimit: 4000, dailyVideoLimit: 360, concurrentImageJobs: 40, concurrentVideoJobs: 24, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 730, storageGb: 8000, maxUploadMb: 2500, seatLimit: 60, supportLevel: "dedicated", priorityQueue: true, metadata: planMeta({ badge: "SUR MESURE", tagline: "Pour production intensive, support dedie et volumes negocies", cta: "Parler a l'equipe", business: true, dedicated_support: true }) },
-  crew: { id: "crew", displayName: "Studio", includedCredits: 9000, monthlyPriceUsd: 99, annualPriceUsd: 950, monthlyMessageLimit: 6000, dailyMessageLimit: 420, dailyVideoLimit: 30, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 600, seatLimit: 3, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "studio", hidden: true }) },
-  squad: { id: "squad", displayName: "Business", includedCredits: 18000, monthlyPriceUsd: 199, annualPriceUsd: 1910, monthlyMessageLimit: 15000, dailyMessageLimit: 850, dailyVideoLimit: 70, concurrentImageJobs: 12, concurrentVideoJobs: 8, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 1200, maxUploadMb: 1000, seatLimit: 8, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "business", hidden: true }) },
-  max: { id: "max", displayName: "Studio", includedCredits: 9000, monthlyPriceUsd: 99, annualPriceUsd: 950, monthlyMessageLimit: 6000, dailyMessageLimit: 420, dailyVideoLimit: 30, concurrentImageJobs: 8, concurrentVideoJobs: 4, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 180, storageGb: 500, maxUploadMb: 600, seatLimit: 3, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "studio", hidden: true }) },
-  scale: { id: "scale", displayName: "Agency", includedCredits: 36000, monthlyPriceUsd: 399, annualPriceUsd: 3830, monthlyMessageLimit: 35000, dailyMessageLimit: 1500, dailyVideoLimit: 150, concurrentImageJobs: 20, concurrentVideoJobs: 12, allowedMediaTypes: ["image", "video", "audio", "lipsync", "image_edit", "video_edit", "voice_clone"], watermarkRequired: false, mediaRetentionDays: 365, storageGb: 2500, maxUploadMb: 1500, seatLimit: 20, supportLevel: "priority", priorityQueue: true, metadata: planMeta({ canonical: "agency", hidden: true }) },
+const FREE_FALLBACK_PLAN: PlanLimits = {
+  id: "free",
+  displayName: "Free",
+  includedCredits: 100,
+  monthlyPriceUsd: 0,
+  annualPriceUsd: 0,
+  monthlyMessageLimit: 60,
+  dailyMessageLimit: 10,
+  dailyVideoLimit: 0,
+  concurrentImageJobs: 1,
+  concurrentVideoJobs: 0,
+  allowedMediaTypes: ["image"],
+  watermarkRequired: true,
+  mediaRetentionDays: 7,
+  storageGb: 1,
+  maxUploadMb: 25,
+  seatLimit: 1,
+  supportLevel: "community",
+  priorityQueue: false,
+  metadata: planMeta({ checkout: false }),
 };
-
-const PUBLIC_PLAN_IDS = ["free", "starter", "creator", "pro", "studio", "business", "agency", "enterprise"];
-
-function publicPricingPlans() {
-  return PUBLIC_PLAN_IDS.map((id) => planPublic(fallbackPlans[id]));
-}
 
 function serviceKey() {
   const rawSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
@@ -1373,15 +1373,40 @@ function normalizePlan(row: Record<string, unknown>): PlanLimits {
 
 async function resolvePlan(supabase: ReturnType<typeof adminClient>, plan: string | null | undefined) {
   const normalized = normalizePlanId(plan);
-  if (fallbackPlans[normalized]) return fallbackPlans[normalized];
-  const { data, error } = await supabase.from("pricing_plans").select("*").eq("id", normalized).maybeSingle();
+  const { data, error } = await supabase.from("pricing_plans").select("*").eq("id", normalized).eq("active", true).maybeSingle();
   if (!error && data) return normalizePlan(data);
-  return fallbackPlans[normalized] || fallbackPlans.free;
+  if (normalized === "free") return FREE_FALLBACK_PLAN;
+  throw new FlowtubeError(503, "Le tarif demande est momentanement indisponible.", {
+    code: "ACTIVE_PLAN_NOT_FOUND",
+    planId: normalized,
+  });
+}
+
+async function publicPricingPlans(supabase: ReturnType<typeof adminClient>) {
+  const { data, error } = await supabase.from("pricing_plans")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+  if (error) {
+    throw new FlowtubeError(503, "Les tarifs sont momentanement indisponibles.", { code: "PRICING_UNAVAILABLE" });
+  }
+  const plans = (data || []).map((row) => normalizePlan(row as Record<string, unknown>));
+  if (!plans.length) {
+    throw new FlowtubeError(503, "Aucun tarif actif n'est configure.", { code: "NO_ACTIVE_PRICING" });
+  }
+  return plans.map(planPublic);
+}
+
+function planAmountXof(plan: PlanLimits, interval: "monthly" | "annual") {
+  const metadataKey = interval === "annual" ? "annual_price_xof" : "monthly_price_xof";
+  const explicit = Number(plan.metadata[metadataKey] || 0);
+  if (Number.isFinite(explicit) && explicit > 0) return Math.round(explicit);
+  return usdToXof(interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd);
 }
 
 function planPublic(plan: PlanLimits) {
-  const monthlyXof = usdToXof(plan.monthlyPriceUsd);
-  const annualXof = usdToXof(plan.annualPriceUsd);
+  const monthlyXof = plan.monthlyPriceUsd > 0 ? planAmountXof(plan, "monthly") : 0;
+  const annualXof = plan.annualPriceUsd > 0 ? planAmountXof(plan, "annual") : 0;
   return {
     id: plan.id,
     displayName: plan.displayName,
@@ -1811,58 +1836,75 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
     .select("id,title,created_at")
     .eq("user_id", userId)
     .eq("archived", false)
-    .order("created_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .limit(100);
   if (error) throw error;
+  if (!projects?.length) return [];
 
-  return await Promise.all((projects || []).map(async (project) => {
-    const { data: conv } = await supabase.from("conversations")
-      .select("id,title")
-      .eq("project_id", project.id)
-      .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
-    const conversationId = conv?.id;
-    const { data: messages } = await supabase.from("messages")
-      .select("id,role,content,metadata,created_at")
-      .eq("project_id", project.id)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true });
-    const ids = (messages || []).map((message) => message.id);
-    const { data: generations } = ids.length
-      ? await supabase.from("generations").select("*").in("message_id", ids)
-      : { data: [] };
-    const genByMessage = new Map((generations || []).map((generation) => [generation.message_id, generation]));
+  const projectIds = projects.map((project) => project.id);
+  const [conversationsResult, messagesResult] = await Promise.all([
+    supabase.from("conversations").select("id,project_id,title").eq("user_id", userId).in("project_id", projectIds).order("created_at", { ascending: false }).limit(100),
+    supabase.from("messages").select("id,project_id,role,content,metadata,created_at").eq("user_id", userId).in("project_id", projectIds).order("created_at", { ascending: true }).limit(2000),
+  ]);
+  if (conversationsResult.error) throw conversationsResult.error;
+  if (messagesResult.error) throw messagesResult.error;
+  const messages = messagesResult.data || [];
+  const messageIds = messages.map((message) => message.id);
+  const generationsResult = messageIds.length
+    ? await supabase.from("generations").select("id,message_id,type,status,model_id,model_label,provider,prompt,aspect_ratio,duration_seconds,progress,result_url,error_message,credits,created_at,completed_at,params").in("message_id", messageIds).limit(2000)
+    : { data: [], error: null };
+  if (generationsResult.error) throw generationsResult.error;
+  const conversationByProject = new Map((conversationsResult.data || []).map((conversation) => [conversation.project_id, conversation]));
+  const messagesByProject = new Map<string, Record<string, unknown>[]>();
+  for (const message of messages) {
+    const list = messagesByProject.get(String(message.project_id)) || [];
+    list.push(message);
+    messagesByProject.set(String(message.project_id), list);
+  }
+  const genByMessage = new Map((generationsResult.data || []).map((generation) => [generation.message_id, generation]));
+
+  return projects.map((project) => {
+    const conv = conversationByProject.get(project.id);
+    const projectMessages = messagesByProject.get(String(project.id)) || [];
     return {
       id: project.id,
       title: project.title,
-      conversationId,
-      messages: (messages || []).map((message) => ({
+      conversationId: conv?.id,
+      messages: projectMessages.map((message) => ({
         id: message.id,
         role: message.role === "assistant" ? "agent" : message.role,
         text: message.content,
-        attachments: message.metadata?.attachments || undefined,
-        batch: message.metadata?.batch || undefined,
-        media: !message.metadata?.batch && genByMessage.has(message.id)
+        attachments: (message.metadata as Record<string, unknown> | null)?.attachments || undefined,
+        batch: (message.metadata as Record<string, unknown> | null)?.batch || undefined,
+        media: !(message.metadata as Record<string, unknown> | null)?.batch && genByMessage.has(message.id)
           ? mediaFromGeneration(genByMessage.get(message.id)!)
-          : (message.metadata?.media || undefined),
+          : ((message.metadata as Record<string, unknown> | null)?.media || undefined),
       })),
     };
-  }));
+  });
 }
 
 async function bootstrap(req: Request) {
   const supabase = adminClient();
   const userId = await optionalUserIdFromRequest(req, supabase);
-  const profile = userId ? await ensureProfile(supabase, userId) : null;
-  const projects = userId ? await listProjectData(supabase, userId) : [];
-  const catalog = await pricingCatalog(supabase);
-  const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
-  const { data: subscription } = userId
-    ? await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()
-    : { data: null };
-  const { count: generationCount } = userId
-    ? await supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)
-    : { count: 0 };
+  const [profile, projects, plans, creditPacksResult, subscriptionResult, generationCountResult] = await Promise.all([
+    userId ? ensureProfile(supabase, userId) : Promise.resolve(null),
+    userId ? listProjectData(supabase, userId) : Promise.resolve([]),
+    publicPricingPlans(supabase),
+    supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true }),
+    userId
+      ? supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    userId
+      ? supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)
+      : Promise.resolve({ count: 0, error: null }),
+  ]);
+  if (creditPacksResult.error) throw creditPacksResult.error;
+  if (subscriptionResult.error) throw subscriptionResult.error;
+  if (generationCountResult.error) throw generationCountResult.error;
+  const creditPacks = creditPacksResult.data || [];
+  const subscription = subscriptionResult.data;
+  const generationCount = generationCountResult.count || 0;
   return json({
     user: profile ? {
       id: profile.id,
@@ -1901,7 +1943,7 @@ async function bootstrap(req: Request) {
     agentModels: publicAgentModels(),
     // Les moteurs media fal.ai restent backend-only. Le frontend affiche seulement les modeles agent.
     models: [],
-    plans: publicPricingPlans(),
+    plans,
     creditPacks: (creditPacks || []).map((pack) => ({
       id: pack.id,
       label: pack.label,
@@ -5528,7 +5570,9 @@ async function createMoneyFusionCheckout(
   }
 
   const reference = crypto.randomUUID();
-  const amountXof = moneyFusionAmount(amountUsd);
+  const amountXof = plan
+    ? planAmountXof(plan, interval === "annual" ? "annual" : "monthly")
+    : moneyFusionAmount(amountUsd);
   const callbackUrl = moneyFusionCallbackUrl();
   const returnUrl = moneyFusionSafeAppUrl(body.successUrl || successUrl, moneyFusionReturnUrl());
   const payload: Record<string, unknown> = {
@@ -5911,9 +5955,10 @@ async function statsRoute(req: Request) {
 
 async function pricingRoute() {
   const supabase = adminClient();
+  const plans = await publicPricingPlans(supabase);
   const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
   return json({
-    plans: publicPricingPlans(),
+    plans,
     creditPacks: creditPacks || [],
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
@@ -5926,16 +5971,171 @@ async function pricingRoute() {
   });
 }
 
-function requireAdmin(req: Request) {
+async function requireAdmin(req: Request, supabase: ReturnType<typeof adminClient>) {
   const secret = Deno.env.get("FLOWTUBE_ADMIN_SECRET") || "";
-  if (!secret) throw new FlowtubeError(503, "Admin secret missing.", { code: "ADMIN_NOT_CONFIGURED" });
   const provided = req.headers.get("x-flowtube-admin-secret") || req.headers.get("x-huggyflow-admin-secret");
-  if (provided !== secret) throw new FlowtubeError(401, "Unauthorized admin request.", { code: "ADMIN_UNAUTHORIZED" });
+  if (secret && provided === secret) return "service";
+
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  if (error || !data.user) throw new FlowtubeError(401, "Session admin invalide.", { code: "ADMIN_SESSION_INVALID" });
+  const adminEmail = String(Deno.env.get("HUGGYFLOW_ADMIN_EMAIL") || "novacore629@gmail.com").trim().toLowerCase();
+  if (String(data.user.email || "").trim().toLowerCase() !== adminEmail) {
+    throw new FlowtubeError(403, "Acces administrateur refuse.", { code: "ADMIN_FORBIDDEN" });
+  }
+  return userId;
 }
 
 async function adminRoute(req: Request, action: string) {
-  requireAdmin(req);
   const supabase = adminClient();
+  await requireAdmin(req, supabase);
+  if (action === "dashboard" && req.method === "GET") {
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+    const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const [profilesResult, generationsResult, checkoutResult, moderationResult, modelsResult, plansResult, eventsResult] = await Promise.all([
+      supabase.from("profiles").select("id,email,display_name,plan,credits,credits_max,billing_status,metadata,created_at").order("created_at", { ascending: false }).limit(500),
+      supabase.from("generations").select("id,type,status,model_id,model_label,provider,credits,cost_usd,created_at").gte("created_at", `${sevenDaysAgo}T00:00:00.000Z`).order("created_at", { ascending: false }).limit(5000),
+      supabase.from("billing_checkout_sessions").select("id,provider,mode,plan_id,billing_interval,status,amount_usd,currency,metadata,created_at,completed_at").gte("created_at", monthStart).order("created_at", { ascending: false }).limit(5000),
+      supabase.from("moderation_events").select("id,user_id,provider,decision,reason,created_at").order("created_at", { ascending: false }).limit(100),
+      supabase.from("pricing_models").select("id,label,provider,media_type,credits,cost_per_unit_usd,active").order("media_type", { ascending: true }),
+      supabase.from("pricing_plans").select("id,display_name,monthly_price_usd,active,sort_order").eq("active", true).order("sort_order", { ascending: true }),
+      supabase.from("payment_events").select("provider,event_type,processed,created_at").order("created_at", { ascending: false }).limit(100),
+    ]);
+    const queryResults = [profilesResult, generationsResult, checkoutResult, moderationResult, modelsResult, plansResult, eventsResult];
+    const queryError = queryResults.find((result) => result.error)?.error;
+    if (queryError) throw queryError;
+
+    const profiles = profilesResult.data || [];
+    const generations = generationsResult.data || [];
+    const checkouts = checkoutResult.data || [];
+    const moderation = moderationResult.data || [];
+    const models = modelsResult.data || [];
+    const plans = plansResult.data || [];
+    const events = eventsResult.data || [];
+    const planById = new Map(plans.map((plan) => [normalizePlanId(String(plan.id)), plan]));
+    const planCounts = new Map<string, number>();
+    let mrrUsd = 0;
+    for (const profile of profiles) {
+      const planId = normalizePlanId(String(profile.plan || "free"));
+      planCounts.set(planId, (planCounts.get(planId) || 0) + 1);
+      mrrUsd += Number(planById.get(planId)?.monthly_price_usd || 0);
+    }
+
+    const todayKey = now.toISOString().slice(0, 10);
+    const chart = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000);
+      const key = date.toISOString().slice(0, 10);
+      const count = generations.filter((row) => String(row.created_at || "").slice(0, 10) === key).length;
+      return { label: date.toLocaleDateString("fr-FR", { weekday: "short" }), count };
+    });
+    const maxChart = Math.max(1, ...chart.map((item) => item.count));
+    const completedPayments = checkouts.filter((row) => String(row.status) === "completed");
+    const revenueUsd = completedPayments.reduce((sum, row) => sum + Number(row.amount_usd || 0), 0);
+    const failedPayments = checkouts.filter((row) => ["failed", "cancelled", "expired"].includes(String(row.status))).length;
+    const subscriptionAttempts = checkouts.filter((row) => String(row.mode) === "subscription");
+    const churnRatio = subscriptionAttempts.length ? failedPayments / subscriptionAttempts.length : 0;
+    const modelUsage = new Map<string, { count: number; credits: number }>();
+    for (const row of generations) {
+      const id = String(row.model_id || row.model_label || "unknown");
+      const current = modelUsage.get(id) || { count: 0, credits: 0 };
+      current.count += 1;
+      current.credits += Number(row.credits || 0);
+      modelUsage.set(id, current);
+    }
+
+    return json({
+      generatedAt: now.toISOString(),
+      summary: {
+        mrrUsd: Number(mrrUsd.toFixed(2)),
+        users: profiles.length,
+        paidUsers: profiles.filter((profile) => normalizePlanId(String(profile.plan || "free")) !== "free").length,
+        generationsToday: generations.filter((row) => String(row.created_at || "").slice(0, 10) === todayKey).length,
+        paymentFailureRate: Number(churnRatio.toFixed(3)),
+      },
+      chart: chart.map((item) => ({ ...item, percent: Math.round((item.count / maxChart) * 100) })),
+      health: [
+        { label: "Base de donnees", value: "Connectee", ok: true },
+        { label: "MoneyFusion", value: moneyFusionConfigured() ? "Configure" : "Non configure", ok: moneyFusionConfigured() },
+        { label: "Generation media", value: Deno.env.get("FAL_KEY") ? "Configuree" : "Non configuree", ok: Boolean(Deno.env.get("FAL_KEY")) },
+        { label: "Evenements paiement", value: `${events.filter((event) => event.processed).length} traites`, ok: events.every((event) => event.processed) },
+      ],
+      users: profiles.map((profile) => ({
+        id: profile.id,
+        name: profile.display_name || profile.email || "Utilisateur",
+        email: profile.email || "",
+        plan: normalizePlanId(String(profile.plan || "free")),
+        credits: Number(profile.credits || 0),
+        creditsMax: Number(profile.credits_max || 0),
+        status: profile.billing_status || (normalizePlanId(String(profile.plan || "free")) === "free" ? "free" : "unknown"),
+        suspended: Boolean((profile.metadata as Record<string, unknown> | null)?.admin_suspended),
+        createdAt: profile.created_at,
+      })),
+      reports: moderation.map((item) => ({
+        id: item.id,
+        type: item.decision || "review",
+        title: item.reason || "Evenement de moderation",
+        meta: `${item.provider || "interne"} · ${new Date(item.created_at).toLocaleString("fr-FR")}`,
+        level: String(item.decision || "").toLowerCase().includes("block") ? "high" : "normal",
+      })),
+      models: models.map((model) => ({
+        id: model.id,
+        name: model.label || model.id,
+        group: model.media_type || model.provider,
+        credits: Number(model.credits || 0),
+        costPerUnitUsd: Number(model.cost_per_unit_usd || 0),
+        active: Boolean(model.active),
+        usage: modelUsage.get(String(model.id)) || { count: 0, credits: 0 },
+      })),
+      finance: {
+        revenueUsd: Number(revenueUsd.toFixed(2)),
+        averageOrderUsd: completedPayments.length ? Number((revenueUsd / completedPayments.length).toFixed(2)) : 0,
+        completedPayments: completedPayments.length,
+        failedPayments,
+      },
+      plans: plans.map((plan) => {
+        const count = planCounts.get(normalizePlanId(String(plan.id))) || 0;
+        return {
+          id: plan.id,
+          name: plan.display_name || plan.id,
+          count,
+          mrrUsd: Number((count * Number(plan.monthly_price_usd || 0)).toFixed(2)),
+          percent: profiles.length ? Math.round((count / profiles.length) * 100) : 0,
+        };
+      }),
+    });
+  }
+  if (action === "users" && req.method === "POST") {
+    const body = await bodyJson(req);
+    const userId = String(body.userId || "");
+    const suspended = Boolean(body.suspended);
+    if (!userId) throw new FlowtubeError(400, "Utilisateur invalide.", { code: "ADMIN_USER_REQUIRED" });
+    const { data: profile, error: profileError } = await supabase.from("profiles").select("metadata").eq("id", userId).maybeSingle();
+    if (profileError) throw profileError;
+    const { error: authError } = await supabase.auth.admin.updateUserById(userId, { ban_duration: suspended ? "876000h" : "none" });
+    if (authError) throw authError;
+    const metadata = { ...((profile?.metadata || {}) as Record<string, unknown>), admin_suspended: suspended };
+    const { error: updateError } = await supabase.from("profiles").update({ metadata }).eq("id", userId);
+    if (updateError) throw updateError;
+    await supabase.from("app_events").insert({ user_id: userId, event_name: suspended ? "admin_user_suspended" : "admin_user_reactivated" });
+    return json({ ok: true, userId, suspended });
+  }
+  if (action === "moderation" && req.method === "POST") {
+    const body = await bodyJson(req);
+    const reportId = String(body.reportId || "");
+    const resolution = String(body.resolution || "approved") === "removed" ? "removed" : "approved";
+    const { data: report, error } = await supabase.from("moderation_events").select("id,generation_id,metadata").eq("id", reportId).maybeSingle();
+    if (error) throw error;
+    if (!report) throw new FlowtubeError(404, "Signalement introuvable.", { code: "REPORT_NOT_FOUND" });
+    const metadata = { ...((report.metadata || {}) as Record<string, unknown>), resolution, resolved_at: new Date().toISOString() };
+    const { error: reportError } = await supabase.from("moderation_events").update({ metadata }).eq("id", reportId);
+    if (reportError) throw reportError;
+    if (report.generation_id) {
+      const { error: generationError } = await supabase.from("generations").update({ moderation_status: resolution }).eq("id", report.generation_id);
+      if (generationError) throw generationError;
+    }
+    return json({ ok: true, reportId, resolution });
+  }
   if (action === "pricing" && req.method === "GET") {
     const { data: plans } = await supabase.from("pricing_plans").select("*").order("sort_order", { ascending: true });
     const { data: models } = await supabase.from("pricing_models").select("*").order("media_type", { ascending: true });

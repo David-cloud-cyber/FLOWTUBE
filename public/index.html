@@ -27,8 +27,12 @@
 html{background:var(--hf-page)}
 body{margin:0}
 button,input,textarea{font:inherit}
-button{transition:transform .16s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,color .2s ease,filter .2s ease}
-button:active{transform:scale(.97)}
+button{transition:transform .14s cubic-bezier(.22,1,.36,1),background .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease,filter .18s ease;will-change:transform}
+button:not(:disabled){cursor:pointer}
+button:hover:not(:disabled){filter:brightness(1.07)}
+button:active:not(:disabled){transform:scale(.965);transition-duration:.06s}
+button:focus-visible,[role="button"]:focus-visible{outline:2px solid #D1FE17;outline-offset:2px}
+button:disabled{cursor:not-allowed;opacity:.55}
 textarea{resize:none}
 input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset:1px}
 ::placeholder{color:#9A9DA4}
@@ -53,9 +57,13 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-md]{white-space:normal;overflow-wrap:anywhere}
 [data-hf-md] p{margin:0 0 10px}
 [data-hf-md] p:last-child{margin-bottom:0}
+[data-hf-md] h1,[data-hf-md] h2,[data-hf-md] h3,[data-hf-md] h4{margin:18px 0 8px;color:inherit;font-family:'Space Grotesk',ui-sans-serif,sans-serif;line-height:1.3;letter-spacing:0}
+[data-hf-md] h1:first-child,[data-hf-md] h2:first-child,[data-hf-md] h3:first-child,[data-hf-md] h4:first-child{margin-top:0}
+[data-hf-md] h1{font-size:22px}[data-hf-md] h2{font-size:19px}[data-hf-md] h3{font-size:17px}[data-hf-md] h4{font-size:15px}
 [data-hf-md] strong{font-weight:750;color:inherit}
 [data-hf-md] ul,[data-hf-md] ol{margin:8px 0 10px 20px;padding:0}
 [data-hf-md] li{margin:5px 0}
+[data-hf-md] blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid #D1FE17;background:rgba(209,254,23,.06);border-radius:0 8px 8px 0;color:#A8A8A8}
 [data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(209,254,23,.10);color:#D1FE17}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
@@ -486,13 +494,15 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             </button>
             <div style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
               <button onClick="{{ setMonthly }}" style="{{ monthlyTabStyle }}">Mensuel</button>
-              <button onClick="{{ setAnnual }}" style="{{ annualTabStyle }}">Annuel <span style="color:{{ tGreen }};font-weight:700">−20%</span></button>
+              <button onClick="{{ setAnnual }}" style="{{ annualTabStyle }}">Annuel</button>
             </div>
           </div>
         </div>
         <sc-if value="{{ hasPricingNotice }}" hint-placeholder-val="{{ false }}">
           <div style="margin:-16px 0 22px;padding:12px 16px;border-radius:14px;background:rgba({{ tLineRGB }},.055);border:1px solid rgba({{ tLineRGB }},.10);font-size:13px;line-height:1.45;color:{{ tText2 }}">{{ pricingNotice }}</div>
         </sc-if>
+        <sc-if value="{{ pricingLoading }}" hint-placeholder-val="{{ false }}"><div data-hf-skeleton="true" style="height:280px;margin-bottom:18px"></div></sc-if>
+        <sc-if value="{{ pricingEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:24px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:14px;color:{{ tText2 }};text-align:center">Les tarifs actifs n’ont pas pu être chargés. Réessaie dans un instant.</div></sc-if>
 
         <div style="display:grid;grid-template-columns:{{ plansGridCols }};gap:16px;align-items:stretch">
           <sc-for list="{{ plans }}" as="pl" hint-placeholder-count="3">
@@ -634,6 +644,12 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             <button onClick="{{ n.onClick }}" style="{{ n.style }}">{{ n.label }}</button>
           </sc-for>
         </div>
+        <sc-if value="{{ adminLoading }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px">
+            <sc-for list="{{ adminLoadingCards }}" as="s" hint-placeholder-count="4"><div data-hf-skeleton="true" style="height:96px"></div></sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ adminHasError }}" hint-placeholder-val="{{ false }}"><div style="margin-bottom:18px;padding:12px 14px;border-radius:10px;border:1px solid rgba(196,88,64,.32);background:rgba(196,88,64,.08);color:#E27B64;font-size:13px">{{ adminError }}</div></sc-if>
 
         <sc-if value="{{ adminIsOverview }}" hint-placeholder-val="{{ true }}">
           <div style="animation:tabFade .22s ease both">
@@ -2112,7 +2128,7 @@ class Component extends DCLogic {
     pricingNotice: '',
     toast: '',
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false,
-    backendReady: false,
+    backendReady: false, backendError: false,
     sendLocked: false,
     sidebarCollapsed: !!this.initialUiState.sidebarCollapsed,
     projectsExpanded: this.initialUiState.projectsExpanded !== false,
@@ -2131,7 +2147,8 @@ class Component extends DCLogic {
     creativeTemplates: [], templatesLoading: false,
     integrationConnections: [], integrationsLoading: false,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
-    accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false
+    accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
+    adminData: null, adminLoading: false, adminError: ''
   };
 
   MODELS = [
@@ -2173,33 +2190,6 @@ class Component extends DCLogic {
     { q:'Puis-je changer de plan ?', a:"À tout moment. Le passage à une offre supérieure est immédiat, la différence est calculée au prorata sur ta prochaine facture." }
   ];
 
-  PLAN_DATA = {
-    solo: [
-      { id:'free', name:'FREE', tag:'GRATUIT', tagKind:'muted', tagline:'Pour tester HuggyFlow', credits:100, m:0, aM:0, aY:0, cta:'Créer un compte',
-        vidJobs:0, imgJobs:1, dailyVid:1, msg:60, gb:1, days:7, types:['image'], priority:false, seats:1, watermark:true },
-      { id:'starter', name:'STARTER', tag:'DÉPART', tagKind:'muted', tagline:'Pour publier quelques contenus chaque semaine', credits:550, m:6.99, aM:6, aY:67, cta:'Commencer',
-        vidJobs:1, imgJobs:1, dailyVid:1, msg:300, gb:5, days:30, types:['image','video','image_edit'], priority:false, seats:1, watermark:false },
-      { id:'creator', name:'CREATOR', tag:'CRÉATEUR', tagKind:'blue', tagline:'Pour créateurs solo', credits:1300, m:14.99, aM:12, aY:144, cta:'Choisir Creator',
-        vidJobs:1, imgJobs:2, dailyVid:3, msg:900, gb:30, days:45, types:['image','video','audio','image_edit'], priority:false, seats:1, watermark:false },
-      { id:'pro', name:'PRO', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour produire vite sans exploser les coûts', credits:3500, m:39, aM:31, aY:374, cta:'Choisir Pro',
-        vidJobs:2, imgJobs:5, dailyVid:10, msg:2500, gb:150, days:90, types:['image','video','audio','lipsync','image_edit','video_edit'], priority:false, seats:2, watermark:false }
-    ],
-    team: [
-      { id:'crew', name:'STUDIO', tag:'ÉQUIPE', tagKind:'muted', tagline:'Pour petites équipes', credits:9000, m:99, aM:79, aY:950, cta:'Choisir Studio',
-        vidJobs:4, imgJobs:8, dailyVid:30, msg:6000, gb:500, days:180, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:3, watermark:false },
-      { id:'squad', name:'BUSINESS', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour équipes qui publient chaque jour', credits:18000, m:199, aM:159, aY:1910, cta:'Choisir Business',
-        vidJobs:8, imgJobs:12, dailyVid:70, msg:15000, gb:1200, days:365, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:8, watermark:false }
-    ],
-    business: [
-      { id:'max', name:'AGENCY', tag:'AGENCE', tagKind:'muted', tagline:'Pour servir plusieurs clients avec une marge stable', credits:36000, m:399, aM:319, aY:3830, cta:'Choisir Agency',
-        vidJobs:12, imgJobs:20, dailyVid:150, msg:35000, gb:2500, days:365, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:20, watermark:false },
-      { id:'scale', name:'SCALE', tag:'POPULAIRE', tagKind:'lime', popular:true, tagline:'Pour production à grande échelle', credits:80000, m:799, aM:639, aY:7670, cta:'Choisir Scale',
-        vidJobs:24, imgJobs:40, dailyVid:360, msg:90000, gb:8000, days:730, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:60, watermark:false },
-      { id:'enterprise', name:'ENTERPRISE', tag:'SUR MESURE', tagKind:'muted', tagline:'Pour grandes organisations', credits:160000, m:1499, aM:1199, aY:14390, cta:'Nous contacter',
-        vidJobs:40, imgJobs:80, dailyVid:999, msg:999999, gb:20000, days:730, types:['image','video','audio','lipsync','image_edit','video_edit','voice_clone'], priority:true, seats:999, watermark:false }
-    ]
-  };
-
   tabStyle(active){
     return 'height:34px;min-height:34px;padding:0 18px;border-radius:999px;border:none;font-size:13px;font-weight:600;line-height:34px;cursor:pointer;font-family:inherit;display:inline-flex;gap:6px;align-items:center;justify-content:center;box-sizing:border-box;vertical-align:top;transform:none;transition:background .18s ease,color .18s ease,box-shadow .18s ease;' +
       (active ? 'background:' + this.tokens().surface + ';color:' + this.tokens().ink + ';box-shadow:inset 0 0 0 1px rgba(' + this.tokens().lineRGB + ',.06)' : 'background:transparent;color:' + this.tokens().text3 + ';box-shadow:inset 0 0 0 1px transparent');
@@ -2230,8 +2220,8 @@ class Component extends DCLogic {
       const meta = p.metadata || {};
       const name = String(p.displayName || p.id || 'Plan');
       return {
-        id:p.id, name:name.toUpperCase(), tag:meta.badge || (p.priorityQueue ? 'POPULAIRE' : 'OFFRE'), tagKind:p.priorityQueue ? 'lime' : 'muted',
-        popular:!!p.priorityQueue, tagline:meta.tagline || meta.description || 'Pour creer avec HuggyFlow',
+        id:p.id, name:name.toUpperCase(), tag:meta.badge || ((meta.popular || meta.best_value || p.priorityQueue) ? 'POPULAIRE' : 'OFFRE'), tagKind:(meta.popular || meta.best_value || p.priorityQueue) ? 'lime' : 'muted',
+        popular:!!(meta.popular || meta.best_value || p.priorityQueue), tagline:meta.tagline || meta.audience || meta.description || 'Pour creer avec HuggyFlow',
         credits:Number(p.includedCredits || 0), m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
         mXof:toXof(p.monthlyPriceUsd, p.monthlyPriceXof), aMXof:p.annualPriceXof ? Math.round(Number(p.annualPriceXof || 0) / 12) : toXof(p.monthlyPriceUsd, p.monthlyPriceXof), aYXof:toXof(p.annualPriceUsd, p.annualPriceXof),
         cta:meta.cta || (Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte'),
@@ -2239,13 +2229,8 @@ class Component extends DCLogic {
         gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
       };
     });
-    const basePlanList = apiPlans.length ? apiPlans : (this.PLAN_DATA[this.state.segment] || this.PLAN_DATA.solo);
-    const planList = this.visiblePricingPlans(basePlanList);
+    const planList = this.visiblePricingPlans(apiPlans);
     return planList.map(d=>{
-      const fastImg = Math.floor(d.credits/18);
-      const img = Math.floor(d.credits/66);
-      const sd = Math.floor(d.credits/252);
-      const veo = Math.floor(d.credits/759);
       const hasVid = d.types.indexOf('video') >= 0;
       const hasEdit = d.types.indexOf('image_edit') >= 0;
       const free = d.m === 0;
@@ -2253,10 +2238,10 @@ class Component extends DCLogic {
         name: d.name, tag: d.tag, tagStyle: tagStyles[d.tagKind], tagline: d.tagline,
         creditsTitle: fmt(d.credits) + ' crédits/mois',
         equivalences: [
-          'Jusqu’à ' + fmt(fastImg) + ' images rapides',
-          fmt(img) + ' images premium',
-          hasVid ? (sd + ' clips rapides 5s') : 'Vidéo rapide non incluse',
-          hasVid ? (veo + ' clips premium 5s') : 'Vidéo premium non incluse'
+          fmt(d.credits) + ' crédits réellement débités',
+          d.imgJobs + ' génération(s) image simultanée(s)',
+          hasVid ? (d.vidJobs + ' génération(s) vidéo simultanée(s)') : 'Création image uniquement',
+          fmt(d.gb) + ' Go de stockage inclus'
         ],
         creditsNote: fmt(d.credits) + ' crédits inclus à chaque période',
         hasOldPrice: annual && !free,
@@ -2275,10 +2260,10 @@ class Component extends DCLogic {
           feat(d.seats > 1, d.seats + (d.seats > 1 ? ' utilisateurs' : ' utilisateur'))
         ],
         models: [
-          { name:'Images rapides', cost:'18 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(fastImg) + ' images', allocStyle: allocOn },
-          { name:'Images premium', cost:'66 cr.', ok:true, no:false, color:T.inkSoft, alloc: fmt(img) + ' images', allocStyle: allocOn },
-          { name:'Vidéos rapides', cost:'252 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? sd + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff },
-          { name:'Vidéos premium', cost:'759 cr./5s', ok:hasVid, no:!hasVid, color: hasVid ? T.inkSoft : T.text4, alloc: hasVid ? veo + ' clips 5s' : 'Non inclus', allocStyle: hasVid ? allocOn : allocOff }
+          { name:'Crédits inclus', cost:fmt(d.credits) + ' cr.', ok:true, no:false, color:T.inkSoft, alloc:'par période', allocStyle:allocOn },
+          { name:'Images en parallèle', cost:String(d.imgJobs), ok:d.imgJobs > 0, no:d.imgJobs <= 0, color:d.imgJobs > 0 ? T.inkSoft : T.text4, alloc:d.imgJobs > 0 ? 'Actif' : 'Non inclus', allocStyle:d.imgJobs > 0 ? allocOn : allocOff },
+          { name:'Vidéos en parallèle', cost:String(d.vidJobs), ok:hasVid, no:!hasVid, color:hasVid ? T.inkSoft : T.text4, alloc:hasVid ? 'Actif' : 'Non inclus', allocStyle:hasVid ? allocOn : allocOff },
+          { name:'Rétention médias', cost:d.days + ' j', ok:true, no:false, color:T.inkSoft, alloc:fmt(d.gb) + ' Go', allocStyle:allocOn }
         ],
         rhythm: [
           feat(true, fmt(d.gb) + ' Go pour tes médias'),
@@ -2321,7 +2306,7 @@ class Component extends DCLogic {
     return this.getResolvedTheme() === 'dark' ? {
       pageBg:'#0F1113', surface:'#1C1E20', surfaceSoft:'rgba(35,38,42,.74)',
       ink:'#F7F7F8', inkSoft:'#F7F7F8', text2:'#A8A8A8', text3:'#898A8B', text4:'#707174',
-      lineRGB:'46,48,49', green:'#D1FE17', xMuted:'#4E535A', strike:'#6E7074',
+      lineRGB:'247,247,248', green:'#D1FE17', xMuted:'#4E535A', strike:'#6E7074',
       mediaGrad:'linear-gradient(135deg,#1C1E20,#23262A 55%,#17191B)'
     } : {
       pageBg:'#F7F7F8', surface:'#FFFFFF', surfaceSoft:'rgba(255,255,255,.88)',
@@ -2329,55 +2314,6 @@ class Component extends DCLogic {
       lineRGB:'46,48,49', green:'#D1FE17', xMuted:'#C4C7CC', strike:'#A8A8A8',
       mediaGrad:'linear-gradient(135deg,#FFFFFF,#F1F2F3 55%,#F7F7F8)'
     };
-  }
-
-  componentDidMount(){
-    try{
-      const t = localStorage.getItem('hf-theme');
-      if(t) this.setState({ theme: t });
-    }catch(e){}
-    this._ph = setInterval(()=>{
-      this.setState(s=>({ placeholderIdx: (s.placeholderIdx+1) % this.PLACEHOLDERS.length }));
-    }, 3600);
-  }
-  componentWillUnmount(){ clearInterval(this._ph); }
-
-  sendPrompt(text){
-    const t = (text || '').trim();
-    if(!t) return;
-    const isVideo = this.curModel().group === 'Vidéos';
-    const msgs = this.state.messages.concat([
-      { role:'user', text:t },
-      { role:'agent', typing:true, kind: isVideo ? 'video' : 'image' }
-    ]);
-    this.setState({ messages: msgs, input:'', activeTitle: t.slice(0, 34) + (t.length > 34 ? '…' : '') });
-    setTimeout(()=>{
-      this.setState(s=>{
-        const m = s.messages.slice();
-        const isVideo = m[m.length-1].kind === 'video';
-        m[m.length-1] = { role:'agent', kind: m[m.length-1].kind, text:"Très bien — je lance la génération avec " + this.curModel().name + ". Voici une première direction, dis-moi ce que tu veux ajuster.", media:'loading', pct:0 };
-        return { messages: m };
-      });
-      this.animateMedia();
-    }, 1100);
-  }
-
-  animateMedia(){
-    let pct = 0;
-    const last = this.state.messages[this.state.messages.length-1];
-    const isVideo = last && last.kind === 'video';
-    const tick = setInterval(()=>{
-      pct = Math.min(100, pct + Math.ceil(Math.random() * (isVideo ? 7 : 16)));
-      this.setState(s=>{
-        const m = s.messages.slice();
-        const last = Object.assign({}, m[m.length-1]);
-        last.pct = pct;
-        if(pct >= 100){ last.media = 'done'; }
-        m[m.length-1] = last;
-        return { messages: m };
-      });
-      if(pct >= 100) clearInterval(tick);
-    }, isVideo ? 420 : 320);
   }
 
   apiBase(){ return (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3000' : ''; }
@@ -2727,10 +2663,13 @@ class Component extends DCLogic {
         theme: prefs.theme || this.state.theme,
         shareAnalytics: prefs.shareAnalytics !== false,
         shareDataTraining: prefs.dataTraining === true,
-        backendReady:true
-      }, ()=>this.resumeGenerationPolling(projects));
+        backendReady:true, backendError:false
+      }, ()=>{
+        this.resumeGenerationPolling(projects);
+        if(this.state.page === 'admin' && this.isAdminUser()) this.loadAdminDashboard();
+      });
     }catch(err){
-      this.setState({ backendReady:false });
+      this.setState({ backendReady:false, backendError:true });
     }
   }
   componentDidMount(){
@@ -2767,7 +2706,7 @@ class Component extends DCLogic {
   }
   schedulePersistUiState(){
     clearTimeout(this.persistTimer);
-    this.persistTimer = setTimeout(()=>this.persistUiState(), 260);
+    this.persistTimer = setTimeout(()=>this.persistUiState(), this.state.sendLocked ? 1400 : 420);
   }
   persistUiState(){
     if(typeof window === 'undefined' || !window.localStorage) return;
@@ -2775,10 +2714,10 @@ class Component extends DCLogic {
       const payload = {
         page:this.state.page === 'auth' ? 'app' : this.state.page,
         input:this.state.input || '',
-        messages:this.state.messages || [],
+        messages:this.state.authToken ? [] : (this.state.messages || []).slice(-40),
         activeProjectId:this.state.activeProjectId || 'welcome',
         activeTitle:this.state.activeTitle || 'Nouveau projet',
-        projectsData:this.state.projectsData || [],
+        projectsData:[],
         modelId:this.state.modelId || 'auto',
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
@@ -2819,15 +2758,13 @@ class Component extends DCLogic {
   normalizeMarkdownText(text){
     return String(text || '')
       .replace(/\r/g, '')
-      .replace(/^\s*[-*_]{3,}\s*$/gm, '')
       .replace(/\s+(#{1,6}\s+)/g, '\n\n$1')
-      .replace(/^\s{0,3}#{1,6}\s+/gm, '')
       .replace(/\s+(-\s+\*\*)/g, '\n$1')
-      .replace(/\s+(-\s+[A-ZÀ-Üa-zà-ÿ])/g, '\n$1')
+      .replace(/\s+(-\s+[A-ZÀ-ÖØ-öø-ÿ])/g, '\n$1')
       .replace(/\s+(\d+\.\s+\*\*)/g, '\n\n$1')
       .replace(/\s+-\s+(\*\*[^*]+\*\*)/g, '\n- $1')
       .replace(/\s+(Petit point cash:)/g, '\n\n$1')
-      .replace(/\s+(Pour d[ée]marrer)/gi, '\n\n$1')
+      .replace(/\s+(Pour démarrer)/gi, '\n\n$1')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
@@ -2847,23 +2784,57 @@ class Component extends DCLogic {
   markdownBlocks(text){
     const source = this.normalizeMarkdownText(text);
     if(!source) return '';
-    const blocks = source.split(/\n{2,}/).map(block=>block.trim()).filter(Boolean);
+    this.markdownCache = this.markdownCache || new Map();
+    if(this.markdownCache.has(source)) return this.markdownCache.get(source);
+    const lines = source.split('\n');
     const children = [];
-    blocks.forEach((block, bi)=>{
-      const lines = block.split(/\n/).map(line=>line.trim()).filter(Boolean);
-      const allBullets = lines.length > 1 && lines.every(line=>/^[-*]\s+/.test(line));
-      const allNumbers = lines.length > 1 && lines.every(line=>/^\d+\.\s+/.test(line));
-      if(allBullets || allNumbers){
-        const tag = allNumbers ? 'ol' : 'ul';
-        children.push(React.createElement(tag, { key:'b'+bi }, lines.map((line, li)=>{
-          const clean = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
-          return React.createElement('li', { key:'li'+li }, this.inlineMarkdown(clean, 'b'+bi+'li'+li));
-        })));
-      } else {
-        children.push(React.createElement('p', { key:'p'+bi }, this.inlineMarkdown(lines.join(' '), 'p'+bi)));
+    let index = 0;
+    let blockIndex = 0;
+    const special = line=>/^\s*(#{1,4}\s+|[-*]\s+|\d+\.\s+|>\s+|[-*_]{3,}\s*$)/.test(line || '');
+    while(index < lines.length){
+      const raw = String(lines[index] || '').trim();
+      if(!raw){ index += 1; continue; }
+      if(/^[-*_]{3,}$/.test(raw)){ index += 1; continue; }
+      const heading = raw.match(/^(#{1,4})\s+(.+)$/);
+      if(heading){
+        const level = Math.min(4, heading[1].length);
+        children.push(React.createElement('h'+level, { key:'h'+blockIndex }, this.inlineMarkdown(heading[2], 'h'+blockIndex)));
+        index += 1; blockIndex += 1; continue;
       }
-    });
-    return React.createElement('div', { 'data-hf-md': true }, children);
+      if(/^[-*]\s+/.test(raw) || /^\d+\.\s+/.test(raw)){
+        const ordered = /^\d+\.\s+/.test(raw);
+        const items = [];
+        while(index < lines.length){
+          const item = String(lines[index] || '').trim();
+          if(ordered ? !/^\d+\.\s+/.test(item) : !/^[-*]\s+/.test(item)) break;
+          items.push(item.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, ''));
+          index += 1;
+        }
+        children.push(React.createElement(ordered ? 'ol' : 'ul', { key:'l'+blockIndex }, items.map((item, itemIndex)=>React.createElement('li', { key:'li'+itemIndex }, this.inlineMarkdown(item, 'l'+blockIndex+'i'+itemIndex)))));
+        blockIndex += 1; continue;
+      }
+      if(/^>\s+/.test(raw)){
+        const quote = [];
+        while(index < lines.length && /^>\s+/.test(String(lines[index] || '').trim())){
+          quote.push(String(lines[index] || '').trim().replace(/^>\s+/, ''));
+          index += 1;
+        }
+        children.push(React.createElement('blockquote', { key:'q'+blockIndex }, this.inlineMarkdown(quote.join(' '), 'q'+blockIndex)));
+        blockIndex += 1; continue;
+      }
+      const paragraph = [raw];
+      index += 1;
+      while(index < lines.length && String(lines[index] || '').trim() && !special(lines[index])){
+        paragraph.push(String(lines[index] || '').trim());
+        index += 1;
+      }
+      children.push(React.createElement('p', { key:'p'+blockIndex }, this.inlineMarkdown(paragraph.join(' '), 'p'+blockIndex)));
+      blockIndex += 1;
+    }
+    const result = React.createElement('div', { 'data-hf-md': true }, children);
+    this.markdownCache.set(source, result);
+    if(this.markdownCache.size > 100) this.markdownCache.delete(this.markdownCache.keys().next().value);
+    return result;
   }
   updateAgentMessage(id, patch){
     this.setState(s=>({ messages:s.messages.map(m=>m.id === id ? Object.assign({}, m, patch) : m) }));
@@ -3074,7 +3045,7 @@ class Component extends DCLogic {
     this.flushAgentText(agentId);
     return delivered;
   }
-  checkoutPlanId(id){ return ({ basic:'creator', max:'studio', scale:'agency' })[id] || id; }
+  checkoutPlanId(id){ return String(id || 'free'); }
   openCheckoutPhone(planId){
     let storedPhone = '';
     try{ storedPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
@@ -3278,6 +3249,62 @@ class Component extends DCLogic {
       });
     }catch(err){
       this.setState({ settingsSaving:false, settingsSaved:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer les reglages pour le moment.') });
+    }
+  }
+  async loadAdminDashboard(){
+    if(!this.isAdminUser() || !this.state.authToken) return;
+    this.setState({ adminLoading:true, adminError:'' });
+    try{
+      const res = await this.apiFetch('/api/admin/dashboard');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Admin dashboard failed');
+      this.setState({ adminData:data, adminLoading:false, adminError:'' });
+    }catch(err){
+      const message = this.friendlyError(err && err.message, 'Impossible de charger les donnees administrateur.');
+      this.setState({ adminLoading:false, adminError:message });
+      this.notify(message);
+    }
+  }
+  async toggleAdminUser(user){
+    if(!user || !user.id || this.state.adminLoading) return;
+    this.setState({ adminLoading:true });
+    try{
+      const res = await this.apiFetch('/api/admin/users', { method:'POST', body:JSON.stringify({ userId:user.id, suspended:!user.suspended }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Admin user update failed');
+      await this.loadAdminDashboard();
+      this.notify(data.suspended ? 'Compte suspendu.' : 'Compte reactive.');
+    }catch(err){
+      this.setState({ adminLoading:false });
+      this.notify(this.friendlyError(err && err.message, 'Mise a jour utilisateur impossible.'));
+    }
+  }
+  async resolveAdminReport(report, resolution){
+    if(!report || !report.id || this.state.adminLoading) return;
+    this.setState({ adminLoading:true });
+    try{
+      const res = await this.apiFetch('/api/admin/moderation', { method:'POST', body:JSON.stringify({ reportId:report.id, resolution }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Moderation update failed');
+      await this.loadAdminDashboard();
+      this.notify(resolution === 'removed' ? 'Contenu retire.' : 'Contenu approuve.');
+    }catch(err){
+      this.setState({ adminLoading:false });
+      this.notify(this.friendlyError(err && err.message, 'Moderation impossible.'));
+    }
+  }
+  async toggleAdminModel(model){
+    if(!model || !model.id || this.state.adminLoading) return;
+    this.setState({ adminLoading:true });
+    try{
+      const res = await this.apiFetch('/api/admin/pricing', { method:'POST', body:JSON.stringify({ table:'pricing_models', id:model.id, patch:{ active:!model.active } }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Model update failed');
+      await this.loadAdminDashboard();
+      this.notify(model.active ? 'Modele desactive.' : 'Modele active.');
+    }catch(err){
+      this.setState({ adminLoading:false });
+      this.notify(this.friendlyError(err && err.message, 'Mise a jour du modele impossible.'));
     }
   }
   async loadBrands(){
@@ -3628,70 +3655,12 @@ class Component extends DCLogic {
     return [];
   }
 
-  GALLERY = [
-    { id:'g1', type:'image', title:'Packshot fond crème', model:'Image studio', date:'Aujourd\'hui', placeholder:'Dépose ton packshot' },
-    { id:'g2', type:'video', title:'Teaser lancement juillet', model:'Vidéo premium', date:'Hier', duration:'0:05', placeholder:'Dépose une frame du teaser' },
-    { id:'g3', type:'voice', title:'Voix off — tutoriel n°3', model:'Voix naturelle', date:'Hier', duration:'0:38' },
-    { id:'g4', type:'image', title:'Portrait éditorial fondatrice', model:'Image studio', date:'2 juil.', placeholder:'Dépose ton portrait' },
-    { id:'g5', type:'video', title:'Boucle d\'ambiance accueil', model:'Vidéo rapide', date:'30 juin', duration:'0:08', placeholder:'Dépose une frame de la boucle' },
-    { id:'g6', type:'image', title:'Visuel Instagram — promo', model:'Retouche image', date:'28 juin', placeholder:'Dépose ton visuel' }
-  ];
-
-  gallerySeedItems(){
-    const f = this.state.galleryFilter || 'all';
-    return this.GALLERY.filter(g => f === 'all' || g.type === f).map(g => ({
-      slotId: 'gallery-' + g.id,
-      title: g.title, model: g.model, date: g.date,
-      duration: g.duration || '',
-      placeholder: g.placeholder || '',
-      isVisual: g.type !== 'voice',
-      isVideo: g.type === 'video',
-      isVoice: g.type === 'voice',
-      onRecreate: ()=>{ this.setState({ page:'app' }); this.sendPrompt('Recrée une variante de « ' + g.title + ' »'); }
-    }));
-  }
-
-  TEAM = [
-    { name:'David N.', email:'david@huggyflow.studio', initials:'DN', avatarBg:'#D1FE17', role:'Admin', activity:'En ligne', you:true },
-    { name:'Sarah Lemoine', email:'sarah@huggyflow.studio', initials:'SL', avatarBg:'#E8D79B', role:'Éditeur', activity:'Il y a 2 h' },
-    { name:'Marc Aubry', email:'marc@huggyflow.studio', initials:'MA', avatarBg:'#C9E8D5', role:'Éditeur', activity:'Hier' },
-    { name:'Inès Kader', email:'ines@huggyflow.studio', initials:'IK', avatarBg:'#E8C9B8', role:'Lecteur', activity:'Il y a 4 j' }
-  ];
-  PENDING_DEFAULT = [
-    { email:'thomas@exemple.com', sent:'il y a 2 jours' }
-  ];
-
-  CHART = {
-    '7': [
-      { l:'Lun', c:42, p:30 }, { l:'Mar', c:88, p:55 }, { l:'Mer', c:35, p:48 }, { l:'Jeu', c:64, p:40 },
-      { l:'Ven', c:52, p:66 }, { l:'Sam', c:18, p:12 }, { l:'Dim', c:9, p:15 }
-    ],
-    '30': [
-      { l:'S1', c:58, p:44 }, { l:'S2', c:82, p:60 }, { l:'S3', c:47, p:72 }, { l:'S4', c:91, p:52 }
-    ],
-    '90': [
-      { l:'Avr', c:64, p:50 }, { l:'Mai', c:78, p:64 }, { l:'Juin', c:92, p:78 }
-    ]
-  };
-
-  ADMIN_USERS = [
-    { name:'Léa Fontaine', email:'lea.design@gmail.com', initials:'LF', avatarBg:'#E8D79B', plan:'Creator', credits:'1 240 / 1 600', status:'Actif' },
-    { name:'Studio Marcel', email:'contact@studiomarcel.fr', initials:'SM', avatarBg:'#C9E8D5', plan:'Pro', credits:'3 820 / 5 500', status:'Actif' },
-    { name:'Karim Vidal', email:'karim.v@outlook.com', initials:'KV', avatarBg:'#D8DCF2', plan:'Free', credits:'12 / 100', status:'Actif' },
-    { name:'Agence Nova', email:'hello@agencenova.com', initials:'AN', avatarBg:'#E8C9B8', plan:'Pro', credits:'890 / 5 500', status:'Actif' },
-    { name:'Sarah Lemoine', email:'sarah@huggyflow.studio', initials:'SL', avatarBg:'#D1FE17', plan:'Creator', credits:'1 105 / 1 600', status:'Actif' },
-    { name:'Tom Berger', email:'tom.berger@proton.me', initials:'TB', avatarBg:'#E4D5F0', plan:'Free', credits:'96 / 100', status:'Actif' }
-  ];
-  ADMIN_REPORTS = [
-    { type:'SIGNALEMENT', level:'high', title:'Image signalée — « Portrait célébrité »', meta:'Signalée par 3 utilisateurs · générée il y a 2 h · karim.v@outlook.com' },
-    { type:'COPYRIGHT', level:'high', title:'Vidéo — logo de marque détecté', meta:'Détection automatique · il y a 5 h · contact@studiomarcel.fr' },
-    { type:'SPAM', level:'low', title:'Compte — 240 générations en 1 h', meta:'Limite de débit dépassée · il y a 1 j · tom.berger@proton.me' }
-  ];
-
-  API_KEYS_DEFAULT = [
-    { name:'Production', masked:'hf_live_9k2x••••••••••••', created:'créée le 12 mai 2026' },
-    { name:'Développement', masked:'hf_test_4rm1••••••••••••', created:'créée le 3 juin 2026' }
-  ];
+  TEAM = [];
+  PENDING_DEFAULT = [];
+  CHART = { '7': [], '30': [], '90': [] };
+  ADMIN_USERS = [];
+  ADMIN_REPORTS = [];
+  API_KEYS_DEFAULT = [];
   INTEGRATIONS = [
     { id:'zapier', name:'Zapier', glyph:'Z', bg:'#F2D8B0', desc:'Déclenche des générations depuis 6 000+ apps.' },
     { id:'slack', name:'Slack', glyph:'S', bg:'#D5E3F0', desc:'Reçois tes rendus terminés dans un canal.' },
@@ -3737,6 +3706,11 @@ class Component extends DCLogic {
     const chipBase = 'display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .18s;';
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
+    const galleryItems = this.galleryItems();
+    const renderedPlans = this.buildPlans();
+    const admin = st.adminData || {};
+    const adminSummary = admin.summary || {};
+    const adminFinance = admin.finance || {};
     const creditMax = Math.max(1, Number(st.creditsMax || 100));
     const creditPct = Math.max(0, Math.min(100, Math.round(100 * Number(st.credits || 0) / creditMax)));
     const creditColor = creditPct > 45 ? '#D1FE17' : (creditPct > 18 ? '#E8B25C' : '#C45840');
@@ -3758,6 +3732,8 @@ class Component extends DCLogic {
       checkoutBusy: !!st.checkoutBusy,
       checkoutButtonLabel: st.checkoutBusy ? 'Ouverture du paiement...' : 'Continuer vers le paiement',
       hasPricingNotice: !!st.pricingNotice,
+      pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
+      pricingEmpty: !!st.backendError && renderedPlans.length === 0,
       showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       settingsSearchQuery: st.settingsSearchQuery || '',
       onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
@@ -4013,18 +3989,8 @@ class Component extends DCLogic {
         curTitle: 'Ce mois : ' + Math.round(b.c * 4) + ' crédits',
         prevTitle: 'Mois dernier : ' + Math.round(b.p * 4) + ' crédits'
       })),
-      modelUsage: [
-        { name:'Vidéos premium', credits:'759 cr', pct:'37%', dot:'#C9A8E8' },
-        { name:'Images premium', credits:'66 cr', pct:'35%', dot:'#D1FE17' },
-        { name:'Vidéos rapides', credits:'252 cr', pct:'22%', dot:'#E8D79B' },
-        { name:'Voix et audio', credits:'63 cr', pct:'6%', dot:'#A8E8C0' }
-      ],
-      highlights: [
-        'Ta création la plus coûteuse : « Teaser lancement juillet » (438 cr).',
-        'Mardi est ton jour le plus productif.',
-        'Les images représentent 72% de tes générations.',
-        'À ce rythme, tes crédits couvrent le mois complet.'
-      ],
+      modelUsage: [],
+      highlights: [],
       openApi: ()=> this.setState({ page:'api', modelMenu:false }),
       apiKeys: (st.apiKeys || this.API_KEYS_DEFAULT).map((k,i)=>({
         name: k.name, masked: k.masked, created: k.created,
@@ -4034,13 +4000,10 @@ class Component extends DCLogic {
           setTimeout(()=> this.setState({ copiedKey: null }), 1600);
         }
       })),
-      createKey: ()=> this.setState(s=>({
-        apiKeys: (s.apiKeys || this.API_KEYS_DEFAULT.slice()).concat([{
-          name:'Nouvelle clé', masked:'hf_live_' + Math.random().toString(36).slice(2,6) + '••••••••••••', created:'à l\'instant'
-        }])
-      })),
+      createKey: ()=> this.createApiKey(),
       integrations: this.INTEGRATIONS.map(ig=>{
-        const on = (st.connected || { zapier:true, slack:false, notion:false, make:false, discord:false, webhooks:true })[ig.id];
+        const current = (st.integrationConnections || []).find(c=>c.provider === ig.id);
+        const on = !!(current && current.status === 'connected');
         return {
           name: ig.name, desc: ig.desc, glyph: ig.glyph, bg: ig.bg,
           trackStyle: this.switchTrack(on), knobStyle: this.switchKnob(on),
@@ -4049,16 +4012,12 @@ class Component extends DCLogic {
             (on
               ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
               : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text4),
-          onToggle: ()=> this.setState(s=>{
-            const connected = Object.assign({ zapier:true, slack:false, notion:false, make:false, discord:false, webhooks:true }, s.connected);
-            connected[ig.id] = !connected[ig.id];
-            return { connected };
-          })
+          onToggle: ()=> this.configureIntegration(ig.id)
         };
       }),
       openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }),
-      seatsLabel: '3 / 5',
-      seatsPct: '60%',
+      seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
+      seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
       inviteEmail: st.inviteEmail || '',
       onInviteEmail: (e)=> this.setState({ inviteEmail: e.target.value, inviteSent:false }),
       inviteRole: st.inviteRole || 'Éditeur',
@@ -4135,28 +4094,13 @@ class Component extends DCLogic {
         style: this.tabStyle((st.galleryFilter || 'all') === p[0]),
         onClick: ()=> this.setState({ galleryFilter: p[0] })
       })),
-      galleryItems: this.galleryItems(),
-      galleryEmpty: this.galleryItems().length === 0,
+      galleryItems,
+      galleryEmpty: galleryItems.length === 0,
       openBilling: ()=> this.setState({ page:'billing', modelMenu:false }),
-      billingPlanName: 'Creator',
-      billingPlanPrice: '15 $ / mois, payé à l\'année',
-      billingNextDate: '12 janvier 2027',
-      invoices: [
-        { date:'12 juin 2026', label:'Abonnement Creator — annuel', amount:'180,00 $', paid:true },
-        { date:'28 mai 2026', label:'Pack 500 crédits supplémentaires', amount:'9,00 $', paid:true },
-        { date:'12 mai 2026', label:'Abonnement Creator — mensuel', amount:'19,00 $', paid:true },
-        { date:'12 avr. 2026', label:'Abonnement Creator — mensuel', amount:'19,00 $', paid:true },
-        { date:'12 mars 2026', label:'Abonnement Creator — mensuel', amount:'19,00 $', paid:false },
-        { date:'12 févr. 2026', label:'Abonnement Creator — mensuel', amount:'19,00 $', paid:true }
-      ].map(inv=>({
-        date: inv.date, label: inv.label, amount: inv.amount,
-        status: inv.paid ? 'Payée' : 'Remboursée',
-        statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
-          (inv.paid
-            ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
-            : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3),
-        onDownload:()=>this.downloadInvoice(inv)
-      })),
+      billingPlanName: (st.user && st.user.plan) || 'Free',
+      billingPlanPrice: st.billingLoading ? 'Chargement...' : 'Aucun abonnement actif',
+      billingNextDate: 'non planifié',
+      invoices: [],
       isEmpty: st.messages.length === 0,
       hasMessages: st.messages.length > 0,
       showSuggestions,
@@ -4169,16 +4113,11 @@ class Component extends DCLogic {
       creditsPct: creditPct + '%',
       creditsTrackStyle: 'height:' + (st.sidebarCollapsed ? '28px' : '3px') + ';width:' + (st.sidebarCollapsed ? '28px' : 'auto') + ';border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;margin:' + (st.sidebarCollapsed ? '0' : '0 8px') + ';position:relative;transition:height .2s ease,width .2s ease',
       creditsBarStyle: 'width:' + (st.sidebarCollapsed ? '100%' : (creditPct + '%')) + ';height:' + (st.sidebarCollapsed ? (creditPct + '%') : '100%') + ';position:absolute;left:0;bottom:0;border-radius:999px;background:' + creditColor + ';transition:width .35s ease,height .35s ease,background .25s ease;box-shadow:0 0 14px -8px ' + creditColor,
-      projects: [
-        { title:'Packshots — collection été', dot:'#D1FE17', onClick: ()=>{} },
-        { title:'Teaser lancement juillet', dot:'#C9A8E8', onClick: ()=>{} },
-        { title:'Voix off — tutoriel n°3', dot:'#A8E8C0', onClick: ()=>{} },
-        { title:'Campagne printemps (archivé)', dot:'#C4C7CC', onClick: ()=> this.setState({ page:'notfound', modelMenu:false }) }
-      ],
+      projects: [],
       showNotFound: st.page === 'notfound',
       showAffiliate: st.page === 'affiliate',
       showAdmin: st.page === 'admin' && this.isAdminUser(),
-      openAdmin: ()=> this.isAdminUser() ? this.setState({ page:'admin', adminTab:'overview', adminHop:false, modelMenu:false }) : null,
+      openAdmin: ()=> this.isAdminUser() ? this.setState({ page:'admin', adminTab:'overview', adminHop:false, modelMenu:false }, ()=>this.loadAdminDashboard()) : null,
       adminAnim: st.adminHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
       adminNav: [['overview','Vue d\'ensemble'],['users','Utilisateurs'],['moderation','Modération'],['models','Modèles'],['finance','Finances'],['platform','Plateforme']].map(p=>({
         label: p[1],
@@ -4191,124 +4130,58 @@ class Component extends DCLogic {
       adminIsModels: st.adminTab === 'models',
       adminIsFinance: st.adminTab === 'finance',
       adminIsPlatform: st.adminTab === 'platform',
-      platToggles: [
-        { key:'signup', label:'Inscriptions ouvertes', hint:'Autoriser la création de nouveaux comptes', def:true },
-        { key:'maintenance', label:'Mode maintenance', hint:'Bloque l\'accès au SaaS avec une page d\'attente', def:false },
-        { key:'watermark', label:'Filigrane sur l\'offre Free', hint:'Marque HuggyFlow sur les exports gratuits', def:true },
-        { key:'ratelimit', label:'Limite de débit stricte', hint:'Max 60 générations / heure / compte', def:true },
-        { key:'newmodels', label:'Nouveaux modèles en bêta', hint:'Exposer les modèles bêta aux abonnés Pro', def:false }
-      ].map(p=>{
-        const cfg = Object.assign({ signup:true, maintenance:false, watermark:true, ratelimit:true, newmodels:false }, st.platform);
-        const on = cfg[p.key];
-        return {
-          label: p.label, hint: p.hint,
-          trackStyle: this.switchTrack(on), knobStyle: this.switchKnob(on),
-          onToggle: ()=> this.setState(s=>{
-            const platform = Object.assign({ signup:true, maintenance:false, watermark:true, ratelimit:true, newmodels:false }, s.platform);
-            platform[p.key] = !platform[p.key];
-            return { platform };
-          })
-        };
-      }),
+      platToggles: [],
       platMessage: st.platMessage || '',
       onPlatMessage: (e)=> this.setState({ platMessage: e.target.value, platSaved:false }),
-      savePlatform: ()=> this.setState({ platSaved:true }),
+      savePlatform: ()=> this.notify('La configuration plateforme est geree par les variables de production.'),
       platSaved: !!st.platSaved,
+      adminLoading: !!st.adminLoading,
+      adminLoadingCards: [{},{},{},{}],
+      adminError: st.adminError || '',
+      adminHasError: !!st.adminError,
       adminKpis: [
-        { label:'MRR', value:'12 480 $', delta:'+6,2% ce mois', up:true },
-        { label:'Utilisateurs actifs', value:'1 842', delta:'+124 ce mois', up:true },
-        { label:'Générations / jour', value:'3 205', delta:'+11% cette semaine', up:true },
-        { label:'Churn', value:'2,1%', delta:'−0,4 pt', up:true }
-      ].map(k=>({ label:k.label, value:k.value, delta:k.delta, deltaColor: k.up ? T.green : '#C45840' })),
-      adminChart: [
-        { l:'Lun', v:62 }, { l:'Mar', v:88 }, { l:'Mer', v:71 }, { l:'Jeu', v:95 }, { l:'Ven', v:80 }, { l:'Sam', v:44 }, { l:'Dim', v:38 }
-      ].map(b=>({ label:b.l, h:b.v + '%', title: Math.round(b.v * 40) + ' générations' })),
-      adminHealth: [
-        { label:'API de génération', value:'99,98%', ok:true },
-        { label:'File de rendu vidéo', value:'2 min', ok:true },
-        { label:'Stockage médias', value:'71% utilisé', ok:true },
-        { label:'Webhooks sortants', value:'retards', ok:false }
-      ].map(h=>({ label:h.label, value:h.value, dot: h.ok ? '#A9B86E' : '#E8B25C' })),
-      adminUsers: this.ADMIN_USERS.map((u,i)=>{
-        const suspended = (st.suspended || {})[i];
-        return {
-          name:u.name, email:u.email, initials:u.initials, avatarBg:u.avatarBg, plan:u.plan, credits:u.credits,
-          status: suspended ? 'Suspendu' : u.status,
-          statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
-            (suspended
-              ? 'background:rgba(196,88,64,.12);color:#C45840'
-              : (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')),
-          action: suspended ? 'Réactiver' : 'Suspendre',
-          actionStyle: 'padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;' +
-            (suspended ? 'border:1px solid rgba(' + T.lineRGB + ',.16);color:' + T.text2 : 'border:1px solid rgba(196,88,64,.35);color:#C45840'),
-          onToggle: ()=> this.setState(s=>{
-            const sus = Object.assign({}, s.suspended);
-            sus[i] = !sus[i];
-            return { suspended: sus };
-          })
-        };
-      }),
-      adminReports: this.ADMIN_REPORTS.map((r,i)=>{
-        const res = (st.reportRes || {})[i];
-        return {
-          type:r.type, title:r.title, meta:r.meta,
-          typeStyle: 'flex:0 0 auto;padding:4px 11px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.05em;' +
-            (r.level === 'high' ? 'background:rgba(196,88,64,.12);color:#C45840' : 'background:rgba(232,178,92,.16);color:#A97B2F'),
-          pending: !res,
-          resolved: !!res,
-          resolution: res === 'ok' ? '✓ Approuvé' : '✕ Retiré',
-          resolvedStyle: 'font-size:12.5px;font-weight:700;color:' + (res === 'ok' ? T.green : '#C45840'),
-          onApprove: ()=> this.setState(s=>({ reportRes: Object.assign({}, s.reportRes, { [i]:'ok' }) })),
-          onRemove: ()=> this.setState(s=>({ reportRes: Object.assign({}, s.reportRes, { [i]:'rm' }) }))
-        };
-      }),
-      adminModels: this.MODELS.map(m=>{
-        const off = (st.modelsOff || {})[m.id];
-        return {
-          name:m.name, group:m.group, creditsLabel:m.creditsLabel, dot:m.dot,
-          usage: ({ auto:'41 220', 'claude-fable-5':'8 940', 'claude-opus-4-8':'12 830', 'claude-opus-4-7':'6 115', 'claude-opus-4-6':'4 210', 'claude-sonnet-5':'15 402', 'claude-sonnet-4-6':'9 671', 'claude-haiku-4-5-20251001':'3 104' })[m.id],
-          trackStyle: this.switchTrack(!off), knobStyle: this.switchKnob(!off),
-          onToggle: ()=> this.setState(s=>{
-            const mo = Object.assign({}, s.modelsOff);
-            mo[m.id] = !mo[m.id];
-            return { modelsOff: mo };
-          })
-        };
-      }),
+        { label:'MRR estimé', value:Number(adminSummary.mrrUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), delta:'plans actifs en base', up:true },
+        { label:'Utilisateurs', value:String(adminSummary.users || 0), delta:String(adminSummary.paidUsers || 0) + ' abonnés payants', up:true },
+        { label:'Générations aujourd’hui', value:String(adminSummary.generationsToday || 0), delta:'données temps réel', up:true },
+        { label:'Échecs paiement', value:Math.round(Number(adminSummary.paymentFailureRate || 0) * 100) + '%', delta:'sur les tentatives du mois', up:Number(adminSummary.paymentFailureRate || 0) === 0 }
+      ].map(k=>({ label:k.label, value:k.value, delta:k.delta, deltaColor:k.up ? T.green : '#C45840' })),
+      adminChart: (admin.chart || []).map(b=>({ label:b.label, h:Number(b.percent || 0) + '%', title:Number(b.count || 0) + ' génération(s)' })),
+      adminHealth: (admin.health || []).map(h=>({ label:h.label, value:h.value, dot:h.ok ? '#D1FE17' : '#E8B25C' })),
+      adminUsers: (admin.users || []).map((u,i)=>({
+        name:u.name, email:u.email, initials:String(u.name || u.email || 'U').split(/\s+/).slice(0,2).map(v=>v.slice(0,1)).join('').toUpperCase(),
+        avatarBg:['#D1FE17','#E8D79B','#C9E8D5','#D8DCF2'][i % 4], plan:u.plan, credits:Number(u.credits || 0).toLocaleString('fr-FR') + ' / ' + Number(u.creditsMax || 0).toLocaleString('fr-FR'),
+        status:u.suspended ? 'Suspendu' : (u.status || 'inconnu'),
+        statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (u.suspended ? 'background:rgba(196,88,64,.12);color:#C45840' : 'background:rgba(209,254,23,.14);color:#D1FE17'),
+        action:u.suspended ? 'Réactiver' : 'Suspendre',
+        actionStyle:'padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;' + (u.suspended ? 'border:1px solid rgba(' + T.lineRGB + ',.22);color:' + T.text2 : 'border:1px solid rgba(196,88,64,.45);color:#E27B64'),
+        onToggle:()=>this.toggleAdminUser(u)
+      })),
+      adminReports: (admin.reports || []).map(r=>({
+        type:String(r.type || 'REVUE').toUpperCase(), title:r.title, meta:r.meta,
+        typeStyle:'flex:0 0 auto;padding:4px 11px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.05em;' + (r.level === 'high' ? 'background:rgba(196,88,64,.12);color:#E27B64' : 'background:rgba(232,178,92,.16);color:#D4A24D'),
+        pending:true, resolved:false, resolution:'', resolvedStyle:'',
+        onApprove:()=>this.resolveAdminReport(r, 'approved'),
+        onRemove:()=>this.resolveAdminReport(r, 'removed')
+      })),
+      adminModels: (admin.models || []).map((m,i)=>({
+        name:m.name, group:m.group, creditsLabel:Number(m.credits || 0) + ' cr', dot:['#D1FE17','#C9A8E8','#9BD1E8','#E8D79B'][i % 4],
+        usage:Number((m.usage && m.usage.count) || 0).toLocaleString('fr-FR'),
+        trackStyle:this.switchTrack(!!m.active), knobStyle:this.switchKnob(!!m.active), onToggle:()=>this.toggleAdminModel(m)
+      })),
       adminFinKpis: [
-        { label:'Revenu ce mois', value:'14 962 $', delta:'+8,1% vs juin', up:true },
-        { label:'Panier moyen', value:'38 $', delta:'+2 $ ce mois', up:true },
-        { label:'Remboursements', value:'214 $', delta:'5 demandes', up:false }
-      ].map(k=>({ label:k.label, value:k.value, delta:k.delta, deltaColor: k.up ? T.green : '#C45840' })),
-      adminPlans: [
-        { name:'Free', count:'1 214', mrr:'0 $', pct:'100%' },
-        { name:'Creator', count:'389', mrr:'5 835 $', pct:'32%' },
-        { name:'Pro', count:'182', mrr:'8 918 $', pct:'15%' },
-        { name:'Équipe & Business', count:'57', mrr:'—', pct:'5%' }
-      ],
+        { label:'Revenu encaissé ce mois', value:Number(adminFinance.revenueUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), delta:String(adminFinance.completedPayments || 0) + ' paiement(s)', up:true },
+        { label:'Panier moyen', value:Number(adminFinance.averageOrderUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), delta:'paiements complétés', up:true },
+        { label:'Paiements non aboutis', value:String(adminFinance.failedPayments || 0), delta:'échoués, annulés ou expirés', up:Number(adminFinance.failedPayments || 0) === 0 }
+      ].map(k=>({ label:k.label, value:k.value, delta:k.delta, deltaColor:k.up ? T.green : '#C45840' })),
+      adminPlans: (admin.plans || []).map(p=>({ name:p.name, count:String(p.count || 0), mrr:Number(p.mrrUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), pct:String(p.percent || 0) + '%' })),
       openAffiliate: ()=> this.setState({ page:'affiliate', modelMenu:false }),
       copyRefLink: ()=>{
         this.setState({ refCopied:true });
         setTimeout(()=> this.setState({ refCopied:false }), 1600);
       },
       refCopyLabel: st.refCopied ? '✓ Copié' : 'Copier le lien',
-      affStats: [
-        { label:'Clics ce mois', value:'128', hint:'via ton lien' },
-        { label:'Abonnés actifs', value:'6', hint:'filleuls avec abonnement' },
-        { label:'Gains cumulés', value:'87 $', hint:'versés chaque 1er du mois' }
-      ],
-      referrals: [
-        { name:'lea.design@…', status:'Abonnée', paid:true, amount:'+5,70 $/mois' },
-        { name:'studiomarcel@…', status:'Abonné', paid:true, amount:'+17,70 $/mois' },
-        { name:'karim.v@…', status:'Essai', paid:false, amount:'—' },
-        { name:'agencenova@…', status:'Abonnée', paid:true, amount:'+26,70 $/mois' }
-      ].map(r=>({
-        name: r.name, amount: r.amount, status: r.status,
-        statusStyle: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' +
-          (r.paid
-            ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
-            : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
-      })),
+      affStats: [],
+      referrals: [],
       affSteps: [
         { n:'1', text:'Partage ton lien dans tes vidéos, articles ou réseaux.' },
         { n:'2', text:'Chaque inscription via ton lien est rattachée à ton compte.' },
@@ -4375,7 +4248,7 @@ class Component extends DCLogic {
       setAnnual: ()=> this.setState({ billing:'annual' }),
       monthlyTabStyle: this.tabStyle(st.billing==='monthly'),
       annualTabStyle: this.tabStyle(st.billing==='annual'),
-      plans: this.buildPlans(),
+      plans: renderedPlans,
       plansGridCols: this.pricingGridCols(),
       segmentTabs: [['solo','Solo'],['team','Équipe'],['business','Business Plan']].map(p=>({
         label: p[1],
@@ -4507,7 +4380,7 @@ class Component extends DCLogic {
             ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
-      plansGridCols: 'repeat(' + this.buildPlans().length + ',1fr)',
+      plansGridCols: 'repeat(' + Math.max(1, renderedPlans.length) + ',1fr)',
       openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label:p[1],
