@@ -3438,6 +3438,159 @@ async function skillsRoute(req: Request) {
   return json({ skill, created: true });
 }
 
+// ===== Skill Evaluation Lab (additive: never changes the normal AgentFlow chat path) =====
+type SkillEvalKind = "blind_comparator" | "posthoc_analyzer" | "grader" | "benchmark_analyzer";
+
+const SKILL_EVAL_KINDS = new Set<SkillEvalKind>([
+  "blind_comparator",
+  "posthoc_analyzer",
+  "grader",
+  "benchmark_analyzer",
+]);
+
+function skillEvalKind(value: unknown): SkillEvalKind {
+  const kind = String(value || "").trim().toLowerCase() as SkillEvalKind;
+  if (!SKILL_EVAL_KINDS.has(kind)) throw new FlowtubeError(400, "Type d evaluation de skill invalide.", { code: "INVALID_SKILL_EVAL_KIND" });
+  return kind;
+}
+
+function boundedEvalInput(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new FlowtubeError(400, "Les donnees d evaluation doivent etre un objet JSON.", { code: "INVALID_SKILL_EVAL_INPUT" });
+  }
+  const input = value as Record<string, unknown>;
+  const serialized = JSON.stringify(input);
+  if (serialized.length > 320_000) {
+    throw new FlowtubeError(413, "Les donnees d evaluation sont trop volumineuses.", { code: "SKILL_EVAL_INPUT_TOO_LARGE" });
+  }
+  return input;
+}
+
+function skillEvalJson(value: unknown): string {
+  return JSON.stringify(value || {}, null, 2).slice(0, 320_000);
+}
+
+function skillEvalPrompt(kind: SkillEvalKind, input: Record<string, unknown>): string {
+  const data = skillEvalJson(input);
+  const common = `
+Tu es un composant interne d AgentFlow dans HuggyFlow.
+Tu dois produire uniquement du JSON valide, sans markdown, sans commentaire avant ou apres.
+Les chemins fournis par l utilisateur sont des references descriptives : utilise le contenu inline fourni dans les donnees quand il existe et ne pretend jamais avoir lu un fichier inaccessible.
+Reste objectif, specifique et base sur les preuves. Ne fabrique pas de score, de citation ou de fichier absent.
+`;
+  if (kind === "blind_comparator") return `${common}
+ROLE: Blind Comparator Agent.
+Compare output_a et output_b sans chercher a deduire quelle skill a produit chaque sortie.
+Lis eval_prompt et expectations. Construis une rubrique adaptee avec contenu (correctness, completeness, accuracy) et structure (organization, formatting, usability), note chaque critere de 1 a 5, calcule content_score, structure_score et overall_score sur 10.
+Determine winner A, B ou TIE. Les assertions sont une evidence secondaire, jamais le seul critere.
+Retourne exactement: winner, reasoning, rubric, output_quality et, seulement si expectations existe, expectation_results.
+Donnees:
+${data}`;
+  if (kind === "posthoc_analyzer") return `${common}
+ROLE: Post-hoc Analyzer Agent.
+Analyse apres comparaison les raisons de la victoire. Desambigue uniquement apres avoir utilise winner.
+Compare winner_skill, loser_skill, winner_transcript et loser_transcript : clarte des instructions, outils/scripts, exemples, erreurs, ecarts d execution et instruction following.
+Retourne exactement les champs comparison_summary, winner_strengths, loser_weaknesses, instruction_following, improvement_suggestions et transcript_insights.
+Chaque suggestion doit etre priorisee high, medium ou low, classee instructions, tools, examples, error_handling, structure ou references, et inclure expected_impact.
+Donnees:
+${data}`;
+  if (kind === "grader") return `${common}
+ROLE: Grader Agent.
+Evalue chaque expectation contre le transcript et les sorties. PASS exige une preuve substantielle; FAIL si la preuve manque, contredit l attente ou n est que superficielle.
+Extrait aussi les claims factuels, de processus et de qualite, puis verifie-les. Critique les evals seulement lorsqu une assertion est triviale, invérifiable ou qu un resultat important n est pas couvert.
+Retourne exactement expectations, summary, execution_metrics si disponible, timing si disponible, claims, user_notes_summary et eval_feedback si necessaire.
+Donnees:
+${data}`;
+  return `${common}
+ROLE: Benchmark Analyzer Agent.
+Analyse benchmark_data par assertion, par eval, par configuration et par metrique. Ne propose pas de modification de skill : produis uniquement des notes factuelles et traçables.
+Retourne un tableau JSON de chaines. Chaque note doit mentionner l eval, l assertion ou la metrique concernee et distinguer evidence, variance, cout, temps et gain.
+Donnees:
+${data}`;
+}
+
+function structuredModelText(raw: string): string {
+  const text = String(raw || "").trim();
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced) return fenced[1].trim();
+  const objectStart = text.indexOf("{");
+  const objectEnd = text.lastIndexOf("}");
+  const arrayStart = text.indexOf("[");
+  const arrayEnd = text.lastIndexOf("]");
+  if (objectStart >= 0 && objectEnd > objectStart && (arrayStart < 0 || objectStart < arrayStart)) return text.slice(objectStart, objectEnd + 1);
+  if (arrayStart >= 0 && arrayEnd > arrayStart) return text.slice(arrayStart, arrayEnd + 1);
+  return text;
+}
+
+function responseTextFromPayload(raw: string): string {
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  if (Array.isArray(parsed.content)) {
+    return parsed.content.filter((item) => item && typeof item === "object" && (item as Record<string, unknown>).type === "text")
+      .map((item) => String((item as Record<string, unknown>).text || "")).join("\n").trim();
+  }
+  const choices = Array.isArray(parsed.choices) ? parsed.choices : [];
+  const message = choices[0] && typeof choices[0] === "object" ? (choices[0] as Record<string, unknown>).message : null;
+  return message && typeof message === "object" ? String((message as Record<string, unknown>).content || "").trim() : "";
+}
+
+async function runSkillEvaluation(
+  kind: SkillEvalKind,
+  input: Record<string, unknown>,
+  modelId: string,
+  billing: AgentBillingContext,
+) {
+  const { response } = await anthropicMessages({
+    max_tokens: 3200,
+    stream: false,
+    system: "Tu es le laboratoire d evaluation de skills de HuggyFlow. Produis des resultats auditables, objectifs et strictement conformes au schema demande.",
+    messages: [{ role: "user", content: skillEvalPrompt(kind, input) }],
+  }, modelId, billing);
+  const raw = await response.text();
+  const text = responseTextFromPayload(raw);
+  if (!text) throw new FlowtubeError(502, "Le modele n a pas retourne de resultat exploitable.", { code: "SKILL_EVAL_EMPTY_OUTPUT" });
+  try {
+    return JSON.parse(structuredModelText(text));
+  } catch (_error) {
+    throw new FlowtubeError(502, "Le resultat du modele n est pas un JSON valide.", { code: "SKILL_EVAL_INVALID_JSON", raw: text.slice(0, 2_000) });
+  }
+}
+
+async function skillEvaluationsRoute(req: Request, runId?: string) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  if (req.method === "GET") {
+    if (runId && isUuid(runId)) {
+      const { data, error } = await supabase.from("agent_eval_runs").select("*").eq("id", runId).eq("user_id", userId).maybeSingle();
+      if (error) throw error;
+      if (!data) return json({ error: { message: "Evaluation introuvable." } }, 404);
+      return json({ run: data });
+    }
+    const limit = Math.min(50, Math.max(1, Number(new URL(req.url).searchParams.get("limit") || 20)));
+    const { data, error } = await supabase.from("agent_eval_runs").select("id,project_id,kind,title,status,output,error_message,created_at,updated_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(limit);
+    if (error) throw error;
+    return json({ runs: data || [] });
+  }
+  if (req.method !== "POST") return json({ error: { message: "Route evaluation non disponible." } }, 404);
+  const body = await bodyJson(req) as Record<string, unknown>;
+  const kind = skillEvalKind(body.kind);
+  const input = boundedEvalInput(body.input || body.payload || {});
+  const projectId = isUuid(String(body.projectId || "")) ? String(body.projectId) : null;
+  const title = compactText(String(body.title || "Evaluation " + kind.replace(/_/g, " ")), 120) || "Evaluation AgentFlow";
+  const modelId = resolveAgentModelId(String(body.agentModelId || body.modelId || DEFAULT_MODEL));
+  const { data: created, error: createError } = await supabase.from("agent_eval_runs").insert({ user_id: userId, project_id: projectId, kind, title, status: "running", input }).select("*").single();
+  if (createError || !created) throw createError || new Error("Evaluation creation failed");
+  try {
+    const output = await runSkillEvaluation(kind, input, modelId, agentBilling({ supabase, userId, send: () => {} }, "skill_evaluation"));
+    const { data: updated, error: updateError } = await supabase.from("agent_eval_runs").update({ status: "completed", output, error_message: null }).eq("id", created.id).eq("user_id", userId).select("*").single();
+    if (updateError || !updated) throw updateError || new Error("Evaluation update failed");
+    return json({ run: updated });
+  } catch (error) {
+    const message = error instanceof FlowtubeError ? error.message : "Evaluation indisponible pour le moment.";
+    await supabase.from("agent_eval_runs").update({ status: "failed", error_message: message }).eq("id", created.id).eq("user_id", userId);
+    throw error;
+  }
+}
+
 function artifactRequestType(prompt: string): string | null {
   const text = stripAccents(String(prompt || "").toLowerCase());
   if (!/\b(artifact|interface|page web|landing page|site web|html|react|composant|outil interactif|tableau|diagramme|svg|document structure|mini app)\b/.test(text)) return null;
@@ -7356,6 +7509,7 @@ Deno.serve(async (req: Request) => {
     if (first === "artifacts" && route[1] === "share" && route[2] && req.method === "GET") return await publicArtifactShareRoute(req, route[2]);
     if (first === "artifacts" && (req.method === "GET" || req.method === "POST")) return await artifactRoute(req, route[1]);
     if (first === "skills" && (req.method === "GET" || req.method === "POST")) return await skillsRoute(req);
+    if (first === "skill-evals" && (req.method === "GET" || req.method === "POST")) return await skillEvaluationsRoute(req, route[1]);
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);

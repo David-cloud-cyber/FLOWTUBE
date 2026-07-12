@@ -599,6 +599,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <button onClick="{{ studioMediaTab }}" style="{{ studioMediaTabStyle }}">Médias <span style="opacity:.6">{{ studioMediaCount }}</span></button>
         <button onClick="{{ studioArtifactTab }}" style="{{ studioArtifactTabStyle }}">Artifacts <span style="opacity:.6">{{ artifactCount }}</span></button>
         <button onClick="{{ studioSkillTab }}" style="{{ studioSkillTabStyle }}">Skills</button>
+        <button onClick="{{ studioEvalTab }}" style="{{ studioEvalTabStyle }}">Évaluations</button>
       </div>
       <div style="flex:1;min-height:0;overflow-y:auto;padding:13px 14px 26px">
         <sc-if value="{{ studioIsMedia }}" hint-placeholder-val="{{ true }}">
@@ -629,6 +630,25 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px"><sc-for list="{{ artifactCards }}" as="artifact" hint-placeholder-count="3"><button onClick="{{ artifact.onClick }}" style="text-align:left;padding:11px 12px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.10);background:{{ artifact.activeStyle }};color:{{ tInk }};cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ artifact.title }}</span><span style="font-size:10px;color:#D1FE17">V{{ artifact.version }}</span></div><div style="margin-top:4px;font-size:10.5px;color:{{ tText4 }}">{{ artifact.type }} · {{ artifact.status }}</div></button></sc-for></div>
         </sc-if>
         <sc-if value="{{ studioIsSkill }}" hint-placeholder-val="{{ false }}"><div style="padding:11px 12px;border-radius:11px;background:rgba(209,254,23,.07);border:1px solid rgba(209,254,23,.16);font-size:12px;line-height:1.5;color:{{ tInk }}">{{ skillActivityLabel }}</div><div style="margin-top:12px;font-size:11px;color:{{ tText4 }}">AgentFlow sauvegarde les compétences réutilisables et les réactive automatiquement lorsqu’une demande correspondante revient.</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:14px"><sc-for list="{{ skillCards }}" as="skill" hint-placeholder-count="3"><div style="padding:11px 12px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ skill.name }}</span><span style="font-size:10px;color:#D1FE17">V{{ skill.version }}</span></div><div style="margin-top:4px;font-size:10.5px;color:{{ tText4 }}">{{ skill.status }} · {{ skill.uses }} utilisation(s)</div></div></sc-for></div></sc-if>
+        <sc-if value="{{ studioIsEval }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:12px;border:1px solid rgba({{ tLineRGB }},.10);border-radius:12px;background:rgba({{ tLineRGB }},.035)">
+            <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:15px;font-weight:700;color:{{ tInk }}">Laboratoire d’évaluation</div>
+            <div style="margin-top:4px;color:{{ tText4 }};font-size:11px;line-height:1.45">Compare, grade et améliore les skills sans modifier le flux principal d’AgentFlow.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">
+              <button onClick="{{ selectEvalComparator }}" style="{{ evalComparatorStyle }}">Comparateur</button>
+              <button onClick="{{ selectEvalPosthoc }}" style="{{ evalPosthocStyle }}">Post-hoc</button>
+              <button onClick="{{ selectEvalGrader }}" style="{{ evalGraderStyle }}">Grader</button>
+              <button onClick="{{ selectEvalBenchmark }}" style="{{ evalBenchmarkStyle }}">Benchmark</button>
+            </div>
+            <textarea value="{{ evalInput }}" onChange="{{ onEvalInput }}" spellcheck="false" placeholder="Colle ici les données JSON de l’évaluation…" style="width:100%;min-height:190px;margin-top:10px;padding:10px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:9px;background:{{ tSurface }};color:{{ tInk }};font:11px/1.5 'JetBrains Mono',monospace;resize:vertical;outline:none"></textarea>
+            <sc-if value="{{ evalError }}" hint-placeholder-val="{{ false }}"><div style="margin-top:7px;color:#E58C72;font-size:11px">{{ evalError }}</div></sc-if>
+            <button onClick="{{ runSkillEvaluation }}" disabled="{{ evalLoading }}" style="width:100%;margin-top:9px;padding:9px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font-size:11.5px;font-weight:800;cursor:pointer">{{ evalLoading ? 'AgentFlow analyse…' : 'Lancer l’évaluation' }}</button>
+          </div>
+          <sc-if value="{{ evalOutputText }}" hint-placeholder-val="{{ false }}"><pre style="max-height:300px;margin:12px 0 0;padding:11px;overflow:auto;border:1px solid rgba({{ tLineRGB }},.10);border-radius:10px;background:#111315;color:#D1FE17;font:10.5px/1.55 'JetBrains Mono',monospace;white-space:pre-wrap">{{ evalOutputText }}</pre></sc-if>
+          <div style="margin-top:14px;color:{{ tText4 }};font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">Historique</div>
+          <sc-if value="{{ evalRunsEmpty }}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;padding:18px 12px;text-align:center;color:{{ tText4 }};font-size:11px;border:1px dashed rgba({{ tLineRGB }},.12);border-radius:10px">Les évaluations terminées apparaîtront ici.</div></sc-if>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:8px"><sc-for list="{{ evalRunCards }}" as="run" hint-placeholder-count="5"><div style="padding:9px 10px;border:1px solid rgba({{ tLineRGB }},.09);border-radius:9px;background:rgba({{ tLineRGB }},.025)"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ tInk }};font-size:11.5px;font-weight:700">{{ run.title }}</span><span style="color:{{ run.statusColor }};font-size:10px">{{ run.status }}</span></div><div style="margin-top:4px;color:{{ tText4 }};font-size:10px">{{ run.kind }} · {{ run.date }}</div></div></sc-for></div>
+        </sc-if>
       </div>
     </aside>
   </sc-if>
@@ -1733,7 +1753,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowSkills }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Compétences</h3><p>Transforme tes workflows récurrents en templates réutilisables.</p></div><button class="hf-settings-secondary" onClick="{{ saveProjectTemplate }}">Sauvegarder le projet actif</button></div><div class="hf-settings-card"><sc-if value="{{ templatesEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune compétence sauvegardée pour le moment.</div></sc-if><sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ template.title }}</div><div style="margin-top:4px;font-size:11px">{{ template.kind }} · {{ template.remixes }} remixes</div></div><button class="hf-settings-secondary" onClick="{{ template.onRemix }}">Remixer</button></div></sc-for></div>
+              <div class="hf-settings-section-head"><div><h3>Compétences</h3><p>Transforme tes workflows récurrents en templates réutilisables. Le laboratoire évalue les résultats sans détourner AgentFlow.</p></div><div style="display:flex;gap:7px;align-items:center"><button class="hf-settings-secondary" onClick="{{ openEvalLab }}">Ouvrir le laboratoire</button><button class="hf-settings-secondary" onClick="{{ saveProjectTemplate }}">Sauvegarder le projet actif</button></div></div><div class="hf-settings-card"><sc-if value="{{ templatesEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune compétence sauvegardée pour le moment.</div></sc-if><sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ template.title }}</div><div style="margin-top:4px;font-size:11px">{{ template.kind }} · {{ template.remixes }} remixes</div></div><button class="hf-settings-secondary" onClick="{{ template.onRemix }}">Remixer</button></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
@@ -2531,6 +2551,12 @@ class Component extends DCLogic {
     artifactPreviewUrl: '',
     studioLoading: false,
     skillActivity: '',
+    evalRuns: [],
+    evalKind: 'blind_comparator',
+    evalInput: '',
+    evalOutputText: '',
+    evalLoading: false,
+    evalError: '',
     attachments: Array.isArray(this.initialUiState.attachments) ? this.initialUiState.attachments : [],
     uploadingAttachment: false,
     attachmentNotice: '',
@@ -3166,7 +3192,56 @@ class Component extends DCLogic {
       const artifacts = (data.artifacts || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
       const active = this.state.activeArtifact && artifacts.find(a=>a.id === this.state.activeArtifact.id) || artifacts[0] || null;
       this.setState({ artifactItems:artifacts, skillItems:Array.isArray(skillData.skills) ? skillData.skills : [], studioLoading:false }, ()=>{ if(active) this.setActiveArtifact(active); });
+      this.loadSkillEvaluations();
     }catch(err){ this.setState({ studioLoading:false }); }
+  }
+  evalKindLabel(kind){
+    return ({
+      blind_comparator:'Comparateur aveugle',
+      posthoc_analyzer:'Analyse post-hoc',
+      grader:'Grader des attentes',
+      benchmark_analyzer:'Analyseur de benchmark'
+    })[String(kind || '')] || 'Evaluation de skill';
+  }
+  evalInputTemplate(kind){
+    const templates = {
+      blind_comparator:{ eval_prompt:'Compare ces deux sorties pour la meme tache.', expectations:[], output_a:'', output_b:'' },
+      posthoc_analyzer:{ winner:'A', winner_skill:'', winner_transcript:'', loser_skill:'', loser_transcript:'', comparison_result:{ winner:'A', reasoning:'' } },
+      grader:{ expectations:['Le livrable respecte le format demande.'], transcript:'', outputs:[] },
+      benchmark_analyzer:{ skill_path:'', benchmark_data:{ runs:[], run_summary:{} } }
+    };
+    return JSON.stringify(templates[kind] || templates.blind_comparator, null, 2);
+  }
+  evalKindButtonStyle(active){
+    return 'padding:7px 8px;border:0;border-radius:8px;background:' + (active ? '#D1FE17' : 'rgba(255,255,255,.06)') + ';color:' + (active ? '#131517' : '#A8A8A8') + ';font-size:10.5px;font-weight:' + (active ? '800' : '700') + ';cursor:pointer;font-family:inherit';
+  }
+  async loadSkillEvaluations(){
+    if(!this.state.authToken) return;
+    try{
+      const res = await this.apiFetch('/api/skill-evals?limit=20');
+      if(!res.ok) return;
+      const data = await res.json();
+      this.setState({ evalRuns:Array.isArray(data.runs) ? data.runs : [] });
+    }catch(err){}
+  }
+  selectEvalKind(kind){
+    this.setState({ evalKind:kind, evalInput:this.evalInputTemplate(kind), evalOutputText:'', evalError:'', studioTab:'eval' });
+  }
+  onEvalInput(event){ this.setState({ evalInput:event && event.target ? event.target.value : '', evalError:'' }); }
+  async runSkillEvaluation(){
+    let input;
+    try{ input = JSON.parse(String(this.state.evalInput || '{}')); }
+    catch(err){ this.setState({ evalError:'Le JSON fourni est invalide.' }); return; }
+    this.setState({ evalLoading:true, evalError:'', evalOutputText:'' });
+    try{
+      const res = await this.apiFetch('/api/skill-evals', { method:'POST', body:JSON.stringify({ kind:this.state.evalKind, input, projectId:this.state.activeProjectId, agentModelId:this.state.modelId }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Evaluation indisponible.');
+      const run = data.run || {};
+      const outputText = JSON.stringify(run.output || {}, null, 2);
+      this.setState(s=>({ evalLoading:false, evalOutputText:outputText, evalRuns:[run].concat((s.evalRuns || []).filter(item=>item.id !== run.id)) }));
+      this.notify('Evaluation terminée et sauvegardée.');
+    }catch(err){ this.setState({ evalLoading:false, evalError:String(err && err.message || 'Evaluation indisponible pour le moment.') }); }
   }
   buildArtifactPreview(artifact){
     if(!artifact || !artifact.version || typeof Blob === 'undefined') return;
@@ -4823,6 +4898,7 @@ class Component extends DCLogic {
       studioIsMedia: st.studioTab === 'media',
       studioIsArtifact: st.studioTab === 'artifact',
       studioIsSkill: st.studioTab === 'skill',
+      studioIsEval: st.studioTab === 'eval',
       studioMediaItems,
       studioMediaEmpty: !studioMediaItems.length,
       studioMediaCount: studioMediaItems.length,
@@ -4837,9 +4913,32 @@ class Component extends DCLogic {
       studioMediaTab: ()=>this.setState({ studioTab:'media' }),
       studioArtifactTab: ()=>this.setState({ studioTab:'artifact' }),
       studioSkillTab: ()=>this.setState({ studioTab:'skill' }),
+      studioEvalTab: ()=>this.setState(s=>({ studioTab:'eval', evalInput:s.evalInput || this.evalInputTemplate(s.evalKind || 'blind_comparator') })),
       studioMediaTabStyle: st.studioTab === 'media' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
       studioArtifactTabStyle: st.studioTab === 'artifact' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
       studioSkillTabStyle: st.studioTab === 'skill' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
+      studioEvalTabStyle: st.studioTab === 'eval' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
+      selectEvalComparator: ()=>this.selectEvalKind('blind_comparator'),
+      selectEvalPosthoc: ()=>this.selectEvalKind('posthoc_analyzer'),
+      selectEvalGrader: ()=>this.selectEvalKind('grader'),
+      selectEvalBenchmark: ()=>this.selectEvalKind('benchmark_analyzer'),
+      evalComparatorStyle: this.evalKindButtonStyle(st.evalKind === 'blind_comparator'),
+      evalPosthocStyle: this.evalKindButtonStyle(st.evalKind === 'posthoc_analyzer'),
+      evalGraderStyle: this.evalKindButtonStyle(st.evalKind === 'grader'),
+      evalBenchmarkStyle: this.evalKindButtonStyle(st.evalKind === 'benchmark_analyzer'),
+      evalInput: st.evalInput || '',
+      evalOutputText: st.evalOutputText || '',
+      evalLoading: !!st.evalLoading,
+      evalError: st.evalError || '',
+      evalRunsEmpty: !(st.evalRuns || []).length,
+      evalRunCards: (st.evalRuns || []).map(run=>({
+        title:run.title || this.evalKindLabel(run.kind),
+        kind:this.evalKindLabel(run.kind),
+        status:run.status === 'completed' ? 'Terminé' : (run.status === 'failed' ? 'Échec' : 'En cours'),
+        statusColor:run.status === 'completed' ? '#D1FE17' : (run.status === 'failed' ? '#E58C72' : '#A8A8A8'),
+        date:run.created_at ? new Date(run.created_at).toLocaleDateString('fr-FR') : 'À l’instant'
+      })),
+      openEvalLab: ()=>this.setState(s=>({ studioPanelOpen:true, studioTab:'eval', evalInput:s.evalInput || this.evalInputTemplate(s.evalKind || 'blind_comparator'), page:'app' })),
       closeStudioPanel: ()=>this.closeStudioPanel(),
       publishActiveArtifact: ()=>this.publishActiveArtifact(),
       copyActiveArtifact: ()=>this.copyActiveArtifact(),
