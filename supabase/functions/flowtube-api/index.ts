@@ -24,21 +24,36 @@ const DEFAULT_MONEYFUSION_STATUS_URL = "https://www.pay.moneyfusion.net/paiement
 const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
 const DEFAULT_BILLING_CURRENCY = (Deno.env.get("MONEYFUSION_CURRENCY") || "XOF").toUpperCase();
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || "";
-const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true";
+const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true" || Boolean(OPENROUTER_API_KEY);
 const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_MEDIA_ENABLED") || "").toLowerCase() === "true";
-const OPENROUTER_AGENT_ENABLED = Boolean(OPENROUTER_API_KEY) && (Deno.env.get("OPENROUTER_AGENT_ENABLED") || "true").toLowerCase() !== "false";
+const OPENROUTER_AGENT_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_AGENT_ENABLED") || "true").toLowerCase() !== "false";
 const OPENROUTER_AGENT_FREE_UNTIL = Deno.env.get("OPENROUTER_AGENT_FREE_UNTIL") || "2026-07-21T23:59:59.999Z";
 const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
 
-function agentProviderAvailable() {
-  return Boolean(Deno.env.get("ANTHROPIC_API_KEY") || OPENROUTER_AGENT_ENABLED);
-}
-
 const AGENT_MODELS = [
-  { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended" },
-  { id: "tencent/hy3:free", name: "Tencent Hy3 (gratuit)", description: "Modele de raisonnement agentique gratuit jusqu'au 21 juillet 2026.", tier: "free", provider: "tencent", capabilities: ["tools", "reasoning"], freeUntil: OPENROUTER_AGENT_FREE_UNTIL },
+  { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended", provider: "auto", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "tencent/hy3:free", name: "Tencent Hy3 (gratuit)", description: "Modele gratuit temporaire pour les conversations rapides.", tier: "free", provider: "tencent", capabilities: ["tools", "reasoning"], freeUntil: OPENROUTER_AGENT_FREE_UNTIL },
+  { id: "tencent/hy3", name: "Tencent Hy3", description: "Raisonnement et execution agentique polyvalente.", tier: "standard", provider: "tencent", capabilities: ["tools", "reasoning"] },
+  { id: "poolside/laguna-xs-2.1:free", name: "Laguna XS 2.1 (gratuit)", description: "Agent code compact avec outils et raisonnement.", tier: "free", provider: "poolside", capabilities: ["tools", "reasoning"], freeUntil: "" },
+  { id: "poolside/laguna-xs-2.1", name: "Laguna XS 2.1", description: "Agent logiciel rapide et economique.", tier: "economy", provider: "poolside", capabilities: ["tools", "reasoning"] },
+  { id: "aion-labs/aion-3.0", name: "Aion-3.0", description: "Direction narrative et ideation creative.", tier: "standard", provider: "aion-labs", capabilities: ["reasoning"] },
+  { id: "aion-labs/aion-3.0-mini", name: "Aion-3.0-Mini", description: "Version legere pour idees et variantes rapides.", tier: "economy", provider: "aion-labs", capabilities: ["reasoning"] },
+  { id: "openai/gpt-5.5", name: "GPT-5.5", description: "Raisonnement avance, planification et taches agentiques.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.5-pro", name: "GPT-5.5 Pro", description: "Raisonnement profond pour les workflows critiques.", tier: "max", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.6-luna-pro", name: "GPT-5.6 Luna Pro", description: "Raisonnement pro rapide et precis.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.6-luna", name: "GPT-5.6 Luna", description: "GPT rapide pour le volume et les iterations.", tier: "economy", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.6-terra-pro", name: "GPT-5.6 Terra Pro", description: "Equilibre premium entre profondeur et vitesse.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.6-terra", name: "GPT-5.6 Terra", description: "Modele polyvalent pour les workflows quotidiens.", tier: "standard", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.6-sol-pro", name: "GPT-5.6 Sol Pro", description: "Qualite maximale pour les briefs complexes.", tier: "max", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/gpt-5.6-sol", name: "GPT-5.6 Sol", description: "Raisonnement frontier pour les plans longs.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "openai/o3", name: "o3", description: "Raisonnement methodique et resolution de problemes.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning"] },
+  { id: "openai/o4-mini", name: "o4-mini", description: "Raisonnement rapide et economique.", tier: "standard", provider: "openai", capabilities: ["tools", "reasoning"] },
+  { id: "openai/o3-deep-research", name: "o3 Deep Research", description: "Recherche approfondie multi-etapes.", tier: "max", provider: "openai", capabilities: ["tools", "reasoning", "research"] },
+  { id: "openai/o4-mini-deep-research", name: "o4-mini Deep Research", description: "Recherche approfondie a cout maitrise.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning", "research"] },
+  { id: "x-ai/grok-4.5", name: "Grok 4.5", description: "Connaissance, code et ideation avec outils.", tier: "premium", provider: "x-ai", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "x-ai/grok-latest", name: "Grok Latest", description: "Alias dynamique du dernier modele Grok.", tier: "premium", provider: "x-ai", capabilities: ["tools", "vision", "reasoning"] },
   { id: "claude-fable-5", name: "Fable 5", description: "Creation ambitieuse, strategie et production complexe.", tier: "max" },
   { id: "claude-mythos-5", name: "Mythos 5", description: "Raisonnement profond avec repli automatique si indisponible.", tier: "max" },
   { id: "claude-opus-4-8", name: "Opus 4.8", description: "Agent premium pour les briefs longs et exigeants.", tier: "pro" },
@@ -59,8 +74,26 @@ const AGENT_MODEL_FALLBACKS = [
 ];
 
 const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margin: "eco" | "standard" | "premium" | "max" }> = {
-  "tencent/hy3:free": { credits: 0, label: "Gratuit jusqu'au 21/07/2026", margin: "eco" },
+  "tencent/hy3:free": { credits: 1, label: "Gratuit", margin: "eco" },
   "tencent/hy3": { credits: 5, label: "5 cr", margin: "standard" },
+  "poolside/laguna-xs-2.1:free": { credits: 1, label: "Gratuit", margin: "eco" },
+  "poolside/laguna-xs-2.1": { credits: 2, label: "2 cr", margin: "eco" },
+  "aion-labs/aion-3.0": { credits: 8, label: "8 cr", margin: "premium" },
+  "aion-labs/aion-3.0-mini": { credits: 3, label: "3 cr", margin: "standard" },
+  "openai/gpt-5.5": { credits: 35, label: "35 cr", margin: "premium" },
+  "openai/gpt-5.5-pro": { credits: 180, label: "180 cr", margin: "max" },
+  "openai/gpt-5.6-luna-pro": { credits: 8, label: "8 cr", margin: "premium" },
+  "openai/gpt-5.6-luna": { credits: 4, label: "4 cr", margin: "standard" },
+  "openai/gpt-5.6-terra-pro": { credits: 20, label: "20 cr", margin: "premium" },
+  "openai/gpt-5.6-terra": { credits: 10, label: "10 cr", margin: "standard" },
+  "openai/gpt-5.6-sol-pro": { credits: 40, label: "40 cr", margin: "max" },
+  "openai/gpt-5.6-sol": { credits: 35, label: "35 cr", margin: "premium" },
+  "openai/o3": { credits: 30, label: "30 cr", margin: "premium" },
+  "openai/o4-mini": { credits: 12, label: "12 cr", margin: "standard" },
+  "openai/o3-deep-research": { credits: 100, label: "100 cr", margin: "max" },
+  "openai/o4-mini-deep-research": { credits: 60, label: "60 cr", margin: "premium" },
+  "x-ai/grok-4.5": { credits: 20, label: "20 cr", margin: "premium" },
+  "x-ai/grok-latest": { credits: 20, label: "20 cr", margin: "premium" },
   "claude-haiku-4-5-20251001": { credits: 1, label: "1 cr", margin: "eco" },
   "claude-sonnet-4-6": { credits: 3, label: "3 cr", margin: "standard" },
   "claude-sonnet-5": { credits: 4, label: "4 cr", margin: "standard" },
@@ -74,6 +107,24 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
 const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
   "tencent/hy3:free": { input: 0, output: 0 },
   "tencent/hy3": { input: 1, output: 4 },
+  "poolside/laguna-xs-2.1:free": { input: 0, output: 0 },
+  "poolside/laguna-xs-2.1": { input: 0.06, output: 0.12 },
+  "aion-labs/aion-3.0": { input: 3, output: 6 },
+  "aion-labs/aion-3.0-mini": { input: 0.5, output: 1.5 },
+  "openai/gpt-5.5": { input: 5, output: 30 },
+  "openai/gpt-5.5-pro": { input: 30, output: 180 },
+  "openai/gpt-5.6-luna-pro": { input: 1, output: 6 },
+  "openai/gpt-5.6-luna": { input: 1, output: 6 },
+  "openai/gpt-5.6-terra-pro": { input: 2.5, output: 15 },
+  "openai/gpt-5.6-terra": { input: 2.5, output: 15 },
+  "openai/gpt-5.6-sol-pro": { input: 5, output: 30 },
+  "openai/gpt-5.6-sol": { input: 5, output: 30 },
+  "openai/o3": { input: 10, output: 40 },
+  "openai/o4-mini": { input: 1.1, output: 4.4 },
+  "openai/o3-deep-research": { input: 10, output: 40 },
+  "openai/o4-mini-deep-research": { input: 10, output: 40 },
+  "x-ai/grok-4.5": { input: 2, output: 6 },
+  "x-ai/grok-latest": { input: 2, output: 6 },
   "claude-haiku-4-5-20251001": { input: 1, output: 5 },
   "claude-sonnet-4-6": { input: 3, output: 15 },
   "claude-sonnet-5": { input: 2, output: 10 },
@@ -86,23 +137,68 @@ const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
 
 type AgentUsage = { inputTokens?: number; outputTokens?: number };
 
-function isHy3FreeActive(modelId: string) {
-  return modelId === "tencent/hy3:free" && Date.now() <= Date.parse(OPENROUTER_AGENT_FREE_UNTIL);
-}
+const OPENROUTER_LIVE_PRICES: Record<string, { input: number; output: number }> = {};
+const OPENROUTER_PRICE_REFRESHED_AT: Record<string, number> = {};
+const OPENROUTER_AGENT_IDS = new Set(AGENT_MODELS.filter((model) => {
+  const provider = (model as { provider?: string }).provider;
+  return provider === "openrouter" || ["tencent", "poolside", "aion-labs", "openai", "x-ai"].includes(String(provider));
+}).map((model) => model.id));
+const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output: number }> = {
+  "openai/gpt-5.5-pro": { input: 30, output: 180 },
+  "openai/o3-deep-research": { input: 10, output: 40 },
+  "openai/o4-mini-deep-research": { input: 10, output: 40 },
+};
 
 function isOpenRouterAgentModel(modelId: string) {
-  return modelId === "tencent/hy3:free" || modelId === "tencent/hy3";
+  return OPENROUTER_AGENT_IDS.has(modelId) || modelId.startsWith("openai/") || modelId.startsWith("x-ai/") || modelId.startsWith("tencent/") || modelId.startsWith("poolside/") || modelId.startsWith("aion-labs/");
+}
+
+function isTemporaryFreeAgentModel(modelId: string) {
+  return modelId === "tencent/hy3:free" && Date.now() <= Date.parse(OPENROUTER_AGENT_FREE_UNTIL);
 }
 
 function agentTokenPriceForModel(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
-  if (isHy3FreeActive(resolved)) return { input: 0, output: 0 };
+  if (isTemporaryFreeAgentModel(resolved)) return { input: 0, output: 0 };
+  if (OPENROUTER_LIVE_PRICES[resolved]) return OPENROUTER_LIVE_PRICES[resolved];
+  if (OPENROUTER_STATIC_FALLBACK_PRICES[resolved]) return OPENROUTER_STATIC_FALLBACK_PRICES[resolved];
+  if (isOpenRouterAgentModel(resolved)) return { input: 10, output: 40 };
   return AGENT_TOKEN_PRICES[resolved] || AGENT_TOKEN_PRICES[DEFAULT_MODEL] || AGENT_TOKEN_PRICES["claude-sonnet-4-6"];
 }
 
+async function refreshOpenRouterPrice(modelId: string) {
+  const resolved = resolveAgentModelId(modelId);
+  if (!isOpenRouterAgentModel(resolved) || isTemporaryFreeAgentModel(resolved)) return agentTokenPriceForModel(resolved);
+  const refreshedAt = OPENROUTER_PRICE_REFRESHED_AT[resolved] || 0;
+  if (OPENROUTER_LIVE_PRICES[resolved] && Date.now() - refreshedAt < 10 * 60 * 1000) return OPENROUTER_LIVE_PRICES[resolved];
+  if (!OPENROUTER_API_KEY) return agentTokenPriceForModel(resolved);
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/models", {
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": APP_BASE_URL,
+        "X-Title": APP_NAME,
+      },
+    });
+    if (response.ok) {
+      const body = await response.json() as { data?: Array<{ id?: string; pricing?: { prompt?: string | number; completion?: string | number } }> };
+      const found = body.data?.find((item) => item.id === resolved);
+      const input = Number(found?.pricing?.prompt);
+      const output = Number(found?.pricing?.completion);
+      if (Number.isFinite(input) && Number.isFinite(output)) {
+        OPENROUTER_LIVE_PRICES[resolved] = { input: input * 1_000_000, output: output * 1_000_000 };
+        OPENROUTER_PRICE_REFRESHED_AT[resolved] = Date.now();
+      }
+    }
+  } catch (_error) {
+    // Le fallback conservateur protege la marge si le catalogue est indisponible.
+  }
+  return agentTokenPriceForModel(resolved);
+}
+
 function agentCreditsForUsage(modelId: string, usage: AgentUsage, multiplier = 1) {
-  if (isHy3FreeActive(resolveAgentModelId(modelId))) {
-    return { credits: 0, providerCostUsd: 0, inputTokens: Number(usage.inputTokens || 0), outputTokens: Number(usage.outputTokens || 0) };
+  if (isTemporaryFreeAgentModel(resolveAgentModelId(modelId))) {
+    return { credits: 0, providerCostUsd: 0, inputTokens: Math.max(0, Number(usage.inputTokens || 0)), outputTokens: Math.max(0, Number(usage.outputTokens || 0)) };
   }
   const inputTokens = Math.max(0, Number(usage.inputTokens || 0));
   const outputTokens = Math.max(0, Number(usage.outputTokens || 0));
@@ -140,14 +236,14 @@ function agentMarginMultiplierForModel(modelId: string) {
 function publicAgentModels() {
   return AGENT_MODELS.map((model) => ({
     ...model,
-    provider: (model as { provider?: string }).provider || (isOpenRouterAgentModel(model.id) ? "tencent" : "anthropic"),
+    provider: (model as { provider?: string }).provider || (isOpenRouterAgentModel(model.id) ? model.id.split("/")[0] : "anthropic"),
     inputUsdPerMillionTokens: agentTokenPriceForModel(model.id).input,
     outputUsdPerMillionTokens: agentTokenPriceForModel(model.id).output,
     creditsPerMessage: agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
-    creditsLabel: model.id === "auto" ? "Selon les tokens" : (isHy3FreeActive(model.id) ? "Gratuit" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`),
+    creditsLabel: model.id === "auto" ? "Selon les tokens" : (isTemporaryFreeAgentModel(model.id) ? "Gratuit" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`),
     billingMode: "token_based",
     costClass: agentCreditRateForModel(model.id).margin,
-    free: isHy3FreeActive(model.id),
+    free: isTemporaryFreeAgentModel(model.id) || model.id.endsWith(":free"),
     freeUntil: (model as { freeUntil?: string }).freeUntil || null,
     capabilities: (model as { capabilities?: string[] }).capabilities || [],
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
@@ -168,9 +264,8 @@ function uniqueStrings(values: string[]) {
 function resolveAgentModelId(value: unknown) {
   const raw = String(value || "").trim();
   if (!raw || raw === "auto" || raw === "huggy-auto") return DEFAULT_MODEL;
-  if (raw === "tencent/hy3:free") return isHy3FreeActive(raw) ? raw : "tencent/hy3";
-  if (OPENROUTER_AGENT_ENABLED && raw === "tencent/hy3") return raw;
   if (/^claude-[a-z0-9][a-z0-9._-]*$/i.test(raw)) return raw;
+  if (OPENROUTER_AGENT_ENABLED && OPENROUTER_AGENT_IDS.has(raw)) return raw;
   return DEFAULT_MODEL;
 }
 
@@ -201,7 +296,7 @@ type AgentBillingContext = {
 };
 
 function agentCreditsForTurn(modelId: string, multiplier = 1) {
-  if (isHy3FreeActive(resolveAgentModelId(modelId))) return 0;
+  if (isTemporaryFreeAgentModel(resolveAgentModelId(modelId))) return 0;
   return Math.max(1, Math.ceil(agentCreditRateForModel(modelId).credits * Math.max(1, multiplier)));
 }
 
@@ -303,94 +398,191 @@ function agentBilling(ctx: Omit<AgentBillingContext, "reason">, reason: string, 
   return { ...ctx, reason, multiplier };
 }
 
-function openRouterRequest(payload: Record<string, unknown>, model: string) {
-  const messages = (Array.isArray(payload.messages) ? payload.messages : []).map((item) => {
-    const message = item as Record<string, unknown>;
-    const content = Array.isArray(message.content)
-      ? message.content.map((part) => {
-        const block = part as Record<string, unknown>;
-        if (block.type === "text") return { type: "text", text: String(block.text || "") };
-        if (block.type === "image" && block.source && typeof block.source === "object") {
-          const source = block.source as Record<string, unknown>;
-          if (source.type === "url") return { type: "image_url", image_url: { url: String(source.url || "") } };
-          if (source.type === "base64") return { type: "image_url", image_url: { url: `data:${String(source.media_type || "image/png")};base64,${String(source.data || "")}` } };
-        }
-        return { type: "text", text: String(block.text || "") };
-      })
-      : String(message.content || "");
-    return {
-      role: String(message.role || "user"),
-      content,
-      ...(message.tool_call_id ? { tool_call_id: String(message.tool_call_id) } : {}),
-      ...(message.tool_calls ? { tool_calls: message.tool_calls } : {}),
-    };
-  });
-  if (payload.system) messages.unshift({ role: "system", content: String(payload.system) });
-  const tools = Array.isArray(payload.tools) ? payload.tools.map((tool) => {
-    const item = tool as Record<string, unknown>;
-    return { type: "function", function: { name: String(item.name || "tool"), description: String(item.description || ""), parameters: item.input_schema || { type: "object", properties: {} } } };
-  }) : undefined;
-  return { model, messages, max_tokens: Number(payload.max_tokens || 1200), stream: Boolean(payload.stream), ...(tools?.length ? { tools, tool_choice: "auto" } : {}) };
+function openRouterContent(content: unknown) {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return String(content || "");
+  return content.map((part) => {
+    if (!part || typeof part !== "object") return part;
+    const item = part as Record<string, unknown>;
+    if (item.type === "text") return { type: "text", text: String(item.text || "") };
+    if (item.type === "image" && item.source && typeof item.source === "object") {
+      const source = item.source as Record<string, unknown>;
+      if (source.type === "url" && source.url) return { type: "image_url", image_url: { url: String(source.url) } };
+      if (source.type === "base64" && source.data) return { type: "image_url", image_url: { url: `data:${String(source.media_type || "image/png")};base64,${String(source.data)}` } };
+    }
+    return { type: "text", text: String(item.text || "") };
+  }).filter(Boolean);
 }
 
-function openRouterStreamToAnthropic(raw: string, model: string) {
+function openRouterTools(tools: unknown) {
+  if (!Array.isArray(tools)) return undefined;
+  return tools.map((tool) => {
+    const item = tool as Record<string, unknown>;
+    return {
+      type: "function",
+      function: {
+        name: String(item.name || "tool"),
+        description: String(item.description || ""),
+        parameters: item.input_schema || item.parameters || { type: "object", properties: {} },
+      },
+    };
+  });
+}
+
+function openRouterPayload(payload: Record<string, unknown>, modelId: string) {
+  const sourceMessages = Array.isArray(payload.messages) ? payload.messages : [];
+  const messages = sourceMessages.map((message) => {
+    const item = message as Record<string, unknown>;
+    return {
+      role: String(item.role || "user"),
+      content: openRouterContent(item.content),
+      ...(item.name ? { name: String(item.name) } : {}),
+      ...(item.tool_call_id ? { tool_call_id: String(item.tool_call_id) } : {}),
+      ...(item.tool_calls ? { tool_calls: item.tool_calls } : {}),
+    };
+  });
+  if (payload.system) messages.unshift({ role: "system", content: openRouterContent(payload.system) });
+  const request: Record<string, unknown> = {
+    model: modelId,
+    messages,
+    max_tokens: Number(payload.max_tokens || 1200),
+    stream: Boolean(payload.stream),
+  };
+  for (const key of ["temperature", "top_p", "presence_penalty", "frequency_penalty", "seed"]) {
+    if (payload[key] !== undefined) request[key] = payload[key];
+  }
+  const tools = openRouterTools(payload.tools);
+  if (tools?.length) request.tools = tools;
+  if (payload.tool_choice !== undefined) request.tool_choice = payload.tool_choice;
+  if (request.stream) request.stream_options = { include_usage: true };
+  return request;
+}
+
+function openRouterUsage(value: unknown): AgentUsage {
+  const usage = (value || {}) as Record<string, unknown>;
+  return {
+    inputTokens: Number(usage.prompt_tokens || usage.input_tokens || 0),
+    outputTokens: Number(usage.completion_tokens || usage.output_tokens || 0),
+  };
+}
+
+function openRouterAnthropicResponse(body: Record<string, unknown>) {
+  const choice = ((body.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
+  const message = (choice?.message || {}) as Record<string, unknown>;
+  const content: Array<Record<string, unknown>> = [];
+  if (typeof message.content === "string" && message.content) content.push({ type: "text", text: message.content });
+  const toolCalls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
+  for (const call of toolCalls) {
+    const item = call as Record<string, unknown>;
+    const fn = (item.function || {}) as Record<string, unknown>;
+    let input: unknown = {};
+    try { input = JSON.parse(String(fn.arguments || "{}")); } catch (_error) { input = { raw: String(fn.arguments || "") }; }
+    content.push({ type: "tool_use", id: String(item.id || crypto.randomUUID()), name: String(fn.name || "tool"), input });
+  }
+  const finishReason = String(choice?.finish_reason || "stop");
+  return {
+    id: String(body.id || crypto.randomUUID()),
+    type: "message",
+    role: "assistant",
+    model: String(body.model || ""),
+    content,
+    stop_reason: finishReason === "tool_calls" ? "tool_use" : "end_turn",
+    stop_sequence: null,
+    usage: openRouterUsage(body.usage),
+  };
+}
+
+function openRouterStreamResponse(raw: string, modelId: string) {
   const textParts: string[] = [];
-  let inputTokens = 0;
-  let outputTokens = 0;
+  const toolCalls = new Map<number, { id: string; name: string; args: string }>();
+  let usage: AgentUsage = {};
   for (const block of raw.split(/\r?\n\r?\n/)) {
-    const line = block.split(/\r?\n/).find((entry) => entry.startsWith("data:"));
-    if (!line) continue;
-    const value = line.slice(5).trim();
+    const dataLine = block.split(/\r?\n/).find((line) => line.startsWith("data:"));
+    if (!dataLine) continue;
+    const value = dataLine.slice(5).trim();
     if (!value || value === "[DONE]") continue;
     try {
       const event = JSON.parse(value) as Record<string, unknown>;
-      const usage = (event.usage || {}) as Record<string, unknown>;
-      inputTokens = Number(usage.prompt_tokens || inputTokens);
-      outputTokens = Number(usage.completion_tokens || outputTokens);
+      if (event.usage) usage = openRouterUsage(event.usage);
       const choice = ((event.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
       const delta = (choice?.delta || {}) as Record<string, unknown>;
       if (typeof delta.content === "string" && delta.content) textParts.push(delta.content);
-    } catch (_error) { /* fragment provider */ }
+      const deltas = Array.isArray(delta.tool_calls) ? delta.tool_calls : [];
+      for (const rawCall of deltas) {
+        const call = rawCall as Record<string, unknown>;
+        const index = Number(call.index || 0);
+        const current = toolCalls.get(index) || { id: String(call.id || crypto.randomUUID()), name: "", args: "" };
+        const fn = (call.function || {}) as Record<string, unknown>;
+        current.name += String(fn.name || "");
+        current.args += String(fn.arguments || "");
+        if (call.id) current.id = String(call.id);
+        toolCalls.set(index, current);
+      }
+    } catch (_error) { /* fragment provider ignore */ }
   }
-  const events = [
-    `event: content_block_start\ndata: ${JSON.stringify({ type: "content_block_start", index: 0, content_block: { type: "text", text: "" } })}\n\n`,
-    ...textParts.map((text) => `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text } })}\n\n`),
-    `event: content_block_stop\ndata: ${JSON.stringify({ type: "content_block_stop", index: 0 })}\n\n`,
-    `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { input_tokens: inputTokens, output_tokens: outputTokens } })}\n\n`,
-    `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop", model })}\n\n`,
+  const encoder = new TextEncoder();
+  const chunks: string[] = [
+    `event: message_start\ndata: ${JSON.stringify({ type: "message_start", message: { id: crypto.randomUUID(), type: "message", role: "assistant", content: [], model: modelId } })}\n\n`,
   ];
-  return { raw: events.join(""), usage: { inputTokens, outputTokens } };
+  let blockIndex = 0;
+  if (textParts.length) {
+    chunks.push(`event: content_block_start\ndata: ${JSON.stringify({ type: "content_block_start", index: blockIndex, content_block: { type: "text", text: "" } })}\n\n`);
+    for (const text of textParts) chunks.push(`event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: blockIndex, delta: { type: "text_delta", text } })}\n\n`);
+    chunks.push(`event: content_block_stop\ndata: ${JSON.stringify({ type: "content_block_stop", index: blockIndex })}\n\n`);
+    blockIndex += 1;
+  }
+  for (const call of toolCalls.values()) {
+    chunks.push(`event: content_block_start\ndata: ${JSON.stringify({ type: "content_block_start", index: blockIndex, content_block: { type: "tool_use", id: call.id, name: call.name, input: {} } })}\n\n`);
+    if (call.args) chunks.push(`event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: blockIndex, delta: { type: "input_json_delta", partial_json: call.args } })}\n\n`);
+    chunks.push(`event: content_block_stop\ndata: ${JSON.stringify({ type: "content_block_stop", index: blockIndex })}\n\n`);
+    blockIndex += 1;
+  }
+  chunks.push(`event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: toolCalls.size ? "tool_use" : "end_turn" }, usage })}\n\n`);
+  chunks.push(`event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`);
+  return { response: new Response(chunks.join(""), { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8" } }), usage };
+}
+
+function anthropicStreamUsage(raw: string): AgentUsage {
+  let usage: AgentUsage = {};
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.startsWith("data:")) continue;
+    try {
+      const event = JSON.parse(line.slice(5).trim()) as Record<string, unknown>;
+      if (event.usage) usage = openRouterUsage(event.usage);
+      if (event.message && typeof event.message === "object") {
+        const message = event.message as Record<string, unknown>;
+        if (message.usage) usage = openRouterUsage(message.usage);
+      }
+    } catch (_error) { /* frame partial ou ping */ }
+  }
+  return usage;
 }
 
 async function openRouterMessages(payload: Record<string, unknown>, preferredModel: string, billing?: AgentBillingContext) {
   const model = resolveAgentModelId(preferredModel);
-  if (!OPENROUTER_AGENT_ENABLED) throw new FlowtubeError(503, "Le modele AgentFlow est indisponible pour le moment.", { code: "OPENROUTER_NOT_CONFIGURED", modelId: model });
+  if (!OPENROUTER_AGENT_ENABLED || !OPENROUTER_API_KEY) {
+    throw new FlowtubeError(503, "Ce modele AgentFlow est momentanement indisponible.", { code: "OPENROUTER_NOT_CONFIGURED", modelId: model });
+  }
+  await refreshOpenRouterPrice(model);
+  await ensureAgentCreditsAvailable(billing, model, estimatedAgentCreditsForPayload(model, payload, billing?.multiplier));
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { Authorization: `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": APP_BASE_URL, "X-Title": APP_NAME },
-    body: JSON.stringify(openRouterRequest(payload, model)),
+    headers: {
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": APP_BASE_URL,
+      "X-Title": APP_NAME,
+    },
+    body: JSON.stringify(openRouterPayload(payload, model)),
   });
   const raw = await response.text();
-  if (!response.ok) throw new FlowtubeError(response.status === 429 ? 429 : 502, "Le modele AgentFlow est indisponible pour le moment.", { code: "OPENROUTER_ERROR", modelId: model });
+  if (!response.ok) throw new FlowtubeError(response.status === 429 ? 429 : 502, "Le modele selectionne n'est pas disponible pour le moment.", { code: "OPENROUTER_ERROR", modelId: model });
   if (Boolean(payload.stream)) {
-    const stream = openRouterStreamToAnthropic(raw, model);
-    await chargeAgentCredits(billing, model, stream.usage);
-    return { response: new Response(stream.raw, { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8" } }), model };
+    const streamed = openRouterStreamResponse(raw, model);
+    await chargeAgentCredits(billing, model, streamed.usage);
+    return { response: streamed.response, model };
   }
-  const data = JSON.parse(raw) as Record<string, unknown>;
-  const choice = ((data.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
-  const message = (choice?.message || {}) as Record<string, unknown>;
-  const usage = (data.usage || {}) as Record<string, unknown>;
-  const content: Array<Record<string, unknown>> = [];
-  if (message.content) content.push({ type: "text", text: String(message.content) });
-  for (const rawToolCall of (Array.isArray(message.tool_calls) ? message.tool_calls : [])) {
-    const toolCall = rawToolCall as Record<string, unknown>;
-    const fn = (toolCall.function || {}) as Record<string, unknown>;
-    let input: unknown = {};
-    try { input = JSON.parse(String(fn.arguments || "{}")); } catch (_error) { input = { raw: String(fn.arguments || "") }; }
-    content.push({ type: "tool_use", id: String(toolCall.id || crypto.randomUUID()), name: String(fn.name || "tool"), input });
-  }
-  const normalized = { id: data.id, type: "message", role: "assistant", content, stop_reason: message.tool_calls ? "tool_use" : "end_turn", usage: { input_tokens: Number(usage.prompt_tokens || 0), output_tokens: Number(usage.completion_tokens || 0) } };
+  const normalized = openRouterAnthropicResponse(JSON.parse(raw) as Record<string, unknown>);
   await chargeAgentCredits(billing, model, normalized.usage);
   return { response: new Response(JSON.stringify(normalized), { status: 200, headers: { "Content-Type": "application/json" } }), model };
 }
@@ -417,19 +609,23 @@ async function anthropicMessages(payload: Record<string, unknown>, preferredMode
     if (response.ok) {
       const raw = await response.text();
       let usage: AgentUsage | undefined;
-      try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        const rawUsage = (parsed.usage || {}) as Record<string, unknown>;
-        usage = {
-          inputTokens: Number(rawUsage.input_tokens || 0),
-          outputTokens: Number(rawUsage.output_tokens || 0),
-        };
-      } catch (_err) {
-        usage = undefined;
+      if (Boolean(payload.stream)) {
+        usage = anthropicStreamUsage(raw);
+      } else {
+        try {
+          const parsed = JSON.parse(raw) as Record<string, unknown>;
+          const rawUsage = (parsed.usage || {}) as Record<string, unknown>;
+          usage = {
+            inputTokens: Number(rawUsage.input_tokens || 0),
+            outputTokens: Number(rawUsage.output_tokens || 0),
+          };
+        } catch (_err) {
+          usage = undefined;
+        }
       }
       await chargeAgentCredits(billing, model, usage);
       return {
-        response: new Response(raw, { status: response.status, headers: response.headers }),
+        response: new Response(raw, { status: response.status, headers: Boolean(payload.stream) ? { "Content-Type": "text/event-stream; charset=utf-8" } : response.headers }),
         model,
       };
     }
@@ -1564,7 +1760,7 @@ function publicPricingModels(catalog: PricingModel[]) {
       id: `agentflow:${model.id}`,
       name: `AgentFlow · ${model.name}`,
       type: "document",
-      provider: "anthropic",
+      provider: model.provider,
       pricingUnit: "1M tokens",
       defaultUnits: 1,
       minimumUnits: 1,
@@ -1580,6 +1776,11 @@ function publicPricingModels(catalog: PricingModel[]) {
       retailCreditUsd: RETAIL_CREDIT_USD,
       qualityTier: String(model.tier || "standard"),
       marginClass: String(model.costClass || "standard"),
+      free: Boolean(model.free),
+      freeUntil: model.freeUntil || null,
+      capabilities: model.capabilities || [],
+      inputUsdPerMillionTokens: price.input,
+      outputUsdPerMillionTokens: price.output,
       costLabel: `${price.input} USD / MTok entree · ${price.output} USD / MTok sortie`,
     };
   });
@@ -2226,7 +2427,7 @@ async function bootstrap(req: Request) {
       providers: {
         mediaPrivatePipeline: Boolean(Deno.env.get("FAL_KEY")),
         openRouterPrepared: true,
-        openRouterEnabled: OPENROUTER_ENABLED || OPENROUTER_AGENT_ENABLED,
+        openRouterEnabled: OPENROUTER_ENABLED,
         openRouterMediaEnabled: OPENROUTER_MEDIA_ENABLED && Boolean(Deno.env.get("OPENROUTER_API_KEY")),
       },
     },
@@ -2258,7 +2459,7 @@ async function bootstrap(req: Request) {
     },
     production: {
       auth: true,
-      agentFlow: agentProviderAvailable(),
+      agentFlow: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
       aiModel: DEFAULT_MODEL,
       aiModels: publicAgentModels(),
       billing: true,
@@ -3019,7 +3220,7 @@ function autoLearnSkillCandidate(prompt: string, attachments: ReturnType<typeof 
 // ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
 async function anthropicVision(imageUrl: string, question: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey && !OPENROUTER_AGENT_ENABLED) return "";
+  if (!apiKey) return "";
   const { response } = await anthropicMessages({
     max_tokens: 900,
     messages: [{
@@ -3211,7 +3412,7 @@ async function runWebResearch(url: string, userPrompt: string, preferredModel?: 
     return `La page ${url} n'expose pas de texte lisible (souvent une SPA/JS). Donne-moi une URL avec du contenu HTML ou colle le texte.`;
   }
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey && !OPENROUTER_AGENT_ENABLED) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
+  if (!apiKey) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
   try {
     const { response } = await anthropicMessages({
       max_tokens: 1000,
@@ -3243,7 +3444,7 @@ async function runMarketResearch(query: string, userPrompt: string, preferredMod
     ].join("\n");
   }
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey && !OPENROUTER_AGENT_ENABLED) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
+  if (!apiKey) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
   try {
     const { response } = await anthropicMessages({
       max_tokens: 1100,
@@ -3319,7 +3520,7 @@ async function anthropicReply(
 ) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   const emit = (text: string) => { if (onDelta && text) onDelta(text); };
-  if (!apiKey && !OPENROUTER_AGENT_ENABLED) {
+  if (!apiKey) {
     const text = fallbackReply(prompt, type, credits);
     emit(text);
     return text;
@@ -3693,7 +3894,7 @@ async function runAgentLoop(
   context: ReplyContext,
 ): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey && !OPENROUTER_AGENT_ENABLED) {
+  if (!apiKey) {
     const text = fallbackReply(prompt, "image", 0);
     ctx.send("text", { delta: text });
     return text;
