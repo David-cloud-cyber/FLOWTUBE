@@ -333,17 +333,12 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div style="position:relative">
-                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.11);color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s,color .15s,border-color .15s" style-hover="background:rgba({{ tLineRGB }},.08);border-color:rgba({{ tLineRGB }},.22);color:{{ tInk }}">
+                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:9px;background:transparent;border:none;color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s,color .15s" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
                     <span style="width:6px;height:6px;border-radius:50%;background:{{ curModelDot }}"></span>{{ curModelName }}
                     <svg width="11" height="11" style="opacity:.55" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
-                    <div style="position:absolute;z-index:40;top:42px;left:0;width:350px;max-width:min(350px,calc(100vw - 28px));max-height:430px;overflow:hidden;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.14);border-radius:16px;padding:7px;box-shadow:0 22px 54px -22px rgba(0,0,0,.72);animation:fadeUp .16s both">
-                      <div style="display:flex;align-items:center;gap:8px;height:40px;padding:0 11px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText3 }};margin-bottom:6px">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Modèles de recherche..." aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
-                      </div>
-                      <div style="max-height:365px;overflow-y:auto;padding-right:1px">
+                    <div style="position:absolute;z-index:40;top:42px;left:0;width:288px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:14px;padding:6px;box-shadow:0 18px 44px -20px rgba(12,11,9,.4);animation:fadeUp .16s both">
                       <sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3">
                         <div style="{{ g.headStyle }}">{{ g.label }}</div>
                         <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
@@ -351,13 +346,10 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                             <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ it.dot }}"></span>
                             <span style="flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span>
                             <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ tText4 }};white-space:nowrap">{{ it.creditsLabel }}</span>
-                            <span style="font-size:10px;color:{{ tText4 }};white-space:nowrap">{{ it.capabilityLabel }}</span>
                             <span style="width:14px;display:flex;justify-content:center;color:{{ tInk }};font-size:11.5px">{{ it.check }}</span>
                           </div>
                         </sc-for>
                       </sc-for>
-                      <sc-if value="{{ modelMenuEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:9px 11px 5px;font-size:10px;color:{{ tText4 }}">Aucun modele trouve.</div></sc-if>
-                      </div>
                     </div>
                   </sc-if>
                 </div>
@@ -2405,8 +2397,7 @@ class Component extends DCLogic {
     input: this.initialUiState.input || '',
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
-    modelMenuSearch: '',
-    modelId: this.initialUiState.modelId || 'tencent/hy3:free',
+    modelId: this.initialUiState.modelId || 'auto',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
     suggestionSet: 0,
@@ -2468,26 +2459,6 @@ class Component extends DCLogic {
   };
 
   MODELS = [
-    { id:'tencent/hy3:free', name:'Tencent Hy3 gratuit', group:'Tencent', provider:'tencent', desc:'Modele agent gratuit jusqu\'au 21 juillet 2026', creditsLabel:'Gratuit', free:true, freeUntil:'2026-07-21T23:59:59.999Z', dot:'#18DCFF', capabilities:['tools','reasoning'] },
-    { id:'tencent/hy3', name:'Tencent Hy3', group:'Tencent', provider:'tencent', desc:'Raisonnement et execution agentique polyvalente', creditsLabel:'5 cr', dot:'#18DCFF', capabilities:['tools','reasoning'] },
-    { id:'poolside/laguna-xs-2.1:free', name:'Laguna XS 2.1 gratuit', group:'Poolside', provider:'poolside', desc:'Agent code compact avec outils et raisonnement', creditsLabel:'Gratuit', free:true, dot:'#8F9BFF', capabilities:['tools','reasoning'] },
-    { id:'poolside/laguna-xs-2.1', name:'Laguna XS 2.1', group:'Poolside', provider:'poolside', desc:'Agent logiciel rapide et economique', creditsLabel:'2 cr', dot:'#8F9BFF', capabilities:['tools','reasoning'] },
-    { id:'aion-labs/aion-3.0', name:'Aion-3.0', group:'Aion Labs', provider:'aion-labs', desc:'Direction narrative et ideation creative', creditsLabel:'8 cr', dot:'#D6C3FF', capabilities:['reasoning'] },
-    { id:'aion-labs/aion-3.0-mini', name:'Aion-3.0-Mini', group:'Aion Labs', provider:'aion-labs', desc:'Idees et variantes rapides', creditsLabel:'3 cr', dot:'#D6C3FF', capabilities:['reasoning'] },
-    { id:'openai/gpt-5.6-luna-pro', name:'GPT-5.6 Luna Pro', group:'OpenAI', provider:'openai', desc:'Raisonnement pro rapide et precis', creditsLabel:'8 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-luna', name:'GPT-5.6 Luna', group:'OpenAI', provider:'openai', desc:'GPT rapide pour le volume et les iterations', creditsLabel:'4 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-terra-pro', name:'GPT-5.6 Terra Pro', group:'OpenAI', provider:'openai', desc:'Equilibre premium entre profondeur et vitesse', creditsLabel:'20 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-terra', name:'GPT-5.6 Terra', group:'OpenAI', provider:'openai', desc:'Modele polyvalent pour les workflows quotidiens', creditsLabel:'10 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-sol-pro', name:'GPT-5.6 Sol Pro', group:'OpenAI', provider:'openai', desc:'Qualite maximale pour les briefs complexes', creditsLabel:'40 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-sol', name:'GPT-5.6 Sol', group:'OpenAI', provider:'openai', desc:'Raisonnement frontier pour les plans longs', creditsLabel:'35 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.5', name:'GPT-5.5', group:'OpenAI', provider:'openai', desc:'Raisonnement avance et planification agentique', creditsLabel:'35 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.5-pro', name:'GPT-5.5 Pro', group:'OpenAI', provider:'openai', desc:'Raisonnement profond pour les workflows critiques', creditsLabel:'180 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/o4-mini', name:'o4-mini', group:'OpenAI', provider:'openai', desc:'Raisonnement rapide et economique', creditsLabel:'12 cr', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'openai/o3', name:'o3-pro', group:'OpenAI', provider:'openai', desc:'Resolution methodique de problemes complexes', creditsLabel:'30 cr', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'openai/o3-deep-research', name:'o3 Deep Research', group:'OpenAI', provider:'openai', desc:'Recherche approfondie multi-etapes', creditsLabel:'100 cr', dot:'#F4F4F5', capabilities:['tools','reasoning','research'] },
-    { id:'openai/o4-mini-deep-research', name:'o4-mini Deep Research', group:'OpenAI', provider:'openai', desc:'Recherche approfondie a cout maitrise', creditsLabel:'60 cr', dot:'#F4F4F5', capabilities:['tools','reasoning','research'] },
-    { id:'x-ai/grok-4.5', name:'Grok 4.5', group:'xAI', provider:'x-ai', desc:'Connaissance, code et ideation avec outils', creditsLabel:'20 cr', dot:'#D6D6D6', capabilities:['tools','vision','reasoning'] },
-    { id:'x-ai/grok-latest', name:'Grok Latest', group:'xAI', provider:'x-ai', desc:'Alias dynamique du dernier modele Grok', creditsLabel:'20 cr', dot:'#D6D6D6', capabilities:['tools','vision','reasoning'] },
     { id:'auto', name:'Auto AgentFlow', group:'AgentFlow', desc:'Choisit le meilleur cerveau pour ta demande', creditsLabel:'Recommandé', dot:'#D1FE17' },
     { id:'claude-fable-5', name:'Fable 5', group:'AgentFlow', desc:'Création ambitieuse, stratégie et production complexe', creditsLabel:'Max', dot:'#C9A8E8' },
     { id:'claude-opus-4-8', name:'Opus 4.8', group:'AgentFlow', desc:'Agent très puissant pour les briefs longs et exigeants', creditsLabel:'Pro', dot:'#BCA7FF' },
@@ -3004,16 +2975,10 @@ class Component extends DCLogic {
         const dots = ['#D1FE17','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
         this.MODELS = agentModels.map((m,i)=>({
           id:m.id || 'auto',
-          name:m.name || 'Auto AgentFlow',
-          group:m.id === 'auto' ? 'AgentFlow' : (m.provider || 'AgentFlow'),
-          provider:m.provider || 'auto',
-          desc:m.description || 'Cerveau AgentFlow',
-          creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
-          free:!!m.free,
-          freeUntil:m.freeUntil || '',
-          capabilities:Array.isArray(m.capabilities) ? m.capabilities : [],
-          inputUsdPerMillionTokens:Number(m.inputUsdPerMillionTokens || 0),
-          outputUsdPerMillionTokens:Number(m.outputUsdPerMillionTokens || 0),
+           name:m.name || 'Auto AgentFlow',
+           group:'AgentFlow',
+           desc:m.description || 'Cerveau AgentFlow',
+          creditsLabel:m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto'),
           dot:dots[i % dots.length]
         }));
       }
@@ -3117,7 +3082,7 @@ class Component extends DCLogic {
         activeProjectId:this.state.activeProjectId || 'welcome',
         activeTitle:this.state.activeTitle || 'Nouveau projet',
         projectsData:[],
-        modelId:this.state.modelId || 'tencent/hy3:free',
+        modelId:this.state.modelId || 'auto',
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
@@ -4822,34 +4787,21 @@ class Component extends DCLogic {
       isIdle: !st.sendLocked,
       sendButtonStyleLarge: 'width:48px;height:48px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px -14px rgba(209,254,23,.8)',
       sendButtonStyleSmall: 'width:38px;height:38px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -14px rgba(209,254,23,.75)',
-      toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '' })),
-      onModelMenuSearch: (e)=> this.setState({ modelMenuSearch: e.target.value || '' }),
+      toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu })),
       modelMenu: st.modelMenu,
-      modelMenuSearch: st.modelMenuSearch || '',
       curModelName: this.curModel().name,
       curModelDot: this.curModel().dot,
-       modelGroups: (()=>{
-        const query = String(st.modelMenuSearch || '').trim().toLowerCase();
-        const grouped = {};
-        this.MODELS.filter(m=>!query || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
-          const key = m.group || m.provider || 'AgentFlow';
-          (grouped[key] || (grouped[key] = [])).push(m);
-        });
-        return Object.keys(grouped).map((g,gi)=>({
-          label: g,
-          headStyle: 'padding:' + (gi === 0 ? '7px' : '12px') + ' 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
-          items: grouped[g].map(m=>({
-            name: m.name, dot: m.dot, desc: m.desc,
-            creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
-            capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? '⚒' : '', m.capabilities && m.capabilities.includes('vision') ? '◉' : '', m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '', m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
-            check: m.id === st.modelId ? '✓' : '',
-            rowStyle: 'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
-            onClick: ()=> this.setState({ modelId: m.id, modelMenu:false, modelMenuSearch:'' })
-          }))
-        }));
-      })(),
-      hasModelMenuResults: this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
-      modelMenuEmpty: !this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+       modelGroups: ['AgentFlow'].map((g,gi)=>({
+        label: g,
+        headStyle: 'padding:' + (gi === 0 ? '7px' : '11px') + ' 11px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
+        items: this.MODELS.filter(m=>m.group===g).map(m=>({
+          name: m.name, dot: m.dot, desc: m.desc,
+          creditsLabel: m.creditsLabel,
+          check: m.id === st.modelId ? '✓' : '',
+          rowStyle: 'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .15s;background:' + (m.id===st.modelId ? 'rgba(' + T.lineRGB + ',.06)' : 'transparent'),
+          onClick: ()=> this.setState({ modelId: m.id, modelMenu:false })
+        }))
+      })),
        modeChips: modeDefs.map(d=>({
         label: d.label,
         style: chipBase + (st.mode===d.id
