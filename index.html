@@ -65,6 +65,28 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-md] li{margin:5px 0}
 [data-hf-md] blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid #D1FE17;background:rgba(209,254,23,.06);border-radius:0 8px 8px 0;color:#A8A8A8}
 [data-hf-md] code{font-family:'JetBrains Mono',monospace;font-size:.92em;padding:2px 5px;border-radius:6px;background:rgba(209,254,23,.10);color:#D1FE17}
+[data-hf-md] a{color:#D1FE17;text-decoration:underline;text-decoration-color:rgba(209,254,23,.42);text-underline-offset:3px}
+[data-hf-md] em{font-style:italic;color:inherit}
+[data-hf-md] del{text-decoration:line-through;color:#898A8B}
+[data-hf-md] pre{position:relative;margin:12px 0;padding:34px 14px 14px;overflow:auto;border:1px solid rgba(247,247,248,.10);border-radius:11px;background:#111315;color:#F7F7F8;white-space:pre;font:12px/1.65 'JetBrains Mono',monospace;tab-size:2}
+[data-hf-md] pre::before{content:attr(data-language);position:absolute;top:9px;left:12px;color:#898A8B;font:700 9px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.10em;text-transform:uppercase}
+[data-hf-md] pre code{display:block;padding:0;background:transparent;color:inherit;font:inherit;white-space:inherit}
+[data-hf-md] .hf-code-keyword{color:#C9A8E8}[data-hf-md] .hf-code-string{color:#E8D79B}[data-hf-md] .hf-code-number{color:#9BD1E8}[data-hf-md] .hf-code-comment{color:#70747B}[data-hf-md] .hf-code-function{color:#D1FE17}
+[data-hf-md] table{width:100%;margin:12px 0;border-collapse:collapse;overflow:hidden;border:1px solid rgba(247,247,248,.10);border-radius:10px;font-size:12.5px}
+[data-hf-md] th,[data-hf-md] td{padding:8px 10px;border-bottom:1px solid rgba(247,247,248,.08);border-right:1px solid rgba(247,247,248,.06);text-align:left;vertical-align:top}
+[data-hf-md] th{background:rgba(209,254,23,.08);color:#F7F7F8;font-weight:700}[data-hf-md] td:last-child,[data-hf-md] th:last-child{border-right:0}[data-hf-md] tr:last-child td{border-bottom:0}
+[data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable}
+[data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+[data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
+[data-hf-attachment-thumb]{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:rgba(209,254,23,.10);color:#D1FE17;font-size:12px;font-weight:800}
+[data-hf-attachment-thumb] img{width:100%;height:100%;object-fit:cover;display:block}
+[data-hf-attachment-meta]{min-width:0;display:flex;flex-direction:column;gap:3px}
+[data-hf-attachment-name]{max-width:205px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#F7F7F8;font-size:11.5px;font-weight:650}
+[data-hf-attachment-status]{color:#898A8B;font-size:10px;white-space:nowrap}
+[data-hf-attachment-remove]{width:20px;height:20px;flex:0 0 20px;display:grid;place-items:center;border:0;border-radius:999px;background:transparent;color:#898A8B;cursor:pointer;font-size:15px;line-height:1}
+[data-hf-attachment-remove]:hover{background:rgba(247,247,248,.10);color:#F7F7F8}
+[data-hf-new-message]{position:absolute;left:50%;bottom:116px;z-index:24;transform:translateX(-50%);display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid rgba(209,254,23,.35);border-radius:999px;background:#1C1E20;color:#D1FE17;box-shadow:0 12px 28px -14px rgba(0,0,0,.72);font-size:11.5px;font-weight:700;cursor:pointer;animation:toastIn .2s ease both}
+[data-hf-new-message]:active{transform:translateX(-50%) scale(.965)}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
 [data-hf-rail="true"]{align-items:center}
@@ -149,7 +171,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
-  <input id="hf-file-input" type="file" accept="image/*,video/*,audio/*,.pdf,.txt,.md,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
+  <input id="hf-file-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
   <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}"><div data-hf-toast="true">{{ toastMessage }}</div></sc-if>
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
@@ -299,8 +321,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                 <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
                   <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
                     <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                      <span style="width:6px;height:6px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>
-                      <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
+                      <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt=""/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
+                      <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
                       <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
                     </span>
                   </sc-for>
@@ -375,17 +397,17 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         </sc-if>
 
         <sc-if value="{{ hasMessages }}" hint-placeholder-val="{{ false }}">
-          <div data-hf-chat-list="true" style="display:flex;flex-direction:column;gap:26px;padding:26px 0 150px">
+          <div data-hf-chat-list="true" role="log" aria-live="polite" aria-relevant="additions text" style="display:flex;flex-direction:column;gap:26px;padding:26px 0 150px">
             <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
               <div style="{{ m.rowStyle }}">
                 <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
-                  <div style="max-width:78%;padding:12px 17px;border-radius:18px 18px 6px 18px;background:{{ tInk }};font-size:14.5px;line-height:1.55;color:{{ tPageBg }}">
+                  <div style="max-width:78%;padding:12px 17px;border-radius:18px 18px 6px 18px;background:{{ tInk }};font-size:15px;line-height:1.6;color:{{ tPageBg }}">
                     <div>{{ m.text }}</div>
                     <sc-if value="{{ m.hasUserAttachments }}" hint-placeholder-val="{{ false }}">
                       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
                         <sc-for list="{{ m.userAttachments }}" as="ua" hint-placeholder-count="1">
                           <span style="display:inline-flex;align-items:center;gap:6px;max-width:190px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.14);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            <span style="width:5px;height:5px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>{{ ua.name }}
+                            <span style="width:5px;height:5px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>{{ ua.icon }} {{ ua.name }}
                           </span>
                         </sc-for>
                       </div>
@@ -410,7 +432,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                         </div>
                       </sc-if>
                        <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}">
-                         <div style="font-size:14.5px;line-height:1.65;color:{{ tInkSoft }};width:100%;max-width:100%">{{ m.richText }}</div>
+                         <div style="font-size:15px;line-height:1.68;color:{{ tInkSoft }};width:100%;max-width:100%">{{ m.richText }}</div>
                          <sc-if value="{{ m.isDocument }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.onDownloadDocument }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:650;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">Télécharger le document .md</button></sc-if>
                        </sc-if>
                       <sc-if value="{{ m.hasMedia }}" hint-placeholder-val="{{ false }}">
@@ -502,6 +524,9 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         </sc-if>
       </div>
     </div>
+    <sc-if value="{{ showNewMessageButton }}" hint-placeholder-val="{{ false }}">
+      <button data-hf-new-message="true" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button>
+    </sc-if>
 
     <sc-if value="{{ hasMessages }}" hint-placeholder-val="{{ false }}">
       <div style="position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 26px 22px;pointer-events:none;background:linear-gradient(transparent,{{ tPageBg }} 62%)">
@@ -512,8 +537,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
                 <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
                   <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                    <span style="width:6px;height:6px;border-radius:50%;background:#D1FE17;flex:0 0 auto"></span>
-                    <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
+                    <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt=""/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
+                    <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
                     <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
                   </span>
                 </sc-for>
@@ -2408,6 +2433,7 @@ class Component extends DCLogic {
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
+    chatUnread: false,
     sidebarCollapsed: !!this.initialUiState.sidebarCollapsed,
     sidebarSearchOpen: false,
     sidebarSearchQuery: '',
@@ -2688,6 +2714,21 @@ class Component extends DCLogic {
   cleanFileName(name){
     return String(name || 'fichier').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 90) || 'fichier';
   }
+  formatFileSize(bytes){
+    const value = Number(bytes || 0);
+    if(value < 1024) return value + ' o';
+    if(value < 1024 * 1024) return Math.round(value / 1024) + ' Ko';
+    return (value / (1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 ? 0 : 1) + ' Mo';
+  }
+  attachmentIcon(kind){ return ({ image:'IMG', video:'VID', audio:'AUD', text:'TXT', file:'DOC' })[kind] || 'DOC'; }
+  attachmentMeta(item){ const bytes=Number(item && (item.bytes || item.size) || 0); return bytes ? this.formatFileSize(bytes) : 'Fichier'; }
+  validateAttachment(file){
+    const type = String(file && file.type || '').toLowerCase();
+    const name = String(file && file.name || '').toLowerCase();
+    const allowed = type.indexOf('image/') === 0 || type.indexOf('video/') === 0 || type.indexOf('audio/') === 0 || type.indexOf('text/') === 0 || /\.(pdf|txt|md|csv|json|doc|docx)$/i.test(name);
+    if(!allowed) throw new Error('Format de fichier non pris en charge.');
+    if(Number(file && file.size || 0) > 50 * 1024 * 1024) throw new Error('Fichier trop lourd. La limite de preparation est de 50 Mo.');
+  }
   readFileAsDataUrl(file){
     return new Promise((resolve, reject)=>{
       const reader = new FileReader();
@@ -2706,38 +2747,57 @@ class Component extends DCLogic {
       reader.readAsText(file);
     });
   }
+  async uploadAttachmentFile(file){
+    this.validateAttachment(file);
+    const dataUrl = await this.readFileAsDataUrl(file);
+    const textPreview = await this.readTextPreview(file);
+    const res = await this.apiFetch('/api/upload', {
+      method:'POST',
+      body:JSON.stringify({
+        fileName:this.cleanFileName(file.name),
+        contentType:file.type || 'application/octet-stream',
+        data:dataUrl,
+        kind:this.attachmentKind(file),
+        textPreview
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'upload');
+    return {
+      id:data.id || ('att-'+Date.now()),
+      name:data.name || this.cleanFileName(file.name),
+      kind:data.kind || this.attachmentKind(file),
+      url:data.url || data.publicUrl || '',
+      previewUrl:(data.kind || this.attachmentKind(file)) === 'image' ? (data.url || data.publicUrl || '') : '',
+      contentType:data.contentType || file.type || '',
+      bytes:Number(data.bytes || file.size || 0),
+      textPreview:data.textPreview || textPreview || '',
+      status:'ready'
+    };
+  }
   async onFileInput(e){
-    const file = e && e.target && e.target.files && e.target.files[0];
+    const files = e && e.target && e.target.files ? Array.from(e.target.files).slice(0, 4) : [];
     if(e && e.target) e.target.value = '';
-    if(!file || this.state.uploadingAttachment) return;
+    if(!files.length || this.state.uploadingAttachment) return;
     if(!this.requireAuth('Connecte-toi pour ajouter un fichier a ton projet HuggyFlow.', { type:'attach' })) return;
-    this.setState({ uploadingAttachment:true, attachmentNotice:'Ajout du fichier...' });
+    this.setState({ uploadingAttachment:true, attachmentNotice:files.length > 1 ? 'Ajout des fichiers...' : 'Ajout du fichier...' });
+    let added = 0;
+    let failed = 0;
     try{
-      const dataUrl = await this.readFileAsDataUrl(file);
-      const textPreview = await this.readTextPreview(file);
-      const res = await this.apiFetch('/api/upload', {
-        method:'POST',
-        body:JSON.stringify({
-          fileName:this.cleanFileName(file.name),
-          contentType:file.type || 'application/octet-stream',
-          data:dataUrl,
-          kind:this.attachmentKind(file),
-          textPreview
-        })
-      });
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'upload');
-      const attachment = {
-        id:data.id || ('att-'+Date.now()),
-        name:data.name || this.cleanFileName(file.name),
-        kind:data.kind || this.attachmentKind(file),
-        url:data.url || data.publicUrl || '',
-        contentType:data.contentType || file.type || '',
-        textPreview:data.textPreview || textPreview || ''
-      };
-      this.setState(s=>({ attachments:(s.attachments || []).concat([attachment]).slice(-4), uploadingAttachment:false, attachmentNotice:'Fichier ajoute.' }));
-      this.notify('Fichier ajoute au projet. HuggyFlow peut maintenant l analyser.');
-      setTimeout(()=>this.setState({ attachmentNotice:'' }), 1600);
+      for(const file of files){
+        try{
+          const attachment = await this.uploadAttachmentFile(file);
+          this.setState(s=>({ attachments:(s.attachments || []).concat([attachment]).slice(-4) }));
+          added += 1;
+        }catch(err){
+          failed += 1;
+          this.notify(this.friendlyError(err && err.message, 'Impossible d ajouter ce fichier pour le moment.'));
+        }
+      }
+      const label = failed ? (added ? added + ' fichier(s) ajoute(s), ' + failed + ' refuse(s).' : 'Aucun fichier ajoute.') : (added > 1 ? added + ' fichiers ajoutes.' : 'Fichier ajoute.');
+      this.setState({ uploadingAttachment:false, attachmentNotice:label });
+      if(added) this.notify('Fichier(s) ajoute(s). AgentFlow peut maintenant les analyser.');
+      setTimeout(()=>this.setState({ attachmentNotice:'' }), 2200);
     }catch(err){
       this.setState({ uploadingAttachment:false, attachmentNotice:this.friendlyError(err && err.message, 'Impossible d ajouter ce fichier pour le moment.') });
     }
@@ -2966,6 +3026,7 @@ class Component extends DCLogic {
     }
   }
   componentDidMount(){
+    this.chatShouldStick = true;
     this.settingsKeydown = (event)=>{
       if(event && event.key === 'Escape' && ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'].includes(this.state.page)){
         this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false });
@@ -2996,7 +3057,10 @@ class Component extends DCLogic {
     const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
-    if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked) this.scrollChatToBottom();
+    if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked){
+      if(this.chatShouldStick !== false) this.scrollChatToBottom();
+      else if(!this.state.chatUnread) this.setState({ chatUnread:true });
+    }
     if(prevState.page !== this.state.page){
       if(this.state.page === 'capabilities') this.loadBrands();
       if(this.state.page === 'skills') this.loadTemplates();
@@ -3023,7 +3087,7 @@ class Component extends DCLogic {
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
         pricingCostFilter:this.state.pricingCostFilter || 'all',
-        attachments:this.state.attachments || [],
+        attachments:(this.state.attachments || []).map(a=>({ id:a.id, name:a.name, kind:a.kind, url:a.url, contentType:a.contentType, bytes:a.bytes, textPreview:a.textPreview || '', status:a.status || 'ready' })),
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         creationsExpanded:this.state.creationsExpanded !== false,
         projectsExpanded:this.state.projectsExpanded !== false
@@ -3039,8 +3103,15 @@ class Component extends DCLogic {
     if(this.chatShouldStick === false || typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
     requestAnimationFrame(()=>{
       const list = document.querySelector('[data-hf-chat-scroll="true"]');
-      if(list) list.scrollTop = list.scrollHeight;
+      if(list){ list.scrollTop = list.scrollHeight; if(this.state.chatUnread) this.setState({ chatUnread:false }); }
     });
+  }
+  jumpToLatest(){
+    this.chatShouldStick = true;
+    this.setState({ chatUnread:false });
+    const list = typeof document !== 'undefined' ? document.querySelector('[data-hf-chat-scroll="true"]') : null;
+    if(list && typeof list.scrollTo === 'function') list.scrollTo({ top:list.scrollHeight, behavior:'smooth' });
+    else if(list) list.scrollTop = list.scrollHeight;
   }
   notify(message){
     if(!message) return;
@@ -3067,6 +3138,7 @@ class Component extends DCLogic {
     const el = e && e.currentTarget;
     if(!el) return;
     this.chatShouldStick = (el.scrollHeight - el.scrollTop - el.clientHeight) < 96;
+    if(this.chatShouldStick && this.state.chatUnread) this.setState({ chatUnread:false });
   }
   isAdminUser(){
     const email = String((this.state.user && this.state.user.email) || '').trim().toLowerCase();
@@ -3085,16 +3157,38 @@ class Component extends DCLogic {
       .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
+  safeMarkdownUrl(value){
+    const url = String(value || '').trim();
+    return /^(https?:\/\/|mailto:)/i.test(url) ? url : '';
+  }
+  highlightCode(code, keyPrefix){
+    const pattern = /(\/\/[^\n]*|#[^\n]*|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\b(?:const|let|var|function|return|if|else|for|while|import|from|export|async|await|class|new|def|in|True|False|null|undefined|true|false)\b|\b\d+(?:\.\d+)?\b)/g;
+    return String(code || '').split(pattern).map((part, i)=>{
+      const key = (keyPrefix || 'code') + '-' + i;
+      if(/^\/\//.test(part) || /^#/.test(part)) return React.createElement('span', { key, className:'hf-code-comment' }, part);
+      if(/^("|'|`)/.test(part)) return React.createElement('span', { key, className:'hf-code-string' }, part);
+      if(/^\d/.test(part)) return React.createElement('span', { key, className:'hf-code-number' }, part);
+      if(/^(const|let|var|function|return|if|else|for|while|import|from|export|async|await|class|new|def|in|True|False|null|undefined|true|false)$/.test(part)) return React.createElement('span', { key, className:'hf-code-keyword' }, part);
+      return React.createElement('span', { key }, part);
+    });
+  }
+  splitTableRow(row){
+    return String(row || '').trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell=>cell.trim());
+  }
+  isTableSeparator(row){ return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(String(row || '').trim()); }
   inlineMarkdown(text, keyPrefix){
-    const parts = String(text || '').split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(part=>part !== '');
+    const parts = String(text || '').split(/(\[[^\]]+\]\((?:https?:\/\/|mailto:)[^)]+\)|\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|\*[^*]+\*)/g).filter(part=>part !== '');
     return parts.map((part, i)=>{
       const key = (keyPrefix || 'md') + '-' + i;
-      if(part.indexOf('**') === 0 && part.lastIndexOf('**') === part.length - 2){
-        return React.createElement('strong', { key }, part.slice(2, -2));
+      const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      if(link){
+        const href = this.safeMarkdownUrl(link[2]);
+        return React.createElement('a', { key, href, target:'_blank', rel:'noreferrer noopener' }, this.inlineMarkdown(link[1], key+'-link'));
       }
-      if(part.indexOf('`') === 0 && part.lastIndexOf('`') === part.length - 1){
-        return React.createElement('code', { key }, part.slice(1, -1));
-      }
+      if(part.indexOf('**') === 0 && part.lastIndexOf('**') === part.length - 2) return React.createElement('strong', { key }, this.inlineMarkdown(part.slice(2, -2), key+'-strong'));
+      if(part.indexOf('~~') === 0 && part.lastIndexOf('~~') === part.length - 2) return React.createElement('del', { key }, part.slice(2, -2));
+      if(part.indexOf('`') === 0 && part.lastIndexOf('`') === part.length - 1) return React.createElement('code', { key }, part.slice(1, -1));
+      if(part.indexOf('*') === 0 && part.lastIndexOf('*') === part.length - 1) return React.createElement('em', { key }, part.slice(1, -1));
       return React.createElement('span', { key }, part);
     });
   }
@@ -3107,11 +3201,30 @@ class Component extends DCLogic {
     const children = [];
     let index = 0;
     let blockIndex = 0;
-    const special = line=>/^\s*(#{1,4}\s+|[-*]\s+|\d+\.\s+|>\s+|[-*_]{3,}\s*$)/.test(line || '');
+    const special = line=>/^\s*(#{1,4}\s+|[-*]\s+|\d+\.\s+|>\s+|```|\|.*\||[-*_]{3,}\s*$)/.test(line || '');
     while(index < lines.length){
       const raw = String(lines[index] || '').trim();
       if(!raw){ index += 1; continue; }
       if(/^[-*_]{3,}$/.test(raw)){ index += 1; continue; }
+      if(/^```/.test(raw)){
+        const language = raw.slice(3).trim() || 'code';
+        const code = [];
+        index += 1;
+        while(index < lines.length && !/^```/.test(String(lines[index] || '').trim())){ code.push(String(lines[index] || '')); index += 1; }
+        if(index < lines.length) index += 1;
+        children.push(React.createElement('pre', { key:'c'+blockIndex, 'data-language':language }, React.createElement('code', null, this.highlightCode(code.join('\n'), 'c'+blockIndex))));
+        blockIndex += 1; continue;
+      }
+      if(/\|/.test(raw) && index + 1 < lines.length && this.isTableSeparator(lines[index + 1])){
+        const header = this.splitTableRow(raw);
+        index += 2;
+        const rows = [];
+        while(index < lines.length && /\|/.test(String(lines[index] || '').trim()) && !this.isTableSeparator(lines[index])){ rows.push(this.splitTableRow(lines[index])); index += 1; }
+        const head = React.createElement('thead', { key:'thead' }, React.createElement('tr', null, header.map((cell, cellIndex)=>React.createElement('th', { key:'th'+cellIndex }, this.inlineMarkdown(cell, 'th'+cellIndex)))));
+        const body = React.createElement('tbody', { key:'tbody' }, rows.map((row, rowIndex)=>React.createElement('tr', { key:'tr'+rowIndex }, header.map((_, cellIndex)=>React.createElement('td', { key:'td'+rowIndex+'-'+cellIndex }, this.inlineMarkdown(row[cellIndex] || '', 'td'+rowIndex+'-'+cellIndex))))));
+        children.push(React.createElement('table', { key:'table'+blockIndex }, head, body));
+        blockIndex += 1; continue;
+      }
       const heading = raw.match(/^(#{1,4})\s+(.+)$/);
       if(heading){
         const level = Math.min(4, heading[1].length);
@@ -4546,6 +4659,8 @@ class Component extends DCLogic {
       invoices: [],
       isEmpty: st.messages.length === 0,
       hasMessages: st.messages.length > 0,
+      showNewMessageButton: !!st.chatUnread && st.messages.length > 0,
+      jumpToLatest: ()=> this.jumpToLatest(),
       showSuggestions,
       input: st.input,
       placeholder: this.PLACEHOLDERS[st.placeholderIdx],
@@ -4662,7 +4777,7 @@ class Component extends DCLogic {
       attachButtonStyle: 'width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       attachButtonStyleSmall: 'width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       hasAttachments: ((st.attachments || []).length > 0),
-      attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', onRemove:()=>this.removeAttachment(a.id) })),
+      attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', icon:this.attachmentIcon(a.kind), meta:this.attachmentMeta(a), statusLabel:a.status === 'uploading' ? 'Ajout...' : 'Pret', hasPreview:a.kind === 'image' && !!(a.previewUrl || a.url), showIcon:!(a.kind === 'image' && !!(a.previewUrl || a.url)), previewUrl:a.previewUrl || (a.kind === 'image' ? a.url : ''), onRemove:()=>this.removeAttachment(a.id) })),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
       sendAction: ()=> st.sendLocked ? this.stopGeneration() : this.sendPrompt(st.input),
@@ -4934,7 +5049,7 @@ class Component extends DCLogic {
           rowStyle: 'display:flex;' + (m.role==='user' ? 'justify-content:flex-end' : 'justify-content:flex-start') + ';animation:fadeUp .3s ease both',
           text: m.text || '',
           hasUserAttachments: Array.isArray(m.attachments) && m.attachments.length > 0,
-          userAttachments: (m.attachments || []).map(a=>({ name:a.name || 'Fichier joint' })),
+          userAttachments: (m.attachments || []).map(a=>({ name:a.name || 'Fichier joint', icon:this.attachmentIcon(a.kind) })),
           richText: this.markdownBlocks(m.text || ''),
           isTyping: !!m.typing && !m.text,
           activityLabel: m.activity || 'AgentFlow prépare ta demande',
