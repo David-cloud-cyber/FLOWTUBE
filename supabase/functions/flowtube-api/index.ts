@@ -5065,12 +5065,14 @@ async function chat(req: Request) {
         const existingSkills = await loadLearnedSkills(supabase, userId);
         const matchedExistingSkill = matchLearnedSkill(prompt, existingSkills);
         const autoSkill = matchedExistingSkill ? null : autoLearnSkillCandidate(prompt, requestAttachments);
+        send("status", { phase: "analyzing", progress: 12, label: "AgentFlow cadre ta demande" });
         if (autoSkill) {
           send("skill", { phase: "creating", name: autoSkill.name, label: "AgentFlow cree une competence reutilisable" });
           await saveLearnedSkill(supabase, userId, String(project.id), autoSkill.name, autoSkill.triggers, autoSkill.playbook, true);
           send("skill", { phase: "ready", name: autoSkill.name, label: "Competence sauvegardee et prete pour cette generation" });
         }
         const learnedSkills = await loadLearnedSkills(supabase, userId);
+        send("status", { phase: "routing", progress: 24, label: matchedExistingSkill ? "AgentFlow réactive une compétence existante" : "AgentFlow prépare le meilleur workflow" });
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -5190,6 +5192,7 @@ async function chat(req: Request) {
         // Recherche web: lit une page (produit/marque/concurrent) et en tire un brief.
         const researchUrl = extractFirstUrl(prompt);
         if (researchUrl && isResearchRequest(prompt)) {
+          send("status", { phase: "researching", progress: 34, label: "AgentFlow vérifie la source demandée", tool: "Recherche web" });
           send("text", { delta: `Je lis ${researchUrl}...` });
           const brief = await runWebResearch(researchUrl, prompt, agentModelId, billAgent("web_research"));
           send("text", { delta: brief });
@@ -5198,6 +5201,7 @@ async function chat(req: Request) {
           return;
         }
         if (!researchUrl && isTrendResearchRequest(prompt)) {
+          send("status", { phase: "researching", progress: 34, label: "AgentFlow analyse les signaux disponibles", tool: "Recherche marché" });
           send("text", { delta: "J'analyse les signaux marche disponibles..." });
           const brief = await runMarketResearch(prompt, prompt, agentModelId, billAgent("market_research"));
           send("text", { delta: brief });
@@ -5245,6 +5249,7 @@ async function chat(req: Request) {
 
         // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
         if (agentLoopEnabled()) {
+          send("status", { phase: "routing", progress: 32, label: "AgentFlow orchestre les outils adaptés", tool: "AgentFlow Loop" });
           const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, agentModelId, send };
           const loopMatched = matchLearnedSkill(prompt, learnedSkills);
           const loopContext: ReplyContext = {
@@ -5272,6 +5277,7 @@ async function chat(req: Request) {
         const quote = quoteFor(model, requestedUnitsForModel(model, body as Record<string, unknown>, prompt, type));
         const willGenerate = shouldGenerateMedia(prompt, mode);
         const batchCount = willGenerate ? batchCountFromPrompt(prompt) : 1;
+        send("status", { phase: "routing", progress: 32, label: `AgentFlow sélectionne ${model.name}`, model: model.name });
 
         if (willGenerate && batchCount >= 2) {
           await enforceBatchGuards(supabase, profile, plan, model, quote, batchCount);
@@ -5352,6 +5358,7 @@ async function chat(req: Request) {
           attachments: attachmentContext,
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
+        send("status", { phase: willGenerate ? "writing" : "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: agentModelId });
         const reply = await anthropicReply(
           prompt,
           type,
@@ -5384,6 +5391,7 @@ async function chat(req: Request) {
         }
 
         if (willGenerate) {
+          send("status", { phase: "rendering", progress: 58, label: "AgentFlow transmet le brief au moteur de création", model: model.name });
           // Reference "refais le #N / la meme": on retrouve la creation visee et on reutilise son prompt + resultat.
           let basePrompt = prompt;
           let referencedImage = body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url;

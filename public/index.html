@@ -54,6 +54,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-nav-scroll]::-webkit-scrollbar{display:none}
 [data-nav-scroll] button:active{transform:none!important}
 @keyframes typingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@keyframes streamPulse{0%,100%{opacity:.45;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
+@keyframes streamCursor{0%,48%{opacity:1}49%,100%{opacity:0}}
 @keyframes shimmer{0%{transform:translateX(-110%)}100%{transform:translateX(220%)}}
 @keyframes softPulse{0%,100%{opacity:.48}50%{opacity:1}}
 [data-hf-md]{white-space:normal;overflow-wrap:anywhere}
@@ -79,6 +81,12 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-md] th{background:rgba(209,254,23,.08);color:#F7F7F8;font-weight:700}[data-hf-md] td:last-child,[data-hf-md] th:last-child{border-right:0}[data-hf-md] tr:last-child td{border-bottom:0}
 [data-hf-md] .hf-math-inline{display:inline-block;padding:1px 6px;border-radius:5px;background:rgba(24,220,255,.08);color:#BDEFFF;font:500 .95em/1.4 'JetBrains Mono',monospace;white-space:pre-wrap}
 [data-hf-md] .hf-math-block{display:block;margin:12px 0;padding:13px 16px;overflow:auto;border:1px solid rgba(24,220,255,.18);border-radius:10px;background:rgba(24,220,255,.055);color:#D9F7FF;text-align:center;font:500 14px/1.65 'JetBrains Mono',monospace;white-space:pre-wrap}
+[data-hf-stream-status]{display:flex;align-items:center;gap:8px;min-height:24px;color:#A8A8A8;font-size:11px;line-height:1.4}
+[data-hf-stream-status] strong{color:#F7F7F8;font-weight:650}
+[data-hf-stream-dot]{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5);animation:streamPulse 1.25s ease-in-out infinite}
+[data-hf-stream-cursor]{display:inline-block;width:6px;height:14px;margin-left:3px;vertical-align:-2px;border-radius:2px;background:#D1FE17;animation:streamCursor 1s steps(1,end) infinite}
+[data-hf-stream-track]{height:3px;margin-top:7px;overflow:hidden;border-radius:999px;background:rgba(247,247,248,.09)}
+[data-hf-stream-track] span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#D1FE17,#18DCFF);box-shadow:0 0 12px rgba(209,254,23,.3);transition:width .35s ease}
 [data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable}
 [data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 [data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
@@ -434,18 +442,28 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                        <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
-                          <div style="display:inline-flex;align-items:center;gap:7px">
-                            <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease infinite"></span>
-                            <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .18s infinite"></span>
-                            <span style="width:6px;height:6px;border-radius:50%;background:{{ tText4 }};animation:typingDot 1.2s ease .36s infinite"></span>
-                            <span style="font-size:12px;color:{{ tText3 }}">{{ m.activityLabel }}</span>
+                          <div data-hf-stream-status="true">
+                            <span data-hf-stream-dot="true"></span>
+                            <strong>{{ m.activityLabel }}</strong>
+                            <span style="margin-left:auto;color:{{ tText4 }};font-family:'JetBrains Mono',monospace;font-size:10px">{{ m.streamProgress }}%</span>
                           </div>
-                          <div data-hf-skeleton="true" style="height:10px;width:100%"></div>
+                          <div data-hf-stream-track="true"><span style="width:{{ m.streamProgressPct }}"></span></div>
+                          <div data-hf-skeleton="true" style="height:10px;width:100%;margin-top:2px"></div>
                           <div data-hf-skeleton="true" style="height:10px;width:72%"></div>
                         </div>
                       </sc-if>
                        <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}">
+                         <sc-if value="{{ m.showLiveStatus }}" hint-placeholder-val="{{ false }}">
+                           <div data-hf-stream-status="true" style="margin:0 0 8px 1px">
+                             <span data-hf-stream-dot="true"></span>
+                             <strong>{{ m.streamPhaseLabel }}</strong>
+                             <sc-if value="{{ m.streamTool }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 7px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:999px;color:{{ tText3 }};font-size:10px">{{ m.streamTool }}</span></sc-if>
+                             <span style="margin-left:auto;color:{{ tText4 }};font-family:'JetBrains Mono',monospace;font-size:10px">{{ m.streamProgress }}%</span>
+                           </div>
+                           <div data-hf-stream-track="true"><span style="width:{{ m.streamProgressPct }}"></span></div>
+                         </sc-if>
                          <div style="font-size:15px;line-height:1.68;color:{{ tInkSoft }};width:100%;max-width:100%">{{ m.richText }}</div>
+                         <sc-if value="{{ m.showLiveStatus }}" hint-placeholder-val="{{ false }}"><span data-hf-stream-cursor="true" aria-hidden="true"></span></sc-if>
                          <sc-if value="{{ m.isDocument }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.onDownloadDocument }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:650;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">Télécharger le document .md</button></sc-if>
                        </sc-if>
                       <sc-if value="{{ m.hasMedia }}" hint-placeholder-val="{{ false }}">
@@ -3542,6 +3560,33 @@ class Component extends DCLogic {
   updateAgentMessage(id, patch){
     this.setState(s=>({ messages:s.messages.map(m=>m.id === id ? Object.assign({}, m, patch) : m) }));
   }
+  streamPhaseLabel(phase){
+    return ({
+      analyzing:'AgentFlow cadre ta demande',
+      routing:'AgentFlow choisit le meilleur moteur',
+      writing:'AgentFlow compose la réponse',
+      researching:'AgentFlow vérifie les informations',
+      rendering:'AgentFlow génère le rendu',
+      assembling:'AgentFlow assemble les éléments',
+      finalizing:'AgentFlow prépare le résultat',
+      complete:'Résultat prêt',
+      cancelled:'Génération interrompue'
+    })[String(phase || '').toLowerCase()] || 'AgentFlow travaille sur ta demande';
+  }
+  streamStatusPatch(payload, fallbackPhase, fallbackProgress){
+    const source = payload || {};
+    const rawPhase = String(source.phase || fallbackPhase || 'analyzing').toLowerCase();
+    const phase = ({ creating:'assembling', building:'assembling', ready:'finalizing' })[rawPhase] || rawPhase;
+    const rawProgress = Number(source.progress);
+    const progress = Number.isFinite(rawProgress) ? Math.max(4, Math.min(96, Math.round(rawProgress))) : (fallbackProgress || 12);
+    return {
+      streamLive:true,
+      streamPhase:phase,
+      streamProgress:progress,
+      activity:String(source.label || source.message || this.streamPhaseLabel(phase)),
+      streamTool:String(source.tool || source.provider || source.model || '')
+    };
+  }
   appendAgentText(id, delta){
     if(!delta) return;
     this.streamBuffers = this.streamBuffers || {};
@@ -3650,7 +3695,7 @@ class Component extends DCLogic {
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
     this.trackEvent(this.state.messages.length ? 'agent_request_started' : 'first_generation_started', { mode, hasAttachments:currentAttachments.length > 0 });
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
-    const agentMsg = { id:agentId, role:'agent', typing:true, kind, activity:'AgentFlow analyse ton brief' };
+    const agentMsg = { id:agentId, role:'agent', typing:true, kind, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande' };
     this.chatShouldStick = true;
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
@@ -3666,7 +3711,7 @@ class Component extends DCLogic {
     this.flushAllAgentText();
     this.setState(s=>({
       sendLocked:false,
-      messages:s.messages.map(m=>m.typing ? Object.assign({}, m, { typing:false, text:'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
+      messages:s.messages.map(m=>m.typing ? Object.assign({}, m, { typing:false, streamLive:false, streamPhase:'cancelled', streamProgress:0, text:'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
     }));
   }
   bindProjectFromApi(payload){
@@ -3718,16 +3763,18 @@ class Component extends DCLogic {
         if(data.generation){ this.addGenerationCard(data.generation, agentId); delivered = true; }
         if(data.message){ this.updateAgentMessage(agentId, { typing:false, text:data.message }); delivered = true; }
       }
-      if(!delivered) this.updateAgentMessage(agentId, { typing:false, text:'Creation lancee. Je synchronise les resultats avec HuggyFlow.' });
+      if(!delivered) this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100, text:'Création lancée. Je synchronise les résultats avec HuggyFlow.' });
     }catch(err){
       const aborted = err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')));
       if(!aborted && /solde insuffisant|credits requis|crédits requis/i.test(String(err && err.message || ''))){
         this.openCreditPaywall(String(err.message || 'Ton solde de crédits est insuffisant.'), this.state.modelId);
       }
-      this.updateAgentMessage(agentId, { typing:false, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La creation est indisponible pour le moment. Reessaie dans quelques instants.') });
+      this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:aborted ? 'cancelled' : 'complete', streamProgress:aborted ? 0 : 100, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.') });
     }finally{
       this.chatAbort = null;
       this.flushAgentText(agentId);
+      const finishedMessage = this.state.messages.find(message=>message.id === agentId);
+      if(finishedMessage && finishedMessage.streamPhase !== 'cancelled') this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 });
       this.setState({ sendLocked:false });
       this.trackEvent('agent_request_completed', { mode });
       this.scheduleBootstrap(1400);
@@ -3736,7 +3783,7 @@ class Component extends DCLogic {
   async consumeChatStream(res, agentId){
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = '', delivered = false;
+    let buffer = '', delivered = false, textStarted = false;
     const handle = (block)=>{
       const lines = block.split(/\r?\n/);
       let type = 'message', data = '';
@@ -3746,16 +3793,30 @@ class Component extends DCLogic {
       });
       if(!data) return;
       let payload; try{ payload = JSON.parse(data); }catch(e){ return; }
-      if(type === 'text'){ this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true; }
-      if(type === 'message'){ this.appendAgentText(agentId, payload.text || ''); delivered = true; }
-      if(type === 'status'){ this.updateAgentMessage(agentId, { activity:payload.label || payload.message || 'AgentFlow poursuit la préparation' }); delivered = true; }
-      if(type === 'skill'){ this.setState({ skillActivity:payload.label || 'AgentFlow construit une competence reutilisable', studioPanelOpen:true, studioTab:'skill' }); this.updateAgentMessage(agentId, { activity:payload.label || 'AgentFlow construit une competence reutilisable' }); delivered = true; }
-      if(type === 'artifact_status'){ this.setState({ studioPanelOpen:true, studioTab:'artifact', skillActivity:payload.label || 'AgentFlow prepare un artifact' }); this.updateAgentMessage(agentId, { activity:payload.label || 'AgentFlow prepare un artifact' }); delivered = true; }
+      if(type === 'text'){
+        if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); textStarted = true; }
+        this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true;
+      }
+      if(type === 'message'){
+        if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); textStarted = true; }
+        this.appendAgentText(agentId, payload.text || ''); delivered = true;
+      }
+      if(type === 'status'){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'analyzing', 18)); delivered = true; }
+      if(type === 'skill'){
+        const skillPatch = this.streamStatusPatch(payload, payload.phase === 'ready' ? 'finalizing' : 'assembling', payload.phase === 'ready' ? 78 : 28);
+        this.setState({ skillActivity:payload.label || 'AgentFlow construit une compétence réutilisable', studioPanelOpen:true, studioTab:'skill' });
+        this.updateAgentMessage(agentId, skillPatch); delivered = true;
+      }
+      if(type === 'artifact_status'){
+        const artifactPatch = this.streamStatusPatch(payload, payload.phase === 'ready' ? 'finalizing' : 'assembling', payload.phase === 'ready' ? 84 : 62);
+        this.setState({ studioPanelOpen:true, studioTab:'artifact', skillActivity:payload.label || 'AgentFlow prépare un artifact' });
+        this.updateAgentMessage(agentId, artifactPatch); delivered = true;
+      }
       if(type === 'artifact' && payload.artifact){ const artifact = this.normalizeArtifact(payload.artifact); this.setState(s=>({ artifactItems:[artifact].concat((s.artifactItems || []).filter(a=>a.id !== artifact.id)), studioPanelOpen:true, studioTab:'artifact' }), ()=>this.setActiveArtifact(artifact)); delivered = true; }
-      if(type === 'generation'){ this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
-      if(type === 'done'){ this.bindProjectFromApi(payload); delivered = true; }
+      if(type === 'generation'){ this.updateAgentMessage(agentId, { streamLive:false, streamPhase:'complete', streamProgress:100 }); this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
+      if(type === 'done'){ this.bindProjectFromApi(payload); this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 }); delivered = true; }
       if(type === 'credits') this.applyCreditPayload(payload);
-      if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, text:this.friendlyError(payload.message, 'La creation a echoue. Reessaie avec une consigne plus courte.') }); delivered = true; }
+      if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', text:this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.') }); delivered = true; }
     };
     while(true){
       const chunk = await reader.read();
@@ -5382,6 +5443,8 @@ class Component extends DCLogic {
         const isVideo = (media ? media.type : m.kind) === 'video';
         const isVoice = (media ? media.type : m.kind) === 'voice';
         const pct = media ? Number(media.progress || (status === 'done' ? 100 : 0)) : (m.pct || 0);
+        const streamProgress = Math.max(0, Math.min(100, Math.round(Number(m.streamProgress || (m.streamLive ? 8 : 100)))));
+        const streamPhase = String(m.streamPhase || (m.streamLive ? 'analyzing' : 'complete'));
         const frameOn = n => (pct >= n * 20 ? '.22' : '.06');
         return {
           isUser: m.role==='user',
@@ -5394,6 +5457,11 @@ class Component extends DCLogic {
           richText: this.markdownBlocks(m.text || ''),
           isTyping: !!m.typing && !m.text,
           activityLabel: m.activity || 'AgentFlow prépare ta demande',
+          showLiveStatus: !!m.streamLive && !!m.text,
+          streamProgress,
+          streamProgressPct: streamProgress + '%',
+          streamPhaseLabel: this.streamPhaseLabel(streamPhase),
+          streamTool: String(m.streamTool || ''),
           showText: !!m.text,
           hasMedia: !!m.media,
           imgLoading: status==='loading' && !isVideo && !isVoice,
