@@ -186,6 +186,24 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
   <input id="hf-file-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
   <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}"><div data-hf-toast="true">{{ toastMessage }}</div></sc-if>
+  <sc-if value="{{ showBackgroundTasks }}" hint-placeholder-val="{{ false }}">
+    <div data-hf-background-tasks="true" style="position:fixed;right:24px;bottom:72px;z-index:130;width:min(350px,calc(100vw - 32px));padding:13px 14px;border:1px solid rgba(209,254,23,.22);border-radius:14px;background:rgba(28,30,32,.96);color:#F7F7F8;box-shadow:0 22px 50px -24px rgba(0,0,0,.76);backdrop-filter:blur(14px);animation:toastIn .24s cubic-bezier(.22,1,.36,1) both">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5)"></span>
+        <span style="flex:1;font-size:12px;font-weight:750">Tâches en arrière-plan</span>
+        <button onClick="{{ dismissBackgroundTasks }}" title="Fermer" style="width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:#898A8B;font-size:16px;line-height:1;cursor:pointer">×</button>
+      </div>
+      <div style="margin-top:9px;display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{ backgroundTaskCards }}" as="task" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.045)">
+            <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ task.dot }}"></span>
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D8D8D9">{{ task.title }}</span>
+            <span style="flex:0 0 auto;font-size:10.5px;color:{{ task.statusColor }}">{{ task.statusLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
   <aside data-hf-rail="{{ sidebarRail }}" style="{{ sidebarStyle }}">
@@ -2515,6 +2533,7 @@ class Component extends DCLogic {
     creditPaywallPlanId: '',
     creditLowNotified: false,
     toast: '',
+    backgroundTasks: [], backgroundTaskPanelOpen: false,
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
@@ -3351,6 +3370,7 @@ class Component extends DCLogic {
         backendReady:true, backendError:false
       }, ()=>{
         this.resumeGenerationPolling(projects);
+        this.loadBackgroundTasks();
         this.loadStudioData(active ? active.id : currentId);
         if(this.state.page === 'admin' && this.isAdminUser()) this.loadAdminDashboard();
       });
@@ -3375,6 +3395,7 @@ class Component extends DCLogic {
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
       if(active && (typeof document === 'undefined' || document.visibilityState !== 'hidden')) this.setState(s=>({ streamPhraseIndex:(s.streamPhraseIndex + 1) % 3 }));
     }, 3000);
+    this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
     this.loadPublicArtifactFromUrl();
     this.restoreAuthSession();
   }
@@ -3382,6 +3403,7 @@ class Component extends DCLogic {
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     clearInterval(this._ph);
     clearInterval(this._streamPhrase);
+    clearInterval(this._backgroundTasks);
     Object.keys(this.polls || {}).forEach(id=>clearTimeout(this.polls[id]));
     Object.keys(this.batchPolls || {}).forEach(id=>clearTimeout(this.batchPolls[id]));
     clearTimeout(this.persistTimer);
@@ -3709,6 +3731,79 @@ class Component extends DCLogic {
       if(m.media && m.media.generationId && m.media.status === 'loading') this.pollGeneration(m.id, m.media.generationId);
     }));
   }
+  backgroundTaskStateMap(){
+    if(typeof window === 'undefined' || !window.localStorage) return {};
+    try{
+      const value = JSON.parse(window.localStorage.getItem('huggyflow_background_tasks') || '{}');
+      return value && typeof value === 'object' ? value : {};
+    }catch(e){ return {}; }
+  }
+  saveBackgroundTaskStateMap(map){
+    if(typeof window === 'undefined' || !window.localStorage) return;
+    try{
+      const entries = Object.entries(map || {}).slice(-80);
+      window.localStorage.setItem('huggyflow_background_tasks', JSON.stringify(Object.fromEntries(entries)));
+    }catch(e){}
+  }
+  backgroundTaskTitle(task){
+    const prompt = String(task && task.prompt || '').replace(/\s+/g, ' ').trim();
+    if(prompt) return prompt.slice(0, 58) + (prompt.length > 58 ? '...' : '');
+    const type = String(task && task.type || 'creation').toLowerCase();
+    return type === 'video' ? 'Génération vidéo' : (type === 'voice' || type === 'audio' ? 'Génération audio' : 'Création AgentFlow');
+  }
+  backgroundTaskNotification(task){
+    const type = String(task && task.type || '').toLowerCase();
+    const message = task && task.status === 'failed'
+      ? 'La génération a rencontré un problème. Consulte ton projet pour les détails.'
+      : (type === 'video' ? 'Ta vidéo est prête à être visionnée.' : (type === 'voice' || type === 'audio' ? 'Ta voix est prête à être écoutée.' : 'Ta création est prête à être utilisée.'));
+    this.notify(message);
+    if(this.state.prefs && this.state.prefs.notif === false) return;
+    try{
+      if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
+        new Notification('AgentFlow', { body:message, tag:'huggyflow-generation-' + String(task.generationId || task.id || Date.now()) });
+      }
+    }catch(e){}
+  }
+  dismissBackgroundTasks(){
+    this.setState({ backgroundTaskPanelOpen:false });
+  }
+  async loadBackgroundTasks(){
+    if(!this.state.authToken || this.backgroundTasksLoading) return;
+    this.backgroundTasksLoading = true;
+    try{
+      const res = await this.apiFetch('/api/background-tasks');
+      if(!res.ok) return;
+      const data = await res.json();
+      const rawTasks = Array.isArray(data.tasks) ? data.tasks : [];
+      const tasks = rawTasks.map(raw=>Object.assign({}, raw, this.normalizeMedia(raw))).filter(task=>task.generationId);
+      const known = this.backgroundTaskStateMap();
+      const completedNow = [];
+      const nextKnown = Object.assign({}, known);
+      tasks.forEach(task=>{
+        const id = String(task.generationId);
+        const previous = known[id];
+        const activeBefore = previous && (previous.status === 'loading' || previous.status === 'pending');
+        if(activeBefore && (task.status === 'done' || task.status === 'failed')) completedNow.push(task);
+        nextKnown[id] = { status:task.status, completedAt:task.completedAt || '', updatedAt:Date.now() };
+      });
+      this.saveBackgroundTaskStateMap(nextKnown);
+      const active = tasks.filter(task=>task.status === 'loading');
+      const updateMessage = (message, task)=>{
+        if(!message) return message;
+        return message.id === task.messageId || (message.media && message.media.generationId === task.generationId)
+          ? Object.assign({}, message, { media:task, kind:task.type === 'video' ? 'video' : (task.type === 'voice' ? 'voice' : 'image') })
+          : message;
+      };
+      this.setState(state=>({
+        backgroundTasks:tasks,
+        backgroundTaskPanelOpen:active.length > 0 || completedNow.length > 0 || state.backgroundTaskPanelOpen,
+        messages:(state.messages || []).map(message=>tasks.reduce((current, task)=>updateMessage(current, task), message)),
+        projectsData:(state.projectsData || []).map(project=>Object.assign({}, project, { messages:(project.messages || []).map(message=>tasks.reduce((current, task)=>updateMessage(current, task), message)) }))
+      }));
+      completedNow.slice(0, 3).forEach(task=>this.backgroundTaskNotification(task));
+    }catch(err){}
+    finally{ this.backgroundTasksLoading = false; }
+  }
   applyCreditPayload(payload){
     if(!payload) return;
     const patch = {};
@@ -3743,7 +3838,12 @@ class Component extends DCLogic {
         const media = this.normalizeMedia(data.generation || data);
         if(media) this.updateAgentMessage(messageId, { media, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image' });
         this.applyCreditPayload(data);
-        if(media && media.status === 'done') this.notify(media.type === 'video' ? 'Video prete a etre visionnee.' : (media.type === 'voice' ? 'Voix prete a etre ecoutee.' : 'Creation prete a etre utilisee.'));
+        if(media && (media.status === 'done' || media.status === 'failed')){
+          const stateMap = this.backgroundTaskStateMap();
+          stateMap[String(media.generationId)] = { status:media.status, completedAt:Date.now(), updatedAt:Date.now() };
+          this.saveBackgroundTaskStateMap(stateMap);
+          if(media.status === 'done') this.notify(media.type === 'video' ? 'Video prete a etre visionnee.' : (media.type === 'voice' ? 'Voix prete a etre ecoutee.' : 'Creation prete a etre utilisee.'));
+        }
         if(media && media.status === 'loading') this.polls[generationId] = setTimeout(run, 2400);
         else delete this.polls[generationId];
       }catch(err){
@@ -4664,6 +4764,16 @@ class Component extends DCLogic {
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
     const paywallPlan = this.paywallPlanDetails();
+    const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
+      const active = task.status === 'loading';
+      const failed = task.status === 'failed';
+      return {
+        title:this.backgroundTaskTitle(task),
+        statusLabel:active ? 'En cours' : (failed ? 'Échec' : 'Terminé'),
+        statusColor:active ? '#D1FE17' : (failed ? '#FF9B8C' : '#A8E8C0'),
+        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
+      };
+    });
     const paywallButtonStyle = active => 'flex:1;min-height:30px;border:0;border-radius:7px;padding:0 9px;background:' + (active ? T.surface : 'transparent') + ';color:' + (active ? T.ink : T.text3) + ';font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:' + (active ? '0 1px 4px rgba(0,0,0,.16)' : 'none');
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
@@ -4671,6 +4781,8 @@ class Component extends DCLogic {
       creditColor,
       showToast: !!st.toast,
       toastMessage: st.toast || '',
+      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen && backgroundTaskCards.length > 0,
+      backgroundTaskCards,
       isDark: this.getResolvedTheme() === 'dark',
       isLight: this.getResolvedTheme() !== 'dark',
        showCheckoutPhone: !!st.checkoutPhoneOpen,

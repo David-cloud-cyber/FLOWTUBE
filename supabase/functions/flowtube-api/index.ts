@@ -2333,6 +2333,8 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
   return {
     id: generation.id,
     generationId: generation.id,
+    projectId: generation.project_id,
+    messageId: generation.message_id,
     type: generation.type,
     status: generation.status,
     progress: generation.progress || 0,
@@ -2346,6 +2348,9 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
     dur: generation.duration_seconds ? `0:${String(generation.duration_seconds).padStart(2, "0")}` : undefined,
     resultUrl: generation.result_url || "",
     credits: generation.credits || 0,
+    errorMessage: generation.error_message || "",
+    createdAt: generation.created_at || "",
+    completedAt: generation.completed_at || "",
   };
 }
 
@@ -6037,6 +6042,40 @@ async function generationStatus(req: Request, generationId: string) {
   return json({ generation: mediaFromGeneration(synced), credits: profile?.credits, creditsMax: profile?.credits_max });
 }
 
+async function backgroundTasksRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const recentSince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const [activeResult, recentResult] = await Promise.all([
+    supabase.from("generations").select("*").eq("user_id", userId).in("status", ["pending", "running"]).order("created_at", { ascending: false }).limit(24),
+    supabase.from("generations").select("*").eq("user_id", userId).in("status", ["completed", "failed", "cancelled"]).gte("completed_at", recentSince).order("completed_at", { ascending: false }).limit(24),
+  ]);
+  if (activeResult.error) throw activeResult.error;
+  if (recentResult.error) throw recentResult.error;
+
+  const syncedActive: Record<string, unknown>[] = [];
+  for (const generation of (activeResult.data || []).slice(0, 8)) {
+    try {
+      syncedActive.push(await syncGeneration(supabase, generation));
+    } catch {
+      syncedActive.push(generation);
+    }
+  }
+  for (const generation of (activeResult.data || []).slice(8)) syncedActive.push(generation);
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const generation of syncedActive) byId.set(String(generation.id), generation);
+  for (const generation of recentResult.data || []) byId.set(String(generation.id), generation);
+
+  const tasks = Array.from(byId.values())
+    .sort((a, b) => new Date(String(b.completed_at || b.created_at || 0)).getTime() - new Date(String(a.completed_at || a.created_at || 0)).getTime())
+    .map((generation) => mediaFromGeneration(generation));
+  return json({
+    tasks,
+    activeCount: tasks.filter((task) => task.status === "pending" || task.status === "running").length,
+    serverTime: new Date().toISOString(),
+  });
+}
+
 async function createProjectRoute(req: Request) {
   const body = await bodyJson(req);
   const supabase = adminClient();
@@ -7554,6 +7593,7 @@ Deno.serve(async (req: Request) => {
     if (first === "artifacts" && (req.method === "GET" || req.method === "POST")) return await artifactRoute(req, route[1]);
     if (first === "skills" && (req.method === "GET" || req.method === "POST")) return await skillsRoute(req);
     if (first === "skill-evals" && (req.method === "GET" || req.method === "POST")) return await skillEvaluationsRoute(req, route[1]);
+    if (first === "background-tasks" && req.method === "GET") return await backgroundTasksRoute(req);
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);
