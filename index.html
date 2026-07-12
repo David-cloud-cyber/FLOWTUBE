@@ -4026,8 +4026,20 @@ class Component extends DCLogic {
     };
     this.polls[generationId] = setTimeout(run, 1);
   }
+  handleStudioCommand(text){
+    const value = String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const asksToOpen = /\b(ouvre|ouvrir|affiche|afficher|montre|montrer|open|show)\b/.test(value) && (value.includes('panneau droit') || value.includes('panneau de droite') || value.includes('studio') || value.includes('aperçu') || value.includes('apercu') || value.includes('artifact') || value.includes('artefact'));
+    if(!asksToOpen) return false;
+    const wantsMedia = /\b(video|image|media|média|galerie)\b/.test(value);
+    this.setState({ studioPanelOpen:true, studioTab:wantsMedia ? 'media' : 'artifact', artifactView:'preview', artifactFullscreen:false }, ()=>{
+      if(!wantsMedia && this.state.activeArtifact) this.setActiveArtifact(this.state.activeArtifact);
+      this.notify(wantsMedia ? 'Panneau medias ouvert.' : 'Panneau droit ouvert.');
+    });
+    return true;
+  }
   sendPrompt(text){
     const t = (text || '').trim();
+    if(t && this.handleStudioCommand(t)) return;
     const currentAttachments = (this.state.attachments || []).filter(a=>a && a.url);
     if((!t && !currentAttachments.length) || this.state.sendLocked) return;
     if(!this.requireAuth('Connecte-toi pour creer, sauvegarder et suivre tes creations HuggyFlow.', { type:'send', text:t })) return;
