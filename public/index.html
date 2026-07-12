@@ -383,19 +383,6 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
               </div>
             </div>
 
-            <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px">
-              <sc-for list="{{ modeChips }}" as="ch" hint-placeholder-count="5">
-                <button onClick="{{ ch.onClick }}" style="{{ ch.style }}" style-hover="border-color:rgba({{ tLineRGB }},.3)">{{ ch.label }}</button>
-              </sc-for>
-            </div>
-
-            <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:13px">
-              <span style="font-size:11px;color:{{ tText4 }}">Démarrer rapidement</span>
-              <sc-for list="{{ quickStarts }}" as="quick" hint-placeholder-count="3">
-                <button onClick="{{ quick.onClick }}" title="{{ quick.hint }}" style="padding:7px 10px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035);color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .16s,color .16s" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">{{ quick.label }}</button>
-              </sc-for>
-            </div>
-
             <sc-if value="{{ showSuggestions }}" hint-placeholder-val="{{ true }}">
               <div style="margin-top:44px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -4612,15 +4599,6 @@ class Component extends DCLogic {
   renderVals(){
     const st = this.state;
     const showSuggestions = this.props.showSuggestions ?? true;
-    const modeDefs = [
-      { id:'image', label:'Image' },
-      { id:'video', label:'Vidéo' },
-      { id:'audio', label:'Voix' },
-      { id:'document', label:'Document' },
-      { id:'marketing', label:'Marketing' },
-      { id:'design', label:'Créer un design' }
-    ];
-    const chipBase = 'display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .18s;';
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
     const galleryItems = this.galleryItems();
@@ -5322,18 +5300,6 @@ class Component extends DCLogic {
       })(),
       hasModelMenuResults: this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
       modelMenuEmpty: !this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
-       modeChips: modeDefs.map(d=>({
-        label: d.label,
-        style: chipBase + (st.mode===d.id
-          ? 'background:' + T.ink + ';color:' + T.pageBg + ';border:1px solid ' + T.ink
-          : 'background:transparent;color:' + T.text2 + ';border:1px solid rgba(' + T.lineRGB + ',.14)'),
-         onClick: ()=> this.setState({ mode: d.id })
-       })),
-       quickStarts: [
-         { label:'Image produit', hint:'Créer un visuel produit', onClick:()=>this.startQuickPrompt('Crée un packshot publicitaire propre et premium pour mon produit.', 'image') },
-         { label:'Vidéo UGC', hint:'Préparer une publicité UGC', onClick:()=>this.startQuickPrompt('Prépare une publicité UGC réaliste de 15 secondes pour mon produit.', 'video') },
-         { label:'Document', hint:'Créer un document structuré', onClick:()=>this.startQuickPrompt('Rédige un brief marketing structuré avec objectifs, audience, plan d’action et prochaines étapes.', 'document') }
-       ],
       suggestions: this.SUGGESTION_SETS[st.suggestionSet].map(s=>({
         tag: s.tag, tagBg: s.tagBg, text: s.text,
         onClick: ()=> this.setState({ input: s.text })

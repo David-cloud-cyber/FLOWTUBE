@@ -2694,12 +2694,12 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "product-photoshoot-studio", label: "shooting produit", triggers: ["photo produit", "product photoshoot", "packshot premium", "ecommerce", "produit studio", "hero product", "visuel produit"], use: "transformer une photo ou un brief produit en visuel studio/lifestyle propre, vendable et reutilisable en pub." },
   { id: "landing-page-composer", label: "page de vente", triggers: ["landing page", "page de vente", "page produit", "mini site", "site produit", "funnel", "web creator"], use: "composer une page claire avec promesse, benefices, preuves, tarifs, FAQ et CTA sans casser l'interface HuggyFlow." },
   { id: "copywriting", label: "texte commercial clair", triggers: ["texte", "copy", "landing", "pricing", "accroche", "slogan", "description"], use: "ecrire des phrases simples, rassurantes et orientees benefice." },
-  { id: "ad-creative", label: "idees publicitaires", triggers: ["creative", "headline", "variante pub", "crochet", "angle publicitaire"], use: "proposer des angles courts, testables et faciles a decliner." },
-  { id: "paid-ads", label: "campagne payante", triggers: ["google ads", "meta ads", "tiktok ads", "linkedin ads", "campagne"], use: "adapter format, message et appel a l'action au canal vise." },
+  { id: "ad-creative", label: "idees publicitaires", triggers: ["creative", "headline", "variante pub", "crochet", "hook", "angle publicitaire", "pas", "bab", "avant apres", "cta", "texte publicitaire"], use: "proposer des angles, hooks, textes et CTA courts, testables et adaptes au canal, a l'offre et au niveau de conscience." },
+  { id: "paid-ads", label: "campagne payante", triggers: ["google ads", "meta ads", "tiktok ads", "linkedin ads", "youtube ads", "reddit ads", "campagne payante", "acquisition payante", "cpa", "roas", "cpc", "cpm", "budget publicitaire", "reciblage", "pixel", "utm"], use: "concevoir, lancer et optimiser une campagne payante avec objectif, budget, audience, structure, suivi des conversions et plan de tests rentable." },
   { id: "social-content", label: "contenu social", triggers: ["instagram", "tiktok", "linkedin", "facebook", "x/twitter", "post"], use: "adapter format, rythme et message a la plateforme." },
   { id: "content-strategy", label: "strategie de contenu", triggers: ["strategie", "calendrier", "contenu", "plan editorial", "audience"], use: "transformer l'objectif en themes, formats et prochaines creations." },
-  { id: "marketing-ideas", label: "idees marketing", triggers: ["idee marketing", "campagne", "lancement", "promotion", "acquisition"], use: "trouver des concepts simples, vendables et faciles a produire." },
-  { id: "marketing-psychology", label: "psychologie marketing", triggers: ["preuve sociale", "urgence", "desir", "confiance", "objection"], use: "renforcer le message avec une motivation claire sans manipulation obscure." },
+  { id: "marketing-ideas", label: "idees marketing", triggers: ["idee marketing", "campagne", "lancement", "promotion", "acquisition", "strategie de croissance", "croissance saas", "canal marketing", "partenariat", "seo", "communaute"], use: "selectionner quelques idees marketing pertinentes selon le stade, le budget, l'audience et le goulot d'activation, puis donner un plan de demarrage mesurable." },
+  { id: "marketing-psychology", label: "psychologie marketing", triggers: ["preuve sociale", "urgence", "desir", "confiance", "objection", "mental model", "biais", "friction", "choix", "prix psychologique", "hick", "fogg"], use: "identifier le frein comportemental principal et appliquer des leviers ethiques comme preuve sociale, contraste, simplicite, reciprocite ou reduction de friction." },
   { id: "creative-brief-compiler", label: "brief creatif exploitable", triggers: ["brief", "idee vague", "je veux creer", "campagne", "concept", "aide moi a creer"], use: "transformer une intention courte en objectif, audience, promesse, format, references, livrables et prochaine etape claire." },
   { id: "brand-sentinel", label: "controle de marque", triggers: ["ma marque", "brand kit", "charte", "identite", "couleurs", "ton de marque", "coherent avec ma marque"], use: "verifier ton, audience, promesse, produit, couleurs et interdits avant de produire une nouvelle creation." },
   { id: "creative-quality-assurance", label: "controle qualite creatif", triggers: ["qualite", "verifie", "controle", "corrige", "artefact", "ameliore ce rendu", "validation"], use: "evaluer le rendu par rapport au brief, relever les ecarts et relancer uniquement l'etape necessaire." },
@@ -2708,7 +2708,7 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "campaign-repurposer", label: "declinaisons de campagne", triggers: ["decline", "repurpose", "recycler", "formats", "reels", "shorts", "variantes", "plusieurs plateformes"], use: "transformer un asset ou une campagne en versions adaptees aux reseaux, avec accroches, captions, miniatures et CTA." },
   { id: "african-market-localizer", label: "adaptation marche africain", triggers: ["afrique", "africain", "fcfa", "xof", "mobile money", "abidjan", "dakar", "lagos", "localiser"], use: "adapter le message, la devise, les exemples, la langue et les freins d'achat au marche cible sans caricature." },
   { id: "rights-consent-guard", label: "droits et consentement", triggers: ["consentement", "visage", "voix", "clone", "droit", "autorisation", "personne reelle"], use: "verifier les droits d'usage, le consentement et les promesses marketing avant une creation sensible." },
-  { id: "prompt-engineering-expert", label: "amelioration de prompt", triggers: ["prompt", "systeme", "instruction", "ameliorer le prompt", "agent"], use: "clarifier role, contexte, contraintes, sortie attendue et criteres de qualite." },
+  { id: "prompt-engineering", label: "prompt engineering", triggers: ["prompt engineering", "prompt-engineering", "prompt", "system prompt", "prompt systeme", "instruction", "few shot", "few-shot", "template de prompt", "ameliorer le prompt", "optimiser le prompt", "agent"], use: "diagnostiquer l'objectif, le contexte et les echecs d'un prompt, puis construire une version de production avec contraintes, exemples, format de sortie, criteres d'evaluation et garde-fous." },
   { id: "nike-air-force-ad", label: "style campagne mode", triggers: ["sneaker", "chaussure", "mode", "streetwear", "campagne produit"], use: "adapter l'energie publicitaire mode a une creation originale, sans copier une marque protegee." },
 ];
 
@@ -2868,13 +2868,41 @@ const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
     workflow: ["remplacer jargon", "clarifier benefice", "reduire friction", "donner CTA simple"],
     output: "texte utilisateur clair, court et vendable",
   },
+  "ad-creative": {
+    requiredInputs: ["produit/offre", "audience", "plateforme", "objectif de campagne"],
+    workflow: ["choisir un angle", "ecrire 3 hooks", "decliner PAS ou avant-apres", "ajouter preuve sans l inventer", "ecrire CTA adapte au funnel", "preparer variantes courtes par format"],
+    output: "matrice d angles, hooks, textes, titres, CTA et hypotheses de test",
+    safeguards: ["respecter les limites de caracteres du canal", "ne pas promettre un resultat non prouve", "tester un changement majeur a la fois"],
+  },
+  "paid-ads": {
+    requiredInputs: ["objectif: notoriete, trafic, leads, ventes ou installations", "offre et landing page", "audience", "budget", "CPA ou ROAS cible si connu"],
+    workflow: ["verifier contexte marketing et offre", "choisir le canal selon l intention", "definir structure et conventions de nommage", "allouer test contre gagnants", "configurer conversion, UTM et exclusions", "preparer 3 a 5 creatives", "lancer avec seuils d arret", "lire CPA, ROAS, CTR, CPC, CPM et conversion", "augmenter seulement les gagnants par paliers"],
+    routing: ["Google pour intention de recherche", "Meta pour demande et retargeting", "TikTok pour creativite native", "LinkedIn pour B2B decideurs", "YouTube pour video et consideration"],
+    output: "plan de campagne exploitable avec budget, audiences, annonces, tracking, hypotheses et plan d optimisation",
+    safeguards: ["demander les informations manquantes avant depense", "ne jamais lancer ou modifier un compte publicitaire sans autorisation explicite", "exclure clients existants et conversions recentes", "ne pas garantir un ROAS", "respecter consentement, politiques publicitaires et conformite locale"],
+  },
+  "marketing-ideas": {
+    requiredInputs: ["stade du SaaS", "objectif principal", "audience", "budget et taille d equipe", "canaux deja testes"],
+    workflow: ["identifier le goulot: trafic, activation, conversion ou retention", "selectionner 3 a 5 idees proportionnees aux ressources", "ordonner quick wins et paris long terme", "decrire premiere implementation en 2 ou 3 etapes", "definir signal de succes et effort"],
+    output: "shortlist priorisee d idees marketing avec pourquoi, demarrage, resultat attendu et ressources",
+    safeguards: ["ne pas recommander une longue liste generique", "relier chaque idee au contexte fourni", "inclure acquisition organique et payante sans presumer du budget"],
+  },
+  "marketing-psychology": {
+    requiredInputs: ["comportement vise", "etape du funnel", "croyance ou frein actuel", "preuve disponible"],
+    workflow: ["identifier le job-to-be-done", "trouver la friction principale", "choisir 1 a 3 modeles mentaux", "appliquer au message, au pricing ou au parcours", "proposer un test et une mesure", "verifier que l influence reste libre et transparente"],
+    output: "diagnostic comportemental + recommandations de copy, UI, offre et test A/B",
+    safeguards: ["urgence et rarete uniquement si elles sont reelles", "ne pas exploiter une vulnerabilite", "ne pas masquer cout, renouvellement ou conditions", "preferer confiance, clarte et reduction de friction"],
+  },
   "self-learning-workflow": {
     workflow: ["detecter motif repetitif", "resumer playbook", "sauvegarder declencheurs", "appliquer au prochain contexte"],
     output: "skill prive reutilisable, sans secrets ni donnees sensibles",
   },
-  "prompt-engineering-expert": {
-    workflow: ["clarifier role", "lister capacites", "definir routage", "ajouter garde-fous", "specifier format de reponse", "proteger UX existante"],
-    output: "prompt systeme robuste, oriente execution, compatible production HuggyFlow",
+  "prompt-engineering": {
+    requiredInputs: ["objectif a atteindre", "prompt actuel si disponible", "exemples d'entrees/sorties", "contraintes de cout, format ou securite"],
+    workflow: ["diagnostiquer le resultat vise et les echecs observes", "separer contexte stable, instruction de tache et donnees variables", "definir role, priorites et limites", "ajouter contraintes mesurables et schema de sortie", "ajouter seulement les exemples few-shot utiles", "prevoir incertitude, fallback et validation", "tester sur cas nominal, limite et hors-sujet", "livrer le prompt final avec changelog court"],
+    routing: ["prompt court pour demande simple", "template parametre pour workflow recurrent", "system prompt pour regles stables", "evaluation A/B pour fiabilite, cout et latence"],
+    output: "prompt de production + variables attendues + exemples de test + criteres de reussite",
+    safeguards: ["ne jamais demander ou exposer une chaine de pensee privee", "ne pas inventer de capacite, source ou outil", "ne pas injecter de secret dans un prompt", "preferer des contraintes verifiables et un raisonnement resume", "conserver le comportement existant d AgentFlow si aucune migration n est demandee"],
   },
 };
 
