@@ -40,6 +40,10 @@ const AGENT_MODELS = [
   { id: "poolside/laguna-xs-2.1", name: "Laguna XS 2.1", description: "Agent logiciel rapide et economique.", tier: "economy", provider: "poolside", capabilities: ["tools", "reasoning"] },
   { id: "aion-labs/aion-3.0", name: "Aion-3.0", description: "Direction narrative et ideation creative.", tier: "standard", provider: "aion-labs", capabilities: ["reasoning"] },
   { id: "aion-labs/aion-3.0-mini", name: "Aion-3.0-Mini", description: "Version legere pour idees et variantes rapides.", tier: "economy", provider: "aion-labs", capabilities: ["reasoning"] },
+  { id: "black-forest-labs/flux.2-klein-4b", name: "FLUX.2 Klein", description: "Generation visuelle rapide et economique dans AgentFlow.", tier: "economy", provider: "black-forest-labs", capabilities: ["vision"] },
+  { id: "black-forest-labs/flux.2-pro", name: "FLUX.2 Pro", description: "Generation visuelle premium et edition de references.", tier: "premium", provider: "black-forest-labs", capabilities: ["vision"] },
+  { id: "openai/gpt-image-1-mini", name: "GPT Image Mini", description: "Creation et edition d'images a cout maitrise.", tier: "economy", provider: "openai", capabilities: ["vision"] },
+  { id: "openai/gpt-5-image-mini", name: "GPT-5 Image Mini", description: "Modele multimodal compact pour creation visuelle et instructions precises.", tier: "standard", provider: "openai", capabilities: ["vision", "reasoning"] },
   { id: "openai/gpt-5.5", name: "GPT-5.5", description: "Raisonnement avance, planification et taches agentiques.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
   { id: "openai/gpt-5.5-pro", name: "GPT-5.5 Pro", description: "Raisonnement profond pour les workflows critiques.", tier: "max", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
   { id: "openai/gpt-5.6-luna-pro", name: "GPT-5.6 Luna Pro", description: "Raisonnement pro rapide et precis.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
@@ -48,7 +52,7 @@ const AGENT_MODELS = [
   { id: "openai/gpt-5.6-terra", name: "GPT-5.6 Terra", description: "Modele polyvalent pour les workflows quotidiens.", tier: "standard", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
   { id: "openai/gpt-5.6-sol-pro", name: "GPT-5.6 Sol Pro", description: "Qualite maximale pour les briefs complexes.", tier: "max", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
   { id: "openai/gpt-5.6-sol", name: "GPT-5.6 Sol", description: "Raisonnement frontier pour les plans longs.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/o3", name: "o3", description: "Raisonnement methodique et resolution de problemes.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning"] },
+  { id: "openai/o3", name: "o3-pro", description: "Raisonnement methodique et resolution de problemes.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning"] },
   { id: "openai/o4-mini", name: "o4-mini", description: "Raisonnement rapide et economique.", tier: "standard", provider: "openai", capabilities: ["tools", "reasoning"] },
   { id: "openai/o3-deep-research", name: "o3 Deep Research", description: "Recherche approfondie multi-etapes.", tier: "max", provider: "openai", capabilities: ["tools", "reasoning", "research"] },
   { id: "openai/o4-mini-deep-research", name: "o4-mini Deep Research", description: "Recherche approfondie a cout maitrise.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning", "research"] },
@@ -80,6 +84,10 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
   "poolside/laguna-xs-2.1": { credits: 2, label: "2 cr", margin: "eco" },
   "aion-labs/aion-3.0": { credits: 8, label: "8 cr", margin: "premium" },
   "aion-labs/aion-3.0-mini": { credits: 3, label: "3 cr", margin: "standard" },
+  "black-forest-labs/flux.2-klein-4b": { credits: 25, label: "25 cr", margin: "eco" },
+  "black-forest-labs/flux.2-pro": { credits: 70, label: "70 cr", margin: "premium" },
+  "openai/gpt-image-1-mini": { credits: 120, label: "120 cr", margin: "premium" },
+  "openai/gpt-5-image-mini": { credits: 90, label: "90 cr", margin: "premium" },
   "openai/gpt-5.5": { credits: 35, label: "35 cr", margin: "premium" },
   "openai/gpt-5.5-pro": { credits: 180, label: "180 cr", margin: "max" },
   "openai/gpt-5.6-luna-pro": { credits: 8, label: "8 cr", margin: "premium" },
@@ -111,6 +119,10 @@ const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
   "poolside/laguna-xs-2.1": { input: 0.06, output: 0.12 },
   "aion-labs/aion-3.0": { input: 3, output: 6 },
   "aion-labs/aion-3.0-mini": { input: 0.5, output: 1.5 },
+  "black-forest-labs/flux.2-klein-4b": { input: 10, output: 40 },
+  "black-forest-labs/flux.2-pro": { input: 10, output: 40 },
+  "openai/gpt-image-1-mini": { input: 10, output: 40 },
+  "openai/gpt-5-image-mini": { input: 10, output: 40 },
   "openai/gpt-5.5": { input: 5, output: 30 },
   "openai/gpt-5.5-pro": { input: 30, output: 180 },
   "openai/gpt-5.6-luna-pro": { input: 1, output: 6 },
@@ -141,7 +153,7 @@ const OPENROUTER_LIVE_PRICES: Record<string, { input: number; output: number }> 
 const OPENROUTER_PRICE_REFRESHED_AT: Record<string, number> = {};
 const OPENROUTER_AGENT_IDS = new Set(AGENT_MODELS.filter((model) => {
   const provider = (model as { provider?: string }).provider;
-  return provider === "openrouter" || ["tencent", "poolside", "aion-labs", "openai", "x-ai"].includes(String(provider));
+  return provider === "openrouter" || ["tencent", "poolside", "aion-labs", "openai", "x-ai", "black-forest-labs"].includes(String(provider));
 }).map((model) => model.id));
 const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output: number }> = {
   "openai/gpt-5.5-pro": { input: 30, output: 180 },
@@ -150,7 +162,7 @@ const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output:
 };
 
 function isOpenRouterAgentModel(modelId: string) {
-  return OPENROUTER_AGENT_IDS.has(modelId) || modelId.startsWith("openai/") || modelId.startsWith("x-ai/") || modelId.startsWith("tencent/") || modelId.startsWith("poolside/") || modelId.startsWith("aion-labs/");
+  return OPENROUTER_AGENT_IDS.has(modelId) || modelId.startsWith("openai/") || modelId.startsWith("x-ai/") || modelId.startsWith("tencent/") || modelId.startsWith("poolside/") || modelId.startsWith("aion-labs/") || modelId.startsWith("black-forest-labs/");
 }
 
 function isTemporaryFreeAgentModel(modelId: string) {

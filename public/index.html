@@ -348,7 +348,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                         <div style="{{ g.headStyle }}">{{ g.label }}</div>
                         <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
                           <div onClick="{{ it.onClick }}" title="{{ it.desc }}" style="{{ it.rowStyle }}" style-hover="background:rgba({{ tLineRGB }},.05)">
-                            <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ it.dot }}"></span>
+                            <span style="width:22px;height:22px;flex:0 0 auto;border-radius:7px;background:rgba({{ tLineRGB }},.08);display:flex;align-items:center;justify-content:center;color:{{ it.dot }};font-size:11px;font-weight:800">{{ it.logo }}</span>
                             <span style="flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span>
                             <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ tText4 }};white-space:nowrap">{{ it.creditsLabel }}</span>
                             <span style="font-size:10px;color:{{ tText4 }};white-space:nowrap">{{ it.capabilityLabel }}</span>
@@ -2468,12 +2468,16 @@ class Component extends DCLogic {
   };
 
   MODELS = [
-    { id:'tencent/hy3:free', name:'Tencent Hy3 gratuit', group:'Tencent', provider:'tencent', desc:'Modele agent gratuit jusqu\'au 21 juillet 2026', creditsLabel:'Gratuit', free:true, freeUntil:'2026-07-21T23:59:59.999Z', dot:'#18DCFF', capabilities:['tools','reasoning'] },
+    { id:'tencent/hy3:free', name:'Tencent Hy3 gratuit', group:'Tencent', provider:'tencent', desc:'Modele agent gratuit jusqu\'au 21 juillet 2026', creditsLabel:'Gratuit', free:true, current:true, freeUntil:'2026-07-21T23:59:59.999Z', dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'tencent/hy3', name:'Tencent Hy3', group:'Tencent', provider:'tencent', desc:'Raisonnement et execution agentique polyvalente', creditsLabel:'5 cr', dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'poolside/laguna-xs-2.1:free', name:'Laguna XS 2.1 gratuit', group:'Poolside', provider:'poolside', desc:'Agent code compact avec outils et raisonnement', creditsLabel:'Gratuit', free:true, dot:'#8F9BFF', capabilities:['tools','reasoning'] },
     { id:'poolside/laguna-xs-2.1', name:'Laguna XS 2.1', group:'Poolside', provider:'poolside', desc:'Agent logiciel rapide et economique', creditsLabel:'2 cr', dot:'#8F9BFF', capabilities:['tools','reasoning'] },
     { id:'aion-labs/aion-3.0', name:'Aion-3.0', group:'Aion Labs', provider:'aion-labs', desc:'Direction narrative et ideation creative', creditsLabel:'8 cr', dot:'#D6C3FF', capabilities:['reasoning'] },
     { id:'aion-labs/aion-3.0-mini', name:'Aion-3.0-Mini', group:'Aion Labs', provider:'aion-labs', desc:'Idees et variantes rapides', creditsLabel:'3 cr', dot:'#D6C3FF', capabilities:['reasoning'] },
+    { id:'black-forest-labs/flux.2-klein-4b', name:'FLUX.2 Klein', group:'Black Forest Labs', provider:'black-forest-labs', desc:'Generation visuelle rapide et economique', creditsLabel:'25 cr', dot:'#F0A35B', capabilities:['vision'] },
+    { id:'black-forest-labs/flux.2-pro', name:'FLUX.2 Pro', group:'Black Forest Labs', provider:'black-forest-labs', desc:'Generation visuelle premium et edition de references', creditsLabel:'70 cr', dot:'#F0A35B', capabilities:['vision'] },
+    { id:'openai/gpt-image-1-mini', name:'GPT Image Mini', group:'OpenAI', provider:'openai', desc:'Creation et edition d images a cout maitrise', creditsLabel:'120 cr', dot:'#F4F4F5', capabilities:['vision'] },
+    { id:'openai/gpt-5-image-mini', name:'GPT-5 Image Mini', group:'OpenAI', provider:'openai', desc:'Modele multimodal compact pour creation visuelle', creditsLabel:'90 cr', dot:'#F4F4F5', capabilities:['vision','reasoning'] },
     { id:'openai/gpt-5.6-luna-pro', name:'GPT-5.6 Luna Pro', group:'OpenAI', provider:'openai', desc:'Raisonnement pro rapide et precis', creditsLabel:'8 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
     { id:'openai/gpt-5.6-luna', name:'GPT-5.6 Luna', group:'OpenAI', provider:'openai', desc:'GPT rapide pour le volume et les iterations', creditsLabel:'4 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
     { id:'openai/gpt-5.6-terra-pro', name:'GPT-5.6 Terra Pro', group:'OpenAI', provider:'openai', desc:'Equilibre premium entre profondeur et vitesse', creditsLabel:'20 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
@@ -3002,10 +3006,10 @@ class Component extends DCLogic {
       const agentModels = Array.isArray(data.agentModels) ? data.agentModels : [];
       if(agentModels.length){
         const dots = ['#D1FE17','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
-        this.MODELS = agentModels.map((m,i)=>({
+        this.MODELS = [...new Map(agentModels.map((m,i)=>[m.id || 'auto', ({
           id:m.id || 'auto',
           name:m.name || 'Auto AgentFlow',
-          group:m.id === 'auto' ? 'AgentFlow' : (m.provider || 'AgentFlow'),
+          group:m.id === 'auto' ? 'AgentFlow' : (({anthropic:'Anthropic',openai:'OpenAI',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI'}[m.provider]) || m.provider || 'AgentFlow'),
           provider:m.provider || 'auto',
           desc:m.description || 'Cerveau AgentFlow',
           creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
@@ -3014,8 +3018,9 @@ class Component extends DCLogic {
           capabilities:Array.isArray(m.capabilities) ? m.capabilities : [],
           inputUsdPerMillionTokens:Number(m.inputUsdPerMillionTokens || 0),
           outputUsdPerMillionTokens:Number(m.outputUsdPerMillionTokens || 0),
+          current:!!m.current,
           dot:dots[i % dots.length]
-        }));
+        })])).values()];
       }
       if(this.state.authToken && !data.user){
         this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
@@ -4831,22 +4836,36 @@ class Component extends DCLogic {
        modelGroups: (()=>{
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const grouped = {};
+        const curated = [];
         this.MODELS.filter(m=>!query || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
+          if(m.id === 'auto' || m.free || m.current){ curated.push(m); return; }
           const key = m.group || m.provider || 'AgentFlow';
           (grouped[key] || (grouped[key] = [])).push(m);
         });
-        return Object.keys(grouped).map((g,gi)=>({
+        const sections = curated.length ? [{
+          label:'Disponible',
+          headStyle:'padding:7px 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
+          items:curated.map(m=>({
+            name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.name || '?').slice(0,1).toUpperCase()))), desc:m.desc,
+            creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
+            capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? '⚒' : '',m.capabilities && m.capabilities.includes('vision') ? '◉' : '',m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '',m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
+            check:m.id === st.modelId ? '✓' : '',
+            rowStyle:'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
+            onClick:()=>this.setState({ modelId:m.id, modelMenu:false, modelMenuSearch:'' })
+          }))
+        }] : [];
+        return sections.concat(Object.keys(grouped).sort((a,b)=>a.localeCompare(b)).map((g,gi)=>({
           label: g,
           headStyle: 'padding:' + (gi === 0 ? '7px' : '12px') + ' 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
           items: grouped[g].map(m=>({
-            name: m.name, dot: m.dot, desc: m.desc,
+            name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.name || '?').slice(0,1).toUpperCase()))), desc: m.desc,
             creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? '⚒' : '', m.capabilities && m.capabilities.includes('vision') ? '◉' : '', m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '', m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
             check: m.id === st.modelId ? '✓' : '',
             rowStyle: 'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
             onClick: ()=> this.setState({ modelId: m.id, modelMenu:false, modelMenuSearch:'' })
           }))
-        }));
+        })));
       })(),
       hasModelMenuResults: this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
       modelMenuEmpty: !this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
