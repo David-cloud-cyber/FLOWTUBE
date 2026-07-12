@@ -3303,6 +3303,8 @@ function artifactType(value: unknown): string {
 function artifactPayload(row: Record<string, unknown>, version?: Record<string, unknown> | null) {
   return {
     id: row.id,
+    projectId: row.project_id,
+    conversationId: row.conversation_id,
     title: row.title,
     type: row.type,
     status: row.status,
@@ -3316,8 +3318,24 @@ function artifactPayload(row: Record<string, unknown>, version?: Record<string, 
       files: version.files || [],
       compileStatus: version.compile_status,
       runtimeError: version.runtime_error || null,
+      sourcePrompt: version.source_prompt || "",
+      modelId: version.model_id || "",
       createdAt: version.created_at,
     } : null,
+  };
+}
+
+function artifactCommentPayload(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    artifactId: row.artifact_id,
+    versionId: row.version_id,
+    body: row.body,
+    filePath: row.file_path || "",
+    lineNumber: row.line_number || null,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -3365,7 +3383,19 @@ async function artifactRoute(req: Request, artifactId?: string) {
       if (error) throw error;
       if (!artifact) return json({ error: { message: "Artifact introuvable." } }, 404);
       const { data: version } = await supabase.from("artifact_versions").select("*").eq("artifact_id", artifact.id).eq("user_id", userId).order("version_number", { ascending: false }).limit(1).maybeSingle();
-      return json({ artifact: artifactPayload(artifact, version) });
+      const detail = new URL(req.url).searchParams.get("detail") === "1";
+      if (!detail) return json({ artifact: artifactPayload(artifact, version) });
+      const [{ data: versions, error: versionsError }, { data: comments, error: commentsError }] = await Promise.all([
+        supabase.from("artifact_versions").select("*").eq("artifact_id", artifact.id).eq("user_id", userId).order("version_number", { ascending: false }).limit(40),
+        supabase.from("artifact_comments").select("*").eq("artifact_id", artifact.id).eq("user_id", userId).order("created_at", { ascending: false }).limit(100),
+      ]);
+      if (versionsError) throw versionsError;
+      if (commentsError) throw commentsError;
+      return json({
+        artifact: artifactPayload(artifact, version),
+        versions: (versions || []).map((item) => artifactPayload(artifact, item).version),
+        comments: (comments || []).map(artifactCommentPayload),
+      });
     }
     let query = supabase.from("artifacts").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(60);
     const projectId = new URL(req.url).searchParams.get("projectId");
@@ -3400,6 +3430,35 @@ async function artifactRoute(req: Request, artifactId?: string) {
   const { data: artifact, error } = await supabase.from("artifacts").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
   if (error) throw error;
   if (!artifact) return json({ error: { message: "Artifact introuvable." } }, 404);
+  if (action === "comment") {
+    const bodyText = compactText(body.body, 2_000);
+    if (!bodyText) throw new FlowtubeError(400, "Le commentaire est vide.", { code: "ARTIFACT_COMMENT_REQUIRED" });
+    const versionId = isUuid(String(body.versionId || "")) ? String(body.versionId) : null;
+    const { data: comment, error: commentError } = await supabase.from("artifact_comments").insert({
+      artifact_id: id,
+      version_id: versionId,
+      user_id: userId,
+      body: bodyText,
+      file_path: compactText(body.filePath, 160) || null,
+      line_number: Number(body.lineNumber || 0) > 0 ? Number(body.lineNumber) : null,
+      status: "open",
+    }).select("*").single();
+    if (commentError) throw commentError;
+    return json({ comment: artifactCommentPayload(comment) });
+  }
+  if (action === "resolve_comment" || action === "delete_comment") {
+    const commentId = String(body.commentId || "");
+    if (!isUuid(commentId)) throw new FlowtubeError(400, "Commentaire invalide.", { code: "INVALID_ARTIFACT_COMMENT_ID" });
+    if (action === "delete_comment") {
+      const { error: deleteError } = await supabase.from("artifact_comments").delete().eq("id", commentId).eq("artifact_id", id).eq("user_id", userId);
+      if (deleteError) throw deleteError;
+      return json({ deleted: true, commentId });
+    }
+    const { data: comment, error: resolveError } = await supabase.from("artifact_comments").update({ status: String(body.status || "resolved") === "open" ? "open" : "resolved" }).eq("id", commentId).eq("artifact_id", id).eq("user_id", userId).select("*").maybeSingle();
+    if (resolveError) throw resolveError;
+    if (!comment) return json({ error: { message: "Commentaire introuvable." } }, 404);
+    return json({ comment: artifactCommentPayload(comment) });
+  }
   if (action === "version") {
     const files = safeArtifactFiles(body.files);
     if (!files.length) throw new FlowtubeError(400, "Ajoute au moins un fichier.", { code: "ARTIFACT_FILES_REQUIRED" });

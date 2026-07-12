@@ -595,10 +595,14 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
   </sc-if>
 
   <sc-if value="{{ showStudioPanel }}" hint-placeholder-val="{{ false }}">
-    <aside data-hf-studio-panel="true" style="position:absolute;top:0;right:0;bottom:0;width:min(42vw,640px);min-width:360px;z-index:16;background:{{ tSurface }};border-left:1px solid rgba({{ tLineRGB }},.14);box-shadow:-24px 0 60px -42px rgba(0,0,0,.85);display:flex;flex-direction:column;animation:panelIn .24s cubic-bezier(.22,1,.36,1) both">
+    <aside data-hf-studio-panel="true" style="position:absolute;top:0;right:0;bottom:0;width:{{ studioPanelWidthStyle }};min-width:360px;z-index:16;background:{{ tSurface }};border-left:1px solid rgba({{ tLineRGB }},.14);box-shadow:-24px 0 60px -42px rgba(0,0,0,.85);display:flex;flex-direction:column;animation:panelIn .24s cubic-bezier(.22,1,.36,1) both">
+      <div onMouseDown="{{ startStudioResize }}" title="Redimensionner le panneau" style="position:absolute;left:-3px;top:0;bottom:0;width:6px;z-index:3;cursor:col-resize;background:transparent" style-hover="background:rgba(209,254,23,.45)"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border-bottom:1px solid rgba({{ tLineRGB }},.10)">
         <div style="min-width:0"><div style="font-family:'Space Grotesk',ui-sans-serif;font-size:17px;font-weight:700;color:{{ tInk }}">Studio AgentFlow</div><div style="margin-top:3px;font-size:11px;color:{{ tText4 }}">Rendus, artifacts et compétences en direct</div></div>
         <button onClick="{{ closeStudioPanel }}" title="Fermer le studio" style="width:31px;height:31px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:18px;line-height:1" style-hover="background:rgba({{ tLineRGB }},.07);color:{{ tInk }}">×</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:7px 14px 0">
+        <button onClick="{{ toggleArtifactFullscreen }}" title="Agrandir le panneau" style="padding:5px 8px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:7px;background:transparent;color:{{ tText3 }};font-size:10px;font-weight:700;cursor:pointer">{{ artifactFullscreenLabel }}</button>
       </div>
       <div style="display:flex;gap:6px;padding:10px 14px 8px;border-bottom:1px solid rgba({{ tLineRGB }},.07)">
         <button onClick="{{ studioMediaTab }}" style="{{ studioMediaTabStyle }}">Médias <span style="opacity:.6">{{ studioMediaCount }}</span></button>
@@ -624,14 +628,40 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
           </div>
         </sc-if>
         <sc-if value="{{ studioIsArtifact }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:5px;overflow-x:auto;padding:0 0 10px;border-bottom:1px solid rgba({{ tLineRGB }},.08)">
+            <button onClick="{{ artifactPreviewView }}" style="{{ artifactPreviewTabStyle }}">Apercu</button>
+            <button onClick="{{ artifactCodeView }}" style="{{ artifactCodeTabStyle }}">Code</button>
+            <button onClick="{{ artifactVersionsView }}" style="{{ artifactVersionsTabStyle }}">Versions</button>
+            <button onClick="{{ artifactActivityView }}" style="{{ artifactActivityTabStyle }}">Activite</button>
+            <button onClick="{{ artifactCommentsView }}" style="{{ artifactCommentsTabStyle }}">Commentaires <span style="opacity:.65">{{ artifactCommentsCount }}</span></button>
+          </div>
           <sc-if value="{{ artifactEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 18px;text-align:center;border:1px dashed rgba({{ tLineRGB }},.14);border-radius:14px;color:{{ tText3 }};font-size:13px;line-height:1.5">Demande à AgentFlow de créer une page, un outil, un tableau ou un document interactif.</div></sc-if>
           <sc-if value="{{ activeArtifactReady }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ artifactViewPreview }}" hint-placeholder-val="{{ true }}">
             <div style="border:1px solid rgba({{ tLineRGB }},.12);border-radius:14px;overflow:hidden;background:rgba({{ tLineRGB }},.035)">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba({{ tLineRGB }},.08)"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ activeArtifactTitle }}</span><span style="font-size:10px;color:#D1FE17">Version {{ activeArtifactVersion }}</span></div>
               <iframe title="Aperçu de l'artifact" src="{{ artifactPreviewUrl }}" sandbox="allow-scripts" referrerpolicy="no-referrer" style="display:block;width:100%;height:310px;border:0;background:#fff"></iframe>
               <div style="display:flex;gap:7px;padding:10px 12px"><button onClick="{{ publishActiveArtifact }}" style="flex:1;padding:8px 10px;border-radius:8px;border:0;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Publier</button><button onClick="{{ copyActiveArtifact }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Copier</button></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:0 12px 10px;overflow-x:auto"><button onClick="{{ setArtifactDesktop }}" style="{{ artifactDeviceDesktopStyle }}">Desktop</button><button onClick="{{ setArtifactTablet }}" style="{{ artifactDeviceTabletStyle }}">Tablet</button><button onClick="{{ setArtifactMobile }}" style="{{ artifactDeviceMobileStyle }}">Mobile</button><div style="flex:1"></div><button onClick="{{ downloadActiveArtifact }}" style="{{ artifactActionStyle }}" title="Telecharger">↓</button></div>
+              <sc-if value="{{ artifactHasRuntimeError }}" hint-placeholder-val="{{ false }}"><div style="margin:0 12px 10px;padding:9px 10px;border-radius:9px;border:1px solid rgba(196,88,64,.28);background:rgba(196,88,64,.08);color:#E58C72;font-size:10.5px;line-height:1.45">{{ artifactRuntimeError }}</div></sc-if>
             </div>
           </sc-if>
+            <sc-if value="{{ artifactViewCode }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:5px;overflow-x:auto;padding:10px 0 8px"><sc-for list="{{ artifactFileTabs }}" as="file" hint-placeholder-count="3"><button onClick="{{ file.onClick }}" style="{{ file.style }}">{{ file.name }}</button></sc-for></div>
+              <textarea value="{{ artifactEditorContent }}" onChange="{{ onArtifactEditor }}" spellcheck="false" aria-label="Editeur de l artifact" style="width:100%;min-height:330px;box-sizing:border-box;resize:vertical;padding:13px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:11px;background:#111315;color:#F7F7F8;outline:none;font:11px/1.6 'JetBrains Mono',monospace"></textarea>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="flex:1;font-size:10.5px;color:{{ artifactSaveStateColor }}">{{ artifactSaveStateLabel }}</span><button onClick="{{ downloadActiveArtifact }}" style="{{ artifactSecondaryStyle }}">Telecharger</button><button onClick="{{ saveArtifactVersion }}" disabled="{{ artifactSaveDisabled }}" style="{{ artifactPublishStyle }}">{{ artifactSaveLabel }}</button></div>
+            </sc-if>
+            <sc-if value="{{ artifactViewVersions }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px"><sc-for list="{{ artifactVersionCards }}" as="version" hint-placeholder-count="4"><button onClick="{{ version.onClick }}" style="{{ version.style }}"><span style="font-weight:800">V{{ version.number }}</span><span style="flex:1;text-align:left;margin-left:8px">{{ version.label }}</span><span style="font-size:10px;color:{{ tText4 }}">{{ version.date }}</span></button></sc-for></div>
+            </sc-if>
+            <sc-if value="{{ artifactViewActivity }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px"><sc-for list="{{ artifactActivityCards }}" as="activity" hint-placeholder-count="4"><div style="display:flex;gap:9px;padding:10px;border:1px solid rgba({{ tLineRGB }},.09);border-radius:10px;background:rgba({{ tLineRGB }},.025)"><span style="width:7px;height:7px;flex:0 0 auto;margin-top:4px;border-radius:50%;background:{{ activity.dot }}"></span><div style="min-width:0"><div style="font-size:11.5px;font-weight:700;color:{{ tInk }}">{{ activity.title }}</div><div style="margin-top:3px;font-size:10.5px;color:{{ tText4 }}">{{ activity.meta }}</div></div></div></sc-for></div>
+            </sc-if>
+            <sc-if value="{{ artifactViewComments }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px"><textarea value="{{ artifactCommentDraft }}" onChange="{{ onArtifactCommentDraft }}" placeholder="Ajouter une note sur cet artifact..." rows="3" style="width:100%;box-sizing:border-box;resize:vertical;padding:10px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:10px;background:transparent;color:{{ tInk }};font:12px/1.45 ui-sans-serif,system-ui,sans-serif"></textarea><button onClick="{{ addArtifactComment }}" style="width:100%;margin-top:7px;padding:9px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Ajouter le commentaire</button></div>
+              <div style="display:flex;flex-direction:column;gap:7px;margin-top:12px"><sc-for list="{{ artifactCommentCards }}" as="comment" hint-placeholder-count="3"><div style="padding:10px;border:1px solid rgba({{ tLineRGB }},.09);border-radius:10px;background:rgba({{ tLineRGB }},.025);opacity:{{ comment.opacity }}"><div style="font-size:11.5px;line-height:1.5;color:{{ tText2 }}">{{ comment.body }}</div><div style="display:flex;align-items:center;gap:8px;margin-top:7px"><span style="flex:1;font-size:10px;color:{{ tText4 }}">{{ comment.date }} · {{ comment.status }}</span><button onClick="{{ comment.onToggle }}" style="{{ artifactTinyActionStyle }}">{{ comment.action }}</button></div></div></sc-for></div>
+            </sc-if>
+            </sc-if>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px"><sc-for list="{{ artifactCards }}" as="artifact" hint-placeholder-count="3"><button onClick="{{ artifact.onClick }}" style="text-align:left;padding:11px 12px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.10);background:{{ artifact.activeStyle }};color:{{ tInk }};cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ artifact.title }}</span><span style="font-size:10px;color:#D1FE17">V{{ artifact.version }}</span></div><div style="margin-top:4px;font-size:10.5px;color:{{ tText4 }}">{{ artifact.type }} · {{ artifact.status }}</div></button></sc-for></div>
         </sc-if>
         <sc-if value="{{ studioIsSkill }}" hint-placeholder-val="{{ false }}"><div style="padding:11px 12px;border-radius:11px;background:rgba(209,254,23,.07);border:1px solid rgba(209,254,23,.16);font-size:12px;line-height:1.5;color:{{ tInk }}">{{ skillActivityLabel }}</div><div style="margin-top:12px;font-size:11px;color:{{ tText4 }}">AgentFlow sauvegarde les compétences réutilisables et les réactive automatiquement lorsqu’une demande correspondante revient.</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:14px"><sc-for list="{{ skillCards }}" as="skill" hint-placeholder-count="3"><div style="padding:11px 12px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ skill.name }}</span><span style="font-size:10px;color:#D1FE17">V{{ skill.version }}</span></div><div style="margin-top:4px;font-size:10.5px;color:{{ tText4 }}">{{ skill.status }} · {{ skill.uses }} utilisation(s)</div></div></sc-for></div></sc-if>
@@ -2551,10 +2581,21 @@ class Component extends DCLogic {
     compareOpen: false,
     studioPanelOpen: false,
     studioTab: 'media',
+    studioPanelWidth: 560,
+    artifactView: 'preview',
+    artifactPreviewDevice: 'desktop',
+    artifactFullscreen: false,
     artifactItems: [],
     skillItems: [],
     activeArtifact: null,
     artifactPreviewUrl: '',
+    artifactVersions: [],
+    artifactComments: [],
+    artifactCommentsLoading: false,
+    artifactCommentDraft: '',
+    artifactEditorFile: '',
+    artifactEditorContent: '',
+    artifactSaveState: 'idle',
     studioLoading: false,
     skillActivity: '',
     evalRuns: [],
@@ -3263,8 +3304,119 @@ class Component extends DCLogic {
     if(this.state.artifactPreviewUrl){ try{ URL.revokeObjectURL(this.state.artifactPreviewUrl); }catch(e){} }
     this.setState({ activeArtifact:artifact, artifactPreviewUrl:nextUrl, studioPanelOpen:true, studioTab:'artifact' });
   }
-  setActiveArtifact(artifact){ this.buildArtifactPreview(this.normalizeArtifact(artifact)); }
-  closeStudioPanel(){ this.setState({ studioPanelOpen:false }); }
+  artifactFilesFor(artifact){ return artifact && artifact.version && Array.isArray(artifact.version.files) ? artifact.version.files : []; }
+  prepareArtifactEditor(artifact){
+    const files = this.artifactFilesFor(artifact);
+    const currentPath = this.state.artifactEditorFile && files.some(file=>file.path === this.state.artifactEditorFile) ? this.state.artifactEditorFile : (files[0] && files[0].path) || '';
+    const current = files.find(file=>file.path === currentPath) || files[0];
+    this.setState({ artifactEditorFile:currentPath, artifactEditorContent:current ? String(current.content || '') : '' });
+  }
+  async loadArtifactDetail(artifactId){
+    if(!artifactId || !this.state.authToken) return;
+    this.setState({ artifactCommentsLoading:true });
+    try{
+      const res = await this.apiFetch('/api/artifacts/' + encodeURIComponent(artifactId) + '?detail=1');
+      if(!res.ok) throw new Error('artifact detail ' + res.status);
+      const data = await res.json();
+      const artifact = this.normalizeArtifact(data.artifact);
+      if(!artifact) return;
+      const versions = Array.isArray(data.versions) ? data.versions : [];
+      const comments = Array.isArray(data.comments) ? data.comments : [];
+      this.setState(s=>({
+        activeArtifact:artifact,
+        artifactItems:(s.artifactItems || []).map(item=>item.id === artifact.id ? artifact : item),
+        artifactVersions:versions,
+        artifactComments:comments,
+        artifactCommentsLoading:false
+      }), ()=>{ this.prepareArtifactEditor(artifact); this.buildArtifactPreview(artifact); });
+    }catch(err){ this.setState({ artifactCommentsLoading:false }); }
+  }
+  setActiveArtifact(artifact){
+    const normalized = this.normalizeArtifact(artifact);
+    if(!normalized) return;
+    this.prepareArtifactEditor(normalized);
+    this.buildArtifactPreview(normalized);
+    this.loadArtifactDetail(normalized.id);
+  }
+  selectArtifactView(view){ this.setState({ artifactView:view }); }
+  selectArtifactFile(path){
+    const file = this.artifactFilesFor(this.state.activeArtifact).find(item=>item.path === path);
+    this.setState({ artifactEditorFile:path, artifactEditorContent:file ? String(file.content || '') : '' });
+  }
+  onArtifactEditor(e){ this.setState({ artifactEditorContent:e.target.value, artifactSaveState:'dirty' }); }
+  selectArtifactVersion(versionId){
+    const version = (this.state.artifactVersions || []).find(item=>String(item.id) === String(versionId) || String(item.number) === String(versionId));
+    const artifact = this.state.activeArtifact;
+    if(!version || !artifact) return;
+    const next = Object.assign({}, artifact, { version });
+    this.prepareArtifactEditor(next);
+    this.buildArtifactPreview(next);
+    this.setState({ artifactView:'preview' });
+  }
+  async saveArtifactVersion(){
+    const artifact = this.state.activeArtifact;
+    if(!artifact || !artifact.id || this.state.artifactSaveState === 'saving') return;
+    const files = this.artifactFilesFor(artifact).map(file=>file.path === this.state.artifactEditorFile ? Object.assign({}, file, { content:this.state.artifactEditorContent }) : file);
+    this.setState({ artifactSaveState:'saving' });
+    try{
+      const res = await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'version', artifactId:artifact.id, files, entryFile:artifact.version && artifact.version.entryFile, sourcePrompt:artifact.version && artifact.version.sourcePrompt, modelId:artifact.version && artifact.version.modelId, title:artifact.title }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.artifact) throw new Error(data && data.error && data.error.message || 'Version indisponible.');
+      const next = this.normalizeArtifact(data.artifact);
+      this.setState(s=>({ artifactSaveState:'saved', activeArtifact:next, artifactItems:(s.artifactItems || []).map(item=>item.id === next.id ? next : item) }), ()=>{ this.buildArtifactPreview(next); this.loadArtifactDetail(next.id); });
+      this.notify('Nouvelle version de l artifact enregistrée.');
+    }catch(err){ this.setState({ artifactSaveState:'dirty' }); this.notify(String(err && err.message || 'Impossible d enregistrer la version.')); }
+  }
+  downloadActiveArtifact(){
+    const artifact = this.state.activeArtifact;
+    const file = this.artifactFilesFor(artifact).find(item=>item.path === (this.state.artifactEditorFile || (artifact && artifact.version && artifact.version.entryFile))) || this.artifactFilesFor(artifact)[0];
+    if(!file || typeof Blob === 'undefined') return;
+    const url = URL.createObjectURL(new Blob([String(file.content || '')], { type:'text/plain;charset=utf-8' }));
+    const anchor = document.createElement('a'); anchor.href=url; anchor.download=String(file.path || 'artifact.txt').split('/').pop(); anchor.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 800);
+    this.notify('Fichier artifact téléchargé.');
+  }
+  onArtifactCommentDraft(e){ this.setState({ artifactCommentDraft:e.target.value }); }
+  async addArtifactComment(){
+    const artifact = this.state.activeArtifact;
+    const body = String(this.state.artifactCommentDraft || '').trim();
+    if(!artifact || !body) return;
+    try{
+      const res = await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'comment', artifactId:artifact.id, versionId:artifact.version && artifact.version.id, body }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.comment) throw new Error(data && data.error && data.error.message || 'Commentaire indisponible.');
+      this.setState(s=>({ artifactComments:[data.comment].concat(s.artifactComments || []), artifactCommentDraft:'' }));
+    }catch(err){ this.notify(String(err && err.message || 'Impossible d ajouter le commentaire.')); }
+  }
+  async setArtifactCommentStatus(comment, status){
+    const artifact = this.state.activeArtifact;
+    if(!artifact || !comment || !comment.id) return;
+    try{
+      const res = await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'resolve_comment', artifactId:artifact.id, commentId:comment.id, status }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.comment) throw new Error('Commentaire indisponible.');
+      this.setState(s=>({ artifactComments:(s.artifactComments || []).map(item=>item.id === comment.id ? data.comment : item) }));
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de mettre à jour le commentaire.')); }
+  }
+  toggleArtifactFullscreen(){ this.setState(s=>({ artifactFullscreen:!s.artifactFullscreen })); }
+  startStudioResize(event){
+    if(!event || typeof window === 'undefined' || window.innerWidth < 760) return;
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = Number(this.state.studioPanelWidth || 560);
+    this.studioResizeMove = move=>{
+      const next = Math.max(360, Math.min(Math.round(window.innerWidth * .82), startWidth + startX - move.clientX));
+      this.setState({ studioPanelWidth:next });
+    };
+    this.studioResizeUp = ()=>{
+      document.removeEventListener('mousemove', this.studioResizeMove);
+      document.removeEventListener('mouseup', this.studioResizeUp);
+      this.studioResizeMove = null; this.studioResizeUp = null;
+    };
+    document.addEventListener('mousemove', this.studioResizeMove);
+    document.addEventListener('mouseup', this.studioResizeUp);
+  }
+  closeStudioPanel(){ this.setState({ studioPanelOpen:false, artifactFullscreen:false }); }
   toggleStudioPanel(){ this.setState(s=>({ studioPanelOpen:!s.studioPanelOpen })); }
   publishActiveArtifact(){
     const artifact = this.state.activeArtifact;
@@ -3401,6 +3553,8 @@ class Component extends DCLogic {
   }
   componentWillUnmount(){
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
+    if(typeof document !== 'undefined' && this.studioResizeMove) document.removeEventListener('mousemove', this.studioResizeMove);
+    if(typeof document !== 'undefined' && this.studioResizeUp) document.removeEventListener('mouseup', this.studioResizeUp);
     clearInterval(this._ph);
     clearInterval(this._streamPhrase);
     clearInterval(this._backgroundTasks);
@@ -4774,6 +4928,19 @@ class Component extends DCLogic {
         dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
       };
     });
+    const artifactView = st.artifactView || 'preview';
+    const artifactTabStyle = active => 'padding:7px 9px;border:0;border-radius:8px;background:' + (active ? '#D1FE17' : 'transparent') + ';color:' + (active ? '#131517' : T.text3) + ';font-size:10.5px;font-weight:' + (active ? '800' : '700') + ';cursor:pointer;white-space:nowrap';
+    const artifactFiles = this.artifactFilesFor(st.activeArtifact);
+    const artifactFileTabs = artifactFiles.map(file=>({ name:String(file.path || '').split('/').pop() || 'fichier', onClick:()=>this.selectArtifactFile(file.path), style:'padding:5px 8px;border:1px solid rgba(' + T.lineRGB + ',.12);border-radius:7px;background:' + (st.artifactEditorFile === file.path ? 'rgba(209,254,23,.12)' : 'transparent') + ';color:' + (st.artifactEditorFile === file.path ? '#D1FE17' : T.text3) + ';font:10px "JetBrains Mono",monospace;cursor:pointer;white-space:nowrap' }));
+    const artifactVersions = Array.isArray(st.artifactVersions) && st.artifactVersions.length ? st.artifactVersions : (st.activeArtifact && st.activeArtifact.version ? [st.activeArtifact.version] : []);
+    const artifactVersionCards = artifactVersions.map(version=>({ number:version.number || 1, label:version.compileStatus === 'failed' ? 'Validation en echec' : (version.sourcePrompt ? String(version.sourcePrompt).replace(/\s+/g,' ').slice(0,48) : 'Version de travail'), date:version.createdAt ? new Date(version.createdAt).toLocaleString('fr-FR',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : 'A l instant', onClick:()=>this.selectArtifactVersion(version.id || version.number), style:'display:flex;align-items:center;width:100%;padding:10px 11px;border:1px solid rgba(' + T.lineRGB + ',.10);border-radius:9px;background:' + ((st.activeArtifact && st.activeArtifact.version && String(st.activeArtifact.version.id) === String(version.id)) ? 'rgba(209,254,23,.09)' : 'rgba(' + T.lineRGB + ',.025)') + ';color:' + T.ink + ';font-size:11px;cursor:pointer' }));
+    const artifactCommentCards = (st.artifactComments || []).map(comment=>({ body:comment.body, date:comment.createdAt ? new Date(comment.createdAt).toLocaleDateString('fr-FR') : 'A l instant', status:comment.status === 'resolved' ? 'Résolu' : 'Ouvert', action:comment.status === 'resolved' ? 'Rouvrir' : 'Résoudre', opacity:comment.status === 'resolved' ? '.62' : '1', onToggle:()=>this.setArtifactCommentStatus(comment, comment.status === 'resolved' ? 'open' : 'resolved') }));
+    const artifactActivityCards = artifactVersions.slice(0, 8).map((version,index)=>({ title:index === 0 ? 'Version actuelle' : 'Version V' + (version.number || 1) + ' créée', meta:(version.createdAt ? new Date(version.createdAt).toLocaleString('fr-FR') : 'A l instant') + (version.compileStatus ? ' · ' + version.compileStatus : ''), dot:version.compileStatus === 'failed' ? '#C45840' : '#D1FE17' }));
+    const artifactSaveState = st.artifactSaveState || 'idle';
+    const artifactSaveLabel = artifactSaveState === 'saving' ? 'Enregistrement...' : (artifactSaveState === 'saved' ? 'Version enregistree' : 'Enregistrer une version');
+    const artifactSaveStateLabel = artifactSaveState === 'dirty' ? 'Modifications non enregistrees' : (artifactSaveState === 'saving' ? 'Sauvegarde en cours...' : (artifactSaveState === 'saved' ? 'Toutes les modifications sont enregistrees' : 'Pret a modifier'));
+    const artifactSaveStateColor = artifactSaveState === 'dirty' ? '#E8B25C' : (artifactSaveState === 'saving' ? '#D1FE17' : T.text4);
+    const artifactButtonStyle = active => 'padding:5px 8px;border:1px solid rgba(' + T.lineRGB + ',.12);border-radius:7px;background:' + (active ? 'rgba(209,254,23,.12)' : 'transparent') + ';color:' + (active ? '#D1FE17' : T.text3) + ';font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap';
     const paywallButtonStyle = active => 'flex:1;min-height:30px;border:0;border-radius:7px;padding:0 9px;background:' + (active ? T.surface : 'transparent') + ';color:' + (active ? T.ink : T.text3) + ';font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:' + (active ? '0 1px 4px rgba(0,0,0,.16)' : 'none');
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
@@ -4985,6 +5152,8 @@ class Component extends DCLogic {
       }),
       showPricing: st.page === 'pricing',
       showStudioPanel: !!st.studioPanelOpen,
+      studioPanelWidthStyle: st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '100vw' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
+      artifactFullscreenLabel: st.artifactFullscreen ? 'Réduire' : 'Agrandir',
       studioIsMedia: st.studioTab === 'media',
       studioIsArtifact: st.studioTab === 'artifact',
       studioIsSkill: st.studioTab === 'skill',
@@ -4999,6 +5168,47 @@ class Component extends DCLogic {
       activeArtifactTitle: st.activeArtifact ? st.activeArtifact.title : '',
       activeArtifactVersion: st.activeArtifact && st.activeArtifact.version ? (st.activeArtifact.version.number || 1) : 1,
       artifactPreviewUrl: st.artifactPreviewUrl || '',
+      activeArtifactType: st.activeArtifact ? (st.activeArtifact.type || 'artifact') : 'artifact',
+      activeArtifactStatus: st.activeArtifact ? (st.activeArtifact.status || 'ready') : 'ready',
+      artifactHasRuntimeError: !!(st.activeArtifact && st.activeArtifact.version && st.activeArtifact.version.runtimeError),
+      artifactRuntimeError: st.activeArtifact && st.activeArtifact.version && st.activeArtifact.version.runtimeError ? JSON.stringify(st.activeArtifact.version.runtimeError) : '',
+      artifactPreviewDeviceLabel: st.artifactPreviewDevice === 'mobile' ? 'Mobile' : (st.artifactPreviewDevice === 'tablet' ? 'Tablette' : 'Desktop'),
+      artifactPreviewMaxWidth: st.artifactPreviewDevice === 'mobile' ? '390px' : (st.artifactPreviewDevice === 'tablet' ? '760px' : '100%'),
+      artifactViewPreview: artifactView === 'preview',
+      artifactViewCode: artifactView === 'code',
+      artifactViewVersions: artifactView === 'versions',
+      artifactViewActivity: artifactView === 'activity',
+      artifactViewComments: artifactView === 'comments',
+      artifactPreviewView: ()=>this.selectArtifactView('preview'),
+      artifactCodeView: ()=>this.selectArtifactView('code'),
+      artifactVersionsView: ()=>this.selectArtifactView('versions'),
+      artifactActivityView: ()=>this.selectArtifactView('activity'),
+      artifactCommentsView: ()=>this.selectArtifactView('comments'),
+      artifactPreviewTabStyle:artifactTabStyle(artifactView === 'preview'),
+      artifactCodeTabStyle:artifactTabStyle(artifactView === 'code'),
+      artifactVersionsTabStyle:artifactTabStyle(artifactView === 'versions'),
+      artifactActivityTabStyle:artifactTabStyle(artifactView === 'activity'),
+      artifactCommentsTabStyle:artifactTabStyle(artifactView === 'comments'),
+      artifactFileTabs,
+      artifactVersionCards,
+      artifactActivityCards,
+      artifactCommentCards,
+      artifactCommentsCount:(st.artifactComments || []).filter(comment=>comment.status !== 'resolved').length,
+      artifactCommentDraft:st.artifactCommentDraft || '',
+      artifactSaveStateLabel,
+      artifactSaveStateColor,
+      artifactSaveLabel,
+      artifactSaveDisabled:artifactSaveState === 'saving' || artifactSaveState === 'idle',
+      artifactSecondaryStyle:artifactButtonStyle(false),
+      artifactPublishStyle:'padding:6px 10px;border:0;border-radius:7px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap',
+      artifactActionStyle:artifactButtonStyle(false),
+      artifactTinyActionStyle:artifactButtonStyle(false),
+      artifactDeviceDesktopStyle:artifactButtonStyle(st.artifactPreviewDevice === 'desktop'),
+      artifactDeviceTabletStyle:artifactButtonStyle(st.artifactPreviewDevice === 'tablet'),
+      artifactDeviceMobileStyle:artifactButtonStyle(st.artifactPreviewDevice === 'mobile'),
+      setArtifactDesktop:()=>this.setState({ artifactPreviewDevice:'desktop' }),
+      setArtifactTablet:()=>this.setState({ artifactPreviewDevice:'tablet' }),
+      setArtifactMobile:()=>this.setState({ artifactPreviewDevice:'mobile' }),
       artifactCards: artifactItems.map(a=>({ title:a.title, version:a.currentVersion || 1, type:a.type || 'markdown', status:a.status || 'ready', activeStyle:st.activeArtifact && st.activeArtifact.id === a.id ? 'rgba(209,254,23,.08)' : 'rgba(' + T.lineRGB + ',.035)', onClick:()=>this.setActiveArtifact(a) })),
       studioMediaTab: ()=>this.setState({ studioTab:'media' }),
       studioArtifactTab: ()=>this.setState({ studioTab:'artifact' }),
@@ -5030,8 +5240,15 @@ class Component extends DCLogic {
       })),
       openEvalLab: ()=>this.setState(s=>({ studioPanelOpen:true, studioTab:'eval', evalInput:s.evalInput || this.evalInputTemplate(s.evalKind || 'blind_comparator'), page:'app' })),
       closeStudioPanel: ()=>this.closeStudioPanel(),
+      toggleArtifactFullscreen: ()=>this.toggleArtifactFullscreen(),
+      startStudioResize: (e)=>this.startStudioResize(e),
       publishActiveArtifact: ()=>this.publishActiveArtifact(),
       copyActiveArtifact: ()=>this.copyActiveArtifact(),
+      downloadActiveArtifact: ()=>this.downloadActiveArtifact(),
+      onArtifactEditor:(e)=>this.onArtifactEditor(e),
+      saveArtifactVersion:()=>this.saveArtifactVersion(),
+      onArtifactCommentDraft:(e)=>this.onArtifactCommentDraft(e),
+      addArtifactComment:()=>this.addArtifactComment(),
       skillActivityLabel: st.skillActivity || 'AgentFlow activera ici les compétences créées pendant tes générations.',
       showAuth: st.page === 'auth',
       showBilling: false,
