@@ -2676,6 +2676,7 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "self-learning-workflow", label: "playbook reutilisable", triggers: ["automatiser", "repete", "a chaque fois", "workflow", "playbook", "skill", "sauvegarde cette methode"], use: "transformer un enchainement repetitif en methode reutilisable et l'appliquer quand le contexte revient." },
   { id: "gpt-image-2-director", label: "direction image premium", triggers: ["image", "affiche", "poster", "portrait", "packshot", "mockup", "texte dans l'image", "miniature"], use: "transformer l'idee en prompt visuel precis, avec cadrage, lumiere, style et contraintes de texte court." },
   { id: "kling-3-prompt-director", label: "direction video premium", triggers: ["kling", "video premium", "cinematique", "camera", "mouvement", "film"], use: "structurer la video avec sujet, action, camera, rythme, ambiance, duree, format et details de scene." },
+  { id: "flux-motion-video", label: "video motion avec FLUX", triggers: ["flux motion", "motion avec flux", "animer avec flux", "flux image to video", "image flux animee", "video a partir d'une image flux", "mouvement produit flux", "flux video"], use: "creer une image-cle FLUX coherente puis la transformer en plan anime avec camera, mouvement, rythme et raccords controles." },
   { id: "seedance-prompting-skills-for-cinematic-films", label: "video rapide et cinematographique", triggers: ["seedance", "video rapide", "image en video", "reference video", "scene courte"], use: "creer un prompt court, stable et tres visuel pour obtenir un mouvement lisible rapidement." },
   { id: "storyboard-cheatcode", label: "storyboard et plan de production", triggers: ["storyboard", "script", "scenario", "previs", "plans", "sequence"], use: "decouper l'idee en plans simples, puis proposer l'image cle ou la video la plus utile en premier." },
   { id: "static-ads", label: "publicite statique", triggers: ["pub", "annonce", "ad", "banniere", "meta ad", "visuel publicitaire"], use: "reutiliser une structure gagnante, clarifier l'offre et produire un visuel publicitaire pret a tester." },
@@ -2705,6 +2706,7 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "creative-quality-assurance", label: "controle qualite creatif", triggers: ["qualite", "verifie", "controle", "corrige", "artefact", "ameliore ce rendu", "validation"], use: "evaluer le rendu par rapport au brief, relever les ecarts et relancer uniquement l'etape necessaire." },
   { id: "cost-aware-production-router", label: "production rentable", triggers: ["budget", "credits", "moins cher", "cout", "rentable", "devis", "qualite prix"], use: "proposer le meilleur niveau de production selon le budget, les credits restants et la qualite attendue." },
   { id: "file-intelligence", label: "lecture de fichiers", triggers: ["pdf", "document", "fichier", "audio uploade", "video uploadee", "analyse le fichier", "piece jointe"], use: "extraire le contexte utile d'un document, d'une image, d'un audio ou d'une video avant de formuler une recommandation ou une creation." },
+  { id: "pdf-document-generator", label: "document PDF professionnel", triggers: ["genere un pdf", "génère un pdf", "document pdf", "rapport pdf", "export pdf", "pdf professionnel", "pdf", "facture pdf", "guide pdf", "ebook pdf"], use: "transformer un brief, des sources et des donnees en document PDF structure, lisible et controle avant export, avec une source editable conservee." },
   { id: "campaign-repurposer", label: "declinaisons de campagne", triggers: ["decline", "repurpose", "recycler", "formats", "reels", "shorts", "variantes", "plusieurs plateformes"], use: "transformer un asset ou une campagne en versions adaptees aux reseaux, avec accroches, captions, miniatures et CTA." },
   { id: "african-market-localizer", label: "adaptation marche africain", triggers: ["afrique", "africain", "fcfa", "xof", "mobile money", "abidjan", "dakar", "lagos", "localiser"], use: "adapter le message, la devise, les exemples, la langue et les freins d'achat au marche cible sans caricature." },
   { id: "rights-consent-guard", label: "droits et consentement", triggers: ["consentement", "visage", "voix", "clone", "droit", "autorisation", "personne reelle"], use: "verifier les droits d'usage, le consentement et les promesses marketing avant une creation sensible." },
@@ -2826,6 +2828,13 @@ const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
     workflow: ["identifier type de fichier", "extraire contenu utile", "resumer contraintes et references", "proposer action la plus utile"],
     output: "brief fiable base sur le contenu fourni, avec limites explicites si le fichier est incomplet",
   },
+  "pdf-document-generator": {
+    requiredInputs: ["sujet ou objectif", "audience", "sources et donnees", "format ou longueur", "branding si disponible"],
+    workflow: ["cadrer le livrable et le niveau de preuve", "construire le plan", "rediger le contenu avec titres, tableaux et references", "appliquer une hierarchie visuelle lisible", "produire une source editable", "verifier pagination, coupures, liens, caracteres et sections obligatoires", "exporter en PDF uniquement via le pipeline disponible", "livrer le PDF et un resume des controles"],
+    routing: ["AgentFlow pour structure et contenu", "Artifact pour la source editable", "export PDF configure pour le fichier final"],
+    output: "document PDF professionnel + source editable + controle de qualite et limites explicites",
+    safeguards: ["ne jamais inventer une source, une citation ou une donnee", "signaler les informations manquantes", "ne pas annoncer un PDF telechargeable si l export n a pas ete execute", "preserver les donnees sensibles et les droits d utilisation"],
+  },
   "campaign-repurposer": {
     requiredInputs: ["asset, script ou campagne source", "plateformes cibles"],
     workflow: ["extraire idee forte", "decliner hooks et formats", "adapter captions, CTA et miniatures", "preparer les exports"],
@@ -2847,6 +2856,13 @@ const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
   "kling-3-prompt-director": {
     workflow: ["decouper scene, action et camera", "verrouiller reference et format", "definir rythme et raccord", "controler mouvement, produit et lisibilite"],
     output: "brief video court, stable et pret a produire",
+  },
+  "flux-motion-video": {
+    requiredInputs: ["sujet ou produit", "reference visuelle optionnelle", "mouvement souhaite", "duree et ratio", "audio optionnel"],
+    workflow: ["definir le sujet, le style et le mouvement principal", "generer une image-cle avec FLUX Schnell pour le draft ou FLUX Pro pour le rendu final", "verrouiller produit, personnage, lumiere et composition", "decrire camera, trajectoire, vitesse et transition", "envoyer l image-cle au pipeline image-to-video disponible", "controler deformation, lisibilite, raccord et boucle", "proposer une variante economique et une variante finale"],
+    routing: ["FLUX Schnell pour ideation et tests", "FLUX Pro pour image-cle commerciale", "moteur video image-to-video pour l animation", "Auto AgentFlow pour choisir le niveau selon credits et objectif"],
+    output: "image-cle FLUX + brief de mouvement + video animee si le moteur video est disponible + variantes",
+    safeguards: ["ne pas presenter FLUX image comme un moteur video si l endpoint est image-only", "demander confirmation avant une generation video couteuse", "ne pas cloner un visage ou une voix reelle sans consentement", "maintenir l identite du produit entre image-cle et animation"],
   },
   "seedance-prompting-skills-for-cinematic-films": {
     workflow: ["choisir action unique", "decrire mouvement lisible", "garder prompt visuel court", "preparer premiere et derniere image si raccord necessaire"],
