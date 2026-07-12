@@ -320,7 +320,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
     </div>
   </aside>
 
-  <main style="flex:1;display:flex;flex-direction:column;position:relative;min-width:0;animation:pageSettle .45s cubic-bezier(.22,1,.36,1) both">
+  <main style="flex:1;display:flex;flex-direction:column;position:relative;min-width:0;box-sizing:border-box;padding-right:{{ studioContentInset }};animation:pageSettle .45s cubic-bezier(.22,1,.36,1) both">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 26px;z-index:3">
       <div style="display:flex;align-items:center;gap:9px;min-width:0;font-size:13.5px">
         <span style="color:{{ tText4 }}">Projet</span>
@@ -601,15 +601,23 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <div style="min-width:0"><div style="font-family:'Space Grotesk',ui-sans-serif;font-size:17px;font-weight:700;color:{{ tInk }}">Studio AgentFlow</div><div style="margin-top:3px;font-size:11px;color:{{ tText4 }}">Rendus, artifacts et compétences en direct</div></div>
         <button onClick="{{ closeStudioPanel }}" title="Fermer le studio" style="width:31px;height:31px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:18px;line-height:1" style-hover="background:rgba({{ tLineRGB }},.07);color:{{ tInk }}">×</button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:7px 14px 0">
-        <button onClick="{{ toggleArtifactFullscreen }}" title="Agrandir le panneau" style="padding:5px 8px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:7px;background:transparent;color:{{ tText3 }};font-size:10px;font-weight:700;cursor:pointer">{{ artifactFullscreenLabel }}</button>
-      </div>
       <div style="display:flex;gap:6px;padding:10px 14px 8px;border-bottom:1px solid rgba({{ tLineRGB }},.07)">
         <button onClick="{{ studioMediaTab }}" style="{{ studioMediaTabStyle }}">Médias <span style="opacity:.6">{{ studioMediaCount }}</span></button>
         <button onClick="{{ studioArtifactTab }}" style="{{ studioArtifactTabStyle }}">Artifacts <span style="opacity:.6">{{ artifactCount }}</span></button>
         <button onClick="{{ studioSkillTab }}" style="{{ studioSkillTabStyle }}">Skills</button>
         <button onClick="{{ studioEvalTab }}" style="{{ studioEvalTabStyle }}">Évaluations</button>
       </div>
+      <sc-if value="{{ studioIsArtifact }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-bottom:1px solid rgba({{ tLineRGB }},.08);background:rgba({{ tLineRGB }},.025)">
+          <button onClick="{{ artifactPreviewView }}" title="Apercu" style="{{ artifactToolbarPreviewStyle }}">◉</button>
+          <button onClick="{{ artifactCodeView }}" title="Code" style="{{ artifactToolbarCodeStyle }}">&lt;/&gt;</button>
+          <button onClick="{{ refreshArtifactPreview }}" title="Actualiser l apercu" style="{{ artifactToolbarButtonStyle }}">↻</button>
+          <div style="flex:1"></div>
+          <button onClick="{{ copyActiveArtifact }}" title="Copier" style="{{ artifactToolbarButtonStyle }}">Copier</button>
+          <button onClick="{{ toggleArtifactFullscreen }}" title="Agrandir" style="{{ artifactToolbarButtonStyle }}">{{ artifactFullscreenLabel }}</button>
+          <button onClick="{{ publishActiveArtifact }}" title="Publier" style="{{ artifactToolbarPublishStyle }}">Publier</button>
+        </div>
+      </sc-if>
       <div style="flex:1;min-height:0;overflow-y:auto;padding:13px 14px 26px">
         <sc-if value="{{ studioIsMedia }}" hint-placeholder-val="{{ true }}">
           <sc-if value="{{ studioMediaEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 18px;text-align:center;border:1px dashed rgba({{ tLineRGB }},.14);border-radius:14px;color:{{ tText3 }};font-size:13px;line-height:1.5">Les images et vidéos apparaîtront ici dès que AgentFlow les produit.</div></sc-if>
@@ -3399,6 +3407,12 @@ class Component extends DCLogic {
     }catch(err){ this.notify(String(err && err.message || 'Impossible de mettre à jour le commentaire.')); }
   }
   toggleArtifactFullscreen(){ this.setState(s=>({ artifactFullscreen:!s.artifactFullscreen })); }
+  refreshArtifactPreview(){
+    const artifact = this.state.activeArtifact;
+    if(!artifact) return;
+    this.buildArtifactPreview(artifact);
+    this.notify('Apercu de l artifact actualise.');
+  }
   startStudioResize(event){
     if(!event || typeof window === 'undefined' || window.innerWidth < 760) return;
     event.preventDefault();
@@ -4941,6 +4955,7 @@ class Component extends DCLogic {
     const artifactSaveStateLabel = artifactSaveState === 'dirty' ? 'Modifications non enregistrees' : (artifactSaveState === 'saving' ? 'Sauvegarde en cours...' : (artifactSaveState === 'saved' ? 'Toutes les modifications sont enregistrees' : 'Pret a modifier'));
     const artifactSaveStateColor = artifactSaveState === 'dirty' ? '#E8B25C' : (artifactSaveState === 'saving' ? '#D1FE17' : T.text4);
     const artifactButtonStyle = active => 'padding:5px 8px;border:1px solid rgba(' + T.lineRGB + ',.12);border-radius:7px;background:' + (active ? 'rgba(209,254,23,.12)' : 'transparent') + ';color:' + (active ? '#D1FE17' : T.text3) + ';font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap';
+    const artifactToolbarStyle = active => 'height:28px;min-width:29px;padding:0 8px;border:1px solid rgba(' + T.lineRGB + ',.13);border-radius:7px;background:' + (active ? 'rgba(209,254,23,.14)' : 'transparent') + ';color:' + (active ? '#D1FE17' : T.text3) + ';font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap';
     const paywallButtonStyle = active => 'flex:1;min-height:30px;border:0;border-radius:7px;padding:0 9px;background:' + (active ? T.surface : 'transparent') + ';color:' + (active ? T.ink : T.text3) + ';font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:' + (active ? '0 1px 4px rgba(0,0,0,.16)' : 'none');
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
@@ -5153,6 +5168,7 @@ class Component extends DCLogic {
       showPricing: st.page === 'pricing',
       showStudioPanel: !!st.studioPanelOpen,
       studioPanelWidthStyle: st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '100vw' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
+      studioContentInset: !st.studioPanelOpen || st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '0px' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
       artifactFullscreenLabel: st.artifactFullscreen ? 'Réduire' : 'Agrandir',
       studioIsMedia: st.studioTab === 'media',
       studioIsArtifact: st.studioTab === 'artifact',
@@ -5203,6 +5219,10 @@ class Component extends DCLogic {
       artifactPublishStyle:'padding:6px 10px;border:0;border-radius:7px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap',
       artifactActionStyle:artifactButtonStyle(false),
       artifactTinyActionStyle:artifactButtonStyle(false),
+      artifactToolbarPreviewStyle:artifactToolbarStyle(artifactView === 'preview'),
+      artifactToolbarCodeStyle:artifactToolbarStyle(artifactView === 'code'),
+      artifactToolbarButtonStyle:artifactToolbarStyle(false),
+      artifactToolbarPublishStyle:'height:28px;padding:0 10px;border:0;border-radius:7px;background:#D1FE17;color:#131517;font-size:10px;font-weight:800;cursor:pointer',
       artifactDeviceDesktopStyle:artifactButtonStyle(st.artifactPreviewDevice === 'desktop'),
       artifactDeviceTabletStyle:artifactButtonStyle(st.artifactPreviewDevice === 'tablet'),
       artifactDeviceMobileStyle:artifactButtonStyle(st.artifactPreviewDevice === 'mobile'),
@@ -5245,6 +5265,7 @@ class Component extends DCLogic {
       publishActiveArtifact: ()=>this.publishActiveArtifact(),
       copyActiveArtifact: ()=>this.copyActiveArtifact(),
       downloadActiveArtifact: ()=>this.downloadActiveArtifact(),
+      refreshArtifactPreview: ()=>this.refreshArtifactPreview(),
       onArtifactEditor:(e)=>this.onArtifactEditor(e),
       saveArtifactVersion:()=>this.saveArtifactVersion(),
       onArtifactCommentDraft:(e)=>this.onArtifactCommentDraft(e),
