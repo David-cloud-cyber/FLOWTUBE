@@ -174,8 +174,9 @@ function agentTokenPriceForModel(modelId: string) {
   if (isTemporaryFreeAgentModel(resolved)) return { input: 0, output: 0 };
   if (OPENROUTER_LIVE_PRICES[resolved]) return OPENROUTER_LIVE_PRICES[resolved];
   if (OPENROUTER_STATIC_FALLBACK_PRICES[resolved]) return OPENROUTER_STATIC_FALLBACK_PRICES[resolved];
+  if (AGENT_TOKEN_PRICES[resolved]) return AGENT_TOKEN_PRICES[resolved];
   if (isOpenRouterAgentModel(resolved)) return { input: 10, output: 40 };
-  return AGENT_TOKEN_PRICES[resolved] || AGENT_TOKEN_PRICES[DEFAULT_MODEL] || AGENT_TOKEN_PRICES["claude-sonnet-4-6"];
+  return AGENT_TOKEN_PRICES[DEFAULT_MODEL] || AGENT_TOKEN_PRICES["claude-sonnet-4-6"];
 }
 
 async function refreshOpenRouterPrice(modelId: string) {
