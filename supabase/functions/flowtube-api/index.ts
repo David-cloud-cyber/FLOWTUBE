@@ -3179,12 +3179,17 @@ async function saveLearnedSkill(
   playbook: string,
   autoLearned: boolean,
 ) {
+  const definition = { name, triggers, playbook, source: autoLearned ? "agentflow" : "user" };
   const { data: existing } = await supabase.from("agent_skills")
     .select("id").eq("user_id", userId).ilike("name", name).maybeSingle();
   if (existing?.id) {
-    await supabase.from("agent_skills").update({ triggers, playbook, auto_learned: autoLearned }).eq("id", existing.id);
+    const { data: current } = await supabase.from("agent_skills").select("current_version").eq("id", existing.id).maybeSingle();
+    const nextVersion = Number(current?.current_version || 1) + 1;
+    await supabase.from("agent_skills").update({ triggers, playbook, auto_learned: autoLearned, definition, current_version: nextVersion, status: "active", last_used_at: new Date().toISOString() }).eq("id", existing.id);
+    await supabase.from("agent_skill_versions").insert({ skill_id: existing.id, user_id: userId, version_number: nextVersion, status: "active", definition, source_prompt: playbook.slice(0, 4_000) });
   } else {
-    await supabase.from("agent_skills").insert({ user_id: userId, project_id: projectId, name, triggers, playbook, auto_learned: autoLearned });
+    const { data: created } = await supabase.from("agent_skills").insert({ user_id: userId, project_id: projectId, name, triggers, playbook, auto_learned: autoLearned, status: "active", visibility: "private", current_version: 1, definition }).select("id").single();
+    if (created?.id) await supabase.from("agent_skill_versions").insert({ skill_id: created.id, user_id: userId, version_number: 1, status: "active", definition, source_prompt: playbook.slice(0, 4_000) });
   }
 }
 
@@ -3223,13 +3228,254 @@ function extractSkillDirective(prompt: string): { name: string; triggers: string
   return { name, triggers: triggers.length ? triggers : [name] };
 }
 
+type ArtifactFile = { path: string; content: string; language?: string };
+
+function safeArtifactFiles(value: unknown): ArtifactFile[] {
+  if (!Array.isArray(value)) return [];
+  const files: ArtifactFile[] = [];
+  let total = 0;
+  for (const item of value.slice(0, 24)) {
+    const raw = (item || {}) as Record<string, unknown>;
+    const path = String(raw.path || "").replace(/\\/g, "/").replace(/^\/+/, "").trim();
+    if (!path || path.includes("..") || path.length > 120) continue;
+    const content = String(raw.content || "");
+    total += new TextEncoder().encode(content).byteLength;
+    if (content.length > 100_000 || total > 220_000) throw new FlowtubeError(413, "Cet artifact est trop volumineux.", { code: "ARTIFACT_TOO_LARGE" });
+    files.push({ path, content, language: compactText(raw.language, 24) || undefined });
+  }
+  return files;
+}
+
+function artifactType(value: unknown): string {
+  const type = String(value || "markdown").toLowerCase();
+  return ["markdown", "html", "react", "svg", "table", "diagram", "document"].includes(type) ? type : "markdown";
+}
+
+function artifactPayload(row: Record<string, unknown>, version?: Record<string, unknown> | null) {
+  return {
+    id: row.id,
+    title: row.title,
+    type: row.type,
+    status: row.status,
+    visibility: row.visibility,
+    currentVersion: row.current_version,
+    updatedAt: row.updated_at,
+    version: version ? {
+      id: version.id,
+      number: version.version_number,
+      entryFile: version.entry_file,
+      files: version.files || [],
+      compileStatus: version.compile_status,
+      runtimeError: version.runtime_error || null,
+      createdAt: version.created_at,
+    } : null,
+  };
+}
+
+async function createArtifactRecord(
+  supabase: ReturnType<typeof adminClient>,
+  input: { userId: string; projectId?: string | null; conversationId?: string | null; title: string; type: string; files: ArtifactFile[]; entryFile?: string; sourcePrompt?: string; modelId?: string },
+) {
+  const files = safeArtifactFiles(input.files);
+  if (!files.length) throw new FlowtubeError(400, "L artifact ne contient aucun fichier exploitable.", { code: "ARTIFACT_FILES_REQUIRED" });
+  const title = compactText(input.title, 120) || "Nouvel artifact";
+  const { data: artifact, error } = await supabase.from("artifacts").insert({
+    user_id: input.userId,
+    project_id: input.projectId && isUuid(input.projectId) ? input.projectId : null,
+    conversation_id: input.conversationId && isUuid(input.conversationId) ? input.conversationId : null,
+    title,
+    type: artifactType(input.type),
+    status: "ready",
+    visibility: "private",
+    current_version: 1,
+  }).select("*").single();
+  if (error || !artifact) throw error || new Error("Artifact creation failed");
+  const { data: version, error: versionError } = await supabase.from("artifact_versions").insert({
+    artifact_id: artifact.id,
+    user_id: input.userId,
+    version_number: 1,
+    entry_file: compactText(input.entryFile, 120) || files[0].path,
+    files,
+    source_prompt: String(input.sourcePrompt || "").slice(0, 4_000),
+    model_id: compactText(input.modelId, 120) || null,
+    compile_status: "not_run",
+  }).select("*").single();
+  if (versionError || !version) {
+    await supabase.from("artifacts").delete().eq("id", artifact.id).eq("user_id", input.userId);
+    throw versionError || new Error("Artifact version creation failed");
+  }
+  return artifactPayload(artifact, version);
+}
+
+async function artifactRoute(req: Request, artifactId?: string) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  if (req.method === "GET") {
+    if (artifactId && isUuid(artifactId)) {
+      const { data: artifact, error } = await supabase.from("artifacts").select("*").eq("id", artifactId).eq("user_id", userId).maybeSingle();
+      if (error) throw error;
+      if (!artifact) return json({ error: { message: "Artifact introuvable." } }, 404);
+      const { data: version } = await supabase.from("artifact_versions").select("*").eq("artifact_id", artifact.id).eq("user_id", userId).order("version_number", { ascending: false }).limit(1).maybeSingle();
+      return json({ artifact: artifactPayload(artifact, version) });
+    }
+    let query = supabase.from("artifacts").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(60);
+    const projectId = new URL(req.url).searchParams.get("projectId");
+    if (projectId && isUuid(projectId)) query = query.eq("project_id", projectId);
+    const { data: artifacts, error } = await query;
+    if (error) throw error;
+    const rows = await Promise.all((artifacts || []).map(async (artifact) => {
+      const { data: version } = await supabase.from("artifact_versions").select("*").eq("artifact_id", artifact.id).eq("user_id", userId).order("version_number", { ascending: false }).limit(1).maybeSingle();
+      return artifactPayload(artifact, version);
+    }));
+    return json({ artifacts: rows });
+  }
+  if (req.method !== "POST") return json({ error: { message: "Artifact route not found" } }, 404);
+  const body = await bodyJson(req);
+  const action = String(body.action || "create");
+  if (action === "create") {
+    const artifact = await createArtifactRecord(supabase, {
+      userId,
+      projectId: String(body.projectId || ""),
+      conversationId: String(body.conversationId || ""),
+      title: String(body.title || "Nouvel artifact"),
+      type: String(body.type || "markdown"),
+      files: safeArtifactFiles(body.files),
+      entryFile: String(body.entryFile || ""),
+      sourcePrompt: String(body.sourcePrompt || ""),
+      modelId: String(body.modelId || ""),
+    });
+    return json({ artifact });
+  }
+  if (!isUuid(String(body.artifactId || ""))) throw new FlowtubeError(400, "Artifact invalide.", { code: "INVALID_ARTIFACT_ID" });
+  const id = String(body.artifactId);
+  const { data: artifact, error } = await supabase.from("artifacts").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  if (!artifact) return json({ error: { message: "Artifact introuvable." } }, 404);
+  if (action === "version") {
+    const files = safeArtifactFiles(body.files);
+    if (!files.length) throw new FlowtubeError(400, "Ajoute au moins un fichier.", { code: "ARTIFACT_FILES_REQUIRED" });
+    const nextVersion = Number(artifact.current_version || 0) + 1;
+    const { data: version, error: versionError } = await supabase.from("artifact_versions").insert({ artifact_id: id, user_id: userId, version_number: nextVersion, entry_file: String(body.entryFile || files[0].path), files, source_prompt: String(body.sourcePrompt || "").slice(0, 4_000), model_id: String(body.modelId || "").slice(0, 120), compile_status: "not_run" }).select("*").single();
+    if (versionError) throw versionError;
+    const { data: updated, error: updateError } = await supabase.from("artifacts").update({ current_version: nextVersion, status: "ready", title: compactText(body.title, 120) || artifact.title }).eq("id", id).eq("user_id", userId).select("*").single();
+    if (updateError) throw updateError;
+    return json({ artifact: artifactPayload(updated, version) });
+  }
+  if (action === "publish") {
+    const visibility = ["private", "unlisted", "public"].includes(String(body.visibility)) ? String(body.visibility) : "unlisted";
+    const { data: updated, error: updateError } = await supabase.from("artifacts").update({ visibility }).eq("id", id).eq("user_id", userId).select("*").single();
+    if (updateError) throw updateError;
+    const { data: version } = await supabase.from("artifact_versions").select("*").eq("artifact_id", id).eq("user_id", userId).order("version_number", { ascending: false }).limit(1).maybeSingle();
+    return json({ artifact: artifactPayload(updated, version) });
+  }
+  if (action === "share") {
+    const { data: version } = await supabase.from("artifact_versions").select("*").eq("artifact_id", id).eq("user_id", userId).order("version_number", { ascending: false }).limit(1).maybeSingle();
+    if (!version) throw new FlowtubeError(404, "Version artifact introuvable.", { code: "ARTIFACT_VERSION_NOT_FOUND" });
+    const rawToken = randomToken(28);
+    const tokenHash = await sha256Hex(rawToken);
+    const { error: shareError } = await supabase.from("artifact_shares").insert({ artifact_id: id, version_id: version.id, user_id: userId, token_hash: tokenHash, access_mode: "view" });
+    if (shareError) throw shareError;
+    await supabase.from("artifacts").update({ visibility: "unlisted" }).eq("id", id).eq("user_id", userId);
+    return json({ shareToken: rawToken, shareUrl: `${APP_BASE_URL}/?artifact=${encodeURIComponent(rawToken)}`, artifact: artifactPayload(artifact, version) });
+  }
+  if (action === "archive") {
+    const { data: updated, error: updateError } = await supabase.from("artifacts").update({ status: "archived" }).eq("id", id).eq("user_id", userId).select("*").single();
+    if (updateError) throw updateError;
+    return json({ artifact: artifactPayload(updated, null) });
+  }
+  throw new FlowtubeError(400, "Action artifact inconnue.", { code: "INVALID_ARTIFACT_ACTION" });
+}
+
+async function publicArtifactShareRoute(req: Request, token: string) {
+  if (req.method !== "GET" || !token || token.length > 160) return json({ error: { message: "Lien artifact invalide." } }, 404);
+  const supabase = adminClient();
+  const tokenHash = await sha256Hex(token);
+  const { data: share, error } = await supabase.from("artifact_shares").select("artifact_id,version_id,expires_at,revoked_at").eq("token_hash", tokenHash).maybeSingle();
+  if (error) throw error;
+  if (!share || share.revoked_at || (share.expires_at && new Date(String(share.expires_at)).getTime() < Date.now())) return json({ error: { message: "Ce lien artifact n est plus disponible." } }, 404);
+  const [{ data: artifact }, { data: version }] = await Promise.all([
+    supabase.from("artifacts").select("id,title,type,status,visibility,current_version,updated_at").eq("id", share.artifact_id).maybeSingle(),
+    supabase.from("artifact_versions").select("id,version_number,entry_file,files,compile_status,runtime_error,created_at").eq("id", share.version_id).maybeSingle(),
+  ]);
+  if (!artifact || !version) return json({ error: { message: "Artifact introuvable." } }, 404);
+  return json({ artifact: artifactPayload(artifact, version) });
+}
+
+async function skillsRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  if (req.method === "GET") {
+    const { data, error } = await supabase.from("agent_skills").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(100);
+    if (error) throw error;
+    return json({ skills: data || [] });
+  }
+  if (req.method !== "POST") return json({ error: { message: "Skills route not found" } }, 404);
+  const body = await bodyJson(req);
+  const action = String(body.action || "create");
+  const name = compactText(body.name, 80);
+  if (!name) throw new FlowtubeError(400, "Le nom du skill est requis.", { code: "SKILL_NAME_REQUIRED" });
+  const triggers = Array.isArray(body.triggers) ? uniqueStrings(body.triggers.map(String)).slice(0, 16) : [name];
+  const definition = safeStructuredContent(body.definition || { name, triggers, playbook: String(body.playbook || "") }, 40_000);
+  const { data: existing } = await supabase.from("agent_skills").select("*").eq("user_id", userId).ilike("name", name).maybeSingle();
+  if (action === "disable" || action === "enable") {
+    if (!existing) throw new FlowtubeError(404, "Skill introuvable.", { code: "SKILL_NOT_FOUND" });
+    const { data: updated, error } = await supabase.from("agent_skills").update({ status: action === "enable" ? "active" : "disabled" }).eq("id", existing.id).eq("user_id", userId).select("*").single();
+    if (error) throw error;
+    return json({ skill: updated });
+  }
+  if (existing) {
+    const nextVersion = Number(existing.current_version || 1) + 1;
+    const { error: versionError } = await supabase.from("agent_skill_versions").insert({ skill_id: existing.id, user_id: userId, version_number: nextVersion, status: "active", definition, source_prompt: String(body.sourcePrompt || "").slice(0, 4_000) });
+    if (versionError) throw versionError;
+    const { data: updated, error } = await supabase.from("agent_skills").update({ triggers, playbook: String(body.playbook || definition.playbook || existing.playbook), definition, current_version: nextVersion, status: "active", last_used_at: new Date().toISOString() }).eq("id", existing.id).eq("user_id", userId).select("*").single();
+    if (error) throw error;
+    return json({ skill: updated, created: false });
+  }
+  const { data: skill, error } = await supabase.from("agent_skills").insert({ user_id: userId, project_id: isUuid(String(body.projectId || "")) ? body.projectId : null, name, triggers, playbook: String(body.playbook || definition.playbook || "").slice(0, 4_000), auto_learned: body.autoLearned !== false, status: "active", visibility: "private", current_version: 1, definition }).select("*").single();
+  if (error) throw error;
+  const { error: versionError } = await supabase.from("agent_skill_versions").insert({ skill_id: skill.id, user_id: userId, version_number: 1, status: "active", definition, source_prompt: String(body.sourcePrompt || "").slice(0, 4_000) });
+  if (versionError) throw versionError;
+  return json({ skill, created: true });
+}
+
+function artifactRequestType(prompt: string): string | null {
+  const text = stripAccents(String(prompt || "").toLowerCase());
+  if (!/\b(artifact|interface|page web|landing page|site web|html|react|composant|outil interactif|tableau|diagramme|svg|document structure|mini app)\b/.test(text)) return null;
+  if (/\b(react|composant|mini app|outil interactif)\b/.test(text)) return "react";
+  if (/\b(html|page web|landing page|site web|interface)\b/.test(text)) return "html";
+  if (/\b(tableau)\b/.test(text)) return "table";
+  if (/\b(diagramme|svg)\b/.test(text)) return "diagram";
+  return "markdown";
+}
+
+function artifactTitleFromPrompt(prompt: string) {
+  const compact = compactText(prompt.replace(/^\s*(cree|crÃ©e|construis|build|make)\s+/i, ""), 80);
+  return compact || "Artifact AgentFlow";
+}
+
+function artifactFilesFromReply(reply: string, type: string): { files: ArtifactFile[]; entryFile: string } {
+  const files: ArtifactFile[] = [];
+  const blockPattern = /```([a-z0-9_+-]*)\s*\n([\s\S]*?)```/gi;
+  let match: RegExpExecArray | null;
+  while ((match = blockPattern.exec(reply)) !== null && files.length < 8) {
+    const language = String(match[1] || "text").toLowerCase();
+    const content = String(match[2] || "").trim();
+    if (!content) continue;
+    const path = language === "html" ? "index.html" : language === "css" ? "styles.css" : language === "javascript" || language === "js" ? "app.js" : language === "tsx" || language === "jsx" ? "App.jsx" : language === "svg" ? "art.svg" : `artifact-${files.length + 1}.md`;
+    files.push({ path, content, language });
+  }
+  if (!files.length) files.push({ path: type === "html" || type === "react" ? "README.md" : "artifact.md", content: reply.trim(), language: "markdown" });
+  return { files, entryFile: files[0].path };
+}
+
 function autoLearnSkillCandidate(prompt: string, attachments: ReturnType<typeof normalizeRequestAttachments>): { name: string; triggers: string[]; playbook: string } | null {
   const raw = String(prompt || "").trim();
   const text = stripAccents(raw.toLowerCase());
   if (/(token|cle api|clé api|secret|mot de passe|password|carte bancaire|numero de carte|cvv|private key|access token)/i.test(raw)) return null;
   const reusable = /\b(a chaque fois|chaque fois|toujours|repete|repeter|workflow|playbook|template|modele reutilisable|process|pipeline|pour mes pubs|pour mes videos|pour ma marque)\b/.test(text);
+  const structuredRequest = raw.split(/\s+/).length >= 12 && /\b(etapes?|sequence|workflow|pipeline|process|campagne|automatisation|skill|competence|playbook)\b/.test(text);
   const ugc = isUgcPipelineRequest(raw);
-  if (!reusable) return null;
+  if (!reusable && !structuredRequest) return null;
   const baseName = ugc ? "ugc-15s-production" : "workflow-huggyflow";
   const triggers = uniqueStrings([
     ugc ? "ugc" : "",
@@ -4816,8 +5062,14 @@ async function chat(req: Request) {
         if (memoryDirectives.length) await saveAgentMemory(supabase, userId, project.id, memoryDirectives);
         const memory = await loadAgentMemory(supabase, userId, project.id);
         const elements = await loadElements(supabase, userId);
-        const autoSkill = autoLearnSkillCandidate(prompt, requestAttachments);
-        if (autoSkill) await saveLearnedSkill(supabase, userId, String(project.id), autoSkill.name, autoSkill.triggers, autoSkill.playbook, true);
+        const existingSkills = await loadLearnedSkills(supabase, userId);
+        const matchedExistingSkill = matchLearnedSkill(prompt, existingSkills);
+        const autoSkill = matchedExistingSkill ? null : autoLearnSkillCandidate(prompt, requestAttachments);
+        if (autoSkill) {
+          send("skill", { phase: "creating", name: autoSkill.name, label: "AgentFlow cree une competence reutilisable" });
+          await saveLearnedSkill(supabase, userId, String(project.id), autoSkill.name, autoSkill.triggers, autoSkill.playbook, true);
+          send("skill", { phase: "ready", name: autoSkill.name, label: "Competence sauvegardee et prete pour cette generation" });
+        }
         const learnedSkills = await loadLearnedSkills(supabase, userId);
         await supabase.from("messages").insert({
           user_id: userId,
@@ -4897,8 +5149,10 @@ async function chat(req: Request) {
         // Commande "cree un skill ...": l'utilisateur enregistre un workflow reutilisable.
         const skillDirective = extractSkillDirective(prompt);
         if (skillDirective) {
+          send("skill", { phase: "creating", name: skillDirective.name, label: "AgentFlow enregistre cette competence pour plus tard" });
           const playbook = prompt.trim();
           await saveLearnedSkill(supabase, userId, String(project.id), skillDirective.name, skillDirective.triggers, playbook, false);
+          send("skill", { phase: "ready", name: skillDirective.name, label: "Competence active et reutilisable" });
           const skillReply = `Skill "${skillDirective.name}" enregistre (declencheurs: ${skillDirective.triggers.join(", ")}). Je l'appliquerai quand le sujet reviendra, ou lance-le avec /${skillDirective.name}.`;
           send("text", { delta: skillReply });
           await saveAssistant(skillReply);
@@ -5109,6 +5363,25 @@ async function chat(req: Request) {
           billAgent(willGenerate ? "agent_creation_brief" : "agent_chat_reply"),
         );
         if (!willGenerate) await saveAssistant(reply);
+
+        const requestedArtifactType = artifactRequestType(prompt);
+        if (requestedArtifactType) {
+          send("artifact_status", { phase: "building", type: requestedArtifactType, label: "AgentFlow prepare un artifact reutilisable" });
+          const artifactFiles = artifactFilesFromReply(reply, requestedArtifactType);
+          const artifact = await createArtifactRecord(supabase, {
+            userId,
+            projectId: String(project.id),
+            conversationId: String(conversation.id),
+            title: artifactTitleFromPrompt(prompt),
+            type: requestedArtifactType,
+            files: artifactFiles.files,
+            entryFile: artifactFiles.entryFile,
+            sourcePrompt: prompt,
+            modelId: agentModelId,
+          });
+          send("artifact_status", { phase: "ready", type: requestedArtifactType, label: "Artifact pret dans le panneau droit" });
+          send("artifact", { artifact });
+        }
 
         if (willGenerate) {
           // Reference "refais le #N / la meme": on retrouve la creation visee et on reutilise son prompt + resultat.
@@ -7072,6 +7345,9 @@ Deno.serve(async (req: Request) => {
     if (first === "chat" && req.method === "POST") return await chat(req);
     if (first === "upload" && req.method === "POST") return await uploadRoute(req);
     if (first === "generate" && req.method === "POST") return await directGenerate(req);
+    if (first === "artifacts" && route[1] === "share" && route[2] && req.method === "GET") return await publicArtifactShareRoute(req, route[2]);
+    if (first === "artifacts" && (req.method === "GET" || req.method === "POST")) return await artifactRoute(req, route[1]);
+    if (first === "skills" && (req.method === "GET" || req.method === "POST")) return await skillsRoute(req);
     if (first === "generations" && route[1] === "batch" && route[2] && req.method === "GET") return await batchStatus(req, route[2]);
     if (first === "generations" && route[1] && req.method === "GET") return await generationStatus(req, route[1]);
     if (first === "projects" && req.method === "POST") return await createProjectRoute(req);

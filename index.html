@@ -48,6 +48,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes modalScale{from{transform:scale(.975);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes toastIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes panelIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes hfSpin{to{transform:rotate(360deg)}}
 [data-nav-scroll]{scrollbar-width:none}
 [data-nav-scroll]::-webkit-scrollbar{display:none}
 [data-nav-scroll] button:active{transform:none!important}
@@ -167,6 +169,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 .hf-settings-progress{height:6px;overflow:hidden;border-radius:999px;background:rgba(247,247,248,.09)}
 .hf-settings-progress span{display:block;height:100%;border-radius:inherit;background:#D1FE17;transition:width .35s ease}
 @media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
+@media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </helmet>
@@ -568,6 +571,50 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
       </div>
     </sc-if>
   </main>
+  </sc-if>
+
+  <sc-if value="{{ showStudioPanel }}" hint-placeholder-val="{{ false }}">
+    <aside data-hf-studio-panel="true" style="position:absolute;top:0;right:0;bottom:0;width:min(42vw,640px);min-width:360px;z-index:16;background:{{ tSurface }};border-left:1px solid rgba({{ tLineRGB }},.14);box-shadow:-24px 0 60px -42px rgba(0,0,0,.85);display:flex;flex-direction:column;animation:panelIn .24s cubic-bezier(.22,1,.36,1) both">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border-bottom:1px solid rgba({{ tLineRGB }},.10)">
+        <div style="min-width:0"><div style="font-family:'Space Grotesk',ui-sans-serif;font-size:17px;font-weight:700;color:{{ tInk }}">Studio AgentFlow</div><div style="margin-top:3px;font-size:11px;color:{{ tText4 }}">Rendus, artifacts et compétences en direct</div></div>
+        <button onClick="{{ closeStudioPanel }}" title="Fermer le studio" style="width:31px;height:31px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:18px;line-height:1" style-hover="background:rgba({{ tLineRGB }},.07);color:{{ tInk }}">×</button>
+      </div>
+      <div style="display:flex;gap:6px;padding:10px 14px 8px;border-bottom:1px solid rgba({{ tLineRGB }},.07)">
+        <button onClick="{{ studioMediaTab }}" style="{{ studioMediaTabStyle }}">Médias <span style="opacity:.6">{{ studioMediaCount }}</span></button>
+        <button onClick="{{ studioArtifactTab }}" style="{{ studioArtifactTabStyle }}">Artifacts <span style="opacity:.6">{{ artifactCount }}</span></button>
+        <button onClick="{{ studioSkillTab }}" style="{{ studioSkillTabStyle }}">Skills</button>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:13px 14px 26px">
+        <sc-if value="{{ studioIsMedia }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ studioMediaEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 18px;text-align:center;border:1px dashed rgba({{ tLineRGB }},.14);border-radius:14px;color:{{ tText3 }};font-size:13px;line-height:1.5">Les images et vidéos apparaîtront ici dès que AgentFlow les produit.</div></sc-if>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+            <sc-for list="{{ studioMediaItems }}" as="item" hint-placeholder-count="4">
+              <div style="overflow:hidden;border-radius:12px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)">
+                <div style="position:relative;aspect-ratio:16/10;background:{{ tMediaGrad }}">
+                  <sc-if value="{{ item.isImage }}" hint-placeholder-val="{{ false }}"><img src="{{ item.url }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/></sc-if>
+                  <sc-if value="{{ item.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ item.url }}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video></sc-if>
+                  <sc-if value="{{ item.isVoice }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(209,254,23,.07)"><audio src="{{ item.url }}" controls style="width:100%"></audio></div></sc-if>
+                  <sc-if value="{{ item.isLoading }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,11,13,.72);color:#D1FE17;font-size:11px;font-weight:700"><span style="width:24px;height:24px;border:2px solid rgba(209,254,23,.25);border-top-color:#D1FE17;border-radius:50%;animation:hfSpin .8s linear infinite"></span><span style="margin-top:8px">{{ item.statusLabel }}</span></div></sc-if>
+                </div>
+                <div style="padding:9px 10px"><div style="font-size:11.5px;font-weight:700;color:{{ tInk }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.title }}</div><div style="margin-top:4px;font-size:10px;color:{{ tText4 }}">{{ item.meta }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ studioIsArtifact }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ artifactEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 18px;text-align:center;border:1px dashed rgba({{ tLineRGB }},.14);border-radius:14px;color:{{ tText3 }};font-size:13px;line-height:1.5">Demande à AgentFlow de créer une page, un outil, un tableau ou un document interactif.</div></sc-if>
+          <sc-if value="{{ activeArtifactReady }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid rgba({{ tLineRGB }},.12);border-radius:14px;overflow:hidden;background:rgba({{ tLineRGB }},.035)">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba({{ tLineRGB }},.08)"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ activeArtifactTitle }}</span><span style="font-size:10px;color:#D1FE17">Version {{ activeArtifactVersion }}</span></div>
+              <iframe title="Aperçu de l'artifact" src="{{ artifactPreviewUrl }}" sandbox="allow-scripts" referrerpolicy="no-referrer" style="display:block;width:100%;height:310px;border:0;background:#fff"></iframe>
+              <div style="display:flex;gap:7px;padding:10px 12px"><button onClick="{{ publishActiveArtifact }}" style="flex:1;padding:8px 10px;border-radius:8px;border:0;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Publier</button><button onClick="{{ copyActiveArtifact }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Copier</button></div>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px"><sc-for list="{{ artifactCards }}" as="artifact" hint-placeholder-count="3"><button onClick="{{ artifact.onClick }}" style="text-align:left;padding:11px 12px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.10);background:{{ artifact.activeStyle }};color:{{ tInk }};cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ artifact.title }}</span><span style="font-size:10px;color:#D1FE17">V{{ artifact.version }}</span></div><div style="margin-top:4px;font-size:10.5px;color:{{ tText4 }}">{{ artifact.type }} · {{ artifact.status }}</div></button></sc-for></div>
+        </sc-if>
+        <sc-if value="{{ studioIsSkill }}" hint-placeholder-val="{{ false }}"><div style="padding:11px 12px;border-radius:11px;background:rgba(209,254,23,.07);border:1px solid rgba(209,254,23,.16);font-size:12px;line-height:1.5;color:{{ tInk }}">{{ skillActivityLabel }}</div><div style="margin-top:12px;font-size:11px;color:{{ tText4 }}">AgentFlow sauvegarde les compétences réutilisables et les réactive automatiquement lorsqu’une demande correspondante revient.</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:14px"><sc-for list="{{ skillCards }}" as="skill" hint-placeholder-count="3"><div style="padding:11px 12px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ skill.name }}</span><span style="font-size:10px;color:#D1FE17">V{{ skill.version }}</span></div><div style="margin-top:4px;font-size:10.5px;color:{{ tText4 }}">{{ skill.status }} · {{ skill.uses }} utilisation(s)</div></div></sc-for></div></sc-if>
+      </div>
+    </aside>
   </sc-if>
 
   <sc-if value="{{ showPricing }}" hint-placeholder-val="{{ false }}">
@@ -2454,6 +2501,14 @@ class Component extends DCLogic {
     renameTitle: '',
     deleteProjectId: '',
     compareOpen: false,
+    studioPanelOpen: false,
+    studioTab: 'media',
+    artifactItems: [],
+    skillItems: [],
+    activeArtifact: null,
+    artifactPreviewUrl: '',
+    studioLoading: false,
+    skillActivity: '',
     attachments: Array.isArray(this.initialUiState.attachments) ? this.initialUiState.attachments : [],
     uploadingAttachment: false,
     attachmentNotice: '',
@@ -2981,6 +3036,83 @@ class Component extends DCLogic {
       credits: md.credits || md.creditsCharged || md.credits_charged || 0
     };
   }
+  normalizeArtifact(a){
+    if(!a || typeof a !== 'object') return null;
+    return Object.assign({}, a, { currentVersion:Number(a.currentVersion || a.current_version || 1), version:a.version || null });
+  }
+  studioMediaItems(){
+    const items = [];
+    (this.state.messages || []).forEach((message)=>{
+      const media = message && message.media;
+      if(!media) return;
+      const type = this.mediaKind(media);
+      items.push({
+        id:media.generationId || message.id,
+        title:(media.prompt || message.text || 'Creation AgentFlow').slice(0,52),
+        url:media.resultUrl || '',
+        isImage:type === 'image',
+        isVideo:type === 'video',
+        isVoice:type === 'voice',
+        isLoading:media.status === 'loading',
+        statusLabel:media.status === 'failed' ? 'Echec' : (media.status === 'loading' ? ('Generation ' + Math.round(Number(media.progress || 0)) + '%') : 'Pret'),
+        meta:(media.model || 'AgentFlow') + (media.status === 'loading' ? '' : ' · ' + (media.ratio || 'rendu'))
+      });
+    });
+    return items.reverse().slice(0, 24);
+  }
+  async loadStudioData(projectId){
+    if(!this.state.authToken) return;
+    this.setState({ studioLoading:true });
+    try{
+      const suffix = projectId ? '?projectId=' + encodeURIComponent(projectId) : '';
+      const [artifactRes, skillRes] = await Promise.all([this.apiFetch('/api/artifacts' + suffix), this.apiFetch('/api/skills')]);
+      if(!artifactRes.ok) throw new Error('artifacts '+artifactRes.status);
+      const data = await artifactRes.json();
+      const skillData = skillRes.ok ? await skillRes.json() : { skills:[] };
+      const artifacts = (data.artifacts || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
+      const active = this.state.activeArtifact && artifacts.find(a=>a.id === this.state.activeArtifact.id) || artifacts[0] || null;
+      this.setState({ artifactItems:artifacts, skillItems:Array.isArray(skillData.skills) ? skillData.skills : [], studioLoading:false }, ()=>{ if(active) this.setActiveArtifact(active); });
+    }catch(err){ this.setState({ studioLoading:false }); }
+  }
+  buildArtifactPreview(artifact){
+    if(!artifact || !artifact.version || typeof Blob === 'undefined') return;
+    const files = Array.isArray(artifact.version.files) ? artifact.version.files : [];
+    const htmlFile = files.find(f=>String(f.path || '').toLowerCase() === 'index.html');
+    const css = files.filter(f=>/\.css$/i.test(String(f.path || ''))).map(f=>String(f.content || '')).join('\n');
+    const js = files.filter(f=>/\.(js|jsx|ts|tsx)$/i.test(String(f.path || ''))).map(f=>String(f.content || '')).join('\n').replace(/<\/script/gi,'<\\/script');
+    let html = htmlFile ? String(htmlFile.content || '') : '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>';
+    if(!htmlFile){ const markdown = files.map(f=>String(f.content || '')).join('\n\n').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); html = '<!doctype html><html><head><meta charset="utf-8"><style>body{font:15px system-ui;padding:24px;white-space:pre-wrap;color:#17191c}</style></head><body><pre>' + markdown + '</pre></body></html>'; }
+    if(css) html = html.replace('</head>', '<style>' + css + '</style></head>');
+    if(js) html = html.replace('</body>', '<script>' + js + '</script></body>');
+    const nextUrl = URL.createObjectURL(new Blob([html], { type:'text/html' }));
+    if(this.state.artifactPreviewUrl){ try{ URL.revokeObjectURL(this.state.artifactPreviewUrl); }catch(e){} }
+    this.setState({ activeArtifact:artifact, artifactPreviewUrl:nextUrl, studioPanelOpen:true, studioTab:'artifact' });
+  }
+  setActiveArtifact(artifact){ this.buildArtifactPreview(this.normalizeArtifact(artifact)); }
+  closeStudioPanel(){ this.setState({ studioPanelOpen:false }); }
+  toggleStudioPanel(){ this.setState(s=>({ studioPanelOpen:!s.studioPanelOpen })); }
+  publishActiveArtifact(){
+    const artifact = this.state.activeArtifact;
+    if(!artifact || !artifact.id) return;
+    this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'share', artifactId:artifact.id }) }).then(r=>r.json()).then(data=>{ if(data.artifact){ this.setActiveArtifact(this.normalizeArtifact(data.artifact)); this.setState(s=>({ artifactItems:(s.artifactItems || []).map(a=>a.id === data.artifact.id ? this.normalizeArtifact(data.artifact) : a) })); if(data.shareUrl && navigator.clipboard) navigator.clipboard.writeText(data.shareUrl).catch(()=>{}); this.notify('Artifact publie. Le lien a ete copie.'); } }).catch(()=>this.notify('Publication impossible pour le moment.'));
+  }
+  copyActiveArtifact(){
+    const artifact = this.state.activeArtifact;
+    const file = artifact && artifact.version && Array.isArray(artifact.version.files) ? artifact.version.files[0] : null;
+    if(!file) return;
+    if(navigator.clipboard) navigator.clipboard.writeText(String(file.content || '')).then(()=>this.notify('Contenu de l artifact copie.')).catch(()=>{});
+  }
+  async loadPublicArtifactFromUrl(){
+    if(typeof window === 'undefined') return;
+    const token = new URLSearchParams(window.location.search).get('artifact');
+    if(!token) return;
+    try{
+      const res = await this.apiFetch('/api/artifacts/share/' + encodeURIComponent(token));
+      if(!res.ok) throw new Error('shared artifact');
+      const data = await res.json();
+      if(data.artifact){ const artifact = this.normalizeArtifact(data.artifact); this.setState({ artifactItems:[artifact], studioPanelOpen:true, studioTab:'artifact' }, ()=>this.setActiveArtifact(artifact)); }
+    }catch(err){ this.notify('Ce lien artifact est indisponible.'); }
+  }
   normalizeMessage(m){
     const media = this.normalizeMedia(m && m.media);
     const role = m && m.role === 'assistant' ? 'agent' : ((m && m.role) || 'agent');
@@ -3063,6 +3195,7 @@ class Component extends DCLogic {
         backendReady:true, backendError:false
       }, ()=>{
         this.resumeGenerationPolling(projects);
+        this.loadStudioData(active ? active.id : currentId);
         if(this.state.page === 'admin' && this.isAdminUser()) this.loadAdminDashboard();
       });
     }catch(err){
@@ -3082,6 +3215,7 @@ class Component extends DCLogic {
       if(storedTheme === 'light') this.setState({ theme:'light' });
     }catch(e){}
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
+    this.loadPublicArtifactFromUrl();
     this.restoreAuthSession();
   }
   componentWillUnmount(){
@@ -3347,7 +3481,7 @@ class Component extends DCLogic {
     this.setState(s=>{
       const exists = s.messages.some(m=>m.id === msgId);
       return { messages: exists ? s.messages.map(m=>m.id === msgId ? Object.assign({}, m, patch) : m) : s.messages.concat([patch]) };
-    }, ()=>{ if(media.generationId && media.status === 'loading') this.pollGeneration(msgId, media.generationId); });
+    }, ()=>{ if(media.type === 'video') this.setState({ studioPanelOpen:true, studioTab:'media' }); if(media.generationId && media.status === 'loading') this.pollGeneration(msgId, media.generationId); });
   }
   resumeGenerationPolling(projects){
     (projects || []).forEach(p=>(p.messages || []).forEach(m=>{
@@ -3519,6 +3653,9 @@ class Component extends DCLogic {
       if(type === 'text'){ this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true; }
       if(type === 'message'){ this.appendAgentText(agentId, payload.text || ''); delivered = true; }
       if(type === 'status'){ this.updateAgentMessage(agentId, { activity:payload.label || payload.message || 'AgentFlow poursuit la préparation' }); delivered = true; }
+      if(type === 'skill'){ this.setState({ skillActivity:payload.label || 'AgentFlow construit une competence reutilisable', studioPanelOpen:true, studioTab:'skill' }); this.updateAgentMessage(agentId, { activity:payload.label || 'AgentFlow construit une competence reutilisable' }); delivered = true; }
+      if(type === 'artifact_status'){ this.setState({ studioPanelOpen:true, studioTab:'artifact', skillActivity:payload.label || 'AgentFlow prepare un artifact' }); this.updateAgentMessage(agentId, { activity:payload.label || 'AgentFlow prepare un artifact' }); delivered = true; }
+      if(type === 'artifact' && payload.artifact){ const artifact = this.normalizeArtifact(payload.artifact); this.setState(s=>({ artifactItems:[artifact].concat((s.artifactItems || []).filter(a=>a.id !== artifact.id)), studioPanelOpen:true, studioTab:'artifact' }), ()=>this.setActiveArtifact(artifact)); delivered = true; }
       if(type === 'generation'){ this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
       if(type === 'done'){ this.bindProjectFromApi(payload); delivered = true; }
       if(type === 'credits') this.applyCreditPayload(payload);
@@ -4022,7 +4159,7 @@ class Component extends DCLogic {
   switchProject(id){
     const project = (this.state.projectsData || []).find(p=>p.id === id);
     if(!project) return;
-    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'' }, ()=>this.notify('Projet ouvert. Ton contexte est restaure.'));
+    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'' }, ()=>{ this.loadStudioData(id); this.notify('Projet ouvert. Ton contexte est restaure.'); });
   }
   openProjectMenu(id, event){
     if(event && event.stopPropagation) event.stopPropagation();
@@ -4236,6 +4373,8 @@ class Component extends DCLogic {
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
     const galleryItems = this.galleryItems();
+    const studioMediaItems = this.studioMediaItems();
+    const artifactItems = (st.artifactItems || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
     const renderedPlans = this.buildPlans();
     const pricingCategory = type => {
       const t = String(type || '').toLowerCase();
@@ -4494,6 +4633,31 @@ class Component extends DCLogic {
         return { theme: t };
       }),
       showPricing: st.page === 'pricing',
+      showStudioPanel: !!st.studioPanelOpen,
+      studioIsMedia: st.studioTab === 'media',
+      studioIsArtifact: st.studioTab === 'artifact',
+      studioIsSkill: st.studioTab === 'skill',
+      studioMediaItems,
+      studioMediaEmpty: !studioMediaItems.length,
+      studioMediaCount: studioMediaItems.length,
+      artifactCount: artifactItems.length,
+      skillCards: (st.skillItems || []).map(s=>({ name:s.name || 'Skill AgentFlow', version:Number(s.current_version || 1), status:s.status || 'active', uses:Number(s.uses || 0) })),
+      artifactEmpty: !artifactItems.length,
+      activeArtifactReady: !!(st.activeArtifact && st.artifactPreviewUrl),
+      activeArtifactTitle: st.activeArtifact ? st.activeArtifact.title : '',
+      activeArtifactVersion: st.activeArtifact && st.activeArtifact.version ? (st.activeArtifact.version.number || 1) : 1,
+      artifactPreviewUrl: st.artifactPreviewUrl || '',
+      artifactCards: artifactItems.map(a=>({ title:a.title, version:a.currentVersion || 1, type:a.type || 'markdown', status:a.status || 'ready', activeStyle:st.activeArtifact && st.activeArtifact.id === a.id ? 'rgba(209,254,23,.08)' : 'rgba(' + T.lineRGB + ',.035)', onClick:()=>this.setActiveArtifact(a) })),
+      studioMediaTab: ()=>this.setState({ studioTab:'media' }),
+      studioArtifactTab: ()=>this.setState({ studioTab:'artifact' }),
+      studioSkillTab: ()=>this.setState({ studioTab:'skill' }),
+      studioMediaTabStyle: st.studioTab === 'media' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
+      studioArtifactTabStyle: st.studioTab === 'artifact' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
+      studioSkillTabStyle: st.studioTab === 'skill' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
+      closeStudioPanel: ()=>this.closeStudioPanel(),
+      publishActiveArtifact: ()=>this.publishActiveArtifact(),
+      copyActiveArtifact: ()=>this.copyActiveArtifact(),
+      skillActivityLabel: st.skillActivity || 'AgentFlow activera ici les compétences créées pendant tes générations.',
       showAuth: st.page === 'auth',
       showBilling: false,
       showGallery: st.page === 'gallery',
