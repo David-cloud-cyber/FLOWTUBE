@@ -34,7 +34,7 @@ button:active:not(:disabled){transform:scale(.965);transition-duration:.06s}
 button:focus-visible,[role="button"]:focus-visible{outline:2px solid #D1FE17;outline-offset:2px}
 button:disabled{cursor:not-allowed;opacity:.55}
 textarea{resize:none}
-input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset:1px}
+input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset:0}
 ::placeholder{color:#9A9DA4}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(120,116,104,.35);border-radius:9px}
@@ -557,11 +557,11 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
       </div>
     </div>
     <sc-if value="{{ showNewMessageButton }}" hint-placeholder-val="{{ false }}">
-      <button data-hf-new-message="true" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button>
+      <button data-hf-new-message="true" style="left:calc((100% - {{ studioContentInset }}) / 2)" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button>
     </sc-if>
 
     <sc-if value="{{ hasMessages }}" hint-placeholder-val="{{ false }}">
-      <div style="position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 26px 22px;pointer-events:none;background:linear-gradient(transparent,{{ tPageBg }} 62%)">
+      <div style="position:absolute;left:0;right:{{ studioContentInset }};bottom:0;display:flex;justify-content:center;padding:0 26px 22px;pointer-events:none;background:linear-gradient(transparent,{{ tPageBg }} 62%)">
         <div style="width:100%;max-width:720px;pointer-events:auto">
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:12px 12px 10px;box-shadow:0 18px 44px -30px rgba(12,11,9,.4)">
             <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Continuer la conversation…" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:14.5px;line-height:1.5;font-family:inherit;padding:4px 6px;min-height:28px;max-height:120px;overflow-y:auto"></textarea>
