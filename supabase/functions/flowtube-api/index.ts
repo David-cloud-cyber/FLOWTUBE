@@ -32,6 +32,10 @@ const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDO
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
 
+function agentProviderAvailable() {
+  return Boolean(Deno.env.get("ANTHROPIC_API_KEY") || OPENROUTER_AGENT_ENABLED);
+}
+
 const AGENT_MODELS = [
   { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended" },
   { id: "tencent/hy3:free", name: "Tencent Hy3 (gratuit)", description: "Modele de raisonnement agentique gratuit jusqu'au 21 juillet 2026.", tier: "free", provider: "tencent", capabilities: ["tools", "reasoning"], freeUntil: OPENROUTER_AGENT_FREE_UNTIL },
@@ -302,10 +306,31 @@ function agentBilling(ctx: Omit<AgentBillingContext, "reason">, reason: string, 
 function openRouterRequest(payload: Record<string, unknown>, model: string) {
   const messages = (Array.isArray(payload.messages) ? payload.messages : []).map((item) => {
     const message = item as Record<string, unknown>;
-    return { role: String(message.role || "user"), content: typeof message.content === "string" ? message.content : JSON.stringify(message.content || "") };
+    const content = Array.isArray(message.content)
+      ? message.content.map((part) => {
+        const block = part as Record<string, unknown>;
+        if (block.type === "text") return { type: "text", text: String(block.text || "") };
+        if (block.type === "image" && block.source && typeof block.source === "object") {
+          const source = block.source as Record<string, unknown>;
+          if (source.type === "url") return { type: "image_url", image_url: { url: String(source.url || "") } };
+          if (source.type === "base64") return { type: "image_url", image_url: { url: `data:${String(source.media_type || "image/png")};base64,${String(source.data || "")}` } };
+        }
+        return { type: "text", text: String(block.text || "") };
+      })
+      : String(message.content || "");
+    return {
+      role: String(message.role || "user"),
+      content,
+      ...(message.tool_call_id ? { tool_call_id: String(message.tool_call_id) } : {}),
+      ...(message.tool_calls ? { tool_calls: message.tool_calls } : {}),
+    };
   });
   if (payload.system) messages.unshift({ role: "system", content: String(payload.system) });
-  return { model, messages, max_tokens: Number(payload.max_tokens || 1200), stream: Boolean(payload.stream) };
+  const tools = Array.isArray(payload.tools) ? payload.tools.map((tool) => {
+    const item = tool as Record<string, unknown>;
+    return { type: "function", function: { name: String(item.name || "tool"), description: String(item.description || ""), parameters: item.input_schema || { type: "object", properties: {} } } };
+  }) : undefined;
+  return { model, messages, max_tokens: Number(payload.max_tokens || 1200), stream: Boolean(payload.stream), ...(tools?.length ? { tools, tool_choice: "auto" } : {}) };
 }
 
 function openRouterStreamToAnthropic(raw: string, model: string) {
@@ -356,7 +381,16 @@ async function openRouterMessages(payload: Record<string, unknown>, preferredMod
   const choice = ((data.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
   const message = (choice?.message || {}) as Record<string, unknown>;
   const usage = (data.usage || {}) as Record<string, unknown>;
-  const normalized = { id: data.id, type: "message", role: "assistant", content: [{ type: "text", text: String(message.content || "") }], stop_reason: "end_turn", usage: { input_tokens: Number(usage.prompt_tokens || 0), output_tokens: Number(usage.completion_tokens || 0) } };
+  const content: Array<Record<string, unknown>> = [];
+  if (message.content) content.push({ type: "text", text: String(message.content) });
+  for (const rawToolCall of (Array.isArray(message.tool_calls) ? message.tool_calls : [])) {
+    const toolCall = rawToolCall as Record<string, unknown>;
+    const fn = (toolCall.function || {}) as Record<string, unknown>;
+    let input: unknown = {};
+    try { input = JSON.parse(String(fn.arguments || "{}")); } catch (_error) { input = { raw: String(fn.arguments || "") }; }
+    content.push({ type: "tool_use", id: String(toolCall.id || crypto.randomUUID()), name: String(fn.name || "tool"), input });
+  }
+  const normalized = { id: data.id, type: "message", role: "assistant", content, stop_reason: message.tool_calls ? "tool_use" : "end_turn", usage: { input_tokens: Number(usage.prompt_tokens || 0), output_tokens: Number(usage.completion_tokens || 0) } };
   await chargeAgentCredits(billing, model, normalized.usage);
   return { response: new Response(JSON.stringify(normalized), { status: 200, headers: { "Content-Type": "application/json" } }), model };
 }
@@ -2192,7 +2226,7 @@ async function bootstrap(req: Request) {
       providers: {
         mediaPrivatePipeline: Boolean(Deno.env.get("FAL_KEY")),
         openRouterPrepared: true,
-        openRouterEnabled: OPENROUTER_ENABLED,
+        openRouterEnabled: OPENROUTER_ENABLED || OPENROUTER_AGENT_ENABLED,
         openRouterMediaEnabled: OPENROUTER_MEDIA_ENABLED && Boolean(Deno.env.get("OPENROUTER_API_KEY")),
       },
     },
@@ -2224,7 +2258,7 @@ async function bootstrap(req: Request) {
     },
     production: {
       auth: true,
-      agentFlow: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
+      agentFlow: agentProviderAvailable(),
       aiModel: DEFAULT_MODEL,
       aiModels: publicAgentModels(),
       billing: true,
@@ -2985,7 +3019,7 @@ function autoLearnSkillCandidate(prompt: string, attachments: ReturnType<typeof 
 // ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
 async function anthropicVision(imageUrl: string, question: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return "";
+  if (!apiKey && !OPENROUTER_AGENT_ENABLED) return "";
   const { response } = await anthropicMessages({
     max_tokens: 900,
     messages: [{
@@ -3177,7 +3211,7 @@ async function runWebResearch(url: string, userPrompt: string, preferredModel?: 
     return `La page ${url} n'expose pas de texte lisible (souvent une SPA/JS). Donne-moi une URL avec du contenu HTML ou colle le texte.`;
   }
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
+  if (!apiKey && !OPENROUTER_AGENT_ENABLED) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
   try {
     const { response } = await anthropicMessages({
       max_tokens: 1000,
@@ -3209,7 +3243,7 @@ async function runMarketResearch(query: string, userPrompt: string, preferredMod
     ].join("\n");
   }
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
+  if (!apiKey && !OPENROUTER_AGENT_ENABLED) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
   try {
     const { response } = await anthropicMessages({
       max_tokens: 1100,
@@ -3285,7 +3319,7 @@ async function anthropicReply(
 ) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   const emit = (text: string) => { if (onDelta && text) onDelta(text); };
-  if (!apiKey) {
+  if (!apiKey && !OPENROUTER_AGENT_ENABLED) {
     const text = fallbackReply(prompt, type, credits);
     emit(text);
     return text;
@@ -3659,7 +3693,7 @@ async function runAgentLoop(
   context: ReplyContext,
 ): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) {
+  if (!apiKey && !OPENROUTER_AGENT_ENABLED) {
     const text = fallbackReply(prompt, "image", 0);
     ctx.send("text", { delta: text });
     return text;
