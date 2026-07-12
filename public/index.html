@@ -110,6 +110,17 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-rail="true"] [data-hf-rail-bottom]{align-items:center;width:100%}
 [data-hf-toast]{position:fixed;right:24px;bottom:24px;z-index:140;display:flex;align-items:center;gap:10px;max-width:min(390px,calc(100vw - 32px));padding:12px 14px;border:1px solid rgba(209,254,23,.22);border-radius:12px;background:rgba(28,30,32,.94);color:#F7F7F8;box-shadow:0 18px 44px -18px rgba(0,0,0,.62);backdrop-filter:blur(12px);animation:toastIn .24s cubic-bezier(.22,1,.36,1) both}
 [data-hf-toast]::before{content:"";width:7px;height:7px;flex:0 0 auto;border-radius:999px;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.48)}
+[data-hf-message-row]{content-visibility:auto;contain-intrinsic-size:120px}
+[data-hf-stream-timeline]{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0 10px;padding:7px 9px;border:1px solid rgba(247,247,248,.08);border-radius:10px;background:rgba(247,247,248,.035)}
+[data-hf-stream-step]{display:inline-flex;align-items:center;gap:5px;min-height:18px;color:#70747B;font-size:9.5px;font-weight:700;white-space:nowrap;transition:color .22s ease,opacity .22s ease}
+[data-hf-stream-step] span:first-child{width:6px;height:6px;flex:0 0 6px;border-radius:50%;transition:background .22s ease,box-shadow .22s ease,transform .22s ease}
+[data-hf-stream-step] + [data-hf-stream-step]::before{content:"/";margin-right:1px;color:rgba(247,247,248,.18);font-weight:500}
+[data-hf-command-backdrop]{position:fixed;inset:0;z-index:150;display:flex;align-items:flex-start;justify-content:center;padding:12vh 18px 24px;background:rgba(5,6,8,.58);backdrop-filter:blur(12px);animation:modalFadeIn .18s ease both}
+[data-hf-command-dialog]{width:min(620px,100%);overflow:hidden;border:1px solid rgba(247,247,248,.14);border-radius:16px;background:#1C1E20;box-shadow:0 30px 100px -30px rgba(0,0,0,.8);animation:modalScale .22s cubic-bezier(.22,1,.36,1) both}
+[data-hf-command-dialog] input{width:100%;height:54px;padding:0 17px;border:0;border-bottom:1px solid rgba(247,247,248,.09);outline:none;background:transparent;color:#F7F7F8;font-size:15px}
+[data-hf-command-item]{display:flex;align-items:center;gap:11px;width:100%;min-height:48px;padding:0 15px;border:0;background:transparent;color:#D8D8D9;text-align:left;cursor:pointer;font-size:13px;transition:background .14s ease,color .14s ease}
+[data-hf-command-item]:hover,[data-hf-command-item]:focus-visible{background:rgba(209,254,23,.10);color:#F7F7F8;outline:none}
+[data-hf-command-item] kbd{margin-left:auto;padding:3px 6px;border:1px solid rgba(247,247,248,.12);border-radius:5px;color:#898A8B;font:10px 'JetBrains Mono',monospace}
 [data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 @media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
 .hf-pricing-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
@@ -201,6 +212,23 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <span style="flex:0 0 auto;font-size:10.5px;color:{{ task.statusColor }}">{{ task.statusLabel }}</span>
           </div>
         </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showCommandPalette }}" hint-placeholder-val="{{ false }}">
+    <div data-hf-command-backdrop="true">
+      <div data-hf-command-dialog="true" role="dialog" aria-label="Palette de commandes">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 17px;border-bottom:1px solid rgba(247,247,248,.09)">
+          <span style="color:#D1FE17;font-size:14px">⌘</span>
+          <input value="{{ commandQuery }}" onChange="{{ onCommandQuery }}" onKeyDown="{{ onCommandKey }}" placeholder="Rechercher une action ou un espace..." aria-label="Rechercher une commande" autofocus="true"/>
+          <kbd style="padding:4px 7px;border:1px solid rgba(247,247,248,.12);border-radius:5px;color:#898A8B;font:10px 'JetBrains Mono',monospace">Esc</kbd>
+        </div>
+        <sc-if value="{{ commandPaletteEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:20px 17px;color:#898A8B;font-size:12px">Aucune action ne correspond.</div></sc-if>
+        <div style="max-height:min(430px,58vh);overflow:auto;padding:7px">
+          <sc-for list="{{ commandItems }}" as="command" hint-placeholder-count="6">
+            <button data-hf-command-item="true" onClick="{{ command.onClick }}"><span style="width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:rgba(209,254,23,.10);color:#D1FE17;font-size:11px;font-weight:800">{{ command.icon }}</span><span>{{ command.label }}</span><kbd>{{ command.shortcut }}</kbd></button>
+          </sc-for>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -328,6 +356,10 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ activeTitle }}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
+        <button onClick="{{ toggleBackgroundTasks }}" title="Notifications et taches en arriere-plan" style="position:relative;width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
+          <sc-if value="{{ hasBackgroundTaskNotice }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:5px;top:4px;width:6px;height:6px;border-radius:50%;background:#D1FE17;box-shadow:0 0 8px rgba(209,254,23,.7)"></span></sc-if>
+        </button>
         <button onClick="{{ toggleTheme }}" title="Basculer le thème" style="width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05)">
           <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></sc-if>
           <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"></line><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"></line><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"></line></svg></sc-if>
@@ -347,7 +379,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </div>
 
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
-              <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="2" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;min-height:48px;max-height:140px;overflow-y:auto"></textarea>
+              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="2" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;min-height:48px;max-height:140px;overflow-y:auto"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
                   <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
@@ -441,7 +473,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                   </div>
                 </sc-if>
                 <sc-if value="{{ m.isAgent }}" hint-placeholder-val="{{ true }}">
-                  <div style="display:flex;gap:12px;align-items:flex-start;width:100%">
+                  <div data-hf-message-row="true" style="display:flex;gap:12px;align-items:flex-start;width:100%">
                     <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;padding-top:4px">
                        <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
@@ -453,6 +485,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                           </div>
                           <div data-hf-skeleton="true" style="height:10px;width:100%;margin-top:2px"></div>
                           <div data-hf-skeleton="true" style="height:10px;width:72%"></div>
+                          <div data-hf-stream-timeline="true" aria-label="Etapes de generation">
+                            <sc-for list="{{ m.streamSteps }}" as="step" hint-placeholder-count="5">
+                              <div data-hf-stream-step="true" style="{{ step.style }}"><span style="{{ step.dotStyle }}"></span><span>{{ step.label }}</span></div>
+                            </sc-for>
+                          </div>
                         </div>
                       </sc-if>
                        <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}">
@@ -461,6 +498,13 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                              <span data-hf-stream-dot="true"></span>
                              <strong data-hf-text-shimmer="true" aria-live="polite">{{ m.shimmerPhrase }}</strong>
                              <sc-if value="{{ m.streamTool }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 7px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:999px;color:{{ tText3 }};font-size:10px">{{ m.streamTool }}</span></sc-if>
+                           </div>
+                         </sc-if>
+                         <sc-if value="{{ m.showStreamTimeline }}" hint-placeholder-val="{{ false }}">
+                           <div data-hf-stream-timeline="true" aria-label="Etapes de generation">
+                             <sc-for list="{{ m.streamSteps }}" as="step" hint-placeholder-count="5">
+                               <div data-hf-stream-step="true" style="{{ step.style }}"><span style="{{ step.dotStyle }}"></span><span>{{ step.label }}</span></div>
+                             </sc-for>
                            </div>
                          </sc-if>
                          <div style="font-size:15px;line-height:1.68;color:{{ tInkSoft }};width:100%;max-width:100%">{{ m.richText }}</div>
@@ -489,6 +533,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                                 <div style="display:flex;flex-direction:column;align-items:center;gap:10px;z-index:1">
                                   <span style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:500;color:#F7F7F8">{{ m.pct }}</span>
                                   <span style="font-size:12.5px;color:#A8A8A8;animation:pageFade .4s both">{{ m.stage }}</span>
+                                  <div data-hf-stream-timeline="true" aria-label="Etapes de generation" style="margin:0;background:rgba(0,0,0,.18)">
+                                    <sc-for list="{{ m.mediaSteps }}" as="step" hint-placeholder-count="5">
+                                      <div data-hf-stream-step="true" style="{{ step.style }}"><span style="{{ step.dotStyle }}"></span><span>{{ step.label }}</span></div>
+                                    </sc-for>
+                                  </div>
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:8px;z-index:1">
                                   <div style="display:flex;gap:5px">
@@ -498,16 +547,15 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                                     <div style="flex:1;height:34px;border-radius:6px;background:rgba(255,255,255,{{ m.f4 }});transition:background .5s"></div>
                                     <div style="flex:1;height:34px;border-radius:6px;background:rgba(255,255,255,{{ m.f5 }});transition:background .5s"></div>
                                   </div>
-                                  <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden"><div style="width:{{ m.pct }};height:100%;border-radius:3px;background:#D1FE17;transition:width .4s ease"></div></div>
                                 </div>
                               </div>
                             </sc-if>
                             <sc-if value="{{ m.imgResult }}" hint-placeholder-val="{{ false }}">
-                              <img src="{{ m.resultUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"/>
+                              <img src="{{ m.resultUrl }}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"/>
                               <div style="position:absolute;left:12px;top:12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#F7F7F8;background:rgba(0,0,0,.38);padding:4px 9px;border-radius:999px">{{ m.caption }}</div>
                             </sc-if>
                             <sc-if value="{{ m.vidResult }}" hint-placeholder-val="{{ false }}">
-                              <video src="{{ m.resultUrl }}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
+                              <video src="{{ m.resultUrl }}" controls playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
                               <div style="position:absolute;left:12px;top:12px;display:flex;gap:6px;pointer-events:none">
                                 <span style="padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.4);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#F7F7F8">{{ m.caption }}</span>
                               </div>
@@ -2536,6 +2584,8 @@ class Component extends DCLogic {
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
     modelMenuSearch: '',
+    commandPaletteOpen: false,
+    commandQuery: '',
     modelId: this.initialUiState.modelId || 'tencent/hy3:free',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
@@ -2556,6 +2606,7 @@ class Component extends DCLogic {
     activeTitle: this.initialUiState.activeTitle || 'Nouveau projet',
     activeProjectId: this.initialUiState.activeProjectId || 'welcome',
     projectsData: Array.isArray(this.initialUiState.projectsData) ? this.initialUiState.projectsData : [],
+    studioContextByProject: this.initialUiState.studioContextByProject && typeof this.initialUiState.studioContextByProject === 'object' ? this.initialUiState.studioContextByProject : {},
     pricingPlans: [],
     pricingModels: [],
     pricingMeta: {},
@@ -2571,7 +2622,7 @@ class Component extends DCLogic {
     creditPaywallPlanId: '',
     creditLowNotified: false,
     toast: '',
-    backgroundTasks: [], backgroundTaskPanelOpen: false,
+    backgroundTasks: [], backgroundTaskPanelOpen: false, backgroundTaskUnread: false,
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
@@ -2587,12 +2638,12 @@ class Component extends DCLogic {
     renameTitle: '',
     deleteProjectId: '',
     compareOpen: false,
-    studioPanelOpen: false,
-    studioTab: 'media',
-    studioPanelWidth: 560,
-    artifactView: 'preview',
-    artifactPreviewDevice: 'desktop',
-    artifactFullscreen: false,
+    studioPanelOpen: this.initialUiState.studioPanelOpen === true,
+    studioTab: this.initialUiState.studioTab || 'media',
+    studioPanelWidth: Math.max(360, Number(this.initialUiState.studioPanelWidth || 560)),
+    artifactView: this.initialUiState.artifactView || 'preview',
+    artifactPreviewDevice: this.initialUiState.artifactPreviewDevice || 'desktop',
+    artifactFullscreen: this.initialUiState.artifactFullscreen === true,
     artifactItems: [],
     skillItems: [],
     activeArtifact: null,
@@ -3547,7 +3598,18 @@ class Component extends DCLogic {
   componentDidMount(){
     this.chatShouldStick = true;
     this.settingsKeydown = (event)=>{
-      if(event && event.key === 'Escape' && ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'].includes(this.state.page)){
+      if(!event) return;
+      if((event.metaKey || event.ctrlKey) && String(event.key || '').toLowerCase() === 'k'){
+        event.preventDefault();
+        this.openCommandPalette();
+        return;
+      }
+      if(event.key === 'Escape' && this.state.commandPaletteOpen){
+        event.preventDefault();
+        this.closeCommandPalette();
+        return;
+      }
+      if(event.key === 'Escape' && ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'].includes(this.state.page)){
         this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false });
       }
     };
@@ -3583,9 +3645,11 @@ class Component extends DCLogic {
     this.flushAllAgentText();
   }
   componentDidUpdate(prevProps, prevState){
-    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded'];
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
+    const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>prevState[key] !== this.state[key]);
+    if(studioChanged) this.rememberStudioContext();
     if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked){
       if(this.chatShouldStick !== false) this.scrollChatToBottom();
       else if(!this.state.chatUnread) this.setState({ chatUnread:true });
@@ -3619,7 +3683,14 @@ class Component extends DCLogic {
         attachments:(this.state.attachments || []).map(a=>({ id:a.id, name:a.name, kind:a.kind, url:a.url, contentType:a.contentType, bytes:a.bytes, textPreview:a.textPreview || '', status:a.status || 'ready' })),
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         creationsExpanded:this.state.creationsExpanded !== false,
-        projectsExpanded:this.state.projectsExpanded !== false
+        projectsExpanded:this.state.projectsExpanded !== false,
+        studioContextByProject:this.state.studioContextByProject || {},
+        studioPanelOpen:!!this.state.studioPanelOpen,
+        studioTab:this.state.studioTab || 'media',
+        studioPanelWidth:Math.max(360, Number(this.state.studioPanelWidth || 560)),
+        artifactView:this.state.artifactView || 'preview',
+        artifactPreviewDevice:this.state.artifactPreviewDevice || 'desktop',
+        artifactFullscreen:!!this.state.artifactFullscreen
       };
       window.localStorage.setItem('huggyflow_ui_state', JSON.stringify(payload));
     }catch(e){}
@@ -3647,6 +3718,85 @@ class Component extends DCLogic {
     clearTimeout(this.toastTimer);
     this.setState({ toast:String(message) });
     this.toastTimer = setTimeout(()=>this.setState({ toast:'' }), 3400);
+  }
+  openCommandPalette(){
+    this.setState({ commandPaletteOpen:true, commandQuery:'' });
+    setTimeout(()=>{
+      if(typeof document !== 'undefined'){
+        const input = document.querySelector('[data-hf-command-dialog] input');
+        if(input && typeof input.focus === 'function') input.focus();
+      }
+    }, 0);
+  }
+  closeCommandPalette(){ this.setState({ commandPaletteOpen:false, commandQuery:'' }); }
+  onCommandQuery(event){ this.setState({ commandQuery:event && event.target ? event.target.value : '' }); }
+  onCommandKey(event){
+    if(!event) return;
+    if(event.key === 'Escape'){ event.preventDefault(); this.closeCommandPalette(); return; }
+    if(event.key === 'Enter'){
+      event.preventDefault();
+      const first = this.getCommandItems()[0];
+      if(first && first.onClick) first.onClick();
+    }
+  }
+  runCommand(command){
+    this.closeCommandPalette();
+    if(command === 'new') return this.newProject();
+    if(command === 'gallery') return this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false });
+    if(command === 'studio') return this.setState({ page:'app', studioPanelOpen:true, studioTab:'media', artifactFullscreen:false });
+    if(command === 'search') return this.setState({ page:'app', modelMenu:false, sidebarCollapsed:false, sidebarSearchOpen:true }, ()=>{
+      setTimeout(()=>{ const input = typeof document !== 'undefined' ? document.querySelector('#hf-sidebar-search') : null; if(input && input.focus) input.focus(); }, 0);
+    });
+    if(command === 'settings') return this.setState({ page:'settings', settingsSearchQuery:'', settingsHop:false });
+    if(command === 'sidebar') return this.setState(s=>({ sidebarCollapsed:!s.sidebarCollapsed }));
+    if(command === 'theme') return this.setState(s=>({ theme:s.theme === 'dark' ? 'light' : 'dark' }));
+    if(command === 'focus') return this.focusComposer();
+  }
+  getCommandItems(){
+    const query = String(this.state.commandQuery || '').trim().toLowerCase();
+    const definitions = [
+      { id:'new', label:'Nouveau projet', icon:'+', shortcut:'N' , terms:'projet creation nouveau'},
+      { id:'gallery', label:'Ouvrir la galerie', icon:'G', shortcut:'', terms:'galerie creations medias'},
+      { id:'studio', label:'Ouvrir le Studio', icon:'S', shortcut:'', terms:'studio panneau droit artifact media'},
+      { id:'search', label:'Rechercher dans les projets', icon:'/', shortcut:'', terms:'recherche projet message'},
+      { id:'focus', label:'Focus sur le champ de conversation', icon:'↵', shortcut:'', terms:'chat conversation message composer'},
+      { id:'settings', label:'Ouvrir les paramètres', icon:'O', shortcut:'', terms:'parametres preferences compte'},
+      { id:'sidebar', label:'Réduire ou développer la barre latérale', icon:'<', shortcut:'', terms:'sidebar navigation barre'},
+      { id:'theme', label:'Changer le thème', icon:'◐', shortcut:'', terms:'theme sombre clair apparence'}
+    ];
+    return definitions.filter(item=>!query || (item.label + ' ' + item.terms).toLowerCase().includes(query)).map(item=>Object.assign({}, item, { onClick:()=>this.runCommand(item.id) }));
+  }
+  focusComposer(){
+    this.setState({ page:'app' }, ()=>setTimeout(()=>{
+      const input = typeof document !== 'undefined' ? document.querySelector('[data-hf-chat-input="true"]') : null;
+      if(input && input.focus) input.focus();
+    }, 0));
+  }
+  toggleBackgroundTasks(){
+    if(!this.state.authToken){ this.notify('Connecte-toi pour suivre tes taches en arriere-plan.'); return; }
+    this.setState(s=>({ backgroundTaskPanelOpen:!s.backgroundTaskPanelOpen, backgroundTaskUnread:false }));
+    this.loadBackgroundTasks();
+  }
+  streamStepCards(phase, live){
+    const labels = [
+      { id:'analyzing', label:'Analyse' },
+      { id:'routing', label:'Decision' },
+      { id:'rendering', label:'Generation' },
+      { id:'finalizing', label:'Verification' },
+      { id:'complete', label:'Resultat' }
+    ];
+    const raw = String(phase || 'analyzing').toLowerCase();
+    const normalized = ({ writing:'rendering', researching:'rendering', assembling:'rendering', creating:'rendering', building:'rendering', ready:'finalizing' })[raw] || raw;
+    const activeIndex = normalized === 'complete' ? labels.length - 1 : Math.max(0, labels.findIndex(item=>item.id === normalized));
+    return labels.map((item,index)=>{
+      const done = !live ? true : index < activeIndex;
+      const active = live && index === activeIndex;
+      return {
+        label:item.label,
+        style:'color:' + (done ? '#A8E8C0' : (active ? '#F7F7F8' : '#70747B')) + ';opacity:' + (done || active ? '1' : '.72'),
+        dotStyle:'background:' + (done ? '#A8E8C0' : (active ? '#D1FE17' : '#70747B')) + ';box-shadow:' + (active ? '0 0 9px rgba(209,254,23,.62)' : 'none') + ';transform:' + (active ? 'scale(1.15)' : 'scale(1)')
+      };
+    });
   }
   trackEvent(event, metadata){
     if(!this.state.authToken || (this.state.prefs && this.state.prefs.shareAnalytics === false)) return;
@@ -3965,6 +4115,7 @@ class Component extends DCLogic {
       this.setState(state=>({
         backgroundTasks:tasks,
         backgroundTaskPanelOpen:active.length > 0 || completedNow.length > 0 || state.backgroundTaskPanelOpen,
+        backgroundTaskUnread:state.backgroundTaskUnread || completedNow.length > 0,
         messages:(state.messages || []).map(message=>tasks.reduce((current, task)=>updateMessage(current, task), message)),
         projectsData:(state.projectsData || []).map(project=>Object.assign({}, project, { messages:(project.messages || []).map(message=>tasks.reduce((current, task)=>updateMessage(current, task), message)) }))
       }));
@@ -4674,10 +4825,27 @@ class Component extends DCLogic {
       this.setState({ pricingNotice:'Impossible de creer le projet pour le moment.' });
     }
   }
+  rememberStudioContext(){
+    const projectId = String(this.state.activeProjectId || '');
+    if(!projectId) return;
+    const context = {
+      studioPanelOpen:!!this.state.studioPanelOpen,
+      studioTab:this.state.studioTab || 'media',
+      studioPanelWidth:Math.max(360, Number(this.state.studioPanelWidth || 560)),
+      artifactView:this.state.artifactView || 'preview',
+      artifactPreviewDevice:this.state.artifactPreviewDevice || 'desktop',
+      artifactFullscreen:!!this.state.artifactFullscreen
+    };
+    const previous = (this.state.studioContextByProject || {})[projectId];
+    if(previous && JSON.stringify(previous) === JSON.stringify(context)) return;
+    this.setState(s=>({ studioContextByProject:Object.assign({}, s.studioContextByProject || {}, { [projectId]:context }) }));
+  }
   switchProject(id){
     const project = (this.state.projectsData || []).find(p=>p.id === id);
     if(!project) return;
-    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'' }, ()=>{ this.loadStudioData(id); this.notify('Projet ouvert. Ton contexte est restaure.'); });
+    this.rememberStudioContext();
+    const context = (this.state.studioContextByProject || {})[id] || {};
+    this.setState({ activeProjectId:id, activeTitle:project.title, messages:project.messages || [], page:'app', modelMenu:false, projectMenuId:'', studioPanelOpen:context.studioPanelOpen === true, studioTab:context.studioTab || 'media', studioPanelWidth:Math.max(360, Number(context.studioPanelWidth || 560)), artifactView:context.artifactView || 'preview', artifactPreviewDevice:context.artifactPreviewDevice || 'desktop', artifactFullscreen:context.artifactFullscreen === true }, ()=>{ this.loadStudioData(id); this.notify('Projet ouvert. Ton contexte est restaure.'); });
   }
   openProjectMenu(id, event){
     if(event && event.stopPropagation) event.stopPropagation();
@@ -4954,6 +5122,7 @@ class Component extends DCLogic {
         dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
       };
     });
+    const commandItems = this.getCommandItems();
     const artifactView = st.artifactView || 'preview';
     const artifactTabStyle = active => 'padding:7px 9px;border:0;border-radius:8px;background:' + (active ? '#D1FE17' : 'transparent') + ';color:' + (active ? '#131517' : T.text3) + ';font-size:10.5px;font-weight:' + (active ? '800' : '700') + ';cursor:pointer;white-space:nowrap';
     const artifactFiles = this.artifactFilesFor(st.activeArtifact);
@@ -4977,6 +5146,14 @@ class Component extends DCLogic {
       toastMessage: st.toast || '',
       showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen && backgroundTaskCards.length > 0,
       backgroundTaskCards,
+      hasBackgroundTaskNotice: !!st.backgroundTaskUnread || backgroundTaskCards.some(task=>task.statusLabel === 'En cours'),
+      toggleBackgroundTasks: ()=>this.toggleBackgroundTasks(),
+      showCommandPalette: !!st.commandPaletteOpen,
+      commandQuery: st.commandQuery || '',
+      onCommandQuery: (e)=>this.onCommandQuery(e),
+      onCommandKey: (e)=>this.onCommandKey(e),
+      commandItems,
+      commandPaletteEmpty: commandItems.length === 0,
       isDark: this.getResolvedTheme() === 'dark',
       isLight: this.getResolvedTheme() !== 'dark',
        showCheckoutPhone: !!st.checkoutPhoneOpen,
@@ -5891,6 +6068,8 @@ class Component extends DCLogic {
         const pct = media ? Number(media.progress || (status === 'done' ? 100 : 0)) : (m.pct || 0);
         const streamProgress = Math.max(0, Math.min(100, Math.round(Number(m.streamProgress || (m.streamLive ? 8 : 100)))));
         const streamPhase = String(m.streamPhase || (m.streamLive ? 'analyzing' : 'complete'));
+        const streamSteps = this.streamStepCards(streamPhase, !!m.streamLive);
+        const mediaPhase = status === 'done' ? 'complete' : (pct < 24 ? 'rendering' : (pct < 72 ? 'rendering' : 'finalizing'));
         const frameOn = n => (pct >= n * 20 ? '.22' : '.06');
         return {
           isUser: m.role==='user',
@@ -5909,6 +6088,9 @@ class Component extends DCLogic {
           streamPhaseLabel: this.streamPhaseLabel(streamPhase),
           shimmerPhrase: this.streamPhraseFor(streamPhase, st.streamPhraseIndex),
           streamTool: String(m.streamTool || ''),
+          showStreamTimeline: !!m.streamLive,
+          streamSteps,
+          mediaSteps: this.streamStepCards(mediaPhase, status === 'loading'),
           showText: !!m.text,
           hasMedia: !!m.media,
           imgLoading: status==='loading' && !isVideo && !isVoice,
