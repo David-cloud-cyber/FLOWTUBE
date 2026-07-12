@@ -3083,7 +3083,7 @@ class Component extends DCLogic {
     let html = htmlFile ? String(htmlFile.content || '') : '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>';
     if(!htmlFile){ const markdown = files.map(f=>String(f.content || '')).join('\n\n').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); html = '<!doctype html><html><head><meta charset="utf-8"><style>body{font:15px system-ui;padding:24px;white-space:pre-wrap;color:#17191c}</style></head><body><pre>' + markdown + '</pre></body></html>'; }
     if(css) html = html.replace('</head>', '<style>' + css + '</style></head>');
-    if(js) html = html.replace('</body>', '<script>' + js + '</script></body>');
+    if(js) html = html.replace('</body>', '<script>' + js + '</scr' + 'ipt></body>');
     const nextUrl = URL.createObjectURL(new Blob([html], { type:'text/html' }));
     if(this.state.artifactPreviewUrl){ try{ URL.revokeObjectURL(this.state.artifactPreviewUrl); }catch(e){} }
     this.setState({ activeArtifact:artifact, artifactPreviewUrl:nextUrl, studioPanelOpen:true, studioTab:'artifact' });
