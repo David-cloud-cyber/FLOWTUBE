@@ -34,6 +34,10 @@ const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATIO
 
 const AGENT_MODELS = [
   { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended", provider: "auto", capabilities: ["tools", "vision", "reasoning"] },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", name: "Nemotron 3 Ultra (gratuit)", description: "Raisonnement frontier et orchestration agentique.", tier: "free", provider: "nvidia", capabilities: ["tools", "reasoning"] },
+  { id: "nvidia/nemotron-3-super-120b-a12b:free", name: "Nemotron 3 Super (gratuit)", description: "Planification multi-agents et raisonnement long contexte.", tier: "free", provider: "nvidia", capabilities: ["tools", "reasoning"] },
+  { id: "openai/gpt-oss-120b:free", name: "GPT OSS 120B (gratuit)", description: "Modele ouvert pour raisonnement et execution agentique.", tier: "free", provider: "openai", capabilities: ["tools", "reasoning"] },
+  { id: "google/gemma-4-31b-it:free", name: "Gemma 4 31B IT (gratuit)", description: "Modele compact pour reponses rapides et outils.", tier: "free", provider: "google", capabilities: ["tools", "reasoning"] },
   { id: "tencent/hy3:free", name: "Tencent Hy3 (gratuit)", description: "Modele gratuit temporaire pour les conversations rapides.", tier: "free", provider: "tencent", capabilities: ["tools", "reasoning"], freeUntil: OPENROUTER_AGENT_FREE_UNTIL },
   { id: "tencent/hy3", name: "Tencent Hy3", description: "Raisonnement et execution agentique polyvalente.", tier: "standard", provider: "tencent", capabilities: ["tools", "reasoning"] },
   { id: "poolside/laguna-xs-2.1:free", name: "Laguna XS 2.1 (gratuit)", description: "Agent code compact avec outils et raisonnement.", tier: "free", provider: "poolside", capabilities: ["tools", "reasoning"], freeUntil: "" },
@@ -78,6 +82,10 @@ const AGENT_MODEL_FALLBACKS = [
 ];
 
 const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margin: "eco" | "standard" | "premium" | "max" }> = {
+  "nvidia/nemotron-3-ultra-550b-a55b:free": { credits: 0, label: "Gratuit", margin: "eco" },
+  "nvidia/nemotron-3-super-120b-a12b:free": { credits: 0, label: "Gratuit", margin: "eco" },
+  "openai/gpt-oss-120b:free": { credits: 0, label: "Gratuit", margin: "eco" },
+  "google/gemma-4-31b-it:free": { credits: 0, label: "Gratuit", margin: "eco" },
   "tencent/hy3:free": { credits: 1, label: "Gratuit", margin: "eco" },
   "tencent/hy3": { credits: 5, label: "5 cr", margin: "standard" },
   "poolside/laguna-xs-2.1:free": { credits: 1, label: "Gratuit", margin: "eco" },
@@ -113,6 +121,10 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
 };
 
 const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
+  "nvidia/nemotron-3-ultra-550b-a55b:free": { input: 0, output: 0 },
+  "nvidia/nemotron-3-super-120b-a12b:free": { input: 0, output: 0 },
+  "openai/gpt-oss-120b:free": { input: 0, output: 0 },
+  "google/gemma-4-31b-it:free": { input: 0, output: 0 },
   "tencent/hy3:free": { input: 0, output: 0 },
   "tencent/hy3": { input: 1, output: 4 },
   "poolside/laguna-xs-2.1:free": { input: 0, output: 0 },
@@ -153,7 +165,7 @@ const OPENROUTER_LIVE_PRICES: Record<string, { input: number; output: number }> 
 const OPENROUTER_PRICE_REFRESHED_AT: Record<string, number> = {};
 const OPENROUTER_AGENT_IDS = new Set(AGENT_MODELS.filter((model) => {
   const provider = (model as { provider?: string }).provider;
-  return provider === "openrouter" || ["tencent", "poolside", "aion-labs", "openai", "x-ai", "black-forest-labs"].includes(String(provider));
+  return provider === "openrouter" || ["tencent", "poolside", "aion-labs", "openai", "x-ai", "black-forest-labs", "nvidia", "google"].includes(String(provider));
 }).map((model) => model.id));
 const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output: number }> = {
   "openai/gpt-5.5-pro": { input: 30, output: 180 },
@@ -162,16 +174,20 @@ const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output:
 };
 
 function isOpenRouterAgentModel(modelId: string) {
-  return OPENROUTER_AGENT_IDS.has(modelId) || modelId.startsWith("openai/") || modelId.startsWith("x-ai/") || modelId.startsWith("tencent/") || modelId.startsWith("poolside/") || modelId.startsWith("aion-labs/") || modelId.startsWith("black-forest-labs/");
+  return OPENROUTER_AGENT_IDS.has(modelId) || modelId.startsWith("openai/") || modelId.startsWith("x-ai/") || modelId.startsWith("tencent/") || modelId.startsWith("poolside/") || modelId.startsWith("aion-labs/") || modelId.startsWith("black-forest-labs/") || modelId.startsWith("nvidia/") || modelId.startsWith("google/");
 }
 
 function isTemporaryFreeAgentModel(modelId: string) {
   return modelId === "tencent/hy3:free" && Date.now() <= Date.parse(OPENROUTER_AGENT_FREE_UNTIL);
 }
 
+function isFreeOpenRouterAgentModel(modelId: string) {
+  return modelId.endsWith(":free") && (modelId !== "tencent/hy3:free" || isTemporaryFreeAgentModel(modelId));
+}
+
 function agentTokenPriceForModel(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
-  if (isTemporaryFreeAgentModel(resolved)) return { input: 0, output: 0 };
+  if (isFreeOpenRouterAgentModel(resolved)) return { input: 0, output: 0 };
   if (OPENROUTER_LIVE_PRICES[resolved]) return OPENROUTER_LIVE_PRICES[resolved];
   if (OPENROUTER_STATIC_FALLBACK_PRICES[resolved]) return OPENROUTER_STATIC_FALLBACK_PRICES[resolved];
   if (AGENT_TOKEN_PRICES[resolved]) return AGENT_TOKEN_PRICES[resolved];
@@ -181,7 +197,7 @@ function agentTokenPriceForModel(modelId: string) {
 
 async function refreshOpenRouterPrice(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
-  if (!isOpenRouterAgentModel(resolved) || isTemporaryFreeAgentModel(resolved)) return agentTokenPriceForModel(resolved);
+  if (!isOpenRouterAgentModel(resolved) || isFreeOpenRouterAgentModel(resolved)) return agentTokenPriceForModel(resolved);
   const refreshedAt = OPENROUTER_PRICE_REFRESHED_AT[resolved] || 0;
   if (OPENROUTER_LIVE_PRICES[resolved] && Date.now() - refreshedAt < 10 * 60 * 1000) return OPENROUTER_LIVE_PRICES[resolved];
   if (!OPENROUTER_API_KEY) return agentTokenPriceForModel(resolved);
@@ -210,7 +226,7 @@ async function refreshOpenRouterPrice(modelId: string) {
 }
 
 function agentCreditsForUsage(modelId: string, usage: AgentUsage, multiplier = 1) {
-  if (isTemporaryFreeAgentModel(resolveAgentModelId(modelId))) {
+  if (isFreeOpenRouterAgentModel(resolveAgentModelId(modelId))) {
     return { credits: 0, providerCostUsd: 0, inputTokens: Math.max(0, Number(usage.inputTokens || 0)), outputTokens: Math.max(0, Number(usage.outputTokens || 0)) };
   }
   const inputTokens = Math.max(0, Number(usage.inputTokens || 0));
@@ -253,10 +269,10 @@ function publicAgentModels() {
     inputUsdPerMillionTokens: agentTokenPriceForModel(model.id).input,
     outputUsdPerMillionTokens: agentTokenPriceForModel(model.id).output,
     creditsPerMessage: agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
-    creditsLabel: model.id === "auto" ? "Selon les tokens" : (isTemporaryFreeAgentModel(model.id) ? "Gratuit" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`),
+    creditsLabel: model.id === "auto" ? "Selon les tokens" : (isFreeOpenRouterAgentModel(model.id) ? "Gratuit" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`),
     billingMode: "token_based",
     costClass: agentCreditRateForModel(model.id).margin,
-    free: isTemporaryFreeAgentModel(model.id) || model.id.endsWith(":free"),
+    free: isFreeOpenRouterAgentModel(model.id),
     freeUntil: (model as { freeUntil?: string }).freeUntil || null,
     capabilities: (model as { capabilities?: string[] }).capabilities || [],
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
@@ -309,7 +325,7 @@ type AgentBillingContext = {
 };
 
 function agentCreditsForTurn(modelId: string, multiplier = 1) {
-  if (isTemporaryFreeAgentModel(resolveAgentModelId(modelId))) return 0;
+  if (isFreeOpenRouterAgentModel(resolveAgentModelId(modelId))) return 0;
   return Math.max(1, Math.ceil(agentCreditRateForModel(modelId).credits * Math.max(1, multiplier)));
 }
 

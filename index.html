@@ -2468,6 +2468,10 @@ class Component extends DCLogic {
   };
 
   MODELS = [
+    { id:'nvidia/nemotron-3-ultra-550b-a55b:free', name:'Nemotron 3 Ultra gratuit', group:'NVIDIA', provider:'nvidia', desc:'Raisonnement frontier et orchestration agentique', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
+    { id:'nvidia/nemotron-3-super-120b-a12b:free', name:'Nemotron 3 Super gratuit', group:'NVIDIA', provider:'nvidia', desc:'Planification multi-agents et raisonnement long contexte', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
+    { id:'openai/gpt-oss-120b:free', name:'GPT OSS 120B gratuit', group:'OpenAI', provider:'openai', desc:'Modele ouvert pour raisonnement et execution agentique', creditsLabel:'Gratuit', free:true, dot:'#F4F4F5', capabilities:['tools','reasoning'] },
+    { id:'google/gemma-4-31b-it:free', name:'Gemma 4 31B gratuit', group:'Google', provider:'google', desc:'Modele compact pour reponses rapides et outils', creditsLabel:'Gratuit', free:true, dot:'#4285F4', capabilities:['tools','reasoning'] },
     { id:'tencent/hy3:free', name:'Tencent Hy3 gratuit', group:'Tencent', provider:'tencent', desc:'Modele agent gratuit jusqu\'au 21 juillet 2026', creditsLabel:'Gratuit', free:true, current:true, freeUntil:'2026-07-21T23:59:59.999Z', dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'tencent/hy3', name:'Tencent Hy3', group:'Tencent', provider:'tencent', desc:'Raisonnement et execution agentique polyvalente', creditsLabel:'5 cr', dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'poolside/laguna-xs-2.1:free', name:'Laguna XS 2.1 gratuit', group:'Poolside', provider:'poolside', desc:'Agent code compact avec outils et raisonnement', creditsLabel:'Gratuit', free:true, dot:'#8F9BFF', capabilities:['tools','reasoning'] },
@@ -3009,7 +3013,7 @@ class Component extends DCLogic {
         this.MODELS = [...new Map(agentModels.map((m,i)=>[m.id || 'auto', ({
           id:m.id || 'auto',
           name:m.name || 'Auto AgentFlow',
-          group:m.id === 'auto' ? 'AgentFlow' : (({anthropic:'Anthropic',openai:'OpenAI',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI'}[m.provider]) || m.provider || 'AgentFlow'),
+          group:m.id === 'auto' ? 'AgentFlow' : (({anthropic:'Anthropic',openai:'OpenAI',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI',nvidia:'NVIDIA',google:'Google'}[m.provider]) || m.provider || 'AgentFlow'),
           provider:m.provider || 'auto',
           desc:m.description || 'Cerveau AgentFlow',
           creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
@@ -4846,7 +4850,7 @@ class Component extends DCLogic {
           label:'Disponible',
           headStyle:'padding:7px 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
           items:curated.map(m=>({
-            name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.name || '?').slice(0,1).toUpperCase()))), desc:m.desc,
+            name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc:m.desc,
             creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? '⚒' : '',m.capabilities && m.capabilities.includes('vision') ? '◉' : '',m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '',m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
             check:m.id === st.modelId ? '✓' : '',
@@ -4858,7 +4862,7 @@ class Component extends DCLogic {
           label: g,
           headStyle: 'padding:' + (gi === 0 ? '7px' : '12px') + ' 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
           items: grouped[g].map(m=>({
-            name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.name || '?').slice(0,1).toUpperCase()))), desc: m.desc,
+            name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc: m.desc,
             creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? '⚒' : '', m.capabilities && m.capabilities.includes('vision') ? '◉' : '', m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '', m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
             check: m.id === st.modelId ? '✓' : '',
