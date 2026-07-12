@@ -4,7 +4,7 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const APP_NAME = "HuggyFlow";
-const DEFAULT_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
+const DEFAULT_MODEL = Deno.env.get("AGENTFLOW_DEFAULT_MODEL") || "tencent/hy3:free";
 const ANTHROPIC_VERSION = "2023-06-01";
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
@@ -23,14 +23,18 @@ const DEFAULT_MONEYFUSION_CHECKOUT_URL = "https://pay.moneyfusion.net/HuggyFlow/
 const DEFAULT_MONEYFUSION_STATUS_URL = "https://www.pay.moneyfusion.net/paiementNotif/{token}";
 const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
 const DEFAULT_BILLING_CURRENCY = (Deno.env.get("MONEYFUSION_CURRENCY") || "XOF").toUpperCase();
+const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || "";
 const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true";
 const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_MEDIA_ENABLED") || "").toLowerCase() === "true";
+const OPENROUTER_AGENT_ENABLED = Boolean(OPENROUTER_API_KEY) && (Deno.env.get("OPENROUTER_AGENT_ENABLED") || "true").toLowerCase() !== "false";
+const OPENROUTER_AGENT_FREE_UNTIL = Deno.env.get("OPENROUTER_AGENT_FREE_UNTIL") || "2026-07-21T23:59:59.999Z";
 const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
 
 const AGENT_MODELS = [
   { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended" },
+  { id: "tencent/hy3:free", name: "Tencent Hy3 (gratuit)", description: "Modele de raisonnement agentique gratuit jusqu'au 21 juillet 2026.", tier: "free", provider: "tencent", capabilities: ["tools", "reasoning"], freeUntil: OPENROUTER_AGENT_FREE_UNTIL },
   { id: "claude-fable-5", name: "Fable 5", description: "Creation ambitieuse, strategie et production complexe.", tier: "max" },
   { id: "claude-mythos-5", name: "Mythos 5", description: "Raisonnement profond avec repli automatique si indisponible.", tier: "max" },
   { id: "claude-opus-4-8", name: "Opus 4.8", description: "Agent premium pour les briefs longs et exigeants.", tier: "pro" },
@@ -51,6 +55,8 @@ const AGENT_MODEL_FALLBACKS = [
 ];
 
 const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margin: "eco" | "standard" | "premium" | "max" }> = {
+  "tencent/hy3:free": { credits: 0, label: "Gratuit jusqu'au 21/07/2026", margin: "eco" },
+  "tencent/hy3": { credits: 5, label: "5 cr", margin: "standard" },
   "claude-haiku-4-5-20251001": { credits: 1, label: "1 cr", margin: "eco" },
   "claude-sonnet-4-6": { credits: 3, label: "3 cr", margin: "standard" },
   "claude-sonnet-5": { credits: 4, label: "4 cr", margin: "standard" },
@@ -62,6 +68,8 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
 };
 
 const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
+  "tencent/hy3:free": { input: 0, output: 0 },
+  "tencent/hy3": { input: 1, output: 4 },
   "claude-haiku-4-5-20251001": { input: 1, output: 5 },
   "claude-sonnet-4-6": { input: 3, output: 15 },
   "claude-sonnet-5": { input: 2, output: 10 },
@@ -74,12 +82,24 @@ const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
 
 type AgentUsage = { inputTokens?: number; outputTokens?: number };
 
+function isHy3FreeActive(modelId: string) {
+  return modelId === "tencent/hy3:free" && Date.now() <= Date.parse(OPENROUTER_AGENT_FREE_UNTIL);
+}
+
+function isOpenRouterAgentModel(modelId: string) {
+  return modelId === "tencent/hy3:free" || modelId === "tencent/hy3";
+}
+
 function agentTokenPriceForModel(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
+  if (isHy3FreeActive(resolved)) return { input: 0, output: 0 };
   return AGENT_TOKEN_PRICES[resolved] || AGENT_TOKEN_PRICES[DEFAULT_MODEL] || AGENT_TOKEN_PRICES["claude-sonnet-4-6"];
 }
 
 function agentCreditsForUsage(modelId: string, usage: AgentUsage, multiplier = 1) {
+  if (isHy3FreeActive(resolveAgentModelId(modelId))) {
+    return { credits: 0, providerCostUsd: 0, inputTokens: Number(usage.inputTokens || 0), outputTokens: Number(usage.outputTokens || 0) };
+  }
   const inputTokens = Math.max(0, Number(usage.inputTokens || 0));
   const outputTokens = Math.max(0, Number(usage.outputTokens || 0));
   const price = agentTokenPriceForModel(modelId);
@@ -116,13 +136,16 @@ function agentMarginMultiplierForModel(modelId: string) {
 function publicAgentModels() {
   return AGENT_MODELS.map((model) => ({
     ...model,
-    provider: "anthropic",
+    provider: (model as { provider?: string }).provider || (isOpenRouterAgentModel(model.id) ? "tencent" : "anthropic"),
     inputUsdPerMillionTokens: agentTokenPriceForModel(model.id).input,
     outputUsdPerMillionTokens: agentTokenPriceForModel(model.id).output,
     creditsPerMessage: agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
-    creditsLabel: model.id === "auto" ? "Selon les tokens" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`,
+    creditsLabel: model.id === "auto" ? "Selon les tokens" : (isHy3FreeActive(model.id) ? "Gratuit" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`),
     billingMode: "token_based",
     costClass: agentCreditRateForModel(model.id).margin,
+    free: isHy3FreeActive(model.id),
+    freeUntil: (model as { freeUntil?: string }).freeUntil || null,
+    capabilities: (model as { capabilities?: string[] }).capabilities || [],
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
   }));
 }
@@ -141,6 +164,8 @@ function uniqueStrings(values: string[]) {
 function resolveAgentModelId(value: unknown) {
   const raw = String(value || "").trim();
   if (!raw || raw === "auto" || raw === "huggy-auto") return DEFAULT_MODEL;
+  if (raw === "tencent/hy3:free") return isHy3FreeActive(raw) ? raw : "tencent/hy3";
+  if (OPENROUTER_AGENT_ENABLED && raw === "tencent/hy3") return raw;
   if (/^claude-[a-z0-9][a-z0-9._-]*$/i.test(raw)) return raw;
   return DEFAULT_MODEL;
 }
@@ -172,12 +197,14 @@ type AgentBillingContext = {
 };
 
 function agentCreditsForTurn(modelId: string, multiplier = 1) {
+  if (isHy3FreeActive(resolveAgentModelId(modelId))) return 0;
   return Math.max(1, Math.ceil(agentCreditRateForModel(modelId).credits * Math.max(1, multiplier)));
 }
 
 async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefined, modelId: string, requiredOverride?: number) {
   if (!billing) return;
-  const creditsRequired = requiredOverride || agentCreditsForTurn(modelId, billing.multiplier);
+  const creditsRequired = requiredOverride ?? agentCreditsForTurn(modelId, billing.multiplier);
+  if (creditsRequired <= 0) return;
   const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
@@ -198,6 +225,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     ? agentCreditsForUsage(modelId, usage, billing.multiplier)
     : { credits: agentCreditsForTurn(modelId, billing.multiplier), providerCostUsd: 0, inputTokens: 0, outputTokens: 0 };
   const credits = usagePricing.credits;
+  if (credits <= 0) return { charged: 0, balance: undefined as number | undefined };
   const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
@@ -232,7 +260,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     reason: "agent_message",
     balance_after: balanceAfter,
     metadata: {
-      provider: "anthropic",
+      provider: isOpenRouterAgentModel(modelId) ? "openrouter" : "anthropic",
       model_id: modelId,
       credit_rate_label: rate.label,
       cost_class: rate.margin,
@@ -252,7 +280,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     status: "completed",
     metadata: {
       kind: "agent_message",
-      provider: "anthropic",
+      provider: isOpenRouterAgentModel(modelId) ? "openrouter" : "anthropic",
       model_id: modelId,
       credit_rate_label: rate.label,
       cost_class: rate.margin,
@@ -271,7 +299,71 @@ function agentBilling(ctx: Omit<AgentBillingContext, "reason">, reason: string, 
   return { ...ctx, reason, multiplier };
 }
 
+function openRouterRequest(payload: Record<string, unknown>, model: string) {
+  const messages = (Array.isArray(payload.messages) ? payload.messages : []).map((item) => {
+    const message = item as Record<string, unknown>;
+    return { role: String(message.role || "user"), content: typeof message.content === "string" ? message.content : JSON.stringify(message.content || "") };
+  });
+  if (payload.system) messages.unshift({ role: "system", content: String(payload.system) });
+  return { model, messages, max_tokens: Number(payload.max_tokens || 1200), stream: Boolean(payload.stream) };
+}
+
+function openRouterStreamToAnthropic(raw: string, model: string) {
+  const textParts: string[] = [];
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const block of raw.split(/\r?\n\r?\n/)) {
+    const line = block.split(/\r?\n/).find((entry) => entry.startsWith("data:"));
+    if (!line) continue;
+    const value = line.slice(5).trim();
+    if (!value || value === "[DONE]") continue;
+    try {
+      const event = JSON.parse(value) as Record<string, unknown>;
+      const usage = (event.usage || {}) as Record<string, unknown>;
+      inputTokens = Number(usage.prompt_tokens || inputTokens);
+      outputTokens = Number(usage.completion_tokens || outputTokens);
+      const choice = ((event.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
+      const delta = (choice?.delta || {}) as Record<string, unknown>;
+      if (typeof delta.content === "string" && delta.content) textParts.push(delta.content);
+    } catch (_error) { /* fragment provider */ }
+  }
+  const events = [
+    `event: content_block_start\ndata: ${JSON.stringify({ type: "content_block_start", index: 0, content_block: { type: "text", text: "" } })}\n\n`,
+    ...textParts.map((text) => `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text } })}\n\n`),
+    `event: content_block_stop\ndata: ${JSON.stringify({ type: "content_block_stop", index: 0 })}\n\n`,
+    `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { input_tokens: inputTokens, output_tokens: outputTokens } })}\n\n`,
+    `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop", model })}\n\n`,
+  ];
+  return { raw: events.join(""), usage: { inputTokens, outputTokens } };
+}
+
+async function openRouterMessages(payload: Record<string, unknown>, preferredModel: string, billing?: AgentBillingContext) {
+  const model = resolveAgentModelId(preferredModel);
+  if (!OPENROUTER_AGENT_ENABLED) throw new FlowtubeError(503, "Le modele AgentFlow est indisponible pour le moment.", { code: "OPENROUTER_NOT_CONFIGURED", modelId: model });
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": APP_BASE_URL, "X-Title": APP_NAME },
+    body: JSON.stringify(openRouterRequest(payload, model)),
+  });
+  const raw = await response.text();
+  if (!response.ok) throw new FlowtubeError(response.status === 429 ? 429 : 502, "Le modele AgentFlow est indisponible pour le moment.", { code: "OPENROUTER_ERROR", modelId: model });
+  if (Boolean(payload.stream)) {
+    const stream = openRouterStreamToAnthropic(raw, model);
+    await chargeAgentCredits(billing, model, stream.usage);
+    return { response: new Response(stream.raw, { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8" } }), model };
+  }
+  const data = JSON.parse(raw) as Record<string, unknown>;
+  const choice = ((data.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
+  const message = (choice?.message || {}) as Record<string, unknown>;
+  const usage = (data.usage || {}) as Record<string, unknown>;
+  const normalized = { id: data.id, type: "message", role: "assistant", content: [{ type: "text", text: String(message.content || "") }], stop_reason: "end_turn", usage: { input_tokens: Number(usage.prompt_tokens || 0), output_tokens: Number(usage.completion_tokens || 0) } };
+  await chargeAgentCredits(billing, model, normalized.usage);
+  return { response: new Response(JSON.stringify(normalized), { status: 200, headers: { "Content-Type": "application/json" } }), model };
+}
+
 async function anthropicMessages(payload: Record<string, unknown>, preferredModel?: string, billing?: AgentBillingContext) {
+  const requestedModel = resolveAgentModelId(preferredModel);
+  if (isOpenRouterAgentModel(requestedModel)) return openRouterMessages(payload, requestedModel, billing);
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
   let lastStatus = 0;

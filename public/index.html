@@ -2397,7 +2397,7 @@ class Component extends DCLogic {
     input: this.initialUiState.input || '',
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
-    modelId: this.initialUiState.modelId || 'auto',
+    modelId: this.initialUiState.modelId || 'tencent/hy3:free',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
     suggestionSet: 0,
@@ -2459,6 +2459,7 @@ class Component extends DCLogic {
   };
 
   MODELS = [
+    { id:'tencent/hy3:free', name:'Tencent Hy3 gratuit', group:'AgentFlow', provider:'tencent', desc:'Raisonnement agentique gratuit jusqu\'au 21 juillet 2026', creditsLabel:'Gratuit', free:true, dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'auto', name:'Auto AgentFlow', group:'AgentFlow', desc:'Choisit le meilleur cerveau pour ta demande', creditsLabel:'Recommandé', dot:'#D1FE17' },
     { id:'claude-fable-5', name:'Fable 5', group:'AgentFlow', desc:'Création ambitieuse, stratégie et production complexe', creditsLabel:'Max', dot:'#C9A8E8' },
     { id:'claude-opus-4-8', name:'Opus 4.8', group:'AgentFlow', desc:'Agent très puissant pour les briefs longs et exigeants', creditsLabel:'Pro', dot:'#BCA7FF' },
@@ -2977,8 +2978,11 @@ class Component extends DCLogic {
           id:m.id || 'auto',
            name:m.name || 'Auto AgentFlow',
            group:'AgentFlow',
+           provider:m.provider || 'anthropic',
            desc:m.description || 'Cerveau AgentFlow',
-          creditsLabel:m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto'),
+          creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
+          free:!!m.free,
+          capabilities:Array.isArray(m.capabilities) ? m.capabilities : [],
           dot:dots[i % dots.length]
         }));
       }
@@ -3082,7 +3086,7 @@ class Component extends DCLogic {
         activeProjectId:this.state.activeProjectId || 'welcome',
         activeTitle:this.state.activeTitle || 'Nouveau projet',
         projectsData:[],
-        modelId:this.state.modelId || 'auto',
+        modelId:this.state.modelId || 'tencent/hy3:free',
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
