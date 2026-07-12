@@ -56,6 +56,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 @keyframes typingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 @keyframes streamPulse{0%,100%{opacity:.45;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
 @keyframes streamCursor{0%,48%{opacity:1}49%,100%{opacity:0}}
+@keyframes textShimmer{0%{background-position:140% 0}100%{background-position:-40% 0}}
 @keyframes shimmer{0%{transform:translateX(-110%)}100%{transform:translateX(220%)}}
 @keyframes softPulse{0%,100%{opacity:.48}50%{opacity:1}}
 [data-hf-md]{white-space:normal;overflow-wrap:anywhere}
@@ -84,9 +85,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-stream-status]{display:flex;align-items:center;gap:8px;min-height:24px;color:#A8A8A8;font-size:11px;line-height:1.4}
 [data-hf-stream-status] strong{color:#F7F7F8;font-weight:650}
 [data-hf-stream-dot]{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5);animation:streamPulse 1.25s ease-in-out infinite}
+[data-hf-text-shimmer]{background:linear-gradient(105deg,#898A8B 18%,#F7F7F8 38%,#D1FE17 50%,#898A8B 68%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:textShimmer 1.8s linear infinite}
 [data-hf-stream-cursor]{display:inline-block;width:6px;height:14px;margin-left:3px;vertical-align:-2px;border-radius:2px;background:#D1FE17;animation:streamCursor 1s steps(1,end) infinite}
-[data-hf-stream-track]{height:3px;margin-top:7px;overflow:hidden;border-radius:999px;background:rgba(247,247,248,.09)}
-[data-hf-stream-track] span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#D1FE17,#18DCFF);box-shadow:0 0 12px rgba(209,254,23,.3);transition:width .35s ease}
 [data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable}
 [data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 [data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
@@ -444,10 +444,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
                           <div data-hf-stream-status="true">
                             <span data-hf-stream-dot="true"></span>
-                            <strong>{{ m.activityLabel }}</strong>
-                            <span style="margin-left:auto;color:{{ tText4 }};font-family:'JetBrains Mono',monospace;font-size:10px">{{ m.streamProgress }}%</span>
+                            <strong data-hf-text-shimmer="true" aria-live="polite">{{ m.shimmerPhrase }}</strong>
                           </div>
-                          <div data-hf-stream-track="true"><span style="width:{{ m.streamProgressPct }}"></span></div>
                           <div data-hf-skeleton="true" style="height:10px;width:100%;margin-top:2px"></div>
                           <div data-hf-skeleton="true" style="height:10px;width:72%"></div>
                         </div>
@@ -456,11 +454,9 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
                          <sc-if value="{{ m.showLiveStatus }}" hint-placeholder-val="{{ false }}">
                            <div data-hf-stream-status="true" style="margin:0 0 8px 1px">
                              <span data-hf-stream-dot="true"></span>
-                             <strong>{{ m.streamPhaseLabel }}</strong>
+                             <strong data-hf-text-shimmer="true" aria-live="polite">{{ m.shimmerPhrase }}</strong>
                              <sc-if value="{{ m.streamTool }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 7px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:999px;color:{{ tText3 }};font-size:10px">{{ m.streamTool }}</span></sc-if>
-                             <span style="margin-left:auto;color:{{ tText4 }};font-family:'JetBrains Mono',monospace;font-size:10px">{{ m.streamProgress }}%</span>
                            </div>
-                           <div data-hf-stream-track="true"><span style="width:{{ m.streamProgressPct }}"></span></div>
                          </sc-if>
                          <div style="font-size:15px;line-height:1.68;color:{{ tInkSoft }};width:100%;max-width:100%">{{ m.richText }}</div>
                          <sc-if value="{{ m.showLiveStatus }}" hint-placeholder-val="{{ false }}"><span data-hf-stream-cursor="true" aria-hidden="true"></span></sc-if>
@@ -2480,6 +2476,7 @@ class Component extends DCLogic {
     modelId: this.initialUiState.modelId || 'tencent/hy3:free',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
+    streamPhraseIndex: 0,
     suggestionSet: 0,
     billing: this.initialUiState.billing || 'annual',
     segment: this.initialUiState.segment || 'solo',
@@ -2592,6 +2589,17 @@ class Component extends DCLogic {
     "Ameliore cette image pour une publicite...",
     "Prepare une voix off claire pour mon contenu..."
   ];
+
+  STREAM_PHRASES = {
+    analyzing: ['AgentFlow réfléchit…', 'AgentFlow structure ta demande…', 'AgentFlow identifie le meilleur workflow…'],
+    routing: ['AgentFlow compare les options…', 'AgentFlow choisit le meilleur moteur…', 'AgentFlow prépare la stratégie…'],
+    writing: ['AgentFlow compose la réponse…', 'AgentFlow organise les idées…', 'AgentFlow affine le résultat…'],
+    researching: ['AgentFlow consulte les sources…', 'AgentFlow vérifie les informations…', 'AgentFlow synthétise la recherche…'],
+    rendering: ['AgentFlow génère le rendu…', 'AgentFlow compose les plans…', 'AgentFlow finalise la création…'],
+    assembling: ['AgentFlow assemble les éléments…', 'AgentFlow construit ton workflow…', 'AgentFlow prépare les fichiers…'],
+    finalizing: ['AgentFlow vérifie le résultat…', 'AgentFlow prépare la livraison…', 'AgentFlow termine les derniers détails…'],
+    cancelled: ['Génération interrompue']
+  };
 
   SUGGESTION_SETS = [
     [
@@ -3301,12 +3309,17 @@ class Component extends DCLogic {
       if(storedTheme === 'light') this.setState({ theme:'light' });
     }catch(e){}
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
+    this._streamPhrase = setInterval(()=>{
+      const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
+      if(active && (typeof document === 'undefined' || document.visibilityState !== 'hidden')) this.setState(s=>({ streamPhraseIndex:(s.streamPhraseIndex + 1) % 3 }));
+    }, 3000);
     this.loadPublicArtifactFromUrl();
     this.restoreAuthSession();
   }
   componentWillUnmount(){
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     clearInterval(this._ph);
+    clearInterval(this._streamPhrase);
     Object.keys(this.polls || {}).forEach(id=>clearTimeout(this.polls[id]));
     Object.keys(this.batchPolls || {}).forEach(id=>clearTimeout(this.batchPolls[id]));
     clearTimeout(this.persistTimer);
@@ -3572,6 +3585,12 @@ class Component extends DCLogic {
       complete:'Résultat prêt',
       cancelled:'Génération interrompue'
     })[String(phase || '').toLowerCase()] || 'AgentFlow travaille sur ta demande';
+  }
+  streamPhraseFor(phase, index){
+    const raw = String(phase || 'analyzing').toLowerCase();
+    const normalized = ({ creating:'assembling', building:'assembling', ready:'finalizing' })[raw] || raw;
+    const phrases = this.STREAM_PHRASES[normalized] || this.STREAM_PHRASES.analyzing;
+    return phrases[Math.abs(Number(index || 0)) % phrases.length];
   }
   streamStatusPatch(payload, fallbackPhase, fallbackProgress){
     const source = payload || {};
@@ -5461,6 +5480,7 @@ class Component extends DCLogic {
           streamProgress,
           streamProgressPct: streamProgress + '%',
           streamPhaseLabel: this.streamPhaseLabel(streamPhase),
+          shimmerPhrase: this.streamPhraseFor(streamPhase, st.streamPhraseIndex),
           streamTool: String(m.streamTool || ''),
           showText: !!m.text,
           hasMedia: !!m.media,
