@@ -290,7 +290,7 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
           <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0 64px;animation:fadeUp .4s ease both">
             <div style="text-align:center;margin-bottom:34px">
               <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;line-height:1.12;letter-spacing:-.01em;color:{{ tInk }}">On crée quoi <em style="font-style:italic">aujourd'hui</em> ?</div>
-              <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos et voix — décris ton idée, HuggyFlow s'occupe du reste.</div>
+              <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos, documents et voix — décris ton idée, AgentFlow s'occupe du reste.</div>
             </div>
 
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
@@ -343,6 +343,13 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
             <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px">
               <sc-for list="{{ modeChips }}" as="ch" hint-placeholder-count="5">
                 <button onClick="{{ ch.onClick }}" style="{{ ch.style }}" style-hover="border-color:rgba({{ tLineRGB }},.3)">{{ ch.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:13px">
+              <span style="font-size:11px;color:{{ tText4 }}">Démarrer rapidement</span>
+              <sc-for list="{{ quickStarts }}" as="quick" hint-placeholder-count="3">
+                <button onClick="{{ quick.onClick }}" title="{{ quick.hint }}" style="padding:7px 10px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035);color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .16s,color .16s" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">{{ quick.label }}</button>
               </sc-for>
             </div>
 
@@ -1121,6 +1128,24 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <input value="{{ checkoutPhone }}" onChange="{{ onCheckoutPhoneChange }}" inputmode="tel" autocomplete="tel" placeholder="Ex. +225 07 00 00 00 00" style="margin-top:18px;width:100%;box-sizing:border-box;padding:12px 13px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:{{ tSurfaceSoft }};color:{{ tInk }};font-size:14px;font-family:inherit" style-focus="border-color:#D1FE17"/>
         <sc-if value="{{ hasPricingNotice }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;color:#D17D64;font-size:12px">{{ pricingNotice }}</div></sc-if>
         <button onClick="{{ submitCheckoutPhone }}" disabled="{{ checkoutBusy }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D1FE17;color:#131517;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">{{ checkoutButtonLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCreditPaywall }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:109;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
+      <div onClick="{{ closeCreditPaywall }}" style="position:absolute;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(4px)"></div>
+      <div style="position:relative;width:420px;max-width:calc(100vw - 32px);padding:24px;background:{{ tSurface }};border:1px solid rgba(209,254,23,.22);border-radius:18px;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
+        <button onClick="{{ closeCreditPaywall }}" title="Fermer" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.11);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:20px;line-height:1">×</button>
+        <div style="display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:999px;background:rgba(209,254,23,.12);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.08em">CRÉATION ENCORE POSSIBLE</div>
+        <div style="margin-top:14px;font-family:'Space Grotesk',ui-sans-serif;font-size:23px;font-weight:700;color:{{ tInk }}">Continue ta création avec AgentFlow</div>
+        <div style="margin-top:8px;font-size:13px;line-height:1.55;color:{{ tText3 }}">{{ creditPaywallReason }}</div>
+        <div style="margin-top:16px;padding:13px 14px;border-radius:12px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:14px;font-weight:700;color:{{ tInk }}">Pro</span><span style="font-size:13px;font-weight:700;color:#D1FE17">{{ creditPaywallPlanPrice }}</span></div>
+          <div style="margin-top:5px;font-size:12px;color:{{ tText3 }}">1 500 crédits, modèles avancés et traitement prioritaire.</div>
+        </div>
+        <button onClick="{{ creditPaywallCta }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D1FE17;color:#131517;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">Continuer avec Pro</button>
+        <button onClick="{{ creditPaywallPricing }}" style="margin-top:9px;width:100%;padding:10px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:12.5px;font-weight:650;cursor:pointer;font-family:inherit">Voir toutes les offres</button>
       </div>
     </div>
   </sc-if>
@@ -2376,6 +2401,9 @@ class Component extends DCLogic {
     billingStatus: null,
     billingLoading: false,
     pricingNotice: '',
+    creditPaywallOpen: false,
+    creditPaywallReason: '',
+    creditLowNotified: false,
     toast: '',
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
@@ -2763,7 +2791,7 @@ class Component extends DCLogic {
       authStatus:'Connecte.',
       page: nextPage,
       modelMenu:false
-    }, ()=>{ this.bootstrap().then(()=>this.runPendingAuthAction()); });
+    }, ()=>{ if(action) this.trackEvent(action === 'signup' ? 'signup_completed' : 'login_completed', { method:'password' }); this.bootstrap().then(()=>this.runPendingAuthAction()); });
   }
   clearSession(status){
     if(typeof window !== 'undefined' && window.localStorage){
@@ -3020,6 +3048,21 @@ class Component extends DCLogic {
     this.setState({ toast:String(message) });
     this.toastTimer = setTimeout(()=>this.setState({ toast:'' }), 3400);
   }
+  trackEvent(event, metadata){
+    if(!this.state.authToken || (this.state.prefs && this.state.prefs.shareAnalytics === false)) return;
+    const sessionId = this.analyticsSessionId || ('hf-session-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+    this.analyticsSessionId = sessionId;
+    this.apiFetch('/api/events', { method:'POST', body:JSON.stringify({ event, sessionId, metadata:metadata || {} }) }).catch(()=>{});
+  }
+  openCreditPaywall(reason){
+    this.trackEvent('paywall_viewed', { reason:reason || 'credits_low', plan:'pro' });
+    this.setState({ creditPaywallOpen:true, creditPaywallReason:reason || 'Ton solde de crédits ne permet plus de poursuivre cette création.' });
+  }
+  closeCreditPaywall(){ this.setState({ creditPaywallOpen:false }); }
+  startQuickPrompt(prompt, mode){
+    this.trackEvent('activation_quick_start', { mode });
+    this.setState({ input:prompt, mode });
+  }
   onChatScroll(e){
     const el = e && e.currentTarget;
     if(!el) return;
@@ -3160,6 +3203,14 @@ class Component extends DCLogic {
     if(payload.credits !== undefined && payload.credits !== null) patch.credits = Number(payload.credits);
     const creditsMax = payload.creditsMax !== undefined ? payload.creditsMax : payload.credits_max;
     if(creditsMax !== undefined && creditsMax !== null) patch.creditsMax = Number(creditsMax);
+    const nextCredits = patch.credits !== undefined ? patch.credits : Number(this.state.credits || 0);
+    const nextMax = patch.creditsMax !== undefined ? patch.creditsMax : Number(this.state.creditsMax || 100);
+    if(nextCredits > 0 && nextMax > 0 && nextCredits / nextMax <= .2 && !this.state.creditLowNotified){
+      patch.creditLowNotified = true;
+      setTimeout(()=>this.notify('Il te reste ' + nextCredits + ' crédits. Pense à sécuriser la suite de ton projet.'), 0);
+    } else if(nextCredits / Math.max(1, nextMax) > .2){
+      patch.creditLowNotified = false;
+    }
     if(Object.keys(patch).length) this.setState(patch);
   }
   pollGeneration(messageId, generationId){
@@ -3200,12 +3251,17 @@ class Component extends DCLogic {
     const currentAttachments = (this.state.attachments || []).filter(a=>a && a.url);
     if((!t && !currentAttachments.length) || this.state.sendLocked) return;
     if(!this.requireAuth('Connecte-toi pour creer, sauvegarder et suivre tes creations HuggyFlow.', { type:'send', text:t })) return;
+    if(Number(this.state.credits || 0) <= 0){
+      this.openCreditPaywall('Ton solde est épuisé. Passe à Pro pour continuer sans interrompre ton projet.');
+      return;
+    }
     const prompt = t || 'Analyse le fichier joint et propose la meilleure suite.';
     const userText = t || ('Fichier joint : ' + currentAttachments.map(a=>a.name).join(', '));
     const attachmentPayload = this.attachmentPayload();
     const mode = this.state.mode || 'image';
     const kind = mode === 'video' ? 'video' : mode === 'audio' ? 'voice' : mode === 'document' ? 'document' : 'image';
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
+    this.trackEvent(this.state.messages.length ? 'agent_request_started' : 'first_generation_started', { mode, hasAttachments:currentAttachments.length > 0 });
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
     const agentMsg = { id:agentId, role:'agent', typing:true, kind, activity:'AgentFlow analyse ton brief' };
     this.chatShouldStick = true;
@@ -3278,11 +3334,15 @@ class Component extends DCLogic {
       if(!delivered) this.updateAgentMessage(agentId, { typing:false, text:'Creation lancee. Je synchronise les resultats avec HuggyFlow.' });
     }catch(err){
       const aborted = err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')));
+      if(!aborted && /solde insuffisant|credits requis|crédits requis/i.test(String(err && err.message || ''))){
+        this.openCreditPaywall(String(err.message || 'Ton solde de crédits est insuffisant.'));
+      }
       this.updateAgentMessage(agentId, { typing:false, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La creation est indisponible pour le moment. Reessaie dans quelques instants.') });
     }finally{
       this.chatAbort = null;
       this.flushAgentText(agentId);
       this.setState({ sendLocked:false });
+      this.trackEvent('agent_request_completed', { mode });
       this.scheduleBootstrap(1400);
     }
   }
@@ -3354,8 +3414,10 @@ class Component extends DCLogic {
     if(!customerPhone && typeof window !== 'undefined'){
       try{ customerPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
     }
+    this.trackEvent('checkout_intent', { planId:checkoutPlanId, interval:this.state.billing || 'annual' });
     if(!customerPhone){ this.openCheckoutPhone(planId); return; }
     try{
+      this.trackEvent('checkout_started', { planId:checkoutPlanId, interval:this.state.billing || 'annual' });
       const checkoutRequestId = this.state.checkoutRequestId || ('hf-checkout-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9));
       this.setState({ checkoutBusy:true, checkoutRequestId, pricingNotice:'' });
       const res = await this.apiFetch('/api/billing/checkout', {
@@ -3365,9 +3427,11 @@ class Component extends DCLogic {
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
       if(!this.isTrustedPaymentUrl(data.url)) throw new Error('La page de paiement securisee est indisponible. Reessaie dans un instant.');
+      this.trackEvent('checkout_redirected', { planId:checkoutPlanId, interval:this.state.billing || 'annual', amountXof:data.amountXof || null });
       window.location.assign(data.url);
     }catch(err){
       const message = this.friendlyError(err && err.message, 'Le paiement est indisponible pour le moment.');
+      this.trackEvent('checkout_failed', { planId:checkoutPlanId, message });
       this.setState({ pricingNotice:message });
     }finally{
       this.setState({ checkoutBusy:false });
@@ -4074,6 +4138,8 @@ class Component extends DCLogic {
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
+    const proPlan = (st.pricingPlans || []).find(plan=>String(plan.id || '') === 'pro');
+    const proPriceXof = proPlan ? Number(st.billing === 'annual' ? (Number(proPlan.annualPriceXof || 0) / 12) : Number(proPlan.monthlyPriceXof || 0)).toLocaleString('fr-FR') + ' FCFA / mois' : '19 900 FCFA / mois';
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -4082,7 +4148,13 @@ class Component extends DCLogic {
       toastMessage: st.toast || '',
       isDark: this.getResolvedTheme() === 'dark',
       isLight: this.getResolvedTheme() !== 'dark',
-      showCheckoutPhone: !!st.checkoutPhoneOpen,
+       showCheckoutPhone: !!st.checkoutPhoneOpen,
+       showCreditPaywall: !!st.creditPaywallOpen,
+       creditPaywallReason: st.creditPaywallReason || 'Ton solde de crédits ne permet plus de poursuivre cette création.',
+       creditPaywallPlanPrice: proPriceXof,
+       closeCreditPaywall: ()=> this.closeCreditPaywall(),
+       creditPaywallCta: ()=>{ this.closeCreditPaywall(); this.openCheckoutPhone('pro'); },
+       creditPaywallPricing: ()=>{ this.trackEvent('paywall_pricing_opened', { plan:'pro' }); this.closeCreditPaywall(); this.setState({ page:'pricing', segment:'solo', modelMenu:false }); },
       checkoutPhone: st.checkoutPhone || '',
       onCheckoutPhoneChange: (e)=> this.setState({ checkoutPhone:e.target.value, pricingNotice:'' }),
       closeCheckoutPhone: ()=> this.closeCheckoutPhone(),
@@ -4568,7 +4640,7 @@ class Component extends DCLogic {
         onOpen: ()=> this.setState({ page:'gallery', galleryFilter: c.filter, modelMenu:false }, ()=>this.notify(c.name + ' affichees.'))
       })),
       newProject: ()=> this.newProject(),
-       openPricing: ()=> this.setState({ page:'pricing', modelMenu:false }, ()=>this.notify('Offres et crédits disponibles.')),
+        openPricing: ()=>{ this.trackEvent('pricing_viewed', { source:'sidebar' }); this.setState({ page:'pricing', modelMenu:false }, ()=>this.notify('Offres et crédits disponibles.')); },
        openSearch: ()=> this.setState({ page:'app', modelMenu:false, sidebarCollapsed:false, sidebarSearchOpen:true }, ()=>{
          const input = typeof document !== 'undefined' ? document.getElementById('hf-sidebar-search') : null;
          if(input && typeof input.focus === 'function') input.focus();
@@ -4615,13 +4687,18 @@ class Component extends DCLogic {
           onClick: ()=> this.setState({ modelId: m.id, modelMenu:false })
         }))
       })),
-      modeChips: modeDefs.map(d=>({
+       modeChips: modeDefs.map(d=>({
         label: d.label,
         style: chipBase + (st.mode===d.id
           ? 'background:' + T.ink + ';color:' + T.pageBg + ';border:1px solid ' + T.ink
           : 'background:transparent;color:' + T.text2 + ';border:1px solid rgba(' + T.lineRGB + ',.14)'),
-        onClick: ()=> this.setState({ mode: d.id })
-      })),
+         onClick: ()=> this.setState({ mode: d.id })
+       })),
+       quickStarts: [
+         { label:'Image produit', hint:'Créer un visuel produit', onClick:()=>this.startQuickPrompt('Crée un packshot publicitaire propre et premium pour mon produit.', 'image') },
+         { label:'Vidéo UGC', hint:'Préparer une publicité UGC', onClick:()=>this.startQuickPrompt('Prépare une publicité UGC réaliste de 15 secondes pour mon produit.', 'video') },
+         { label:'Document', hint:'Créer un document structuré', onClick:()=>this.startQuickPrompt('Rédige un brief marketing structuré avec objectifs, audience, plan d’action et prochaines étapes.', 'document') }
+       ],
       suggestions: this.SUGGESTION_SETS[st.suggestionSet].map(s=>({
         tag: s.tag, tagBg: s.tagBg, text: s.text,
         onClick: ()=> this.setState({ input: s.text })
