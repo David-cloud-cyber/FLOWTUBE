@@ -77,6 +77,8 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
 [data-hf-md] table{width:100%;margin:12px 0;border-collapse:collapse;overflow:hidden;border:1px solid rgba(247,247,248,.10);border-radius:10px;font-size:12.5px}
 [data-hf-md] th,[data-hf-md] td{padding:8px 10px;border-bottom:1px solid rgba(247,247,248,.08);border-right:1px solid rgba(247,247,248,.06);text-align:left;vertical-align:top}
 [data-hf-md] th{background:rgba(209,254,23,.08);color:#F7F7F8;font-weight:700}[data-hf-md] td:last-child,[data-hf-md] th:last-child{border-right:0}[data-hf-md] tr:last-child td{border-bottom:0}
+[data-hf-md] .hf-math-inline{display:inline-block;padding:1px 6px;border-radius:5px;background:rgba(24,220,255,.08);color:#BDEFFF;font:500 .95em/1.4 'JetBrains Mono',monospace;white-space:pre-wrap}
+[data-hf-md] .hf-math-block{display:block;margin:12px 0;padding:13px 16px;overflow:auto;border:1px solid rgba(24,220,255,.18);border-radius:10px;background:rgba(24,220,255,.055);color:#D9F7FF;text-align:center;font:500 14px/1.65 'JetBrains Mono',monospace;white-space:pre-wrap}
 [data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable}
 [data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 [data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
@@ -1220,11 +1222,15 @@ input:focus,textarea:focus{outline:2px solid rgba(209,254,23,.72);outline-offset
         <div style="display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:999px;background:rgba(209,254,23,.12);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.08em">CRÉATION ENCORE POSSIBLE</div>
         <div style="margin-top:14px;font-family:'Space Grotesk',ui-sans-serif;font-size:23px;font-weight:700;color:{{ tInk }}">Continue ta création avec AgentFlow</div>
         <div style="margin-top:8px;font-size:13px;line-height:1.55;color:{{ tText3 }}">{{ creditPaywallReason }}</div>
-        <div style="margin-top:16px;padding:13px 14px;border-radius:12px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.08)">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:14px;font-weight:700;color:{{ tInk }}">Pro</span><span style="font-size:13px;font-weight:700;color:#D1FE17">{{ creditPaywallPlanPrice }}</span></div>
-          <div style="margin-top:5px;font-size:12px;color:{{ tText3 }}">1 500 crédits, modèles avancés et traitement prioritaire.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;padding:4px;border-radius:10px;background:rgba({{ tLineRGB }},.055);border:1px solid rgba({{ tLineRGB }},.08)">
+          <button onClick="{{ setPaywallMonthly }}" style="{{ creditPaywallMonthlyStyle }}">Mensuel</button>
+          <button onClick="{{ setPaywallAnnual }}" style="{{ creditPaywallAnnualStyle }}">Annuel <span style="font-size:10px;opacity:.78">-{{ creditPaywallAnnualDiscount }}</span></button>
         </div>
-        <button onClick="{{ creditPaywallCta }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D1FE17;color:#131517;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">Continuer avec Pro</button>
+        <div style="margin-top:12px;padding:13px 14px;border-radius:12px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:14px;font-weight:700;color:{{ tInk }}">{{ creditPaywallPlanName }}</span><span style="font-size:13px;font-weight:700;color:#D1FE17">{{ creditPaywallPlanPrice }}</span></div>
+          <div style="margin-top:5px;font-size:12px;color:{{ tText3 }}">{{ creditPaywallPlanCredits }} crédits inclus · {{ creditPaywallCycleLabel }}.</div>
+        </div>
+        <button onClick="{{ creditPaywallCta }}" style="margin-top:18px;width:100%;padding:12px;border-radius:11px;border:none;background:#D1FE17;color:#131517;font-size:14px;font-weight:750;cursor:pointer;font-family:inherit">{{ creditPaywallCtaLabel }}</button>
         <button onClick="{{ creditPaywallPricing }}" style="margin-top:9px;width:100%;padding:10px;border-radius:11px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:12.5px;font-weight:650;cursor:pointer;font-family:inherit">Voir toutes les offres</button>
       </div>
     </div>
@@ -2484,6 +2490,7 @@ class Component extends DCLogic {
     pricingNotice: '',
     creditPaywallOpen: false,
     creditPaywallReason: '',
+    creditPaywallPlanId: '',
     creditLowNotified: false,
     toast: '',
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
@@ -2706,6 +2713,67 @@ class Component extends DCLogic {
       });
     }
     return list;
+  }
+
+  normalizedPlanId(value){
+    const id = String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
+    const aliases = { starter:'basic', creator:'basic', free:'free', gratuit:'free', solo:'basic', team:'crew', scale:'squad', business:'business' };
+    return aliases[id] || id || 'free';
+  }
+  planSegment(plan){
+    const id = String((plan && plan.id) || '').toLowerCase();
+    const meta = (plan && plan.metadata) || {};
+    return String(meta.segment || ((['free','starter','basic','creator','pro'].indexOf(id) >= 0) ? 'solo' : (['crew','squad'].indexOf(id) >= 0 ? 'team' : 'business'))).toLowerCase();
+  }
+  planRank(id){
+    return { free:0, basic:1, pro:2, crew:3, squad:4, business:5 }[this.normalizedPlanId(id)] ?? 0;
+  }
+  currentPlanId(){
+    const statusUser = this.state.billingStatus && this.state.billingStatus.user;
+    return this.normalizedPlanId((statusUser && statusUser.plan) || (this.state.user && this.state.user.plan) || 'free');
+  }
+  cheapestUpgradePlan(){
+    const currentId = this.currentPlanId();
+    const currentRank = this.planRank(currentId);
+    const segment = this.planSegment({ id:currentId, metadata:{ segment:this.state.segment || 'solo' } });
+    const rate = Number(this.state.usdXofRate || 600);
+    const priceFor = plan => {
+      const annual = this.state.billing === 'annual';
+      const usd = annual ? Number(plan.annualPriceUsd || 0) / 12 : Number(plan.monthlyPriceUsd || 0);
+      const xof = annual ? Number(plan.annualPriceXof || 0) / 12 : Number(plan.monthlyPriceXof || 0);
+      return Number(xof || Math.round(usd * rate));
+    };
+    const candidates = (this.state.pricingPlans || []).filter(plan=>{
+      const id = this.normalizedPlanId(plan.id);
+      const hasPrice = priceFor(plan) > 0;
+      const sameSegment = this.planSegment(plan) === segment || segment === 'solo' && this.planSegment(plan) === 'solo';
+      return hasPrice && sameSegment && this.planRank(id) > currentRank;
+    }).sort((a,b)=>priceFor(a)-priceFor(b) || this.planRank(a.id)-this.planRank(b.id));
+    if(candidates.length) return candidates[0];
+    if(currentRank > 0) return null;
+    return (this.state.pricingPlans || []).filter(plan=>priceFor(plan) > 0 && this.planSegment(plan) === 'solo').sort((a,b)=>priceFor(a)-priceFor(b))[0] || null;
+  }
+  paywallPlanDetails(){
+    const raw = this.cheapestUpgradePlan();
+    if(!raw) return { id:'', name:'Une offre HuggyFlow', credits:0, priceXof:0, annual:false, discount:'', billed:'' };
+    const annual = this.state.billing === 'annual';
+    const rate = Number(this.state.usdXofRate || 600);
+    const monthlyUsd = Number(raw.monthlyPriceUsd || 0);
+    const annualUsd = Number(raw.annualPriceUsd || 0);
+    const monthlyXof = Number(raw.monthlyPriceXof || Math.round(monthlyUsd * rate));
+    const annualXof = Number(raw.annualPriceXof || Math.round(annualUsd * rate));
+    const monthlyEquivalent = annual ? Math.round(annualXof / 12) : monthlyXof;
+    const discount = monthlyUsd > 0 && annualUsd > 0 ? Math.max(0, Math.round((1 - annualUsd / (monthlyUsd * 12)) * 100)) : 0;
+    const format = value => Number(value || 0).toLocaleString('fr-FR') + ' FCFA / mois';
+    return {
+      id:String(raw.id || ''),
+      name:String(raw.displayName || raw.id || 'Offre HuggyFlow'),
+      credits:Number(raw.includedCredits || 0).toLocaleString('fr-FR'),
+      priceXof:format(monthlyEquivalent),
+      annual,
+      discount:String(discount) + '%',
+      billed:annual ? 'facturation annuelle, soit ' + annualXof.toLocaleString('fr-FR') + ' FCFA / an' : 'facturation mensuelle'
+    };
   }
 
   pricingGridCols(){
@@ -3303,11 +3371,24 @@ class Component extends DCLogic {
     this.analyticsSessionId = sessionId;
     this.apiFetch('/api/events', { method:'POST', body:JSON.stringify({ event, sessionId, metadata:metadata || {} }) }).catch(()=>{});
   }
-  openCreditPaywall(reason){
-    this.trackEvent('paywall_viewed', { reason:reason || 'credits_low', plan:'pro' });
-    this.setState({ creditPaywallOpen:true, creditPaywallReason:reason || 'Ton solde de crédits ne permet plus de poursuivre cette création.' });
+  isModelFree(model){
+    if(!model || !model.free) return false;
+    if(!model.freeUntil) return true;
+    const until = Date.parse(model.freeUntil);
+    return !Number.isFinite(until) || Date.now() <= until;
   }
-  closeCreditPaywall(){ this.setState({ creditPaywallOpen:false }); }
+  openCreditPaywall(reason, modelId){
+    const model = modelId ? this.MODELS.find(item=>item.id === modelId) : this.curModel();
+    if(this.isModelFree(model)) return;
+    const plan = this.cheapestUpgradePlan();
+    if(!plan){
+      this.notify('Aucune offre supérieure n’est disponible pour ce compte. Consulte les packs de crédits.');
+      return;
+    }
+    this.trackEvent('paywall_viewed', { reason:reason || 'credits_low', plan:String(plan.id || '') });
+    this.setState({ creditPaywallOpen:true, creditPaywallPlanId:String(plan.id || ''), creditPaywallReason:reason || 'Ton solde de crédits ne permet plus de poursuivre cette création.' });
+  }
+  closeCreditPaywall(){ this.setState({ creditPaywallOpen:false, creditPaywallPlanId:'' }); }
   startQuickPrompt(prompt, mode){
     this.trackEvent('activation_quick_start', { mode });
     this.setState({ input:prompt, mode });
@@ -3355,7 +3436,7 @@ class Component extends DCLogic {
   }
   isTableSeparator(row){ return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(String(row || '').trim()); }
   inlineMarkdown(text, keyPrefix){
-    const parts = String(text || '').split(/(\[[^\]]+\]\((?:https?:\/\/|mailto:)[^)]+\)|\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|\*[^*]+\*)/g).filter(part=>part !== '');
+    const parts = String(text || '').split(/(\[[^\]]+\]\((?:https?:\/\/|mailto:)[^)]+\)|\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|\$[^$\n]+\$|\*[^*]+\*)/g).filter(part=>part !== '');
     return parts.map((part, i)=>{
       const key = (keyPrefix || 'md') + '-' + i;
       const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
@@ -3366,6 +3447,7 @@ class Component extends DCLogic {
       if(part.indexOf('**') === 0 && part.lastIndexOf('**') === part.length - 2) return React.createElement('strong', { key }, this.inlineMarkdown(part.slice(2, -2), key+'-strong'));
       if(part.indexOf('~~') === 0 && part.lastIndexOf('~~') === part.length - 2) return React.createElement('del', { key }, part.slice(2, -2));
       if(part.indexOf('`') === 0 && part.lastIndexOf('`') === part.length - 1) return React.createElement('code', { key }, part.slice(1, -1));
+      if(part.indexOf('$') === 0 && part.lastIndexOf('$') === part.length - 1 && part.length > 2) return React.createElement('span', { key, className:'hf-math-inline', title:'Formule mathématique' }, part.slice(1, -1));
       if(part.indexOf('*') === 0 && part.lastIndexOf('*') === part.length - 1) return React.createElement('em', { key }, part.slice(1, -1));
       return React.createElement('span', { key }, part);
     });
@@ -3384,6 +3466,19 @@ class Component extends DCLogic {
       const raw = String(lines[index] || '').trim();
       if(!raw){ index += 1; continue; }
       if(/^[-*_]{3,}$/.test(raw)){ index += 1; continue; }
+      if(raw === '$$' || /^\$\$/.test(raw)){
+        const formula = [];
+        const first = raw.slice(2).replace(/\$\$$/, '');
+        if(first) formula.push(first);
+        index += 1;
+        while(index < lines.length && String(lines[index] || '').trim() !== '$$'){
+          formula.push(String(lines[index] || '').trim());
+          index += 1;
+        }
+        if(index < lines.length) index += 1;
+        children.push(React.createElement('div', { key:'m'+blockIndex, className:'hf-math-block', role:'img', 'aria-label':'Formule mathématique' }, formula.join('\n')));
+        blockIndex += 1; continue;
+      }
       if(/^```/.test(raw)){
         const language = raw.slice(3).trim() || 'code';
         const code = [];
@@ -3542,8 +3637,9 @@ class Component extends DCLogic {
     const currentAttachments = (this.state.attachments || []).filter(a=>a && a.url);
     if((!t && !currentAttachments.length) || this.state.sendLocked) return;
     if(!this.requireAuth('Connecte-toi pour creer, sauvegarder et suivre tes creations HuggyFlow.', { type:'send', text:t })) return;
-    if(Number(this.state.credits || 0) <= 0){
-      this.openCreditPaywall('Ton solde est épuisé. Passe à Pro pour continuer sans interrompre ton projet.');
+    const selectedModel = this.curModel();
+    if(Number(this.state.credits || 0) <= 0 && !this.isModelFree(selectedModel)){
+      this.openCreditPaywall('Ton solde est épuisé. Choisis une offre pour continuer sans interrompre ton projet.', selectedModel && selectedModel.id);
       return;
     }
     const prompt = t || 'Analyse le fichier joint et propose la meilleure suite.';
@@ -3626,7 +3722,7 @@ class Component extends DCLogic {
     }catch(err){
       const aborted = err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')));
       if(!aborted && /solde insuffisant|credits requis|crédits requis/i.test(String(err && err.message || ''))){
-        this.openCreditPaywall(String(err.message || 'Ton solde de crédits est insuffisant.'));
+        this.openCreditPaywall(String(err.message || 'Ton solde de crédits est insuffisant.'), this.state.modelId);
       }
       this.updateAgentMessage(agentId, { typing:false, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La creation est indisponible pour le moment. Reessaie dans quelques instants.') });
     }finally{
@@ -4434,8 +4530,8 @@ class Component extends DCLogic {
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
-    const proPlan = (st.pricingPlans || []).find(plan=>String(plan.id || '') === 'pro');
-    const proPriceXof = proPlan ? Number(st.billing === 'annual' ? (Number(proPlan.annualPriceXof || 0) / 12) : Number(proPlan.monthlyPriceXof || 0)).toLocaleString('fr-FR') + ' FCFA / mois' : '19 900 FCFA / mois';
+    const paywallPlan = this.paywallPlanDetails();
+    const paywallButtonStyle = active => 'flex:1;min-height:30px;border:0;border-radius:7px;padding:0 9px;background:' + (active ? T.surface : 'transparent') + ';color:' + (active ? T.ink : T.text3) + ';font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:' + (active ? '0 1px 4px rgba(0,0,0,.16)' : 'none');
     return {
       tPageBg: T.pageBg, tSurface: T.surface, tSurfaceSoft: T.surfaceSoft,
       tInk: T.ink, tInkSoft: T.inkSoft, tText2: T.text2, tText3: T.text3, tText4: T.text4,
@@ -4447,10 +4543,20 @@ class Component extends DCLogic {
        showCheckoutPhone: !!st.checkoutPhoneOpen,
        showCreditPaywall: !!st.creditPaywallOpen,
        creditPaywallReason: st.creditPaywallReason || 'Ton solde de crédits ne permet plus de poursuivre cette création.',
-       creditPaywallPlanPrice: proPriceXof,
+       creditPaywallPlanId: paywallPlan.id,
+       creditPaywallPlanName: paywallPlan.name,
+       creditPaywallPlanPrice: paywallPlan.priceXof,
+       creditPaywallPlanCredits: paywallPlan.credits,
+       creditPaywallAnnualDiscount: paywallPlan.discount,
+       creditPaywallCycleLabel: paywallPlan.billed,
+       creditPaywallCtaLabel: paywallPlan.id ? 'Continuer avec ' + paywallPlan.name : 'Voir les offres disponibles',
+       creditPaywallMonthlyStyle: paywallButtonStyle(st.billing === 'monthly'),
+       creditPaywallAnnualStyle: paywallButtonStyle(st.billing === 'annual'),
+       setPaywallMonthly: ()=> this.setState({ billing:'monthly' }),
+       setPaywallAnnual: ()=> this.setState({ billing:'annual' }),
        closeCreditPaywall: ()=> this.closeCreditPaywall(),
-       creditPaywallCta: ()=>{ this.closeCreditPaywall(); this.openCheckoutPhone('pro'); },
-       creditPaywallPricing: ()=>{ this.trackEvent('paywall_pricing_opened', { plan:'pro' }); this.closeCreditPaywall(); this.setState({ page:'pricing', segment:'solo', modelMenu:false }); },
+       creditPaywallCta: ()=>{ if(paywallPlan.id){ this.closeCreditPaywall(); this.openCheckoutPhone(paywallPlan.id); } else { this.setState({ page:'pricing', segment:'solo', modelMenu:false }); } },
+       creditPaywallPricing: ()=>{ this.trackEvent('paywall_pricing_opened', { plan:paywallPlan.id || 'pricing' }); this.closeCreditPaywall(); this.setState({ page:'pricing', segment:'solo', modelMenu:false }); },
       checkoutPhone: st.checkoutPhone || '',
       onCheckoutPhoneChange: (e)=> this.setState({ checkoutPhone:e.target.value, pricingNotice:'' }),
       closeCheckoutPhone: ()=> this.closeCheckoutPhone(),
