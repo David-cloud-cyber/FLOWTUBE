@@ -2524,11 +2524,14 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "",
   "Protocole d'execution non negociable:",
   "- Classe chaque demande en silence: conseil, recherche, creation, retouche, production multi-etapes, publication ou gestion de compte.",
+  "- Choisis une intention principale par tour. Si plusieurs objectifs existent, traite celui qui debloque les autres puis annonce clairement la suite.",
   "- Choisis au maximum trois skills utiles. N'enchaine des skills que si chaque etape apporte un resultat concret au livrable.",
   "- Avant un rendu couteux, verifie les references, le format, les contraintes de marque, le cout et le consentement. Demande une seule information si elle bloque vraiment la qualite ou la legalite.",
   "- Utilise un outil reel avant d'affirmer qu'une recherche, une analyse, une sauvegarde, une generation ou une publication est terminee. Ne simule jamais un resultat.",
   "- Apres toute creation, controle le livrable contre le brief: objectif, lisibilite, coherence de marque, produit, realisme, format, CTA et absence d'artefacts. Corrige seulement l'etape en cause.",
   "- Pour un workflow reutilisable, memorise uniquement une preference stable ou un playbook explicitement demande ou clairement recurrent. Chaque skill appris doit rester court, reversible, sans secret et sans donnee de paiement.",
+  "- Contrat de verite: ne dis jamais qu'une action, une recherche, une analyse, une publication ou une generation est terminee sans resultat d'outil ou donnee verifiable. Distingue explicitement hypothese, action en cours, resultat confirme et information manquante.",
+  "- Ne suppose jamais qu'un compte publicitaire, un connecteur, une source, un fichier ou une permission est disponible. Si une capacite manque, dis-le et propose l'etape suivante la plus courte.",
   "",
   "Principes:",
   "- Avance par defaut. Si une information manque mais peut etre deduite, annonce l'hypothese et continue.",
@@ -2949,7 +2952,7 @@ function skillHintsForPrompt(prompt: string, type: string) {
   const picked = ranked.length ? ranked.map((row) => row.skill) : defaults
     .map((id) => HUGGYFLOW_SKILL_LIBRARY.find((skill) => skill.id === id))
     .filter(Boolean) as HuggySkill[];
-  return picked.slice(0, 5).map((skill) => {
+  return picked.slice(0, 2).map((skill) => {
     const recipe = HUGGYFLOW_SKILL_RECIPES[skill.id];
     const lines = [`- ${skill.label}: ${skill.use}`];
     if (recipe?.requiredInputs?.length) lines.push(`  Inputs requis: ${recipe.requiredInputs.join("; ")}`);
@@ -3079,7 +3082,30 @@ function ugcPipelineMissingReply(missing: string[]) {
   ].join("\n");
 }
 
-type MemoryDirective = { kind: "brand" | "fact" | "preference" | "style"; label: string; content: string };
+type MemoryDirective = {
+  kind: "brand" | "fact" | "preference" | "style";
+  label: string;
+  content: string;
+  sourceType?: "user" | "agent" | "artifact" | "generation" | "connector" | "system";
+  confidence?: number;
+  expiresAt?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+type AgentMemoryRecord = {
+  id: string;
+  kind: string;
+  label: string;
+  content: string;
+  projectId: string | null;
+  sourceType: string;
+  sourceExcerpt: string;
+  confidence: number;
+  status: string;
+  expiresAt: string | null;
+  updatedAt: string | null;
+  isPinned: boolean;
+};
 
 // Detecte une consigne memoire dans le message ("retiens X", "ma marque s'appelle Y", "mes couleurs sont Z").
 function extractMemoryDirectives(prompt: string): MemoryDirective[] {
@@ -3115,11 +3141,25 @@ async function loadAgentMemory(
   userId: string,
   projectId?: string,
 ): Promise<string[]> {
-  let query = supabase.from("agent_memory").select("kind,label,content,project_id,updated_at").eq("user_id", userId);
+  let query = supabase.from("agent_memory")
+    .select("id,kind,label,content,project_id,source_type,confidence,expires_at,is_pinned,updated_at")
+    .eq("user_id", userId)
+    .eq("status", "active");
   if (projectId) query = query.or(`project_id.is.null,project_id.eq.${projectId}`);
   else query = query.is("project_id", null);
-  const { data } = await query.order("updated_at", { ascending: false }).limit(40);
-  return (data || []).map((row) => `${row.label}: ${row.content}`);
+  const { data } = await query
+    .order("is_pinned", { ascending: false })
+    .order("confidence", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(24);
+  const now = Date.now();
+  const rows = (data || []).filter((row) => !row.expires_at || new Date(String(row.expires_at)).getTime() > now);
+  if (rows.length) {
+    void supabase.from("agent_memory")
+      .update({ last_used_at: new Date().toISOString() })
+      .in("id", rows.map((row) => row.id));
+  }
+  return rows.map((row) => `${row.label}: ${row.content}`);
 }
 
 async function saveAgentMemory(
@@ -3133,14 +3173,126 @@ async function saveAgentMemory(
     let query = supabase.from("agent_memory").select("id").eq("user_id", userId).ilike("label", d.label);
     query = scope ? query.eq("project_id", scope) : query.is("project_id", null);
     const { data: existing } = await query.maybeSingle();
+    const confidence = Math.max(0, Math.min(1, Number(d.confidence ?? 1)));
+    const sourceType = d.sourceType || "user";
+    const sourceExcerpt = d.content.slice(0, 320);
     if (existing?.id) {
-      await supabase.from("agent_memory").update({ content: d.content, kind: d.kind }).eq("id", existing.id);
+      await supabase.from("agent_memory").update({
+        content: d.content,
+        kind: d.kind,
+        source_type: sourceType,
+        source_excerpt: sourceExcerpt,
+        confidence,
+        expires_at: d.expiresAt || null,
+        metadata: d.metadata || {},
+        status: "active",
+      }).eq("id", existing.id);
     } else {
       await supabase.from("agent_memory").insert({
-        user_id: userId, project_id: scope, kind: d.kind, label: d.label, content: d.content,
+        user_id: userId,
+        project_id: scope,
+        kind: d.kind,
+        label: d.label,
+        content: d.content,
+        source_type: sourceType,
+        source_excerpt: sourceExcerpt,
+        confidence,
+        expires_at: d.expiresAt || null,
+        metadata: d.metadata || {},
       });
     }
   }
+}
+
+function memoryPayload(row: Record<string, unknown>): AgentMemoryRecord {
+  return {
+    id: String(row.id || ""),
+    kind: String(row.kind || "fact"),
+    label: String(row.label || "Souvenir"),
+    content: String(row.content || ""),
+    projectId: row.project_id ? String(row.project_id) : null,
+    sourceType: String(row.source_type || "user"),
+    sourceExcerpt: String(row.source_excerpt || ""),
+    confidence: Number(row.confidence ?? 1),
+    status: String(row.status || "active"),
+    expiresAt: row.expires_at ? String(row.expires_at) : null,
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
+    isPinned: Boolean(row.is_pinned),
+  };
+}
+
+async function agentMemoryRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const url = new URL(req.url);
+  const projectId = isUuid(url.searchParams.get("projectId") || "") ? String(url.searchParams.get("projectId")) : null;
+
+  if (req.method === "GET") {
+    const includeInactive = url.searchParams.get("includeInactive") === "true";
+    let query = supabase.from("agent_memory").select("*").eq("user_id", userId);
+    if (!includeInactive) query = query.eq("status", "active");
+    if (projectId) query = query.or(`project_id.is.null,project_id.eq.${projectId}`);
+    else query = query.is("project_id", null);
+    const { data, error } = await query
+      .order("is_pinned", { ascending: false })
+      .order("confidence", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(80);
+    if (error) throw error;
+    const now = Date.now();
+    const memory = (data || [])
+      .filter((row) => includeInactive || !row.expires_at || new Date(String(row.expires_at)).getTime() > now)
+      .map(memoryPayload);
+    return json({ memory });
+  }
+
+  const body = await bodyJson(req);
+  const action = String(body.action || "create");
+  const memoryId = isUuid(String(body.memoryId || "")) ? String(body.memoryId) : "";
+  if (["forget", "restore", "pin", "unpin", "delete", "update"].includes(action) && !memoryId) {
+    throw new FlowtubeError(400, "Souvenir invalide.", { code: "INVALID_MEMORY_ID" });
+  }
+
+  if (action === "delete") {
+    const { error } = await supabase.from("agent_memory").delete().eq("id", memoryId).eq("user_id", userId);
+    if (error) throw error;
+    return json({ ok: true, memoryId });
+  }
+  if (action === "forget" || action === "restore" || action === "pin" || action === "unpin") {
+    const patch = action === "forget" ? { status: "forgotten" }
+      : action === "restore" ? { status: "active" }
+        : { is_pinned: action === "pin" };
+    const { data, error } = await supabase.from("agent_memory")
+      .update(patch).eq("id", memoryId).eq("user_id", userId).select("*").maybeSingle();
+    if (error) throw error;
+    if (!data) throw new FlowtubeError(404, "Souvenir introuvable.", { code: "MEMORY_NOT_FOUND" });
+    return json({ memory: memoryPayload(data) });
+  }
+
+  const label = String(body.label || "").replace(/\s+/g, " ").trim().slice(0, 120);
+  const content = String(body.content || "").trim().slice(0, 2000);
+  if (!label || !content) throw new FlowtubeError(400, "Un libelle et un contenu sont requis.", { code: "MEMORY_CONTENT_REQUIRED" });
+  const kind = ["brand", "fact", "preference", "style"].includes(String(body.kind)) ? String(body.kind) : "fact";
+  const expiresAt = body.expiresAt && !Number.isNaN(Date.parse(String(body.expiresAt))) ? String(body.expiresAt) : null;
+  const confidence = Math.max(0, Math.min(1, Number(body.confidence ?? 1)));
+  const scopeProjectId = isUuid(String(body.projectId || "")) ? String(body.projectId) : null;
+  const payload = {
+    label,
+    content,
+    kind,
+    project_id: scopeProjectId,
+    confidence,
+    expires_at: expiresAt,
+    source_type: "user",
+    source_excerpt: content.slice(0, 320),
+    status: "active",
+  };
+  const query = action === "update"
+    ? supabase.from("agent_memory").update(payload).eq("id", memoryId).eq("user_id", userId)
+    : supabase.from("agent_memory").insert({ user_id: userId, ...payload });
+  const { data, error } = await query.select("*").single();
+  if (error) throw error;
+  return json({ memory: memoryPayload(data) });
 }
 
 // ===== Elements: references nommees reutilisables (@nom) pour la coherence visuelle =====
@@ -4135,7 +4287,7 @@ function agentLoopEnabled() {
   return (Deno.env.get("AGENT_LOOP_ENABLED") || "").toLowerCase() === "true";
 }
 
-const AGENT_LOOP_MAX_ITERATIONS = 4;
+const AGENT_LOOP_MAX_ITERATIONS = 3;
 
 const AGENT_TOOLS = [
   {
@@ -4267,6 +4419,8 @@ const AGENT_LOOP_SYSTEM_EXTRA = [
   "",
   "Mode agent outille:",
   "- Tu disposes d'outils reels. Utilise-les au lieu de decrire ce que tu ferais: generate_media pour creer, create_batch pour un lot ou une video multi-scenes, research_url pour lire une page, market_research pour les tendances, remember pour memoriser, save_skill pour enregistrer un playbook, estimate_cost pour un devis, list_recent_creations pour retrouver les creations passees.",
+  "- N'appelle qu'un ensemble minimal d'outils qui sert l'intention principale. Ne lance pas de media, de lot, de publication ou de sauvegarde irreversible sans demande explicite ou confirmation requise.",
+  "- Apres generate_media ou create_batch, relaie uniquement le resultat confirme de l'outil puis arrete la boucle. Ne simule jamais une verification qui n'a pas eu lieu.",
   "- Enchaine plusieurs outils si la tache le demande (ex: lire une URL puis creer; estimer puis generer; memoriser puis creer).",
   "- Quand un outil renvoie une demande de confirmation de cout, transmets-la clairement a l'utilisateur et arrete-toi la: c'est lui qui confirme.",
   "- Reste bref entre les appels d'outils: une phrase d'intention avant, une phrase de resultat apres. Pas de Markdown decoratif.",
@@ -4483,10 +4637,16 @@ async function runAgentLoop(
 
     messages.push({ role: "assistant", content });
     const results: ApiContent[] = [];
+    let terminalAction = false;
     for (const toolUse of toolUses) {
       const output = await executeAgentTool(ctx, String(toolUse.name), cleanMetadata(toolUse.input));
       results.push({ type: "tool_result", tool_use_id: toolUse.id, content: output });
+      if (["generate_media", "create_batch"].includes(String(toolUse.name))) {
+        emit(output);
+        terminalAction = true;
+      }
     }
+    if (terminalAction) break;
     messages.push({ role: "user", content: results });
   }
 
@@ -4742,6 +4902,378 @@ async function trackGenerationJob(
     metadata,
   }, { onConflict: "generation_id" });
   if (error) console.error("generation job tracking failed", error.message);
+  try {
+    await syncTaskGraphForGeneration(supabase, generation, status);
+  } catch (taskError) {
+    console.error("agent task graph sync failed", taskError instanceof Error ? taskError.message : taskError);
+  }
+}
+
+type AgentTaskStatus = "queued" | "running" | "paused" | "completed" | "failed" | "cancelled";
+type AgentTaskRow = Record<string, unknown>;
+
+function agentTaskStatusForGeneration(status: string): AgentTaskStatus {
+  if (status === "completed") return "completed";
+  if (status === "failed") return "failed";
+  if (status === "cancelled") return "cancelled";
+  return status === "running" ? "running" : "queued";
+}
+
+function agentTaskPayload(row: AgentTaskRow) {
+  return {
+    id: String(row.id || ""),
+    rootTaskId: row.root_task_id ? String(row.root_task_id) : null,
+    parentTaskId: row.parent_task_id ? String(row.parent_task_id) : null,
+    generationId: row.generation_id ? String(row.generation_id) : null,
+    type: String(row.task_type || "workflow"),
+    title: String(row.title || "Tache AgentFlow"),
+    status: String(row.status || "queued"),
+    progress: Number(row.progress || 0),
+    costCredits: Number(row.cost_credits || 0),
+    estimatedSeconds: row.estimated_seconds === null || row.estimated_seconds === undefined ? null : Number(row.estimated_seconds),
+    attempts: Number(row.attempts || 0),
+    lastError: row.last_error ? String(row.last_error) : "",
+    output: cleanMetadata(row.output),
+    metadata: cleanMetadata(row.metadata),
+    createdAt: row.created_at ? String(row.created_at) : null,
+    startedAt: row.started_at ? String(row.started_at) : null,
+    completedAt: row.completed_at ? String(row.completed_at) : null,
+  };
+}
+
+async function recordAgentTaskEvent(
+  supabase: ReturnType<typeof adminClient>,
+  task: AgentTaskRow,
+  eventType: string,
+  detail: Record<string, unknown> = {},
+  fromStatus?: string,
+  toStatus?: string,
+) {
+  const taskId = String(task.id || "");
+  const userId = String(task.user_id || "");
+  if (!isUuid(taskId) || !isUuid(userId)) return;
+  const { error } = await supabase.from("agent_task_events").insert({
+    task_id: taskId,
+    user_id: userId,
+    event_type: eventType,
+    from_status: fromStatus || null,
+    to_status: toStatus || null,
+    detail,
+  });
+  if (error) console.error("agent task event failed", error.message);
+}
+
+async function updateAgentTask(
+  supabase: ReturnType<typeof adminClient>,
+  task: AgentTaskRow,
+  patch: Record<string, unknown>,
+  eventType = "state",
+) {
+  const previous = String(task.status || "queued");
+  const next = String(patch.status || previous) as AgentTaskStatus;
+  const update: Record<string, unknown> = { ...patch };
+  if (next === "running" && !task.started_at) update.started_at = new Date().toISOString();
+  if (["completed", "failed", "cancelled"].includes(next)) update.completed_at = new Date().toISOString();
+  const { data, error } = await supabase.from("agent_tasks")
+    .update(update).eq("id", task.id).eq("user_id", task.user_id).select("*").single();
+  if (error) throw error;
+  if (previous !== next || eventType !== "state") {
+    await recordAgentTaskEvent(supabase, data, eventType, cleanMetadata(patch.output || patch.metadata), previous, next);
+  }
+  return data as AgentTaskRow;
+}
+
+function technicalQualityAssessment(generation: Record<string, unknown>) {
+  const prompt = String(generation.prompt || "").trim();
+  const params = cleanMetadata(generation.params);
+  const checks = [
+    { id: "result", label: "Rendu disponible", passed: Boolean(generation.result_url) },
+    { id: "brief", label: "Brief exploitable", passed: prompt.split(/\s+/).filter(Boolean).length >= 5 },
+    { id: "format", label: "Format defini", passed: Boolean(generation.aspect_ratio) },
+    { id: "capability", label: "Capacite choisie", passed: Boolean(params.selected_capability || generation.model_id) },
+    { id: "moderation", label: "Verification de securite", passed: String(generation.moderation_status || "").toLowerCase() !== "blocked" },
+  ];
+  const score = Math.round(checks.reduce((total, check) => total + (check.passed ? 20 : 0), 0));
+  return {
+    score,
+    confidence: 0.65,
+    analysisType: "technical_brief",
+    note: "Controle technique et conformite au brief. Une analyse visuelle detaillee demande un moteur de vision configure.",
+    checks,
+  };
+}
+
+async function createWorkflowTaskGraph(
+  supabase: ReturnType<typeof adminClient>,
+  input: {
+    userId: string;
+    projectId: string;
+    conversationId: string;
+    title: string;
+    workflowKey: string;
+    generations: Record<string, unknown>[];
+    batchId?: string;
+  },
+) {
+  if (!input.generations.length) return null;
+  const { data: existing } = await supabase.from("agent_tasks")
+    .select("*").eq("user_id", input.userId).eq("idempotency_key", input.workflowKey).maybeSingle();
+  if (existing) return existing as AgentTaskRow;
+
+  const rootTitle = input.generations.length > 1
+    ? `${input.generations.length} rendus, analyse et classement`
+    : "Generation et verification";
+  const { data: root, error: rootError } = await supabase.from("agent_tasks").insert({
+    user_id: input.userId,
+    project_id: input.projectId,
+    conversation_id: input.conversationId,
+    task_type: "workflow",
+    title: input.title || rootTitle,
+    status: "running",
+    progress: 1,
+    idempotency_key: input.workflowKey,
+    input: { batch_id: input.batchId || null, total: input.generations.length },
+    metadata: { workflow: "generate-analyze-rank", batch_id: input.batchId || null },
+    started_at: new Date().toISOString(),
+  }).select("*").single();
+  if (rootError || !root) throw rootError || new Error("Workflow task creation failed");
+  const { data: rooted, error: rootedError } = await supabase.from("agent_tasks")
+    .update({ root_task_id: root.id }).eq("id", root.id).select("*").single();
+  if (rootedError || !rooted) throw rootedError || new Error("Workflow root update failed");
+  await recordAgentTaskEvent(supabase, rooted, "created", { total: input.generations.length }, "queued", "running");
+
+  const generationTasks: AgentTaskRow[] = [];
+  for (const generation of input.generations) {
+    const generationStatus = agentTaskStatusForGeneration(String(generation.status || "queued"));
+    const { data: generationTask, error } = await supabase.from("agent_tasks").insert({
+      user_id: input.userId,
+      project_id: input.projectId,
+      conversation_id: input.conversationId,
+      root_task_id: rooted.id,
+      parent_task_id: rooted.id,
+      generation_id: generation.id,
+      task_type: "generate",
+      title: String(generation.type || "media") === "video" ? "Generer la video" : "Generer le rendu",
+      status: generationStatus,
+      progress: Number(generation.progress || (generationStatus === "completed" ? 100 : 1)),
+      cost_credits: Number(generation.credits || 0),
+      estimated_seconds: generation.duration_seconds ? Number(generation.duration_seconds) : null,
+      input: { prompt: String(generation.prompt || "").slice(0, 240), type: generation.type, aspect_ratio: generation.aspect_ratio },
+      metadata: { model_id: generation.model_id || null, batch_id: input.batchId || null },
+      started_at: generationStatus === "running" ? new Date().toISOString() : null,
+      completed_at: generationStatus === "completed" ? new Date().toISOString() : null,
+    }).select("*").single();
+    if (error || !generationTask) throw error || new Error("Generation task creation failed");
+    generationTasks.push(generationTask as AgentTaskRow);
+    await recordAgentTaskEvent(supabase, generationTask, "created", { generation_id: generation.id }, "queued", generationStatus);
+  }
+
+  const analysisTasks: AgentTaskRow[] = [];
+  for (const generationTask of generationTasks) {
+    const { data: analysisTask, error } = await supabase.from("agent_tasks").insert({
+      user_id: input.userId,
+      project_id: input.projectId,
+      conversation_id: input.conversationId,
+      root_task_id: rooted.id,
+      parent_task_id: rooted.id,
+      generation_id: generationTask.generation_id,
+      task_type: "analyze",
+      title: "Verifier le rendu",
+      status: "queued",
+      depends_on: [generationTask.id],
+      metadata: { analysis_type: "technical_brief" },
+    }).select("*").single();
+    if (error || !analysisTask) throw error || new Error("Analysis task creation failed");
+    analysisTasks.push(analysisTask as AgentTaskRow);
+  }
+
+  if (input.generations.length > 1) {
+    const { data: rankTask, error: rankError } = await supabase.from("agent_tasks").insert({
+      user_id: input.userId,
+      project_id: input.projectId,
+      conversation_id: input.conversationId,
+      root_task_id: rooted.id,
+      parent_task_id: rooted.id,
+      task_type: "rank",
+      title: "Classer les rendus",
+      status: "queued",
+      depends_on: analysisTasks.map((task) => String(task.id)),
+    }).select("*").single();
+    if (rankError || !rankTask) throw rankError || new Error("Rank task creation failed");
+    const { error: recommendationError } = await supabase.from("agent_tasks").insert({
+      user_id: input.userId,
+      project_id: input.projectId,
+      conversation_id: input.conversationId,
+      root_task_id: rooted.id,
+      parent_task_id: rooted.id,
+      task_type: "recommend",
+      title: "Recommander les meilleures variantes",
+      status: "queued",
+      depends_on: [rankTask.id],
+    });
+    if (recommendationError) throw recommendationError;
+  }
+
+  // A webhook can complete unusually quickly, before this graph is created.
+  // Reconcile terminal jobs now so their dependent analysis nodes never stay queued.
+  for (const generation of input.generations) {
+    const status = String(generation.status || "queued");
+    if (["completed", "failed", "cancelled"].includes(status)) {
+      await syncTaskGraphForGeneration(
+        supabase,
+        generation,
+        status as "completed" | "failed" | "cancelled",
+      );
+    }
+  }
+  return rooted as AgentTaskRow;
+}
+
+async function refreshWorkflowTaskGraph(supabase: ReturnType<typeof adminClient>, rootTaskId: string) {
+  if (!isUuid(rootTaskId)) return;
+  const [{ data: root }, { data: children, error }] = await Promise.all([
+    supabase.from("agent_tasks").select("*").eq("id", rootTaskId).maybeSingle(),
+    supabase.from("agent_tasks").select("*").eq("parent_task_id", rootTaskId).order("created_at", { ascending: true }),
+  ]);
+  if (error || !root || !children) return;
+  const nodes = children as AgentTaskRow[];
+  const generations = nodes.filter((task) => String(task.task_type) === "generate");
+  const analyses = nodes.filter((task) => String(task.task_type) === "analyze");
+  const terminals = new Set(["completed", "failed", "cancelled"]);
+  const allGenerationsTerminal = generations.length > 0 && generations.every((task) => terminals.has(String(task.status)));
+  const allAnalysesTerminal = analyses.length === generations.length && analyses.every((task) => terminals.has(String(task.status)));
+  const completedGenerations = generations.filter((task) => String(task.status) === "completed");
+  const weightedProgress = generations.length
+    ? (generations.reduce((sum, task) => sum + Number(task.progress || 0), 0) / generations.length) * 0.72
+      + (analyses.length ? (analyses.filter((task) => String(task.status) === "completed").length / analyses.length) * 23 : 0)
+    : 0;
+
+  if (!allGenerationsTerminal || !allAnalysesTerminal) {
+    await updateAgentTask(supabase, root, { status: "running", progress: Math.min(96, Math.max(1, Math.round(weightedProgress))) });
+    return;
+  }
+
+  const rankTask = nodes.find((task) => String(task.task_type) === "rank");
+  const recommendationTask = nodes.find((task) => String(task.task_type) === "recommend");
+  const ranked = analyses
+    .filter((task) => String(task.status) === "completed")
+    .map((task) => ({
+      generationId: String(task.generation_id || ""),
+      score: Number(cleanMetadata(task.output).score || 0),
+      checks: cleanMetadata(task.output).checks || [],
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  if (rankTask && String(rankTask.status) !== "completed") {
+    await updateAgentTask(supabase, rankTask, {
+      status: "completed",
+      progress: 100,
+      output: { ranked, methodology: "technical_brief", completed_generations: completedGenerations.length },
+    }, "ranked");
+  }
+  if (recommendationTask && String(recommendationTask.status) !== "completed") {
+    const top = ranked.slice(0, 3);
+    const message = top.length
+      ? `Top ${top.length}: ${top.map((item, index) => `#${index + 1} (${item.score}/100)`).join(", ")}. Ces scores mesurent le respect technique du brief; valide visuellement avant publication.`
+      : "Aucun rendu termine ne peut etre recommande.";
+    await updateAgentTask(supabase, recommendationTask, {
+      status: top.length ? "completed" : "failed",
+      progress: 100,
+      output: { top, message, confidence: 0.65, source: "technical_brief" },
+      last_error: top.length ? null : "Aucun rendu termine",
+    }, "recommended");
+  }
+  const finalStatus: AgentTaskStatus = completedGenerations.length ? "completed" : "failed";
+  await updateAgentTask(supabase, root, {
+    status: finalStatus,
+    progress: 100,
+    output: { ranked: ranked.slice(0, 10), completed: completedGenerations.length, total: generations.length },
+    last_error: completedGenerations.length ? null : "Aucun rendu n'a abouti",
+  }, "workflow_completed");
+}
+
+async function syncTaskGraphForGeneration(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  generationStatus: "queued" | "running" | "completed" | "failed" | "cancelled",
+) {
+  const generationId = String(generation.id || "");
+  if (!isUuid(generationId)) return;
+  const { data: generationNodes, error } = await supabase.from("agent_tasks")
+    .select("*").eq("generation_id", generationId).eq("task_type", "generate");
+  if (error || !generationNodes?.length) return;
+  const roots = new Set<string>();
+  for (const node of generationNodes as AgentTaskRow[]) {
+    const nextStatus = agentTaskStatusForGeneration(generationStatus);
+    const progress = nextStatus === "completed" ? 100 : Math.max(Number(node.progress || 0), Number(generation.progress || 0));
+    const output = nextStatus === "completed"
+      ? { result_url: generation.result_url || null, model: generation.model_label || generation.model_id || null }
+      : cleanMetadata(node.output);
+    const updated = await updateAgentTask(supabase, node, {
+      status: nextStatus,
+      progress,
+      output,
+      last_error: nextStatus === "failed" ? String(generation.error_message || "Generation failed") : null,
+    }, "generation_status");
+    const rootId = String(updated.root_task_id || updated.parent_task_id || "");
+    if (isUuid(rootId)) roots.add(rootId);
+    const { data: analyses } = await supabase.from("agent_tasks")
+      .select("*").eq("root_task_id", rootId).eq("task_type", "analyze").contains("depends_on", [String(node.id)]);
+    for (const analysis of (analyses || []) as AgentTaskRow[]) {
+      if (nextStatus === "completed" && String(analysis.status) !== "completed") {
+        const started = await updateAgentTask(supabase, analysis, { status: "running", progress: 20 }, "analysis_started");
+        await updateAgentTask(supabase, started, {
+          status: "completed",
+          progress: 100,
+          output: technicalQualityAssessment(generation),
+        }, "analysis_completed");
+      } else if (["failed", "cancelled"].includes(nextStatus) && !["completed", "failed", "cancelled"].includes(String(analysis.status))) {
+        await updateAgentTask(supabase, analysis, {
+          status: "cancelled",
+          progress: 100,
+          last_error: `Analyse annulee: generation ${nextStatus}`,
+        }, "dependency_cancelled");
+      }
+    }
+  }
+  for (const rootId of roots) await refreshWorkflowTaskGraph(supabase, rootId);
+}
+
+async function agentTasksRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const url = new URL(req.url);
+  const projectId = isUuid(url.searchParams.get("projectId") || "") ? String(url.searchParams.get("projectId")) : "";
+  let rootQuery = supabase.from("agent_tasks").select("*")
+    .eq("user_id", userId).eq("task_type", "workflow").is("parent_task_id", null)
+    .order("created_at", { ascending: false }).limit(24);
+  if (projectId) rootQuery = rootQuery.eq("project_id", projectId);
+  const { data: roots, error } = await rootQuery;
+  if (error) throw error;
+  const rootIds = (roots || []).map((task) => String(task.id));
+  const { data: children, error: childError } = rootIds.length
+    ? await supabase.from("agent_tasks").select("*").eq("user_id", userId).in("parent_task_id", rootIds).order("created_at", { ascending: true })
+    : { data: [], error: null };
+  if (childError) throw childError;
+  const workflows = (roots || []).map((root) => {
+    const nodes = (children || []).filter((task) => String(task.parent_task_id) === String(root.id));
+    const counts = nodes.reduce((acc, task) => {
+      const status = String(task.status || "queued");
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return {
+      ...agentTaskPayload(root),
+      summary: {
+        total: nodes.length,
+        completed: counts.completed || 0,
+        failed: (counts.failed || 0) + (counts.cancelled || 0),
+        active: (counts.running || 0) + (counts.queued || 0) + (counts.paused || 0),
+      },
+      tasks: nodes.map(agentTaskPayload),
+    };
+  });
+  return json({ workflows });
 }
 
 async function enforceMessageLimits(supabase: ReturnType<typeof adminClient>, userId: string, plan: PlanLimits) {
@@ -4929,6 +5461,14 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   if (error) throw error;
 
   await trackGenerationJob(supabase, generation, "queued", { queued_at: new Date().toISOString() });
+  await createWorkflowTaskGraph(supabase, {
+    userId,
+    projectId: String(project.id),
+    conversationId: String(conversation.id),
+    title: `Creation: ${prompt.slice(0, 72) || "nouveau rendu"}`,
+    workflowKey: `generation:${generation.id}`,
+    generations: [generation],
+  });
   void recordProductEvent(supabase, userId, "generation_requested", {
     generation_id: generation.id,
     project_id: project.id,
@@ -5224,6 +5764,15 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
   const { data: batchGenerations, error: insertError } = await supabase.from("generations").insert(rows).select("*");
   if (insertError) throw insertError;
   await Promise.all((batchGenerations || []).map((generation) => trackGenerationJob(supabase, generation, "queued", { batch_id: batchId })));
+  await createWorkflowTaskGraph(supabase, {
+    userId,
+    projectId: String(project.id),
+    conversationId: String(conversation.id),
+    title: `Lot: ${count} ${type === "video" ? "videos" : "creations"}`,
+    workflowKey: `batch:${batchId}`,
+    generations: (batchGenerations || []) as Record<string, unknown>[],
+    batchId,
+  });
   void recordProductEvent(supabase, userId, "generation_batch_requested", {
     batch_id: batchId,
     project_id: project.id,
@@ -6105,12 +6654,14 @@ async function backgroundTasksRoute(req: Request) {
   const supabase = adminClient();
   const userId = await userIdFromRequest(req, supabase);
   const recentSince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const [activeResult, recentResult] = await Promise.all([
+  const [activeResult, recentResult, workflowResult] = await Promise.all([
     supabase.from("generations").select("*").eq("user_id", userId).in("status", ["pending", "running"]).order("created_at", { ascending: false }).limit(24),
     supabase.from("generations").select("*").eq("user_id", userId).in("status", ["completed", "failed", "cancelled"]).gte("completed_at", recentSince).order("completed_at", { ascending: false }).limit(24),
+    supabase.from("agent_tasks").select("*").eq("user_id", userId).eq("task_type", "workflow").is("parent_task_id", null).order("updated_at", { ascending: false }).limit(12),
   ]);
   if (activeResult.error) throw activeResult.error;
   if (recentResult.error) throw recentResult.error;
+  if (workflowResult.error) throw workflowResult.error;
 
   const syncedActive: Record<string, unknown>[] = [];
   for (const generation of (activeResult.data || []).slice(0, 8)) {
@@ -6131,6 +6682,7 @@ async function backgroundTasksRoute(req: Request) {
   return json({
     tasks,
     activeCount: tasks.filter((task) => task.status === "pending" || task.status === "running").length,
+    workflows: (workflowResult.data || []).map(agentTaskPayload),
     serverTime: new Date().toISOString(),
   });
 }
@@ -7650,6 +8202,8 @@ Deno.serve(async (req: Request) => {
     if (first === "generate" && req.method === "POST") return await directGenerate(req);
     if (first === "artifacts" && route[1] === "share" && route[2] && req.method === "GET") return await publicArtifactShareRoute(req, route[2]);
     if (first === "artifacts" && (req.method === "GET" || req.method === "POST")) return await artifactRoute(req, route[1]);
+    if (first === "memory" && (req.method === "GET" || req.method === "POST")) return await agentMemoryRoute(req);
+    if (first === "agent-tasks" && req.method === "GET") return await agentTasksRoute(req);
     if (first === "skills" && (req.method === "GET" || req.method === "POST")) return await skillsRoute(req);
     if (first === "skill-evals" && (req.method === "GET" || req.method === "POST")) return await skillEvaluationsRoute(req, route[1]);
     if (first === "background-tasks" && req.method === "GET") return await backgroundTasksRoute(req);

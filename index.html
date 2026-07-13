@@ -232,6 +232,16 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <span style="flex:0 0 auto;font-size:10.5px;color:{{ task.statusColor }}">{{ task.statusLabel }}</span>
           </div>
         </sc-for>
+        <sc-if value="{{ showBackgroundWorkflows }}" hint-placeholder-val="false">
+          <div style="margin:5px 2px 0;font-size:10px;font-weight:800;letter-spacing:.08em;color:#898A8B;text-transform:uppercase">Workflow</div>
+          <sc-for list="{{ backgroundWorkflowCards }}" as="workflow" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;border-radius:9px;background:rgba(209,254,23,.055)">
+              <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D8D8D9">{{ workflow.title }}</span>
+              <span style="flex:0 0 auto;font-size:10.5px;color:#A8A8A8">{{ workflow.meta }}</span>
+            </div>
+          </sc-for>
+        </sc-if>
       </div>
     </div>
   </sc-if>
@@ -399,7 +409,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </div>
 
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
-              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="2" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;min-height:48px;max-height:140px;overflow-y:auto"></textarea>
+              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:48px;min-height:48px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
                   <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
@@ -1809,6 +1819,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Analyses produit</div><div class="hf-settings-row-hint">Partager des événements anonymisés pour améliorer la fluidité et la fiabilité.</div></div><button onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}" aria-label="Basculer les analyses produit"><span style="{{ analyticsKnobStyle }}"></span></button></div>
                 <sc-for list="{{ prefItems }}" as="pref" hint-placeholder-count="3"><div class="hf-settings-row"><div><div class="hf-settings-row-label">{{ pref.label }}</div><div class="hf-settings-row-hint">{{ pref.hint }}</div></div><button onClick="{{ pref.onToggle }}" style="{{ pref.trackStyle }}" aria-label="Modifier {{ pref.label }}"><span style="{{ pref.knobStyle }}"></span></button></div></sc-for>
               </div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Mémoire de l'agent</div><div style="margin-top:4px;font-size:11px">Portée, source et confiance de chaque information utilisée.</div></div><button class="hf-settings-secondary" onClick="{{ loadAgentMemory }}">Actualiser</button></div><sc-if value="{{ memoryLoading }}" hint-placeholder-val="false"><div class="hf-settings-empty">Chargement de la mémoire…</div></sc-if><sc-if value="{{ memoryEmpty }}" hint-placeholder-val="false"><div class="hf-settings-empty">Aucune information active pour ce contexte.</div></sc-if><sc-for list="{{ memoryCards }}" as="memory" hint-placeholder-count="4"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650">{{ memory.label }}</div><div style="margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;font-size:11px">{{ memory.content }}</div><div style="margin-top:5px;color:#898A8B;font-size:10px">{{ memory.scope }} · {{ memory.source }} · confiance {{ memory.confidence }}</div></div><div style="display:flex;gap:6px"><button class="hf-settings-secondary" onClick="{{ memory.onPin }}">{{ memory.pinned ? 'Désépingler' : 'Épingler' }}</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ memory.onForget }}">Oublier</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
@@ -2624,7 +2635,8 @@ class Component extends DCLogic {
     creditPaywallPlanId: '',
     creditLowNotified: false,
     toast: '',
-    backgroundTasks: [], backgroundTaskPanelOpen: false, backgroundTaskUnread: false,
+    backgroundTasks: [], workflowTasks: [], backgroundTaskPanelOpen: false, backgroundTaskUnread: false,
+    memoryItems: [], memoryLoading: false,
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
@@ -3638,6 +3650,7 @@ class Component extends DCLogic {
     this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
     this.loadPublicArtifactFromUrl();
     this.restoreAuthSession();
+    this.syncChatInputSize();
   }
   componentWillUnmount(){
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
@@ -3675,6 +3688,7 @@ class Component extends DCLogic {
       if(this.state.page === 'skills') this.loadTemplates();
       if(this.state.page === 'connectors') this.loadIntegrations();
     }
+    if(prevState.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
   }
   schedulePersistUiState(){
@@ -3758,6 +3772,7 @@ class Component extends DCLogic {
       if(target === 'team') this.loadTeam();
       if(target === 'api') this.loadApiKeys();
       if(target === 'stats') this.loadStats();
+      if(target === 'privacy') this.loadAgentMemory();
       if(target === 'capabilities') this.loadBrands();
       if(target === 'skills') this.loadTemplates();
       if(target === 'connectors') this.loadIntegrations();
@@ -3772,6 +3787,7 @@ class Component extends DCLogic {
       if(section === 'team') this.loadTeam();
       if(section === 'api') this.loadApiKeys();
       if(section === 'stats') this.loadStats();
+      if(section === 'privacy') this.loadAgentMemory();
       if(section === 'capabilities') this.loadBrands();
       if(section === 'skills') this.loadTemplates();
       if(section === 'connectors') this.loadIntegrations();
@@ -3809,6 +3825,19 @@ class Component extends DCLogic {
       const list = document.querySelector('[data-hf-chat-scroll="true"]');
       if(list){ list.scrollTop = list.scrollHeight; if(this.state.chatUnread) this.setState({ chatUnread:false }); }
     });
+  }
+  resizeChatInput(element){
+    if(!element) return;
+    const maxHeight = 180;
+    element.style.height = 'auto';
+    const contentHeight = Math.max(48, element.scrollHeight || 48);
+    element.style.height = Math.min(contentHeight, maxHeight) + 'px';
+    element.style.overflowY = contentHeight > maxHeight ? 'auto' : 'hidden';
+  }
+  syncChatInputSize(){
+    if(typeof document === 'undefined') return;
+    const inputs = document.querySelectorAll('[data-hf-chat-input="true"]');
+    inputs.forEach(input=>this.resizeChatInput(input));
   }
   jumpToLatest(){
     this.chatShouldStick = true;
@@ -3889,7 +3918,7 @@ class Component extends DCLogic {
   focusComposer(){
     this.setState({ page:'app' }, ()=>setTimeout(()=>{
       const input = typeof document !== 'undefined' ? document.querySelector('[data-hf-chat-input="true"]') : null;
-      if(input && input.focus) input.focus();
+      if(input && input.focus){ this.resizeChatInput(input); input.focus(); }
     }, 0));
   }
   toggleBackgroundTasks(){
@@ -4148,6 +4177,30 @@ class Component extends DCLogic {
       if(m.media && m.media.generationId && m.media.status === 'loading') this.pollGeneration(m.id, m.media.generationId);
     }));
   }
+  async loadAgentMemory(){
+    if(!this.state.authToken || this.memoryLoading) return;
+    this.memoryLoading = true;
+    this.setState({ memoryLoading:true });
+    try{
+      const projectId = this.state.activeProjectId && this.state.activeProjectId !== 'welcome' ? '?projectId=' + encodeURIComponent(this.state.activeProjectId) : '';
+      const res = await this.apiFetch('/api/memory' + projectId);
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Memoire indisponible.');
+      this.setState({ memoryItems:Array.isArray(data.memory) ? data.memory : [] });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de charger la memoire.')); }
+    finally{ this.memoryLoading=false; this.setState({ memoryLoading:false }); }
+  }
+  async updateAgentMemory(memory, action){
+    if(!memory || !memory.id || !action) return;
+    try{
+      const res = await this.apiFetch('/api/memory', { method:'POST', body:JSON.stringify({ action, memoryId:memory.id }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Memoire indisponible.');
+      if(action === 'delete') this.setState(s=>({ memoryItems:(s.memoryItems || []).filter(item=>item.id !== memory.id) }));
+      else if(data.memory) this.setState(s=>({ memoryItems:(s.memoryItems || []).map(item=>item.id === memory.id ? data.memory : item) }));
+      this.notify(action === 'forget' ? 'Information oubliee.' : (action === 'restore' ? 'Information restauree.' : 'Memoire mise a jour.'));
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de mettre a jour la memoire.')); }
+  }
   backgroundTaskStateMap(){
     if(typeof window === 'undefined' || !window.localStorage) return {};
     try{
@@ -4192,6 +4245,7 @@ class Component extends DCLogic {
       if(!res.ok) return;
       const data = await res.json();
       const rawTasks = Array.isArray(data.tasks) ? data.tasks : [];
+      const workflows = Array.isArray(data.workflows) ? data.workflows : [];
       const tasks = rawTasks.map(raw=>Object.assign({}, raw, this.normalizeMedia(raw))).filter(task=>task.generationId);
       const known = this.backgroundTaskStateMap();
       const completedNow = [];
@@ -4213,7 +4267,8 @@ class Component extends DCLogic {
       };
       this.setState(state=>({
         backgroundTasks:tasks,
-        backgroundTaskPanelOpen:active.length > 0 || completedNow.length > 0 || state.backgroundTaskPanelOpen,
+        workflowTasks:workflows,
+        backgroundTaskPanelOpen:active.length > 0 || workflows.some(workflow=>['queued','running','paused'].includes(String(workflow.status || ''))) || completedNow.length > 0 || state.backgroundTaskPanelOpen,
         backgroundTaskUnread:state.backgroundTaskUnread || completedNow.length > 0,
         messages:(state.messages || []).map(message=>tasks.reduce((current, task)=>updateMessage(current, task), message)),
         projectsData:(state.projectsData || []).map(project=>Object.assign({}, project, { messages:(project.messages || []).map(message=>tasks.reduce((current, task)=>updateMessage(current, task), message)) }))
@@ -5222,6 +5277,28 @@ class Component extends DCLogic {
         dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
       };
     });
+    const backgroundWorkflowCards = (st.workflowTasks || []).slice(0, 3).map(workflow=>{
+      const status = String(workflow.status || 'queued');
+      const active = ['queued','running','paused'].includes(status);
+      const failed = status === 'failed';
+      const progress = Math.max(0, Math.min(100, Math.round(Number(workflow.progress || 0))));
+      return {
+        title:String(workflow.title || 'Workflow AgentFlow'),
+        meta:progress + '% - ' + (active ? 'orchestration en cours' : (failed ? 'a verifier' : 'verifie')),
+        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
+      };
+    });
+    const memoryCards = (st.memoryItems || []).map(memory=>({
+      id:memory.id,
+      label:String(memory.label || 'Souvenir'),
+      content:String(memory.content || ''),
+      source:memory.sourceType === 'user' ? 'Ajoute par toi' : 'Ajoute par AgentFlow',
+      scope:memory.projectId ? 'Projet actif' : 'Compte',
+      confidence:Math.round(Number(memory.confidence || 0) * 100) + '%',
+      pinned:!!memory.isPinned,
+      onForget:()=>this.updateAgentMemory(memory, memory.status === 'forgotten' ? 'restore' : 'forget'),
+      onPin:()=>this.updateAgentMemory(memory, memory.isPinned ? 'unpin' : 'pin')
+    }));
     const commandItems = this.getCommandItems();
     const artifactView = st.artifactView || 'preview';
     const artifactTabStyle = active => 'padding:7px 9px;border:0;border-radius:8px;background:' + (active ? '#D1FE17' : 'transparent') + ';color:' + (active ? '#131517' : T.text3) + ';font-size:10.5px;font-weight:' + (active ? '800' : '700') + ';cursor:pointer;white-space:nowrap';
@@ -5244,8 +5321,10 @@ class Component extends DCLogic {
       creditColor,
       showToast: !!st.toast,
       toastMessage: st.toast || '',
-      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen && backgroundTaskCards.length > 0,
+      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen && (backgroundTaskCards.length > 0 || backgroundWorkflowCards.length > 0),
       backgroundTaskCards,
+      backgroundWorkflowCards,
+      showBackgroundWorkflows: backgroundWorkflowCards.length > 0,
       hasBackgroundTaskNotice: !!st.backgroundTaskUnread || backgroundTaskCards.some(task=>task.statusLabel === 'En cours'),
       toggleBackgroundTasks: ()=>this.toggleBackgroundTasks(),
       showCommandPalette: !!st.commandPaletteOpen,
@@ -5572,6 +5651,10 @@ class Component extends DCLogic {
       modalShowStats: st.page === 'stats',
       modalShowAccount: st.page === 'account',
       modalShowPrivacy: st.page === 'privacy',
+      memoryCards,
+      memoryLoading: !!st.memoryLoading,
+      memoryEmpty: !st.memoryLoading && memoryCards.length === 0,
+      loadAgentMemory: ()=>this.loadAgentMemory(),
       modalShowCapabilities: st.page === 'capabilities',
       modalShowClaudeCode: st.page === 'claudecode',
       modalShowSkills: st.page === 'skills',
@@ -5881,7 +5964,10 @@ class Component extends DCLogic {
        creationsChevronStyle: 'transition:transform .18s ease;transform:rotate(' + ((st.sidebarCollapsed || st.creationsExpanded !== false) ? '0deg' : '-90deg') + ')',
       openAuth: ()=> this.setState({ page:'auth', modelMenu:false }),
       backToApp: ()=> this.setState({ page:'app' }),
-      onInput: (e)=> this.setState({ input: e.target.value }),
+      onInput: (e)=>{
+        const input = e && (e.currentTarget || e.target);
+        this.setState({ input: input ? input.value : '' }, ()=>this.resizeChatInput(input));
+      },
       onFileInput: (e)=> this.onFileInput(e),
       openFilePicker: ()=> this.openFilePicker(),
       attachButtonTitle: st.uploadingAttachment ? 'Ajout en cours' : 'Ajouter une image, une video, un son ou un document',
