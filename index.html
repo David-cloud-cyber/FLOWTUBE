@@ -129,48 +129,50 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-plan-panel] + [data-hf-plan-panel]{margin-top:16px!important}
 @media (max-width:900px){.hf-pricing-grid{grid-template-columns:1fr!important}}
 @media (max-width:760px){.hf-cost-row{grid-template-columns:minmax(0,1fr) auto!important}.hf-cost-row > span:nth-child(3),.hf-cost-row > span:nth-child(4){grid-column:1/-1}.hf-cost-row > span:last-child{text-align:left!important}}
-.hf-settings-backdrop{position:fixed;inset:0;z-index:100;background:rgba(5,6,8,.72);backdrop-filter:blur(18px);animation:modalFadeIn .22s ease both}
-.hf-settings-shell{position:fixed;inset:0;margin:auto;z-index:101;width:min(1180px,calc(100vw - 48px));height:min(820px,calc(100vh - 48px));display:flex;overflow:hidden;background:#131517;border:1px solid rgba(247,247,248,.12);border-radius:20px;box-shadow:0 32px 110px -32px rgba(0,0,0,.82);animation:modalScale .28s cubic-bezier(.22,1,.36,1) both}
-.hf-settings-rail{width:264px;flex:0 0 264px;display:flex;flex-direction:column;background:#17191c;border-right:1px solid rgba(247,247,248,.08);overflow:hidden}
-.hf-settings-brand{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid rgba(247,247,248,.07)}
-.hf-settings-brand-mark{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#D1FE17;color:#131517;font-weight:800;box-shadow:0 0 24px rgba(209,254,23,.18)}
-.hf-settings-search{margin:16px 16px 12px;position:relative}
-.hf-settings-search input{width:100%;box-sizing:border-box;height:40px;padding:0 12px 0 38px;border-radius:10px;border:1px solid rgba(247,247,248,.10);background:#202327;color:#F7F7F8;font:500 13px ui-sans-serif,system-ui,sans-serif;transition:border-color .18s,background .18s,box-shadow .18s}
+.hf-settings-backdrop{position:fixed;inset:0;z-index:100;background:rgba(5,6,8,.58);backdrop-filter:blur(12px);animation:modalFadeIn .18s ease both}
+.hf-settings-backdrop[data-hf-settings-theme="light"]{background:rgba(255,255,255,.68)}
+.hf-settings-shell{--hf-settings-page:#131517;--hf-settings-rail:#17191c;--hf-settings-surface:#1C1E20;--hf-settings-control:#23262A;--hf-settings-ink:#F7F7F8;--hf-settings-muted:#898A8B;--hf-settings-line:247,247,248;position:fixed;inset:0;margin:auto;z-index:101;width:min(1080px,calc(100vw - 40px));height:min(740px,calc(100vh - 40px));display:flex;overflow:hidden;background:var(--hf-settings-page);border:1px solid rgba(var(--hf-settings-line),.12);border-radius:16px;box-shadow:0 28px 80px -34px rgba(0,0,0,.72);animation:modalScale .22s cubic-bezier(.22,1,.36,1) both}
+.hf-settings-shell[data-hf-settings-theme="light"]{--hf-settings-page:#F7F7F8;--hf-settings-rail:#FFFFFF;--hf-settings-surface:#FFFFFF;--hf-settings-control:#F0F1F2;--hf-settings-ink:#131517;--hf-settings-muted:#656970;--hf-settings-line:46,48,49}
+.hf-settings-rail{width:232px;flex:0 0 232px;display:flex;flex-direction:column;background:var(--hf-settings-rail);border-right:1px solid rgba(var(--hf-settings-line),.08);overflow:hidden}
+.hf-settings-brand{display:flex;align-items:center;gap:10px;padding:17px 16px 14px;border-bottom:1px solid rgba(var(--hf-settings-line),.07)}
+.hf-settings-brand-mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#D1FE17;color:#131517;font-weight:800;box-shadow:0 0 18px rgba(209,254,23,.15)}
+.hf-settings-search{margin:13px 13px 10px;position:relative}
+.hf-settings-search input{width:100%;box-sizing:border-box;height:38px;padding:0 12px 0 36px;border-radius:9px;border:1px solid rgba(var(--hf-settings-line),.10);background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 12.5px ui-sans-serif,system-ui,sans-serif;transition:border-color .18s,background .18s,box-shadow .18s}
 .hf-settings-search input:focus{outline:none;border-color:rgba(209,254,23,.7);background:#24272b;box-shadow:0 0 0 3px rgba(209,254,23,.09)}
 .hf-settings-nav{flex:1;overflow:auto;padding:0 12px 16px;scrollbar-width:none}
 .hf-settings-nav::-webkit-scrollbar,.hf-settings-content::-webkit-scrollbar{width:0;height:0}
 .hf-settings-nav-group{margin:18px 8px 7px;color:#70747b;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
-.hf-settings-nav-item{width:100%;min-height:40px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#A8A8A8;text-align:left;font:600 13px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .18s,color .18s,transform .18s}
-.hf-settings-nav-item:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
+.hf-settings-nav-item{width:100%;min-height:38px;display:flex;align-items:center;gap:10px;padding:0 9px;border:0;border-radius:9px;background:transparent;color:var(--hf-settings-muted);text-align:left;font:600 12.5px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .16s,color .16s,transform .16s}
+.hf-settings-nav-item:hover{background:rgba(var(--hf-settings-line),.06);color:var(--hf-settings-ink)}
 .hf-settings-nav-item:active{transform:scale(.985)}
-.hf-settings-nav-item.is-active{background:rgba(209,254,23,.12);color:#D1FE17;box-shadow:inset 3px 0 0 #D1FE17}
-.hf-settings-nav-icon{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:rgba(247,247,248,.06);color:inherit;font-size:10px;font-weight:800}
+.hf-settings-nav-item.is-active{background:rgba(209,254,23,.12);color:#D1FE17;box-shadow:inset 2px 0 0 #D1FE17}
+.hf-settings-nav-icon{width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:rgba(var(--hf-settings-line),.06);color:inherit;font-size:10px;font-weight:800}
 .hf-settings-nav-item.is-active .hf-settings-nav-icon{background:#D1FE17;color:#131517}
-.hf-settings-account{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid rgba(247,247,248,.07);color:#A8A8A8}
+.hf-settings-account{display:flex;align-items:center;gap:10px;padding:13px 14px;border-top:1px solid rgba(var(--hf-settings-line),.07);color:var(--hf-settings-muted)}
 .hf-settings-avatar{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:#D1FE17;color:#131517;font-weight:800;font-size:12px}
-.hf-settings-main{min-width:0;flex:1;display:flex;flex-direction:column;background:#131517}
-.hf-settings-topbar{height:72px;flex:0 0 72px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 28px;border-bottom:1px solid rgba(247,247,248,.08)}
+.hf-settings-main{min-width:0;flex:1;display:flex;flex-direction:column;background:var(--hf-settings-page)}
+.hf-settings-topbar{height:64px;flex:0 0 64px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px;border-bottom:1px solid rgba(var(--hf-settings-line),.08)}
 .hf-settings-kicker{color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-.hf-settings-title{margin-top:5px;color:#F7F7F8;font:700 25px/1.2 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-settings-title{margin-top:4px;color:var(--hf-settings-ink);font:700 22px/1.2 'Space Grotesk',ui-sans-serif,sans-serif}
 .hf-settings-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(247,247,248,.12);border-radius:10px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-close:hover{background:rgba(247,247,248,.08);color:#F7F7F8}
 .hf-settings-close:active{transform:scale(.94)}
-.hf-settings-content{flex:1;overflow:auto;padding:28px 34px 42px;scroll-behavior:smooth;scrollbar-width:none}
-.hf-settings-content-inner{width:min(760px,100%);margin:0 auto;animation:pageRise .26s cubic-bezier(.22,1,.36,1) both}
+.hf-settings-content{flex:1;overflow:auto;padding:24px 28px 34px;scroll-behavior:smooth;scrollbar-width:none;overscroll-behavior:contain}
+.hf-settings-content-inner{width:min(720px,100%);margin:0 auto;animation:pageRise .2s cubic-bezier(.22,1,.36,1) both}
 .hf-settings-intro{margin-bottom:22px;color:#898A8B;font-size:13px;line-height:1.6}
-.hf-settings-card{border:1px solid rgba(247,247,248,.10);border-radius:14px;background:#1C1E20;overflow:hidden}
+.hf-settings-card{border:1px solid rgba(var(--hf-settings-line),.10);border-radius:11px;background:var(--hf-settings-surface);overflow:hidden}
 .hf-settings-card + .hf-settings-card{margin-top:14px}
-.hf-settings-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:66px;padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07)}
+.hf-settings-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:62px;padding:13px 16px;border-bottom:1px solid rgba(var(--hf-settings-line),.07)}
 .hf-settings-row:last-child{border-bottom:0}
-.hf-settings-row-label{min-width:0;color:#F7F7F8;font-size:13.5px;font-weight:650}
-.hf-settings-row-hint{margin-top:4px;color:#898A8B;font-size:12px;line-height:1.45}
-.hf-settings-control{min-width:190px;max-width:58%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(247,247,248,.11);border-radius:9px;background:#23262A;color:#F7F7F8;font:500 13px ui-sans-serif,system-ui,sans-serif}
+.hf-settings-row-label{min-width:0;color:var(--hf-settings-ink);font-size:13.5px;font-weight:650}
+.hf-settings-row-hint{margin-top:4px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45}
+.hf-settings-control{min-width:190px;max-width:58%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:9px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
 .hf-settings-control:focus{outline:none;border-color:rgba(209,254,23,.7);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
-.hf-settings-textarea{width:100%;min-height:120px;box-sizing:border-box;resize:vertical;padding:12px;border:1px solid rgba(247,247,248,.11);border-radius:10px;background:#23262A;color:#F7F7F8;font:500 13px/1.55 ui-sans-serif,system-ui,sans-serif}
+.hf-settings-textarea{width:100%;min-height:120px;box-sizing:border-box;resize:vertical;padding:12px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:10px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 13px/1.55 ui-sans-serif,system-ui,sans-serif}
 .hf-settings-textarea:focus{outline:none;border-color:rgba(209,254,23,.7);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
 .hf-settings-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
-.hf-settings-section-head h3{margin:0;color:#F7F7F8;font:700 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
-.hf-settings-section-head p{margin:6px 0 0;color:#898A8B;font-size:13px;line-height:1.5}
+.hf-settings-section-head h3{margin:0;color:var(--hf-settings-ink);font:700 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-settings-section-head p{margin:6px 0 0;color:var(--hf-settings-muted);font-size:13px;line-height:1.5}
 .hf-settings-primary{min-height:40px;padding:0 15px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font:750 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s}
 .hf-settings-primary:hover{filter:brightness(1.05);box-shadow:0 8px 24px -12px rgba(209,254,23,.72)}
 .hf-settings-primary:active{transform:scale(.96)}
@@ -181,15 +183,19 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-danger:hover{background:rgba(196,88,64,.11)!important}
 .hf-settings-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:rgba(209,254,23,.13);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .hf-settings-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
-.hf-settings-metric{padding:16px;border:1px solid rgba(247,247,248,.09);border-radius:12px;background:#1C1E20}
-.hf-settings-metric-label{color:#898A8B;font-size:11px;font-weight:650}
-.hf-settings-metric-value{margin-top:8px;color:#F7F7F8;font:700 23px/1 'Space Grotesk',ui-sans-serif,sans-serif}
-.hf-settings-table-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#A8A8A8;font-size:12.5px}
+.hf-settings-metric{padding:15px;border:1px solid rgba(var(--hf-settings-line),.09);border-radius:11px;background:var(--hf-settings-surface)}
+.hf-settings-metric-label{color:var(--hf-settings-muted);font-size:11px;font-weight:650}
+.hf-settings-metric-value{margin-top:8px;color:var(--hf-settings-ink);font:700 22px/1 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-settings-table-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;border-bottom:1px solid rgba(var(--hf-settings-line),.07);color:var(--hf-settings-muted);font-size:12.5px}
 .hf-settings-table-row:last-child{border-bottom:0}
-.hf-settings-empty{padding:28px 18px;text-align:center;color:#898A8B;font-size:13px;line-height:1.55}
+.hf-settings-empty{padding:26px 18px;text-align:center;color:var(--hf-settings-muted);font-size:13px;line-height:1.55}
 .hf-settings-progress{height:6px;overflow:hidden;border-radius:999px;background:rgba(247,247,248,.09)}
 .hf-settings-progress span{display:block;height:100%;border-radius:inherit;background:#D1FE17;transition:width .35s ease}
-@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
+.hf-settings-shell[data-hf-settings-theme="light"] [style*="#F7F7F8"]{color:#131517!important}
+.hf-settings-shell[data-hf-settings-theme="light"] [style*="#898A8B"]{color:#656970!important}
+.hf-settings-shell[data-hf-settings-theme="light"] [style*="rgba(247,247,248"]{border-color:rgba(46,48,49,.10)!important}
+@media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary{transition:none!important}}
+@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
@@ -384,7 +390,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
                   <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
                     <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                      <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt=""/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
+                       <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt="" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
                       <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
                       <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
                     </span>
@@ -617,7 +623,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
                 <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
                   <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                    <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt=""/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
+                     <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt="" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
                     <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
                     <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
                   </span>
@@ -673,8 +679,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <sc-for list="{{ studioMediaItems }}" as="item" hint-placeholder-count="4">
               <div style="overflow:hidden;border-radius:12px;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)">
                 <div style="position:relative;aspect-ratio:16/10;background:{{ tMediaGrad }}">
-                  <sc-if value="{{ item.isImage }}" hint-placeholder-val="{{ false }}"><img src="{{ item.url }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/></sc-if>
-                  <sc-if value="{{ item.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ item.url }}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video></sc-if>
+                   <sc-if value="{{ item.isImage }}" hint-placeholder-val="{{ false }}"><img src="{{ item.url }}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/></sc-if>
+                   <sc-if value="{{ item.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ item.url }}" controls playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video></sc-if>
                   <sc-if value="{{ item.isVoice }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(209,254,23,.07)"><audio src="{{ item.url }}" controls style="width:100%"></audio></div></sc-if>
                   <sc-if value="{{ item.isLoading }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,11,13,.72);color:#D1FE17;font-size:11px;font-weight:700"><span style="width:24px;height:24px;border:2px solid rgba(209,254,23,.25);border-top-color:#D1FE17;border-radius:50%;animation:hfSpin .8s linear infinite"></span><span style="margin-top:8px">{{ item.statusLabel }}</span></div></sc-if>
                 </div>
@@ -1719,8 +1725,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   </sc-if>
   <!-- ========== HUGGYFLOW SETTINGS EXPERIENCE ========== -->
   <sc-if value="{{ showSettingsModal }}" hint-placeholder-val="{{ false }}">
-    <div class="hf-settings-backdrop" onClick="{{ closeSettings }}"></div>
-    <section class="hf-settings-shell" role="dialog" aria-modal="true" aria-label="Paramètres HuggyFlow">
+    <div class="hf-settings-backdrop" data-hf-settings-theme="{{ settingsResolvedTheme }}" onClick="{{ closeSettings }}"></div>
+    <section class="hf-settings-shell" data-hf-settings-theme="{{ settingsResolvedTheme }}" role="dialog" aria-modal="true" aria-label="Paramètres HuggyFlow">
       <aside class="hf-settings-rail">
         <div class="hf-settings-brand">
           <div class="hf-settings-brand-mark">»</div>
@@ -1734,19 +1740,19 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         </div>
         <div class="hf-settings-search">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2" stroke-linecap="round" style="position:absolute;left:13px;top:12px"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.5" y2="16.5"></line></svg>
-          <input value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher un réglage" aria-label="Rechercher un réglage"/>
+          <input data-hf-settings-search="true" value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher un réglage" aria-label="Rechercher un réglage" autocomplete="off"/>
         </div>
         <nav class="hf-settings-nav" aria-label="Navigation des paramètres">
           <div class="hf-settings-nav-group">Paramètres</div>
           <sc-for list="{{ settingsPrimaryItems }}" as="item" hint-placeholder-count="9">
-            <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}">
-              <span class="hf-settings-nav-icon">{{ item.short }}</span><span>{{ item.label }}</span>
+            <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}" aria-current="{{ item.ariaCurrent }}" title="{{ item.label }}">
+              <span class="hf-settings-nav-icon" aria-hidden="true">{{ item.short }}</span><span>{{ item.label }}</span>
             </button>
           </sc-for>
           <div class="hf-settings-nav-group">Personnaliser</div>
           <sc-for list="{{ settingsCustomItems }}" as="item" hint-placeholder-count="3">
-            <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}">
-              <span class="hf-settings-nav-icon">{{ item.short }}</span><span>{{ item.label }}</span>
+            <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}" aria-current="{{ item.ariaCurrent }}" title="{{ item.label }}">
+              <span class="hf-settings-nav-icon" aria-hidden="true">{{ item.short }}</span><span>{{ item.label }}</span>
             </button>
           </sc-for>
           <sc-if value="{{ settingsNavEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty" style="padding:22px 8px;text-align:left">Aucun réglage trouvé.</div></sc-if>
@@ -2280,10 +2286,10 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <sc-if value="{{ g.isVisual }}" hint-placeholder-val="{{ true }}">
                 <div style="position:relative;height:190px">
                   <sc-if value="{{ g.hasImageResult }}" hint-placeholder-val="{{ false }}">
-                    <img src="{{ g.resultUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"/>
+                     <img src="{{ g.resultUrl }}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"/>
                   </sc-if>
                   <sc-if value="{{ g.hasVideoResult }}" hint-placeholder-val="{{ false }}">
-                    <video src="{{ g.resultUrl }}" muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
+                     <video src="{{ g.resultUrl }}" muted loop playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
                   </sc-if>
                   <sc-if value="{{ g.showSlot }}" hint-placeholder-val="{{ true }}">
                     <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
@@ -2519,8 +2525,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <sc-for list="{{ compareItems }}" as="ci" hint-placeholder-count="2">
               <div style="border-radius:16px;overflow:hidden;border:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.035)">
                 <div style="position:relative;aspect-ratio:1/1;background:{{ tMediaGrad }}">
-                  <sc-if value="{{ ci.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ ci.url }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/></sc-if>
-                  <sc-if value="{{ ci.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ ci.url }}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video></sc-if>
+                   <sc-if value="{{ ci.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ ci.url }}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/></sc-if>
+                   <sc-if value="{{ ci.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ ci.url }}" controls playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video></sc-if>
                 </div>
                 <div style="padding:13px 14px">
                   <div style="font-size:13px;font-weight:800;color:{{ tInk }}">{{ ci.label }}</div>
@@ -2578,7 +2584,7 @@ class Component extends DCLogic {
   initialUiState = this.storedUiState();
 
   state = {
-    theme: 'dark',
+    theme: ['light','dark','system'].includes(this.initialUiState.theme) ? this.initialUiState.theme : 'dark',
     page: ['claudecode','plugins'].includes(this.initialUiState.page) ? 'settings' : (this.initialUiState.page || 'app'),
     input: this.initialUiState.input || '',
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
@@ -3599,6 +3605,7 @@ class Component extends DCLogic {
     this.chatShouldStick = true;
     this.settingsKeydown = (event)=>{
       if(!event) return;
+      this.trapSettingsFocus(event);
       if((event.metaKey || event.ctrlKey) && String(event.key || '').toLowerCase() === 'k'){
         event.preventDefault();
         this.openCommandPalette();
@@ -3609,15 +3616,24 @@ class Component extends DCLogic {
         this.closeCommandPalette();
         return;
       }
-      if(event.key === 'Escape' && ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'].includes(this.state.page)){
-        this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false });
+      if(event.key === 'Escape' && this.isSettingsPage(this.state.page)){
+        event.preventDefault();
+        this.closeSettingsModal();
       }
     };
     if(typeof document !== 'undefined') document.addEventListener('keydown', this.settingsKeydown);
     try{
       const storedTheme = localStorage.getItem('huggyflow_theme') || localStorage.getItem('hf-theme');
-      if(storedTheme === 'light') this.setState({ theme:'light' });
+      if(['light','dark','system'].includes(storedTheme)) this.setState({ theme:storedTheme });
+      if(typeof window !== 'undefined' && window.matchMedia){
+        this.themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+        this.themeMediaListener = ()=>{ if(this.state.theme === 'system') this.setState({ theme:'system' }); };
+        if(this.themeMedia.addEventListener) this.themeMedia.addEventListener('change', this.themeMediaListener);
+        else if(this.themeMedia.addListener) this.themeMedia.addListener(this.themeMediaListener);
+      }
     }catch(e){}
+    const hashSection = this.settingsSectionFromHash();
+    if(hashSection) this.setState({ page:hashSection });
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -3629,6 +3645,10 @@ class Component extends DCLogic {
   }
   componentWillUnmount(){
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
+    if(this.themeMedia && this.themeMediaListener){
+      if(this.themeMedia.removeEventListener) this.themeMedia.removeEventListener('change', this.themeMediaListener);
+      else if(this.themeMedia.removeListener) this.themeMedia.removeListener(this.themeMediaListener);
+    }
     if(typeof document !== 'undefined' && this.studioResizeMove) document.removeEventListener('mousemove', this.studioResizeMove);
     if(typeof document !== 'undefined' && this.studioResizeUp) document.removeEventListener('mouseup', this.studioResizeUp);
     clearInterval(this._ph);
@@ -3645,7 +3665,7 @@ class Component extends DCLogic {
     this.flushAllAgentText();
   }
   componentDidUpdate(prevProps, prevState){
-    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
     const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>prevState[key] !== this.state[key]);
@@ -3680,6 +3700,7 @@ class Component extends DCLogic {
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
         pricingCostFilter:this.state.pricingCostFilter || 'all',
+        theme:this.state.theme || 'dark',
         attachments:(this.state.attachments || []).map(a=>({ id:a.id, name:a.name, kind:a.kind, url:a.url, contentType:a.contentType, bytes:a.bytes, textPreview:a.textPreview || '', status:a.status || 'ready' })),
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         creationsExpanded:this.state.creationsExpanded !== false,
@@ -3694,6 +3715,93 @@ class Component extends DCLogic {
       };
       window.localStorage.setItem('huggyflow_ui_state', JSON.stringify(payload));
     }catch(e){}
+  }
+  isSettingsPage(page){
+    return ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'].includes(page);
+  }
+  syncSettingsHash(section){
+    if(typeof window === 'undefined' || !window.history || !window.location) return;
+    try{
+      const base = window.location.pathname + window.location.search;
+      window.history.replaceState({}, '', base + '#settings/' + encodeURIComponent(section || 'settings'));
+    }catch(e){}
+  }
+  clearSettingsHash(){
+    if(typeof window === 'undefined' || !window.history || !window.location) return;
+    try{ window.history.replaceState({}, '', window.location.pathname + window.location.search); }catch(e){}
+  }
+  settingsSectionFromHash(){
+    if(typeof window === 'undefined') return '';
+    const match = String(window.location.hash || '').match(/^#settings\/([^/?#]+)/i);
+    const section = match ? decodeURIComponent(match[1]) : '';
+    return this.isSettingsPage(section) ? section : '';
+  }
+  focusSettingsSearch(){
+    setTimeout(()=>{
+      if(typeof document === 'undefined') return;
+      const input = document.querySelector('[data-hf-settings-search="true"]');
+      if(input && typeof input.focus === 'function') input.focus();
+    }, 0);
+  }
+  openSettingsModal(section){
+    const target = this.isSettingsPage(section) ? section : 'settings';
+    if(!this.isSettingsPage(this.state.page)){
+      this.settingsLastFocused = typeof document !== 'undefined' ? document.activeElement : null;
+      this.settingsReturnContext = {
+        page:this.state.page || 'app',
+        activeProjectId:this.state.activeProjectId,
+        galleryFilter:this.state.galleryFilter,
+        studioPanelOpen:this.state.studioPanelOpen,
+        studioTab:this.state.studioTab,
+        artifactFullscreen:this.state.artifactFullscreen
+      };
+    }
+    this.syncSettingsHash(target);
+    this.setState({ page:target, modelMenu:false, settingsSearchQuery:'', settingsSaved:false, settingsHop:false }, ()=>{
+      if(target === 'billing') this.loadBillingStatus();
+      if(target === 'team') this.loadTeam();
+      if(target === 'api') this.loadApiKeys();
+      if(target === 'stats') this.loadStats();
+      if(target === 'capabilities') this.loadBrands();
+      if(target === 'skills') this.loadTemplates();
+      if(target === 'connectors') this.loadIntegrations();
+      this.focusSettingsSearch();
+    });
+  }
+  openSettingsSection(section){
+    if(!this.isSettingsPage(this.state.page)) return this.openSettingsModal(section);
+    this.syncSettingsHash(section);
+    this.setState({ page:section, settingsHop:true }, ()=>{
+      if(section === 'billing') this.loadBillingStatus();
+      if(section === 'team') this.loadTeam();
+      if(section === 'api') this.loadApiKeys();
+      if(section === 'stats') this.loadStats();
+      if(section === 'capabilities') this.loadBrands();
+      if(section === 'skills') this.loadTemplates();
+      if(section === 'connectors') this.loadIntegrations();
+      this.focusSettingsSearch();
+    });
+  }
+  closeSettingsModal(){
+    const restore = this.settingsReturnContext || { page:'app' };
+    this.settingsReturnContext = null;
+    this.clearSettingsHash();
+    this.setState(Object.assign({}, restore, { settingsSearchQuery:'', settingsHop:false }), ()=>{
+      const target = this.settingsLastFocused;
+      this.settingsLastFocused = null;
+      if(target && target.isConnected && typeof target.focus === 'function') target.focus();
+    });
+  }
+  trapSettingsFocus(event){
+    if(!event || event.key !== 'Tab' || !this.isSettingsPage(this.state.page) || typeof document === 'undefined') return;
+    const dialog = document.querySelector('.hf-settings-shell');
+    if(!dialog) return;
+    const focusable = Array.from(dialog.querySelectorAll('button,input,textarea,select,a,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.getAttribute('aria-hidden') !== 'true' && el.getClientRects().length > 0);
+    if(!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if(event.shiftKey && document.activeElement === first){ event.preventDefault(); last.focus(); }
+    else if(!event.shiftKey && document.activeElement === last){ event.preventDefault(); first.focus(); }
   }
   scheduleBootstrap(delay){
     clearTimeout(this.bootstrapTimer);
@@ -3747,10 +3855,22 @@ class Component extends DCLogic {
     if(command === 'search') return this.setState({ page:'app', modelMenu:false, sidebarCollapsed:false, sidebarSearchOpen:true }, ()=>{
       setTimeout(()=>{ const input = typeof document !== 'undefined' ? document.querySelector('#hf-sidebar-search') : null; if(input && input.focus) input.focus(); }, 0);
     });
-    if(command === 'settings') return this.setState({ page:'settings', settingsSearchQuery:'', settingsHop:false });
+    if(command === 'settings') return this.openSettingsModal('settings');
     if(command === 'sidebar') return this.setState(s=>({ sidebarCollapsed:!s.sidebarCollapsed }));
     if(command === 'theme') return this.setState(s=>({ theme:s.theme === 'dark' ? 'light' : 'dark' }));
     if(command === 'focus') return this.focusComposer();
+  }
+  getGlobalCommandEntries(definitions){
+    const settingsEntries = [
+      ['settings','Profil','P','profil personnalisation'],['account','Compte','C','compte securite'],['privacy','Confidentialite','◈','privacy donnees'],
+      ['billing','Facturation','▣','paiement abonnement'],['team','Equipe','E','membres collaboration'],['stats','Utilisation','U','statistiques credits'],
+      ['capabilities','Capacites','✦','modeles limites'],['api','API','<>','cles developpeur'],['skills','Competences','✧','templates workflows'],['connectors','Connecteurs','↗','drive slack notion']
+    ].map(item=>({ id:'setting-'+item[0], label:'Parametres · '+item[1], icon:item[2], shortcut:'', terms:'parametres '+item[3], action:()=>this.openSettingsModal(item[0]) }));
+    const projectEntries = (this.state.projectsData || []).slice(0,8).map(project=>({
+      id:'project-'+project.id, label:'Projet · '+String(project.title || 'Sans titre').slice(0,52), icon:'P', shortcut:'', terms:'projet espace conversation',
+      action:()=>this.switchProject(project.id)
+    }));
+    return definitions.concat(settingsEntries, projectEntries);
   }
   getCommandItems(){
     const query = String(this.state.commandQuery || '').trim().toLowerCase();
@@ -3764,7 +3884,11 @@ class Component extends DCLogic {
       { id:'sidebar', label:'Réduire ou développer la barre latérale', icon:'<', shortcut:'', terms:'sidebar navigation barre'},
       { id:'theme', label:'Changer le thème', icon:'◐', shortcut:'', terms:'theme sombre clair apparence'}
     ];
-    return definitions.filter(item=>!query || (item.label + ' ' + item.terms).toLowerCase().includes(query)).map(item=>Object.assign({}, item, { onClick:()=>this.runCommand(item.id) }));
+    return this.getGlobalCommandEntries(definitions).filter(item=>!query || (item.label + ' ' + item.terms).toLowerCase().includes(query)).map(item=>Object.assign({}, item, { onClick:()=>{
+      this.closeCommandPalette();
+      if(item.action) return item.action();
+      return this.runCommand(item.id);
+    }}));
   }
   focusComposer(){
     this.setState({ page:'app' }, ()=>setTimeout(()=>{
@@ -5092,9 +5216,10 @@ class Component extends DCLogic {
     const creditColor = creditPct > 45 ? '#D1FE17' : (creditPct > 18 ? '#E8B25C' : '#C45840');
     const sendColor = '#D1FE17';
     const sendFg = '#131517';
-    const settingsQuery = String(st.settingsSearchQuery || '').trim().toLowerCase();
-    const settingsMatch = (label, terms=[]) => !settingsQuery || [label].concat(terms).some(value=>String(value).toLowerCase().includes(settingsQuery));
-    const settingItem = (id, label, short, terms, onClick) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', onClick, visible:settingsMatch(label, terms) });
+    const normalizeSearch = value => String(value || '').normalize ? String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase() : String(value || '').toLowerCase();
+    const settingsQuery = normalizeSearch(st.settingsSearchQuery || '').trim();
+    const settingsMatch = (label, terms=[]) => !settingsQuery || [label].concat(terms).some(value=>normalizeSearch(value).includes(settingsQuery));
+    const settingItem = (id, label, short, terms) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', ariaCurrent:st.page === id ? 'page' : 'false', onClick:()=>this.openSettingsSection(id), visible:settingsMatch(label, terms) });
     const settingsPrimaryItems = [
       settingItem('settings','Profil','◉',['general','personnalisation','apparence'],()=>this.setState({ page:'settings', settingsSaved:false, settingsHop:false })),
       settingItem('account','Compte','◎',['email','securite','mot de passe'],()=>this.setState({ page:'account', settingsHop:true })),
@@ -5156,6 +5281,7 @@ class Component extends DCLogic {
       commandPaletteEmpty: commandItems.length === 0,
       isDark: this.getResolvedTheme() === 'dark',
       isLight: this.getResolvedTheme() !== 'dark',
+      settingsResolvedTheme: this.getResolvedTheme(),
        showCheckoutPhone: !!st.checkoutPhoneOpen,
        showCreditPaywall: !!st.creditPaywallOpen,
        creditPaywallReason: st.creditPaywallReason || 'Ton solde de crédits ne permet plus de poursuivre cette création.',
@@ -5184,7 +5310,7 @@ class Component extends DCLogic {
       pricingEmpty: !!st.backendError && renderedPlans.length === 0,
       showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'skills', 'connectors'].includes(st.page),
       showLegacySettingsModal: false,
-      closeSettings: ()=> this.setState({ page:'app', settingsSearchQuery:'', settingsHop:false }),
+      closeSettings: ()=> this.closeSettingsModal(),
       settingsPrimaryItems,
       settingsCustomItems,
       settingsNavEmpty,
@@ -5343,9 +5469,9 @@ class Component extends DCLogic {
       analyticsTrackStyle: this.switchTrack(st.shareAnalytics !== false),
       analyticsKnobStyle: this.switchKnob(st.shareAnalytics !== false),
       setSystemTheme: ()=> this.setState({ theme:'system', settingsSaved:false }, ()=>{ try{ localStorage.setItem('hf-theme','system'); }catch(e){} this.scheduleSettingsSave(); }),
-      systemTabStyle: st.theme === 'system' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
-      lightTabStyle: st.theme === 'light' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
-      darkTabStyle: st.theme === 'dark' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#898A8B',
+      systemTabStyle: st.theme === 'system' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
+      lightTabStyle: st.theme === 'light' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
+      darkTabStyle: st.theme === 'dark' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'skills', 'connectors'].includes(st.page),
       contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
@@ -5621,7 +5747,7 @@ class Component extends DCLogic {
         })
       })),
       noPending: (st.pending || this.PENDING_DEFAULT).length === 0,
-      openSettings: ()=> this.setState({ page:'settings', modelMenu:false, settingsSaved:false, settingsHop:false }),
+      openSettings: ()=> this.openSettingsModal('settings'),
       settingsName: st.settingsName ?? (st.user ? st.user.name : ''),
       settingsEmail: st.settingsEmail ?? (st.user ? (st.user.billingEmail || st.user.email || '') : ''),
       onSettingsName: (e)=> this.setState({ settingsName: e.target.value, settingsSaved:false },()=>this.scheduleSettingsSave()),
