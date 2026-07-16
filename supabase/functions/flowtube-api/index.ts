@@ -2330,6 +2330,7 @@ async function ensureSeedData(supabase: ReturnType<typeof adminClient>, userId: 
 }
 
 function mediaFromGeneration(generation: Record<string, unknown>) {
+  const batch = cleanMetadata(generation.params).batch;
   return {
     id: generation.id,
     generationId: generation.id,
@@ -2349,6 +2350,9 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
     resultUrl: generation.result_url || "",
     credits: generation.credits || 0,
     errorMessage: generation.error_message || "",
+    batchId: batch?.id ? String(batch.id) : null,
+    batchIndex: batch?.index ? Number(batch.index) : null,
+    batchTotal: batch?.total ? Number(batch.total) : null,
     createdAt: generation.created_at || "",
     completedAt: generation.completed_at || "",
   };
@@ -4731,20 +4735,37 @@ function ensureProviderReady(model: PricingModel) {
 async function startFalGeneration(generation: Record<string, unknown>, model: PricingModel) {
   const key = Deno.env.get("FAL_KEY");
   const supabase = adminClient();
+  const { data: claimed, error: claimError } = await supabase.from("generations")
+    .update({ status: "running", progress: Math.max(5, Number(generation.progress || 1)) })
+    .eq("id", generation.id)
+    .eq("status", "pending")
+    .is("fal_job_id", null)
+    .select("*")
+    .maybeSingle();
+  if (claimError) {
+    console.error("generation claim failed", claimError.message);
+    return false;
+  }
+  if (!claimed) return false;
+  generation = claimed;
   if (!key || !model.endpoint) {
     await supabase.from("generations").update({
       status: "failed",
       error_message: !key ? "fal.ai is not configured" : "fal.ai endpoint is missing",
       provider_payload: { provider_configured: false },
+      completed_at: new Date().toISOString(),
     }).eq("id", generation.id);
     await trackGenerationJob(supabase, generation, "failed", { error: !key ? "provider_not_configured" : "provider_endpoint_missing" });
-    return;
+    await advanceBatch(supabase, generation);
+    return false;
   }
   try {
     fal.config({ credentials: key });
     const params = cleanMetadata(generation.params);
+    const webhookUrl = falWebhookUrl();
     const request = await fal.queue.submit(String(model.endpoint || ""), {
       input: falInput(model, String(generation.prompt || ""), String(generation.aspect_ratio || "4:5"), Number(generation.duration_seconds || model.defaultUnits || 5), params),
+      ...(webhookUrl ? { webhookUrl } : {}),
     });
     await supabase.from("generations").update({
       status: "running",
@@ -4752,16 +4773,82 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
       provider_payload: { submitted: request },
     }).eq("id", generation.id);
     await trackGenerationJob(supabase, { ...generation, fal_job_id: request.request_id }, "running", { submitted_at: new Date().toISOString() });
+    return true;
   } catch (err) {
-    await supabase.from("generations").update({
+    const { data: failed } = await supabase.from("generations").update({
       status: "failed",
       error_message: err instanceof Error ? err.message : "fal.ai submission failed",
       provider_payload: {
         fal_error: err instanceof Error ? err.message : "fal.ai submission failed",
       },
-    }).eq("id", generation.id);
-    await trackGenerationJob(supabase, generation, "failed", { error: err instanceof Error ? err.message : "fal_submission_failed" });
+      completed_at: new Date().toISOString(),
+    }).eq("id", generation.id).select("*").single();
+    const terminal = failed || generation;
+    await refundFailedGeneration(supabase, terminal);
+    await trackGenerationJob(supabase, terminal, "failed", { error: terminal.error_message || "fal_submission_failed" });
+    await advanceBatch(supabase, terminal);
+    return false;
   }
+}
+
+function falWebhookUrl() {
+  const configured = String(Deno.env.get("FAL_WEBHOOK_URL") || "").trim();
+  if (configured) return configured;
+  const base = String(Deno.env.get("SUPABASE_URL") || "").replace(/\/+$/, "");
+  return base ? `${base}/functions/v1/flowtube-api/provider/fal-webhook` : "";
+}
+
+let falJwksCache: { keys: Record<string, unknown>[]; fetchedAt: number } | null = null;
+
+function base64UrlBytes(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(normalized);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+function hexBytes(value: string) {
+  if (!/^[0-9a-f]+$/i.test(value) || value.length % 2 !== 0) throw new Error("Invalid hex value");
+  const bytes = new Uint8Array(value.length / 2);
+  for (let index = 0; index < bytes.length; index += 1) bytes[index] = parseInt(value.slice(index * 2, index * 2 + 2), 16);
+  return bytes;
+}
+
+async function verifyFalWebhook(req: Request, rawBody: Uint8Array) {
+  const configuredSecret = String(Deno.env.get("FAL_WEBHOOK_SECRET") || "").trim();
+  const legacySecret = req.headers.get("x-flowtube-provider-secret") || req.headers.get("x-fal-webhook-secret") || "";
+  if (configuredSecret && legacySecret === configuredSecret) return true;
+
+  const requestId = req.headers.get("x-fal-webhook-request-id");
+  const userId = req.headers.get("x-fal-webhook-user-id");
+  const timestamp = req.headers.get("x-fal-webhook-timestamp");
+  const signature = req.headers.get("x-fal-webhook-signature");
+  if (!requestId || !userId || !timestamp || !signature) return false;
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isFinite(timestampSeconds) || Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds) > 300) return false;
+
+  const bodyHash = await crypto.subtle.digest("SHA-256", rawBody);
+  const bodyHashHex = Array.from(new Uint8Array(bodyHash)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const message = new TextEncoder().encode(`${requestId}\n${userId}\n${timestamp}\n${bodyHashHex}`);
+  const signatureBytes = (() => {
+    try { return hexBytes(signature); } catch { return null; }
+  })();
+  if (!signatureBytes) return false;
+
+  const now = Date.now();
+  if (!falJwksCache || now - falJwksCache.fetchedAt > 24 * 60 * 60 * 1000) {
+    const response = await fetch("https://rest.fal.ai/.well-known/jwks.json", { headers: { accept: "application/json" } });
+    if (!response.ok) return false;
+    const body = await response.json() as Record<string, unknown>;
+    falJwksCache = { keys: Array.isArray(body.keys) ? body.keys as Record<string, unknown>[] : [], fetchedAt: now };
+  }
+  for (const jwk of falJwksCache.keys) {
+    try {
+      if (typeof jwk.x !== "string") continue;
+      const publicKey = await crypto.subtle.importKey("raw", base64UrlBytes(jwk.x), { name: "Ed25519" }, false, ["verify"]);
+      if (await crypto.subtle.verify({ name: "Ed25519" }, publicKey, signatureBytes, message)) return true;
+    } catch (_error) { /* Try the next rotated FAL key. */ }
+  }
+  return false;
 }
 
 function isUuid(value: string) {
@@ -5657,15 +5744,16 @@ async function launchBatchWave(supabase: ReturnType<typeof adminClient>, userId:
   let launched = 0;
   for (const generation of queued.slice(0, freeSlots)) {
     if (Number(profile.credits || 0) < Number(generation.credits || 0)) {
-      await supabase.from("generations").update({
+      const { data: failed } = await supabase.from("generations").update({
         status: "failed",
         error_message: "Credits insuffisants pour poursuivre le lot.",
-      }).eq("id", generation.id);
+        completed_at: new Date().toISOString(),
+      }).eq("id", generation.id).select("*").single();
+      await trackGenerationJob(supabase, failed || generation, "failed", { error: "insufficient_credits" });
       continue;
     }
     const model = resolveModelFromCatalog(catalog, String(generation.model_id), String(generation.type));
-    await startFalGeneration(generation, model);
-    launched += 1;
+    if (await startFalGeneration(generation, model)) launched += 1;
   }
   return launched;
 }
@@ -6485,35 +6573,8 @@ async function uploadRoute(req: Request) {
 
 async function refundFailedGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
   if (!generation?.debited_at || generation.failure_refunded_at) return;
-  const userId = String(generation.user_id);
-  const credits = Number(generation.credits || 0);
-  if (!credits) return;
-  const { data: profile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
-  const nextCredits = Number(profile?.credits || 0) + credits;
-  await supabase.from("profiles").update({ credits: nextCredits }).eq("id", userId);
-  await supabase.from("credit_transactions").insert({
-    user_id: userId,
-    generation_id: generation.id,
-    amount: credits,
-    reason: "generation_refunded",
-    balance_after: nextCredits,
-    metadata: { failed_status: generation.status, provider_cost_usd: generation.cost_usd || 0 },
-  });
-  await supabase.from("pricing_audit_logs").insert({
-    user_id: userId,
-    generation_id: generation.id,
-    pricing_model_id: generation.pricing_model_id || generation.model_id,
-    credits_charged: credits,
-    credit_floor_usd: generation.credit_floor_usd || CREDIT_FLOOR_USD,
-    retail_credit_usd: generation.retail_credit_usd || RETAIL_CREDIT_USD,
-    provider_cost_usd: generation.cost_usd || 0,
-    status: "refunded",
-    metadata: { reason: "generation_failed" },
-  });
-  await supabase.from("generations").update({
-    failure_refunded_at: new Date().toISOString(),
-    refunded_at: new Date().toISOString(),
-  }).eq("id", generation.id);
+  const { error } = await supabase.rpc("refund_failed_generation", { p_generation_id: generation.id });
+  if (error) console.error("generation refund failed", error.message);
 }
 
 async function debitCredits(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
@@ -6615,6 +6676,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       const { data } = await supabase.from("generations").update({
         status: "failed",
         error_message: err instanceof Error ? err.message : "fal.ai status failed",
+        completed_at: new Date().toISOString(),
       }).eq("id", generation.id).select("*").single();
       await refundFailedGeneration(supabase, data);
       await trackGenerationJob(supabase, data, "failed", { error: data?.error_message || "provider_status_failed" });
@@ -6629,6 +6691,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
   const { data } = await supabase.from("generations").update({
     status: "failed",
     error_message: Deno.env.get("FAL_KEY") ? "fal.ai job id missing" : "fal.ai is not configured",
+    completed_at: new Date().toISOString(),
   }).eq("id", generation.id).select("*").single();
   await refundFailedGeneration(supabase, data);
   await trackGenerationJob(supabase, data, "failed", { error: data?.error_message || "provider_job_missing" });
@@ -6664,6 +6727,14 @@ async function backgroundTasksRoute(req: Request) {
   if (workflowResult.error) throw workflowResult.error;
 
   const syncedActive: Record<string, unknown>[] = [];
+  const batchIds = new Set<string>();
+  for (const generation of activeResult.data || []) {
+    const batch = batchInfoOf(generation);
+    if (batch) batchIds.add(batch.id);
+  }
+  for (const batchId of batchIds) {
+    try { await launchBatchWave(supabase, userId, batchId); } catch (error) { console.error("batch recovery failed", error instanceof Error ? error.message : error); }
+  }
   for (const generation of (activeResult.data || []).slice(0, 8)) {
     try {
       syncedActive.push(await syncGeneration(supabase, generation));
@@ -8142,11 +8213,14 @@ async function consentRoute(req: Request) {
 }
 
 async function falWebhook(req: Request) {
-  const expected = Deno.env.get("FAL_WEBHOOK_SECRET") || "";
-  if (expected && req.headers.get("x-flowtube-provider-secret") !== expected && req.headers.get("x-fal-webhook-secret") !== expected) {
-    return unauthorized();
+  const rawBody = new Uint8Array(await req.arrayBuffer());
+  if (!(await verifyFalWebhook(req, rawBody))) return unauthorized();
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(new TextDecoder().decode(rawBody)) as Record<string, unknown>;
+  } catch {
+    throw new FlowtubeError(400, "Invalid provider webhook payload.", { code: "INVALID_PROVIDER_PAYLOAD" });
   }
-  const body = await bodyJson(req);
   const supabase = adminClient();
   const requestId = String(body.request_id || body.requestId || body.fal_job_id || "");
   if (!requestId) throw new FlowtubeError(400, "Missing provider request id.", { code: "MISSING_PROVIDER_REQUEST_ID" });
@@ -8158,14 +8232,28 @@ async function falWebhook(req: Request) {
       status: "failed",
       error_message: String(body.error || body.message || "Provider failed"),
       provider_payload: body,
+      completed_at: new Date().toISOString(),
     }).eq("id", generation.id).select("*").single();
     await refundFailedGeneration(supabase, data);
     await trackGenerationJob(supabase, data, "failed", { error: data?.error_message || "provider_webhook_failed" });
     await advanceBatch(supabase, data);
     return json({ ok: true });
   }
-  if (status === "COMPLETED" || body.output || body.result) {
-    const resultUrl = extractUrl(body.output || body.result || body);
+  if (status === "OK" || status === "COMPLETED" || body.output || body.result || body.payload) {
+    const providerPayload = body.payload || body.output || body.result || body;
+    const resultUrl = extractUrl(providerPayload);
+    if (!resultUrl) {
+      const { data } = await supabase.from("generations").update({
+        status: "failed",
+        error_message: "Provider returned no media URL",
+        provider_payload: body,
+        completed_at: new Date().toISOString(),
+      }).eq("id", generation.id).select("*").single();
+      await refundFailedGeneration(supabase, data);
+      await trackGenerationJob(supabase, data, "failed", { error: "provider_result_url_missing" });
+      await advanceBatch(supabase, data);
+      return json({ ok: true });
+    }
     const { data } = await supabase.from("generations").update({
       status: "completed",
       progress: 100,

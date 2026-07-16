@@ -3731,6 +3731,9 @@ class Component extends DCLogic {
     this.flushAllAgentText();
   }
   componentDidUpdate(prevProps, prevState){
+    // The Streamable wrapper only supplies previous props. Treat missing state
+    // as an empty snapshot so a normal render update can never crash the app.
+    prevState = prevState || {};
     const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
