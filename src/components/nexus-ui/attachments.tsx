@@ -1,6 +1,7 @@
 import React, {
   createContext,
   useContext,
+  memo,
   type HTMLAttributes,
 } from 'react';
 
@@ -26,42 +27,42 @@ interface AttachmentListCtx {
 }
 const AttachmentListContext = createContext<AttachmentListCtx>({ variant: 'compact' });
 
-/* ─── Icons ──────────────────────────────────────────────────── */
+/* ─── Icons (memoized to prevent unnecessary re-renders) ─────── */
 
-const FileIcon = () => (
+const FileIcon = memo(() => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <line x1="8" y1="13" x2="16" y2="13" />
     <line x1="8" y1="17" x2="16" y2="17" />
   </svg>
-);
+));
 
-const VideoIcon = () => (
+const VideoIcon = memo(() => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="5" width="14" height="14" rx="2" />
     <path d="m22 8-6 4 6 4V8z" />
   </svg>
-);
+));
 
-const AudioIcon = () => (
+const AudioIcon = memo(() => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 18V5l12-2v13" />
     <circle cx="6" cy="18" r="3" />
     <circle cx="18" cy="16" r="3" />
   </svg>
-);
+));
 
-const RemoveIcon = () => (
+const RemoveIcon = memo(() => (
   <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
-);
+));
 
-/* ─── Single Attachment card ─────────────────────────────────── */
+/* ─── Single Attachment card (memoized) ──────────────────────── */
 
-export function Attachment({ attachment, variant: variantProp, onRemove }: AttachmentProps) {
+export const Attachment = memo(function Attachment({ attachment, variant: variantProp, onRemove }: AttachmentProps) {
   const ctx = useContext(AttachmentListContext);
   const variant = variantProp ?? ctx.variant;
 
@@ -89,13 +90,12 @@ export function Attachment({ attachment, variant: variantProp, onRemove }: Attac
         background: hasPreview ? '#1c54e0' : 'rgba(255,255,255,0.03)',
         border: hasPreview ? 'none' : '1px solid rgba(255, 255, 255, 0.15)',
         boxSizing: 'border-box',
-        overflow: 'visible', // allow delete button to overflow
+        overflow: 'visible',
         color: '#ffffff',
         transition: 'all 0.2s ease',
       }}
       data-hf-attachment-chip="true"
     >
-      {/* Thumbnail or Icon */}
       {hasPreview ? (
         <img
           src={attachment.url}
@@ -116,7 +116,6 @@ export function Attachment({ attachment, variant: variantProp, onRemove }: Attac
         </div>
       )}
 
-      {/* Absolute Overlapping Close Button */}
       {onRemove && (
         <button
           type="button"
@@ -154,16 +153,16 @@ export function Attachment({ attachment, variant: variantProp, onRemove }: Attac
       )}
     </div>
   );
-}
+});
 
-/* ─── List wrapper ───────────────────────────────────────────── */
+/* ─── List wrapper (memoized) ────────────────────────────────── */
 
 export interface AttachmentListProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'compact' | 'card';
   children?: React.ReactNode;
 }
 
-export function AttachmentList({ variant = 'compact', children, style, ...rest }: AttachmentListProps) {
+export const AttachmentList = memo(function AttachmentList({ variant = 'compact', children, style, ...rest }: AttachmentListProps) {
   return (
     <AttachmentListContext.Provider value={{ variant }}>
       <div
@@ -183,4 +182,4 @@ export function AttachmentList({ variant = 'compact', children, style, ...rest }
       </div>
     </AttachmentListContext.Provider>
   );
-}
+});

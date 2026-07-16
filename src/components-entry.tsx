@@ -20,16 +20,26 @@ import { Attachment, AttachmentList, type AttachmentMeta } from '@/components/ne
 export { Attachment, AttachmentList };
 export type { AttachmentMeta };
 
+// WeakMap cache: each container gets its root created only once
+const rootCache = new WeakMap<HTMLElement, ReturnType<typeof ReactDOM.createRoot>>();
+
 /**
  * Imperatively mount / update the attachment list into a DOM element.
  * Called by the dc-runtime's `localView()` whenever `attachments` changes.
+ * Uses a WeakMap cache so the React root is created only once per container.
  */
 export function mountAttachments(
   container: HTMLElement,
   attachments: Array<AttachmentMeta & { onRemove?: () => void }>,
 ) {
-  const root = (container as any).__hfRoot;
-  const render = () => (
+  let root = rootCache.get(container);
+
+  if (!root) {
+    root = ReactDOM.createRoot(container);
+    rootCache.set(container, root);
+  }
+
+  root.render(
     <AttachmentList>
       {attachments.map((a) => (
         <Attachment
@@ -41,13 +51,6 @@ export function mountAttachments(
       ))}
     </AttachmentList>
   );
-
-  if (!root) {
-    (container as any).__hfRoot = ReactDOM.createRoot(container);
-    (container as any).__hfRoot.render(render());
-  } else {
-    root.render(render());
-  }
 }
 
 // Expose on window so support.js / dc-runtime can call it without imports
