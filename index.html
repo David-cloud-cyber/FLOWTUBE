@@ -5393,7 +5393,7 @@ class Component extends DCLogic {
       creditLowAlert: creditPct <= 20 && !!st.authToken,
       creditAlertMessage: 'Il te reste ' + Math.max(0, Number(st.credits || 0)) + ' crédits (' + creditPct + '%). Recharge maintenant pour ne pas interrompre tes créations.',
       notifDotColor: creditPct <= 20 ? '#C45840' : (backgroundTaskCards.some(t=>t.statusLabel==='En cours') ? '#D1FE17' : '#555759'),
-      onRechargeCredits: ()=>this.setState({ page:'billing', settingsHop:true }, ()=>this.loadBillingStatus()),
+      onRechargeCredits: ()=>{ this.trackEvent('pricing_viewed', { source:'credit_alert' }); this.setState({ page:'pricing', backgroundTaskPanelOpen:false }, ()=>this.loadPlans()); },
       creditPct,
       showCommandPalette: !!st.commandPaletteOpen,
       commandQuery: st.commandQuery || '',
