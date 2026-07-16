@@ -1,7 +1,9 @@
 {
   "framework": null,
   "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/callback", "destination": "/api/callback" }
+    { "source": "/callback", "destination": "/api/callback" },
+    { "source": "/((?!api/.*).*)", "destination": "/index.html" }
   ]
 }
