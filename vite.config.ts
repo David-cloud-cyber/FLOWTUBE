@@ -35,8 +35,8 @@ export default defineConfig({
         inlineDynamicImports: true,
       },
     },
-    // Ensure the bundle is readable during dev
-    minify: false,
-    sourcemap: true,
+    // Enable minification for production performance
+    minify: 'esbuild',
+    sourcemap: false,
   },
 });
