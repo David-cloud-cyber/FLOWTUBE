@@ -244,34 +244,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
   <input id="hf-file-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
   <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}"><div data-hf-toast="true">{{ toastMessage }}</div></sc-if>
-  <sc-if value="{{ showBackgroundTasks }}" hint-placeholder-val="{{ false }}">
-    <div data-hf-background-tasks="true" style="position:fixed;right:24px;bottom:72px;z-index:130;width:min(350px,calc(100vw - 32px));padding:13px 14px;border:1px solid rgba(209,254,23,.22);border-radius:14px;background:rgba(28,30,32,.96);color:#F7F7F8;box-shadow:0 22px 50px -24px rgba(0,0,0,.76);backdrop-filter:blur(14px);animation:toastIn .24s cubic-bezier(.22,1,.36,1) both">
-      <div style="display:flex;align-items:center;gap:9px">
-        <span style="width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5)"></span>
-        <span style="flex:1;font-size:12px;font-weight:750">Tâches en arrière-plan</span>
-        <button onClick="{{ dismissBackgroundTasks }}" title="Fermer" style="width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:#898A8B;font-size:16px;line-height:1;cursor:pointer">×</button>
-      </div>
-      <div style="margin-top:9px;display:flex;flex-direction:column;gap:7px">
-        <sc-for list="{{ backgroundTaskCards }}" as="task" hint-placeholder-count="2">
-          <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.045)">
-            <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ task.dot }}"></span>
-            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D8D8D9">{{ task.title }}</span>
-            <span style="flex:0 0 auto;font-size:10.5px;color:{{ task.statusColor }}">{{ task.statusLabel }}</span>
-          </div>
-        </sc-for>
-        <sc-if value="{{ showBackgroundWorkflows }}" hint-placeholder-val="false">
-          <div style="margin:5px 2px 0;font-size:10px;font-weight:800;letter-spacing:.08em;color:#898A8B;text-transform:uppercase">Workflow</div>
-          <sc-for list="{{ backgroundWorkflowCards }}" as="workflow" hint-placeholder-count="2">
-            <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;border-radius:9px;background:rgba(209,254,23,.055)">
-              <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
-              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D8D8D9">{{ workflow.title }}</span>
-              <span style="flex:0 0 auto;font-size:10.5px;color:#A8A8A8">{{ workflow.meta }}</span>
-            </div>
-          </sc-for>
-        </sc-if>
-      </div>
-    </div>
-  </sc-if>
+
   <sc-if value="{{ showCommandPalette }}" hint-placeholder-val="{{ false }}">
     <div data-hf-command-backdrop="true">
       <div data-hf-command-dialog="true" role="dialog" aria-label="Palette de commandes">
@@ -413,10 +386,83 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ activeTitle }}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <button onClick="{{ toggleBackgroundTasks }}" title="Notifications et taches en arriere-plan" style="position:relative;width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
-          <sc-if value="{{ hasBackgroundTaskNotice }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:5px;top:4px;width:6px;height:6px;border-radius:50%;background:#D1FE17;box-shadow:0 0 8px rgba(209,254,23,.7)"></span></sc-if>
-        </button>
+        <div style="position:relative">
+          <button onClick="{{ toggleBackgroundTasks }}" title="Notifications et taches en arriere-plan" style="position:relative;width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
+            <sc-if value="{{ hasBackgroundTaskNotice }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:5px;top:4px;width:6px;height:6px;border-radius:50%;background:#D1FE17;box-shadow:0 0 8px rgba(209,254,23,.7)"></span></sc-if>
+          </button>
+          <sc-if value="{{ showBackgroundTasks }}" hint-placeholder-val="{{ false }}">
+            <div data-hf-notif-dropdown="true" style="position:absolute;right:0;top:calc(100% + 10px);z-index:200;width:min(340px,calc(100vw - 32px));border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(18,20,22,.97);color:#F7F7F8;box-shadow:0 28px 56px -20px rgba(0,0,0,.85),0 4px 16px -4px rgba(0,0,0,.4);backdrop-filter:blur(18px);overflow:hidden;animation:toastIn .2s cubic-bezier(.22,1,.36,1) both">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 15px 11px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:7px;height:7px;border-radius:50%;background:{{ notifDotColor }};box-shadow:0 0 10px {{ notifDotColor }};flex:0 0 auto"></span>
+                  <span style="font-size:12.5px;font-weight:700;letter-spacing:-.01em">Centre de notifications</span>
+                </div>
+                <button onClick="{{ dismissBackgroundTasks }}" title="Fermer" style="width:24px;height:24px;border:0;border-radius:8px;background:rgba(255,255,255,.07);color:#898A8B;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12);color:#F7F7F8">×</button>
+              </div>
+              <sc-if value="{{ creditLowAlert }}" hint-placeholder-val="{{ false }}">
+                <div style="margin:0 12px 12px;padding:11px 13px;border-radius:12px;background:linear-gradient(135deg,rgba(196,88,64,.18) 0%,rgba(232,178,92,.12) 100%);border:1px solid rgba(196,88,64,.28)">
+                  <div style="display:flex;align-items:flex-start;gap:10px">
+                    <span style="font-size:16px;line-height:1;flex:0 0 auto;margin-top:1px">⚡</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:12px;font-weight:700;color:#F7C67A;margin-bottom:3px">Solde de crédits faible</div>
+                      <div style="font-size:11px;color:#C8A882;line-height:1.45">{{ creditAlertMessage }}</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;display:flex;justify-content:flex-end">
+                    <button onClick="{{ onRechargeCredits }}" style="padding:6px 13px;border:0;border-radius:8px;background:linear-gradient(90deg,#E8B25C,#C45840);color:#fff;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.02em" style-hover="opacity:.88">Recharger les crédits →</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasAnyNotifContent }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:0 12px 6px">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#555759;text-transform:uppercase;margin-bottom:7px">Rendus &amp; tâches</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <sc-for list="{{ backgroundTaskCards }}" as="task" hint-placeholder-count="2">
+                      <div style="padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.042);border:1px solid rgba(255,255,255,.06)">
+                        <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                          <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ task.dot }}"></span>
+                          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D0D0D1">{{ task.title }}</span>
+                          <span style="flex:0 0 auto;font-size:10px;font-weight:700;color:{{ task.statusColor }};white-space:nowrap">{{ task.statusLabel }}</span>
+                        </div>
+                        <sc-if value="{{ task.showProgress }}" hint-placeholder-val="{{ false }}">
+                          <div style="margin-top:7px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                              <span style="font-size:10px;color:#666869">Progression</span>
+                              <span style="font-size:10px;font-weight:700;color:#D1FE17">{{ task.progress }}%</span>
+                            </div>
+                            <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden">
+                              <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#D1FE17,#A8E855);width:{{ task.progress }}%;transition:width .4s ease"></div>
+                            </div>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ showBackgroundWorkflows }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:4px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#555759;text-transform:uppercase;margin-bottom:5px">Workflows</div>
+                      <sc-for list="{{ backgroundWorkflowCards }}" as="workflow" hint-placeholder-count="2">
+                        <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:9px 10px;border-radius:10px;background:rgba(209,254,23,.04);border:1px solid rgba(209,254,23,.09)">
+                          <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
+                          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D0D0D1">{{ workflow.title }}</span>
+                          <span style="flex:0 0 auto;font-size:10px;color:#888">{{ workflow.meta }}</span>
+                        </div>
+                      </sc-for>
+                    </sc-if>
+                  </div>
+                </div>
+                <div style="padding:10px 12px 13px;border-top:1px solid rgba(255,255,255,.07);margin-top:4px">
+                  <button onClick="{{ dismissBackgroundTasks }}" style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.09);border-radius:9px;background:transparent;color:#898A8B;font-size:11px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.06);color:#D0D0D1">Fermer le panneau</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noNotifContent }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:16px 15px 18px;text-align:center">
+                  <div style="font-size:22px;margin-bottom:8px">🔕</div>
+                  <div style="font-size:12px;color:#555759">Aucune notification pour l'instant.</div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
         <button onClick="{{ toggleTheme }}" title="Basculer le thème" style="width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05)">
           <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></sc-if>
           <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"></line><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"></line><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"></line></svg></sc-if>
@@ -5281,11 +5327,15 @@ class Component extends DCLogic {
     const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
       const active = task.status === 'loading';
       const failed = task.status === 'failed';
+      const rawProgress = Math.max(0, Math.min(99, Math.round(Number(task.progress || 0))));
+      const progress = active ? (rawProgress > 0 ? rawProgress : Math.round(30 + Math.random() * 20)) : (failed ? 0 : 100);
       return {
         title:this.backgroundTaskTitle(task),
         statusLabel:active ? 'En cours' : (failed ? 'Échec' : 'Terminé'),
         statusColor:active ? '#D1FE17' : (failed ? '#FF9B8C' : '#A8E8C0'),
-        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
+        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0'),
+        showProgress:active,
+        progress
       };
     });
     const backgroundWorkflowCards = (st.workflowTasks || []).slice(0, 3).map(workflow=>{
@@ -5332,12 +5382,19 @@ class Component extends DCLogic {
       creditColor,
       showToast: !!st.toast,
       toastMessage: st.toast || '',
-      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen && (backgroundTaskCards.length > 0 || backgroundWorkflowCards.length > 0),
+      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen,
       backgroundTaskCards,
       backgroundWorkflowCards,
       showBackgroundWorkflows: backgroundWorkflowCards.length > 0,
-      hasBackgroundTaskNotice: !!st.backgroundTaskUnread || backgroundTaskCards.some(task=>task.statusLabel === 'En cours'),
+      hasAnyNotifContent: backgroundTaskCards.length > 0 || backgroundWorkflowCards.length > 0,
+      noNotifContent: backgroundTaskCards.length === 0 && backgroundWorkflowCards.length === 0 && creditPct > 20,
+      hasBackgroundTaskNotice: !!st.backgroundTaskUnread || backgroundTaskCards.some(task=>task.statusLabel === 'En cours') || (creditPct <= 20 && !!st.authToken),
       toggleBackgroundTasks: ()=>this.toggleBackgroundTasks(),
+      creditLowAlert: creditPct <= 20 && !!st.authToken,
+      creditAlertMessage: 'Il te reste ' + Math.max(0, Number(st.credits || 0)) + ' crédits (' + creditPct + '%). Recharge maintenant pour ne pas interrompre tes créations.',
+      notifDotColor: creditPct <= 20 ? '#C45840' : (backgroundTaskCards.some(t=>t.statusLabel==='En cours') ? '#D1FE17' : '#555759'),
+      onRechargeCredits: ()=>this.setState({ page:'billing', settingsHop:true }, ()=>this.loadBillingStatus()),
+      creditPct,
       showCommandPalette: !!st.commandPaletteOpen,
       commandQuery: st.commandQuery || '',
       onCommandQuery: (e)=>this.onCommandQuery(e),
