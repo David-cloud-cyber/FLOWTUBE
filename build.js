@@ -4,9 +4,9 @@ const { execSync } = require('child_process');
 
 console.log('Building React components...');
 try {
-  execSync('npx vite build --config vite.config.ts', { stdio: 'inherit' });
+  execSync('npm run build:components', { stdio: 'inherit' });
 } catch (err) {
-  console.error('Vite build failed:', err);
+  console.error('Vite build failed:', err.message || err);
   process.exit(1);
 }
 
@@ -56,7 +56,9 @@ for (const file of filesToCopy) {
   const dest = path.join(distDir, file);
   if (fs.existsSync(src)) {
     fs.copyFileSync(src, dest);
-    console.log(`Copied ${file}`);
+    console.log(`Copied: ${file}`);
+  } else {
+    console.warn(`Skipped (not found): ${file}`);
   }
 }
 
@@ -65,7 +67,9 @@ for (const folder of foldersToCopy) {
   const dest = path.join(distDir, folder);
   if (fs.existsSync(src)) {
     copyDir(src, dest);
-    console.log(`Copied directory ${folder}`);
+    console.log(`Copied directory: ${folder}`);
+  } else {
+    console.warn(`Skipped directory (not found): ${folder}`);
   }
 }
 
