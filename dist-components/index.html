@@ -9,30 +9,6 @@
 <link rel="apple-touch-icon" href="/huggyflow-logo.png">
 <meta name="theme-color" content="#0F1113">
 <script src="./support.js"></script>
-<script>
-(function loadHF() {
-  const check = () => {
-    if (window.React && window.ReactDOM) {
-      const s = document.createElement("script");
-      s.src = "./dist-components/hf-components.iife.js";
-      s.onload = () => {
-        if (window.__dcRegistry) {
-          for (const key in window.__dcRegistry) {
-            const entry = window.__dcRegistry[key];
-            if (entry && entry.subs) {
-              entry.subs.forEach(fn => { try { fn(); } catch(e){} });
-            }
-          }
-        }
-      };
-      document.head.appendChild(s);
-    } else {
-      setTimeout(check, 10);
-    }
-  };
-  check();
-})();
-</script>
 </head>
 <body>
 <x-dc>
@@ -141,26 +117,23 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-command-item]{display:flex;align-items:center;gap:11px;width:100%;min-height:48px;padding:0 15px;border:0;background:transparent;color:#D8D8D9;text-align:left;cursor:pointer;font-size:13px;transition:background .14s ease,color .14s ease}
 [data-hf-command-item]:hover,[data-hf-command-item]:focus-visible{background:rgba(209,254,23,.10);color:#F7F7F8;outline:none}
 [data-hf-command-item] kbd{margin-left:auto;padding:3px 6px;border:1px solid rgba(247,247,248,.12);border-radius:5px;color:#898A8B;font:10px 'JetBrains Mono',monospace}
-[data-hf-model-menu]{--hf-model-bg:rgba(27,29,31,.75);--hf-model-surface:rgba(36,38,40,.6);--hf-model-ink:#F4F4F5;--hf-model-muted:#8C8E92;--hf-model-line:247,247,248;position:absolute;z-index:40;top:38px;left:0;width:320px;max-width:min(320px,calc(100vw - 28px));max-height:414px;overflow:hidden;padding:8px;background:var(--hf-model-bg);border:1px solid rgba(var(--hf-model-line),.08);border-radius:12px;box-shadow:0 16px 36px -16px rgba(0,0,0,.35);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:fadeUp .15s cubic-bezier(.22,1,.36,1) both}
-[data-hf-model-menu][data-hf-model-theme="light"]{--hf-model-bg:rgba(255,255,255,.8);--hf-model-surface:rgba(241,242,243,.75);--hf-model-ink:#17191C;--hf-model-muted:#70747B;--hf-model-line:46,48,49}
-[data-hf-model-search]{display:flex;align-items:center;gap:9px;height:38px;padding:0 12px;border:1px solid rgba(var(--hf-model-line),.08);border-radius:999px;background:var(--hf-model-surface);color:var(--hf-model-muted);margin-bottom:6px;transition:all .15s ease}
-[data-hf-model-search]:focus-within{border-color:rgba(var(--hf-model-line),.2)}
+[data-hf-model-menu]{--hf-model-bg:#1B1D1F;--hf-model-surface:#242628;--hf-model-ink:#F4F4F5;--hf-model-muted:#8C8E92;--hf-model-line:247,247,248;position:absolute;z-index:40;top:42px;left:0;width:344px;max-width:min(344px,calc(100vw - 28px));max-height:414px;overflow:hidden;padding:8px;background:var(--hf-model-bg);border:1px solid rgba(var(--hf-model-line),.11);border-radius:16px;box-shadow:0 24px 60px -24px rgba(0,0,0,.78);animation:fadeUp .16s cubic-bezier(.22,1,.36,1) both}
+[data-hf-model-menu][data-hf-model-theme="light"]{--hf-model-bg:#FFFFFF;--hf-model-surface:#F1F2F3;--hf-model-ink:#17191C;--hf-model-muted:#70747B;--hf-model-line:46,48,49}
+[data-hf-model-search]{display:flex;align-items:center;gap:9px;height:42px;padding:0 13px;border:1px solid rgba(var(--hf-model-line),.10);border-radius:999px;background:var(--hf-model-surface);color:var(--hf-model-muted);margin-bottom:6px}
 [data-hf-model-search] input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-model-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
 [data-hf-model-search] input::placeholder{color:var(--hf-model-muted)}
-[data-hf-model-list]{max-height:340px;overflow-y:auto;padding:1px 0 2px;scrollbar-width:thin;scrollbar-color:rgba(var(--hf-model-line),.20) transparent}
-[data-hf-model-list]::-webkit-scrollbar{width:6px}[data-hf-model-list]::-webkit-scrollbar-thumb{background:rgba(var(--hf-model-line),.20);border-radius:8px}
-[data-hf-model-group]{padding:7px 11px 4px;color:var(--hf-model-muted);font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
-[data-hf-model-row]{width:100%;min-height:40px;display:flex;align-items:center;gap:9px;padding:0 9px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--hf-model-muted);text-align:left;cursor:pointer;font:500 12.5px ui-sans-serif,system-ui,sans-serif;transition:all .15s ease}
-[data-hf-model-row]:hover{background:rgba(var(--hf-model-line),.045);color:var(--hf-model-ink)}
-[data-hf-model-row]:active{transform:scale(.99)}
-[data-hf-model-row].is-active{background:rgba(var(--hf-model-line),.05);color:var(--hf-model-ink);border-color:rgba(var(--hf-model-line),.08)}
-[data-hf-model-logo]{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border-radius:6px;background:rgba(var(--hf-model-line),.05);font-size:12px;font-weight:700;transition:all .15s ease}
-[data-hf-model-row].is-active [data-hf-model-logo]{background:rgba(var(--hf-model-line),.08);transform:scale(1.02)}
+[data-hf-model-list]{max-height:350px;overflow-y:auto;padding:1px 0 2px;scrollbar-width:thin;scrollbar-color:rgba(var(--hf-model-line),.20) transparent}
+[data-hf-model-list]::-webkit-scrollbar{width:7px}[data-hf-model-list]::-webkit-scrollbar-thumb{background:rgba(var(--hf-model-line),.20);border-radius:8px}
+[data-hf-model-group]{padding:8px 11px 5px;color:var(--hf-model-muted);font-size:9px;letter-spacing:.10em;text-transform:uppercase;font-weight:800}
+[data-hf-model-row]{width:100%;min-height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--hf-model-ink);text-align:left;cursor:pointer;font:500 13px ui-sans-serif,system-ui,sans-serif;transition:background .14s ease,border-color .14s ease,transform .14s ease}
+[data-hf-model-row]:hover{background:rgba(var(--hf-model-line),.055)}
+[data-hf-model-row]:active{transform:scale(.992)}
+[data-hf-model-row].is-active{border-style:dashed;border-color:rgba(var(--hf-model-line),.34);background:rgba(0,0,0,.27)}
+[data-hf-model-logo]{width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border-radius:8px;background:rgba(var(--hf-model-line),.08);font-size:13px;font-weight:800}
 [data-hf-model-name]{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-[data-hf-model-cost]{display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:6px;background:rgba(var(--hf-model-line),.05);color:var(--hf-model-muted);font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:0.02em;min-width:32px;white-space:nowrap;transition:all .15s ease}
-[data-hf-model-row].is-active [data-hf-model-cost]{background:rgba(var(--hf-model-line),.08);color:var(--hf-model-ink)}
-[data-hf-model-cost-mark]{font-size:10px;line-height:1;margin-right:2px;color:var(--hf-model-muted)}
-[data-hf-model-capabilities]{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;min-width:40px;color:var(--hf-model-muted);font-size:12.5px;white-space:nowrap}
+[data-hf-model-cost]{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;min-width:45px;color:var(--hf-model-muted);font:600 11px 'JetBrains Mono',monospace;white-space:nowrap}
+[data-hf-model-cost-mark]{font-size:12px;line-height:1;color:var(--hf-model-muted)}
+[data-hf-model-capabilities]{display:inline-flex;align-items:center;justify-content:flex-end;gap:7px;min-width:45px;color:var(--hf-model-muted);font-size:13px;white-space:nowrap}
 [data-hf-model-empty]{padding:14px 11px 7px;color:var(--hf-model-muted);font-size:11px}
 [data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 @media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
@@ -438,16 +411,24 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
               <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:48px;min-height:48px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
-                {{ attachmentsReactElement }}
+                <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+                  <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
+                    <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
+                       <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt="" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
+                      <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
+                      <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
+                    </span>
+                  </sc-for>
+                </div>
               </sc-if>
               <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
                 <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyle }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div style="position:relative">
-                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:transparent;border:none;color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .16s ease" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
-                    <span style="width:5.5px;height:5.5px;border-radius:50%;background:{{ curModelDot }};box-shadow:0 0 6px {{ curModelDot }};transition:box-shadow .2s ease"></span>{{ curModelName }}
-                    <svg width="11" height="11" style="opacity:.55;margin-left:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.11);color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s,color .15s,border-color .15s" style-hover="background:rgba({{ tLineRGB }},.08);border-color:rgba({{ tLineRGB }},.22);color:{{ tInk }}">
+                    <span style="width:6px;height:6px;border-radius:50%;background:{{ curModelDot }}"></span>{{ curModelName }}
+                    <svg width="11" height="11" style="opacity:.55" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
@@ -645,7 +626,15 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:12px 12px 10px;box-shadow:0 18px 44px -30px rgba(12,11,9,.4)">
             <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Continuer la conversation…" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:14.5px;line-height:1.5;font-family:inherit;padding:4px 6px;min-height:28px;max-height:120px;overflow-y:auto"></textarea>
             <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
-              {{ attachmentsReactElement }}
+              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
+                <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
+                  <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
+                     <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt="" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
+                    <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
+                    <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
+                  </span>
+                </sc-for>
+              </div>
             </sc-if>
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
               <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyleSmall }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
@@ -5985,27 +5974,6 @@ class Component extends DCLogic {
       attachButtonStyle: 'width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       attachButtonStyleSmall: 'width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       hasAttachments: ((st.attachments || []).length > 0),
-      attachmentsReactElement: (() => {
-        if (!window.HFComponents || !window.React) return null;
-        const R = window.React;
-        const HFC = window.HFComponents;
-        const list = st.attachments || [];
-        if (list.length === 0) return null;
-        const items = list.map(a => ({
-          type: a.kind === 'image' ? 'image' : (a.kind === 'video' ? 'video' : (a.kind === 'audio' ? 'audio' : 'file')),
-          name: a.name || 'Fichier',
-          url: a.previewUrl || a.url || '',
-          mimeType: a.mimeType || '',
-        }));
-        return R.createElement(HFC.AttachmentList, { variant: 'compact' },
-          items.map((item, idx) => R.createElement(HFC.Attachment, {
-            key: idx,
-            variant: 'compact',
-            attachment: item,
-            onRemove: () => this.removeAttachment(list[idx].id)
-          }))
-        );
-      })(),
       attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', icon:this.attachmentIcon(a.kind), meta:this.attachmentMeta(a), statusLabel:a.status === 'uploading' ? 'Ajout...' : 'Pret', hasPreview:a.kind === 'image' && !!(a.previewUrl || a.url), showIcon:!(a.kind === 'image' && !!(a.previewUrl || a.url)), previewUrl:a.previewUrl || (a.kind === 'image' ? a.url : ''), onRemove:()=>this.removeAttachment(a.id) })),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
@@ -6033,7 +6001,7 @@ class Component extends DCLogic {
         });
         const sections = curated.length ? [{
           label:'Disponible',
-          headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
+          headStyle:'padding:7px 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
             name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc:m.desc,
@@ -6047,7 +6015,7 @@ class Component extends DCLogic {
         }] : [];
         return sections.concat(Object.keys(grouped).sort((a,b)=>a.localeCompare(b)).map((g,gi)=>({
           label: g,
-          headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
+          headStyle: 'padding:' + (gi === 0 ? '7px' : '12px') + ' 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
           items: grouped[g].map(m=>({
             activeClass: m.id === st.modelId ? 'is-active' : '',
             name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc: m.desc,
