@@ -17,22 +17,31 @@ if (fs.existsSync(distDir)) {
 }
 fs.mkdirSync(distDir);
 
-// Only copy from public/ — root duplicates removed
+// Files to copy from root to dist
+const filesToCopy = [
+  'index.html',
+  'support.js',
+  'huggyflow-logo.png',
+  'favicon.svg',
+  'Huggy flow.dc.html',
+  'HuggyFlow Cream.dc.html',
+  'image-slot.js'
+];
+
+// Folders to copy
 const foldersToCopy = [
   'dist-components',
   'public'
 ];
 
+// Helper to copy folder recursively
 function copyDir(src, dest) {
-  if (!fs.existsSync(src)) {
-    console.warn(`Skipped directory (not found): ${src}`);
-    return;
-  }
+  if (!fs.existsSync(src)) return;
   fs.mkdirSync(dest, { recursive: true });
   const entries = fs.readdirSync(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
+  for (let entry of entries) {
+    let srcPath = path.join(src, entry.name);
+    let destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
       copyDir(srcPath, destPath);
     } else {
@@ -41,7 +50,18 @@ function copyDir(src, dest) {
   }
 }
 
-console.log('Copying assets from public/ and dist-components/...');
+console.log('Copying static assets...');
+for (const file of filesToCopy) {
+  const src = path.join(__dirname, file);
+  const dest = path.join(distDir, file);
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, dest);
+    console.log(`Copied: ${file}`);
+  } else {
+    console.warn(`Skipped (not found): ${file}`);
+  }
+}
+
 for (const folder of foldersToCopy) {
   const src = path.join(__dirname, folder);
   const dest = path.join(distDir, folder);
