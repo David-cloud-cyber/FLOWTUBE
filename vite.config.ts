@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'classic',
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -20,13 +24,12 @@ export default defineConfig({
     outDir: 'dist-components',
     rollupOptions: {
       // React is already on window via support.js, so externalize it
-      external: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime'],
+      external: ['react', 'react-dom', 'react-dom/client'],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
           'react-dom/client': 'ReactDOM',
-          'react/jsx-runtime': 'React',
         },
         // No code splitting — single bundle file
         inlineDynamicImports: true,
