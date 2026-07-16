@@ -4962,6 +4962,47 @@ function confirmationMessage(model: PricingModel, quote: PricingQuote) {
   return `Cette action coute ${quote.credits} credits (${renderLabel}, ${unitLabel}). Confirme avec "oui" pour lancer, ou "annule" pour ignorer.`;
 }
 
+function generationResultContract(input: {
+  type: string;
+  model: PricingModel;
+  quote: PricingQuote;
+  prompt: string;
+  aspectRatio: string;
+  count?: number;
+}) {
+  const type = String(input.type || "image");
+  const count = Math.max(1, Number(input.count || 1));
+  const format = type === "video" ? "video" : type === "voice" ? "audio" : "image";
+  const criteria = [
+    "Le fournisseur retourne un fichier accessible.",
+    "Le brief contient suffisamment de contexte pour etre execute.",
+    "Le format et le ratio demandes sont conserves.",
+    "Le rendu passe la verification de securite et de disponibilite.",
+  ];
+  return {
+    version: 1,
+    deliverable: {
+      type,
+      format,
+      count,
+      aspect_ratio: input.aspectRatio || null,
+      model_id: input.model.id,
+      model_label: input.model.name,
+    },
+    budget: {
+      max_credits: input.quote.credits * count,
+      credits_per_output: input.quote.credits,
+      provider_cost_usd: input.quote.providerCostUsd * count,
+    },
+    estimate: {
+      seconds_per_output: input.model.pricingUnit === "second" ? Math.round(input.quote.units) : null,
+      units_per_output: input.quote.units,
+    },
+    acceptance_criteria: criteria,
+    source_prompt_excerpt: input.prompt.slice(0, 240),
+  };
+}
+
 async function trackGenerationJob(
   supabase: ReturnType<typeof adminClient>,
   generation: Record<string, unknown>,
@@ -5073,20 +5114,27 @@ async function updateAgentTask(
 function technicalQualityAssessment(generation: Record<string, unknown>) {
   const prompt = String(generation.prompt || "").trim();
   const params = cleanMetadata(generation.params);
+  const contract = cleanMetadata(params.result_contract);
+  const deliverable = cleanMetadata(contract.deliverable);
+  const budget = cleanMetadata(contract.budget);
   const checks = [
     { id: "result", label: "Rendu disponible", passed: Boolean(generation.result_url) },
     { id: "brief", label: "Brief exploitable", passed: prompt.split(/\s+/).filter(Boolean).length >= 5 },
     { id: "format", label: "Format defini", passed: Boolean(generation.aspect_ratio) },
     { id: "capability", label: "Capacite choisie", passed: Boolean(params.selected_capability || generation.model_id) },
     { id: "moderation", label: "Verification de securite", passed: String(generation.moderation_status || "").toLowerCase() !== "blocked" },
+    { id: "contract", label: "Contrat de resultat enregistre", passed: Number(contract.version || 0) >= 1 },
+    { id: "deliverable", label: "Livrable conforme au contrat", passed: !deliverable.type || String(deliverable.type) === String(generation.type) },
+    { id: "budget", label: "Plafond budget respecte", passed: !budget.max_credits || Number(generation.credits || 0) <= Number(budget.max_credits || 0) },
   ];
-  const score = Math.round(checks.reduce((total, check) => total + (check.passed ? 20 : 0), 0));
+  const score = Math.round(100 * checks.filter((check) => check.passed).length / checks.length);
   return {
     score,
     confidence: 0.65,
-    analysisType: "technical_brief",
+    analysisType: "technical_contract",
     note: "Controle technique et conformite au brief. Une analyse visuelle detaillee demande un moteur de vision configure.",
     checks,
+    contract,
   };
 }
 
@@ -5100,6 +5148,7 @@ async function createWorkflowTaskGraph(
     workflowKey: string;
     generations: Record<string, unknown>[];
     batchId?: string;
+    contract?: Record<string, unknown>;
   },
 ) {
   if (!input.generations.length) return null;
@@ -5119,8 +5168,8 @@ async function createWorkflowTaskGraph(
     status: "running",
     progress: 1,
     idempotency_key: input.workflowKey,
-    input: { batch_id: input.batchId || null, total: input.generations.length },
-    metadata: { workflow: "generate-analyze-rank", batch_id: input.batchId || null },
+    input: { batch_id: input.batchId || null, total: input.generations.length, contract: input.contract || {} },
+    metadata: { workflow: "generate-analyze-rank", batch_id: input.batchId || null, contract_version: Number(input.contract?.version || 0) || null },
     started_at: new Date().toISOString(),
   }).select("*").single();
   if (rootError || !root) throw rootError || new Error("Workflow task creation failed");
@@ -5145,7 +5194,7 @@ async function createWorkflowTaskGraph(
       progress: Number(generation.progress || (generationStatus === "completed" ? 100 : 1)),
       cost_credits: Number(generation.credits || 0),
       estimated_seconds: generation.duration_seconds ? Number(generation.duration_seconds) : null,
-      input: { prompt: String(generation.prompt || "").slice(0, 240), type: generation.type, aspect_ratio: generation.aspect_ratio },
+      input: { prompt: String(generation.prompt || "").slice(0, 240), type: generation.type, aspect_ratio: generation.aspect_ratio, contract: cleanMetadata(cleanMetadata(generation.params).result_contract) },
       metadata: { model_id: generation.model_id || null, batch_id: input.batchId || null },
       started_at: generationStatus === "running" ? new Date().toISOString() : null,
       completed_at: generationStatus === "completed" ? new Date().toISOString() : null,
@@ -5794,6 +5843,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
 
   const batchId = crypto.randomUUID();
   const totalCredits = quote.credits * count;
+  const baseContract = generationResultContract({ type, model, quote, prompt, aspectRatio, count });
 
   const { data: assistantMessage, error: messageError } = await supabase.from("messages")
     .insert({
@@ -5833,8 +5883,13 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     requires_confirmation: true,
     confirmed_at: new Date().toISOString(),
     moderation_status: moderation.decision,
-    params: {
-      batch: { id: batchId, index: index + 1, total: count, format: contentPlan[index].format },
+      params: {
+        batch: { id: batchId, index: index + 1, total: count, format: contentPlan[index].format },
+        result_contract: {
+          ...baseContract,
+          deliverable: { ...baseContract.deliverable, count: 1, variant_index: index + 1 },
+          budget: { ...baseContract.budget, max_credits: quote.credits, provider_cost_usd: quote.providerCostUsd },
+        },
       scene: String(body.scene || sceneFromPrompt(prompt)),
       pricing: quote,
       pricing_unit: model.pricingUnit,
@@ -5860,6 +5915,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     workflowKey: `batch:${batchId}`,
     generations: (batchGenerations || []) as Record<string, unknown>[],
     batchId,
+    contract: baseContract,
   });
   void recordProductEvent(supabase, userId, "generation_batch_requested", {
     batch_id: batchId,
