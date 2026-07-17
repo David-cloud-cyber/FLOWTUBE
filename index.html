@@ -1612,8 +1612,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 
               <!-- Save -->
               <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
-                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
-                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D1FE17;font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
+                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">{{ settingsSaving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+                <button onClick="{{ undoSettings }}" style="padding:9px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#A8A8A8;font-size:12px;font-weight:650;cursor:pointer;font-family:inherit">Annuler</button>
+                <sc-if value="{{ settingsSaving }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#A8A8A8;font-weight:600">Enregistrement…</span></sc-if>
+                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D1FE17;font-weight:600;animation:fadeUp .25s both">✓ Enregistré</span></sc-if>
+                <sc-if value="{{ settingsOffline }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#F5C451;font-weight:600">Brouillon local</span></sc-if>
               </div>
             </sc-if>
 
@@ -2256,8 +2259,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </label>
           </div>
           <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
-            <button onClick="{{ saveSettings }}" style="padding:10px 18px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
-            <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:{{ tGreen }};font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
+            <button onClick="{{ saveSettings }}" style="padding:10px 18px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">{{ settingsSaving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+            <button onClick="{{ undoSettings }}" style="padding:9px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.18);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:650;cursor:pointer;font-family:inherit">Annuler</button>
+            <sc-if value="{{ settingsSaving }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:{{ tText3 }};font-weight:600">Enregistrement…</span></sc-if>
+            <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:{{ tGreen }};font-weight:600;animation:fadeUp .25s both">✓ Enregistré</span></sc-if>
+            <sc-if value="{{ settingsOffline }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#C88719;font-weight:600">Brouillon local</span></sc-if>
           </div>
         </div>
 
@@ -2749,6 +2755,7 @@ class Component extends DCLogic {
     attachmentNotice: '',
     prefs: { notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false },
     settingsName: '', settingsEmail: '', settingsCalledName: '', settingsJobDesc: 'Marketing', settingsInstructions: '', settingsFont: 'System UI',
+    settingsDraftRestored: false, settingsLastSavedSnapshot: null, settingsOffline: false,
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false,
     integrationConnections: [], integrationsLoading: false,
@@ -3718,6 +3725,12 @@ class Component extends DCLogic {
       }
     };
     if(typeof document !== 'undefined') document.addEventListener('keydown', this.settingsKeydown);
+    this.settingsOnlineListener = ()=>{
+      if(this.state.settingsOffline && this.state.authToken){
+        this.setState({ settingsOffline:false }, ()=>this.saveSettings());
+      }
+    };
+    if(typeof window !== 'undefined') window.addEventListener('online', this.settingsOnlineListener);
     try{
       const storedTheme = localStorage.getItem('huggyflow_theme') || localStorage.getItem('hf-theme');
       if(['light','dark','system'].includes(storedTheme)) this.setState({ theme:storedTheme });
@@ -3746,6 +3759,7 @@ class Component extends DCLogic {
     this.syncChatInputSize();
   }
   componentWillUnmount(){
+    if(typeof window !== 'undefined' && this.settingsOnlineListener) window.removeEventListener('online', this.settingsOnlineListener);
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     if(this.themeMedia && this.themeMediaListener){
       if(this.themeMedia.removeEventListener) this.themeMedia.removeEventListener('change', this.themeMediaListener);
@@ -3875,7 +3889,10 @@ class Component extends DCLogic {
       };
     }
     this.syncSettingsHash(target);
-    this.setState({ page:target, modelMenu:false, settingsSearchQuery:'', settingsSaved:false, settingsHop:false }, ()=>{
+    const draft = this.readSettingsDraft();
+    const snapshot = this.settingsSnapshot();
+    const draftPatch = draft && draft.values ? Object.assign({}, draft.values, { settingsDraftRestored:true }) : {};
+    this.setState(Object.assign({ page:target, modelMenu:false, settingsSearchQuery:'', settingsSaved:false, settingsHop:false, settingsLastSavedSnapshot:snapshot }, draftPatch), ()=>{
       if(target === 'billing') this.loadBillingStatus();
       if(target === 'team') this.loadTeam();
       if(target === 'api') this.loadApiKeys();
@@ -4827,15 +4844,46 @@ class Component extends DCLogic {
         settingsName:(data.user && data.user.name) || this.state.settingsName,
         settingsEmail:(data.user && (data.user.billingEmail || data.user.email)) || this.state.settingsEmail,
         shareAnalytics:prefs.shareAnalytics,
-        shareDataTraining:prefs.dataTraining
+        shareDataTraining:prefs.dataTraining,
+        settingsOffline:false,
+        settingsDraftRestored:false
+      }, ()=>{
+        this.clearSettingsDraft();
+        this.setState({ settingsLastSavedSnapshot:this.settingsSnapshot() });
       });
     }catch(err){
-      this.setState({ settingsSaving:false, settingsSaved:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer les reglages pour le moment.') });
+      this.persistSettingsDraft();
+      this.setState({ settingsSaving:false, settingsSaved:false, settingsOffline:true, pricingNotice:this.friendlyError(err && err.message, 'Modifications conservées localement : synchronisation dès le retour du réseau.') });
     }
   }
+  settingsSnapshot(){
+    return {
+      settingsName:this.state.settingsName || '', settingsEmail:this.state.settingsEmail || '',
+      settingsCalledName:this.state.settingsCalledName || '', settingsJobDesc:this.state.settingsJobDesc || 'Marketing',
+      settingsInstructions:this.state.settingsInstructions || '', settingsFont:this.state.settingsFont || 'System UI',
+      prefs:Object.assign({}, this.state.prefs || {}), theme:this.state.theme || 'dark',
+      shareAnalytics:this.state.shareAnalytics !== false, shareDataTraining:this.state.shareDataTraining === true
+    };
+  }
+  settingsDraftKey(){ return 'huggyflow_settings_draft_' + String((this.state.user && this.state.user.id) || this.state.authEmail || 'anonymous'); }
+  readSettingsDraft(){
+    try{ const raw = localStorage.getItem(this.settingsDraftKey()); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+  }
+  persistSettingsDraft(){
+    try{ localStorage.setItem(this.settingsDraftKey(), JSON.stringify({ values:this.settingsSnapshot(), updatedAt:Date.now() })); }catch(e){}
+  }
+  clearSettingsDraft(){ try{ localStorage.removeItem(this.settingsDraftKey()); }catch(e){} }
+  restoreSettingsSnapshot(){
+    const snapshot = this.state.settingsLastSavedSnapshot;
+    if(!snapshot) return;
+    this.clearSettingsDraft();
+    this.setState(Object.assign({}, snapshot, { settingsSaved:true, settingsSaving:false, settingsDraftRestored:false }), ()=>this.notify('Modifications annulées.'));
+  }
   scheduleSettingsSave(){
+    this.persistSettingsDraft();
     if(!this.state.authToken) return;
     clearTimeout(this.settingsSaveTimer);
+    this.setState({ settingsSaving:true, settingsSaved:false });
     this.settingsSaveTimer = setTimeout(()=>this.saveSettings(), 900);
   }
   copyApiCreatedKey(){
@@ -5980,6 +6028,9 @@ class Component extends DCLogic {
       saveSettings: ()=> this.saveSettings(),
       settingsSaved: !!st.settingsSaved,
       settingsSaving: !!st.settingsSaving,
+      settingsOffline: !!st.settingsOffline,
+      settingsDraftRestored: !!st.settingsDraftRestored,
+      undoSettings: ()=>this.restoreSettingsSnapshot(),
       prefItems: [
         { key:'notif', label:'Notifications par e-mail', hint:'Rendus terminés et nouveautés produit' },
         { key:'autoplay', label:'Lecture automatique des vidéos', hint:'Lance les aperçus dès qu\'ils sont prêts' },

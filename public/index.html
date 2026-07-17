@@ -9,6 +9,30 @@
 <link rel="apple-touch-icon" href="/huggyflow-logo.png">
 <meta name="theme-color" content="#0F1113">
 <script src="./support.js"></script>
+<script>
+(function loadHF() {
+  const check = () => {
+    if (window.React && window.ReactDOM) {
+      const s = document.createElement("script");
+      s.src = "./dist-components/hf-components.iife.js";
+      s.onload = () => {
+        if (window.__dcRegistry) {
+          for (const key in window.__dcRegistry) {
+            const entry = window.__dcRegistry[key];
+            if (entry && entry.subs) {
+              entry.subs.forEach(fn => { try { fn(); } catch(e){} });
+            }
+          }
+        }
+      };
+      document.head.appendChild(s);
+    } else {
+      setTimeout(check, 10);
+    }
+  };
+  check();
+})();
+</script>
 </head>
 <body>
 <x-dc>
@@ -117,23 +141,26 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-command-item]{display:flex;align-items:center;gap:11px;width:100%;min-height:48px;padding:0 15px;border:0;background:transparent;color:#D8D8D9;text-align:left;cursor:pointer;font-size:13px;transition:background .14s ease,color .14s ease}
 [data-hf-command-item]:hover,[data-hf-command-item]:focus-visible{background:rgba(209,254,23,.10);color:#F7F7F8;outline:none}
 [data-hf-command-item] kbd{margin-left:auto;padding:3px 6px;border:1px solid rgba(247,247,248,.12);border-radius:5px;color:#898A8B;font:10px 'JetBrains Mono',monospace}
-[data-hf-model-menu]{--hf-model-bg:#1B1D1F;--hf-model-surface:#242628;--hf-model-ink:#F4F4F5;--hf-model-muted:#8C8E92;--hf-model-line:247,247,248;position:absolute;z-index:40;top:42px;left:0;width:344px;max-width:min(344px,calc(100vw - 28px));max-height:414px;overflow:hidden;padding:8px;background:var(--hf-model-bg);border:1px solid rgba(var(--hf-model-line),.11);border-radius:16px;box-shadow:0 24px 60px -24px rgba(0,0,0,.78);animation:fadeUp .16s cubic-bezier(.22,1,.36,1) both}
-[data-hf-model-menu][data-hf-model-theme="light"]{--hf-model-bg:#FFFFFF;--hf-model-surface:#F1F2F3;--hf-model-ink:#17191C;--hf-model-muted:#70747B;--hf-model-line:46,48,49}
-[data-hf-model-search]{display:flex;align-items:center;gap:9px;height:42px;padding:0 13px;border:1px solid rgba(var(--hf-model-line),.10);border-radius:999px;background:var(--hf-model-surface);color:var(--hf-model-muted);margin-bottom:6px}
+[data-hf-model-menu]{--hf-model-bg:rgba(27,29,31,.75);--hf-model-surface:rgba(36,38,40,.6);--hf-model-ink:#F4F4F5;--hf-model-muted:#8C8E92;--hf-model-line:247,247,248;position:absolute;z-index:40;top:38px;left:0;width:320px;max-width:min(320px,calc(100vw - 28px));max-height:414px;overflow:hidden;padding:8px;background:var(--hf-model-bg);border:1px solid rgba(var(--hf-model-line),.08);border-radius:12px;box-shadow:0 16px 36px -16px rgba(0,0,0,.35);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:fadeUp .15s cubic-bezier(.22,1,.36,1) both}
+[data-hf-model-menu][data-hf-model-theme="light"]{--hf-model-bg:rgba(255,255,255,.8);--hf-model-surface:rgba(241,242,243,.75);--hf-model-ink:#17191C;--hf-model-muted:#70747B;--hf-model-line:46,48,49}
+[data-hf-model-search]{display:flex;align-items:center;gap:9px;height:38px;padding:0 12px;border:1px solid rgba(var(--hf-model-line),.08);border-radius:999px;background:var(--hf-model-surface);color:var(--hf-model-muted);margin-bottom:6px;transition:all .15s ease}
+[data-hf-model-search]:focus-within{border-color:rgba(var(--hf-model-line),.2)}
 [data-hf-model-search] input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-model-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
 [data-hf-model-search] input::placeholder{color:var(--hf-model-muted)}
-[data-hf-model-list]{max-height:350px;overflow-y:auto;padding:1px 0 2px;scrollbar-width:thin;scrollbar-color:rgba(var(--hf-model-line),.20) transparent}
-[data-hf-model-list]::-webkit-scrollbar{width:7px}[data-hf-model-list]::-webkit-scrollbar-thumb{background:rgba(var(--hf-model-line),.20);border-radius:8px}
-[data-hf-model-group]{padding:8px 11px 5px;color:var(--hf-model-muted);font-size:9px;letter-spacing:.10em;text-transform:uppercase;font-weight:800}
-[data-hf-model-row]{width:100%;min-height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--hf-model-ink);text-align:left;cursor:pointer;font:500 13px ui-sans-serif,system-ui,sans-serif;transition:background .14s ease,border-color .14s ease,transform .14s ease}
-[data-hf-model-row]:hover{background:rgba(var(--hf-model-line),.055)}
-[data-hf-model-row]:active{transform:scale(.992)}
-[data-hf-model-row].is-active{border-style:dashed;border-color:rgba(var(--hf-model-line),.34);background:rgba(0,0,0,.27)}
-[data-hf-model-logo]{width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border-radius:8px;background:rgba(var(--hf-model-line),.08);font-size:13px;font-weight:800}
+[data-hf-model-list]{max-height:340px;overflow-y:auto;padding:1px 0 2px;scrollbar-width:thin;scrollbar-color:rgba(var(--hf-model-line),.20) transparent}
+[data-hf-model-list]::-webkit-scrollbar{width:6px}[data-hf-model-list]::-webkit-scrollbar-thumb{background:rgba(var(--hf-model-line),.20);border-radius:8px}
+[data-hf-model-group]{padding:7px 11px 4px;color:var(--hf-model-muted);font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+[data-hf-model-row]{width:100%;min-height:40px;display:flex;align-items:center;gap:9px;padding:0 9px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--hf-model-muted);text-align:left;cursor:pointer;font:500 12.5px ui-sans-serif,system-ui,sans-serif;transition:all .15s ease}
+[data-hf-model-row]:hover{background:rgba(var(--hf-model-line),.045);color:var(--hf-model-ink)}
+[data-hf-model-row]:active{transform:scale(.99)}
+[data-hf-model-row].is-active{background:rgba(var(--hf-model-line),.05);color:var(--hf-model-ink);border-color:rgba(var(--hf-model-line),.08)}
+[data-hf-model-logo]{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border-radius:6px;background:rgba(var(--hf-model-line),.05);font-size:12px;font-weight:700;transition:all .15s ease}
+[data-hf-model-row].is-active [data-hf-model-logo]{background:rgba(var(--hf-model-line),.08);transform:scale(1.02)}
 [data-hf-model-name]{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-[data-hf-model-cost]{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;min-width:45px;color:var(--hf-model-muted);font:600 11px 'JetBrains Mono',monospace;white-space:nowrap}
-[data-hf-model-cost-mark]{font-size:12px;line-height:1;color:var(--hf-model-muted)}
-[data-hf-model-capabilities]{display:inline-flex;align-items:center;justify-content:flex-end;gap:7px;min-width:45px;color:var(--hf-model-muted);font-size:13px;white-space:nowrap}
+[data-hf-model-cost]{display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:6px;background:rgba(var(--hf-model-line),.05);color:var(--hf-model-muted);font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:0.02em;min-width:32px;white-space:nowrap;transition:all .15s ease}
+[data-hf-model-row].is-active [data-hf-model-cost]{background:rgba(var(--hf-model-line),.08);color:var(--hf-model-ink)}
+[data-hf-model-cost-mark]{font-size:10px;line-height:1;margin-right:2px;color:var(--hf-model-muted)}
+[data-hf-model-capabilities]{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;min-width:40px;color:var(--hf-model-muted);font-size:12.5px;white-space:nowrap}
 [data-hf-model-empty]{padding:14px 11px 7px;color:var(--hf-model-muted);font-size:11px}
 [data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 @media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
@@ -217,34 +244,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
   <input id="hf-file-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
   <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}"><div data-hf-toast="true">{{ toastMessage }}</div></sc-if>
-  <sc-if value="{{ showBackgroundTasks }}" hint-placeholder-val="{{ false }}">
-    <div data-hf-background-tasks="true" style="position:fixed;right:24px;bottom:72px;z-index:130;width:min(350px,calc(100vw - 32px));padding:13px 14px;border:1px solid rgba(209,254,23,.22);border-radius:14px;background:rgba(28,30,32,.96);color:#F7F7F8;box-shadow:0 22px 50px -24px rgba(0,0,0,.76);backdrop-filter:blur(14px);animation:toastIn .24s cubic-bezier(.22,1,.36,1) both">
-      <div style="display:flex;align-items:center;gap:9px">
-        <span style="width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5)"></span>
-        <span style="flex:1;font-size:12px;font-weight:750">Tâches en arrière-plan</span>
-        <button onClick="{{ dismissBackgroundTasks }}" title="Fermer" style="width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:#898A8B;font-size:16px;line-height:1;cursor:pointer">×</button>
-      </div>
-      <div style="margin-top:9px;display:flex;flex-direction:column;gap:7px">
-        <sc-for list="{{ backgroundTaskCards }}" as="task" hint-placeholder-count="2">
-          <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.045)">
-            <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ task.dot }}"></span>
-            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D8D8D9">{{ task.title }}</span>
-            <span style="flex:0 0 auto;font-size:10.5px;color:{{ task.statusColor }}">{{ task.statusLabel }}</span>
-          </div>
-        </sc-for>
-        <sc-if value="{{ showBackgroundWorkflows }}" hint-placeholder-val="false">
-          <div style="margin:5px 2px 0;font-size:10px;font-weight:800;letter-spacing:.08em;color:#898A8B;text-transform:uppercase">Workflow</div>
-          <sc-for list="{{ backgroundWorkflowCards }}" as="workflow" hint-placeholder-count="2">
-            <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;border-radius:9px;background:rgba(209,254,23,.055)">
-              <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
-              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D8D8D9">{{ workflow.title }}</span>
-              <span style="flex:0 0 auto;font-size:10.5px;color:#A8A8A8">{{ workflow.meta }}</span>
-            </div>
-          </sc-for>
-        </sc-if>
-      </div>
-    </div>
-  </sc-if>
+
   <sc-if value="{{ showCommandPalette }}" hint-placeholder-val="{{ false }}">
     <div data-hf-command-backdrop="true">
       <div data-hf-command-dialog="true" role="dialog" aria-label="Palette de commandes">
@@ -386,10 +386,83 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ activeTitle }}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <button onClick="{{ toggleBackgroundTasks }}" title="Notifications et taches en arriere-plan" style="position:relative;width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
-          <sc-if value="{{ hasBackgroundTaskNotice }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:5px;top:4px;width:6px;height:6px;border-radius:50%;background:#D1FE17;box-shadow:0 0 8px rgba(209,254,23,.7)"></span></sc-if>
-        </button>
+        <div style="position:relative">
+          <button onClick="{{ toggleBackgroundTasks }}" title="Notifications et taches en arriere-plan" style="position:relative;width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
+            <sc-if value="{{ hasBackgroundTaskNotice }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:5px;top:4px;width:6px;height:6px;border-radius:50%;background:#D1FE17;box-shadow:0 0 8px rgba(209,254,23,.7)"></span></sc-if>
+          </button>
+          <sc-if value="{{ showBackgroundTasks }}" hint-placeholder-val="{{ false }}">
+            <div data-hf-notif-dropdown="true" style="position:absolute;right:0;top:calc(100% + 10px);z-index:200;width:min(340px,calc(100vw - 32px));border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(18,20,22,.97);color:#F7F7F8;box-shadow:0 28px 56px -20px rgba(0,0,0,.85),0 4px 16px -4px rgba(0,0,0,.4);backdrop-filter:blur(18px);overflow:hidden;animation:toastIn .2s cubic-bezier(.22,1,.36,1) both">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 15px 11px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:7px;height:7px;border-radius:50%;background:{{ notifDotColor }};box-shadow:0 0 10px {{ notifDotColor }};flex:0 0 auto"></span>
+                  <span style="font-size:12.5px;font-weight:700;letter-spacing:-.01em">Centre de notifications</span>
+                </div>
+                <button onClick="{{ dismissBackgroundTasks }}" title="Fermer" style="width:24px;height:24px;border:0;border-radius:8px;background:rgba(255,255,255,.07);color:#898A8B;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12);color:#F7F7F8">×</button>
+              </div>
+              <sc-if value="{{ creditLowAlert }}" hint-placeholder-val="{{ false }}">
+                <div style="margin:0 12px 12px;padding:11px 13px;border-radius:12px;background:linear-gradient(135deg,rgba(196,88,64,.18) 0%,rgba(232,178,92,.12) 100%);border:1px solid rgba(196,88,64,.28)">
+                  <div style="display:flex;align-items:flex-start;gap:10px">
+                    <span style="font-size:16px;line-height:1;flex:0 0 auto;margin-top:1px">⚡</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:12px;font-weight:700;color:#F7C67A;margin-bottom:3px">Solde de crédits faible</div>
+                      <div style="font-size:11px;color:#C8A882;line-height:1.45">{{ creditAlertMessage }}</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;display:flex;justify-content:flex-end">
+                    <button onClick="{{ onRechargeCredits }}" style="padding:6px 13px;border:0;border-radius:8px;background:linear-gradient(90deg,#E8B25C,#C45840);color:#fff;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.02em" style-hover="opacity:.88">Recharger les crédits →</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasAnyNotifContent }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:0 12px 6px">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#555759;text-transform:uppercase;margin-bottom:7px">Rendus &amp; tâches</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <sc-for list="{{ backgroundTaskCards }}" as="task" hint-placeholder-count="2">
+                      <div style="padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.042);border:1px solid rgba(255,255,255,.06)">
+                        <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                          <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ task.dot }}"></span>
+                          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D0D0D1">{{ task.title }}</span>
+                          <span style="flex:0 0 auto;font-size:10px;font-weight:700;color:{{ task.statusColor }};white-space:nowrap">{{ task.statusLabel }}</span>
+                        </div>
+                        <sc-if value="{{ task.showProgress }}" hint-placeholder-val="{{ false }}">
+                          <div style="margin-top:7px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                              <span style="font-size:10px;color:#666869">Progression</span>
+                              <span style="font-size:10px;font-weight:700;color:#D1FE17">{{ task.progress }}%</span>
+                            </div>
+                            <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden">
+                              <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#D1FE17,#A8E855);width:{{ task.progress }}%;transition:width .4s ease"></div>
+                            </div>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ showBackgroundWorkflows }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:4px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#555759;text-transform:uppercase;margin-bottom:5px">Workflows</div>
+                      <sc-for list="{{ backgroundWorkflowCards }}" as="workflow" hint-placeholder-count="2">
+                        <div style="display:flex;align-items:center;gap:9px;min-width:0;padding:9px 10px;border-radius:10px;background:rgba(209,254,23,.04);border:1px solid rgba(209,254,23,.09)">
+                          <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
+                          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D0D0D1">{{ workflow.title }}</span>
+                          <span style="flex:0 0 auto;font-size:10px;color:#888">{{ workflow.meta }}</span>
+                        </div>
+                      </sc-for>
+                    </sc-if>
+                  </div>
+                </div>
+                <div style="padding:10px 12px 13px;border-top:1px solid rgba(255,255,255,.07);margin-top:4px">
+                  <button onClick="{{ dismissBackgroundTasks }}" style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.09);border-radius:9px;background:transparent;color:#898A8B;font-size:11px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.06);color:#D0D0D1">Fermer le panneau</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noNotifContent }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:16px 15px 18px;text-align:center">
+                  <div style="font-size:22px;margin-bottom:8px">🔕</div>
+                  <div style="font-size:12px;color:#555759">Aucune notification pour l'instant.</div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
         <button onClick="{{ toggleTheme }}" title="Basculer le thème" style="width:36px;height:36px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.05)">
           <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></sc-if>
           <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"></line><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"></line><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"></line></svg></sc-if>
@@ -411,24 +484,16 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
               <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:48px;min-height:48px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
-                <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
-                  <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
-                    <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                       <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt="" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
-                      <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
-                      <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
-                    </span>
-                  </sc-for>
-                </div>
+                {{ attachmentsReactElement }}
               </sc-if>
               <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
                 <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyle }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div style="position:relative">
-                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.11);color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s,color .15s,border-color .15s" style-hover="background:rgba({{ tLineRGB }},.08);border-color:rgba({{ tLineRGB }},.22);color:{{ tInk }}">
-                    <span style="width:6px;height:6px;border-radius:50%;background:{{ curModelDot }}"></span>{{ curModelName }}
-                    <svg width="11" height="11" style="opacity:.55" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:transparent;border:none;color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .16s ease" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
+                    <span style="width:5.5px;height:5.5px;border-radius:50%;background:{{ curModelDot }};box-shadow:0 0 6px {{ curModelDot }};transition:box-shadow .2s ease"></span>{{ curModelName }}
+                    <svg width="11" height="11" style="opacity:.55;margin-left:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
@@ -626,15 +691,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:12px 12px 10px;box-shadow:0 18px 44px -30px rgba(12,11,9,.4)">
             <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Continuer la conversation…" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:14.5px;line-height:1.5;font-family:inherit;padding:4px 6px;min-height:28px;max-height:120px;overflow-y:auto"></textarea>
             <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
-              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
-                <sc-for list="{{ attachments }}" as="a" hint-placeholder-count="1">
-                  <span style="display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.12);background:rgba({{ tLineRGB }},.045);color:{{ tText2 }};font-size:11.5px;white-space:nowrap">
-                     <span data-hf-attachment-thumb="true"><sc-if value="{{ a.hasPreview }}" hint-placeholder-val="{{ false }}"><img src="{{ a.previewUrl }}" alt="" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ a.showIcon }}" hint-placeholder-val="{{ true }}"><span>{{ a.icon }}</span></sc-if></span>
-                    <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis">{{ a.name }} <small style="color:{{ tText4 }}">{{ a.statusLabel }}</small></span>
-                    <button onClick="{{ a.onRemove }}" title="Retirer" style="width:18px;height:18px;border-radius:999px;border:none;background:transparent;color:{{ tText4 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
-                  </span>
-                </sc-for>
-              </div>
+              {{ attachmentsReactElement }}
             </sc-if>
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
               <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyleSmall }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
@@ -1176,7 +1233,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:16px">
           <sc-for list="{{ affStats }}" as="a" hint-placeholder-count="3">
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px">
               <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">{{ a.label }}</div>
@@ -1209,10 +1266,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 </div>
               </sc-for>
             </div>
-            <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba({{ tLineRGB }},.08);display:flex;align-items:center;justify-content:space-between;gap:10px">
-              <span style="font-size:12px;color:{{ tText3 }}">Prochain versement le 1<sup>er</sup> août</span>
-              <button onClick="{{ configureAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">Configurer le paiement</button>
+            <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba({{ tLineRGB }},.08);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <span style="font-size:12px;color:{{ tText3 }}">Versement disponible au seuil de 50 USD.</span>
+              <div style="display:flex;gap:7px;flex-wrap:wrap"><button onClick="{{ configureAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">Configurer le paiement</button><button onClick="{{ requestAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:0;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Demander un versement</button></div>
             </div>
+            <sc-if value="{{ affiliatePayouts.length }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba({{ tLineRGB }},.08)"><div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700;margin-bottom:8px">Derniers versements</div><sc-for list="{{ affiliatePayouts }}" as="payout" hint-placeholder-count="3"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;font-size:12px"><span style="color:{{ tText3 }}">{{ payout.label }}</span><span style="font-family:'JetBrains Mono',monospace">{{ payout.amount }}</span><span style="color:{{ tText3 }}">{{ payout.status }}</span></div></sc-for></div></sc-if>
           </div>
         </div>
       </div>
@@ -1554,8 +1612,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 
               <!-- Save -->
               <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
-                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
-                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D1FE17;font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
+                <button onClick="{{ saveSettings }}" style="padding:10px 20px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">{{ settingsSaving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+                <button onClick="{{ undoSettings }}" style="padding:9px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#A8A8A8;font-size:12px;font-weight:650;cursor:pointer;font-family:inherit">Annuler</button>
+                <sc-if value="{{ settingsSaving }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#A8A8A8;font-weight:600">Enregistrement…</span></sc-if>
+                <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#D1FE17;font-weight:600;animation:fadeUp .25s both">✓ Enregistré</span></sc-if>
+                <sc-if value="{{ settingsOffline }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#F5C451;font-weight:600">Brouillon local</span></sc-if>
               </div>
             </sc-if>
 
@@ -1837,7 +1898,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 
             <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>API</h3><p>Crée des clés personnelles pour connecter HuggyFlow à tes outils.</p></div><button class="hf-settings-primary" onClick="{{ createKey }}">Nouvelle clé</button></div>
-              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div><div style="margin-top:5px;font-size:11px;color:{{ key.expiryStyle }}">{{ key.scopesLabel }} · {{ key.expiryLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hf-settings-secondary" onClick="{{ key.onRotate }}">Renouveler</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
@@ -1861,7 +1922,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div class="hf-settings-card"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button></div></sc-for></div>
+              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div class="hf-settings-card"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }} · {{ connector.syncLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button><sc-if value="{{ connector.showDisconnect }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connector.onDisconnect }}">Déconnecter</button></sc-if></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
@@ -2008,10 +2069,12 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div style="flex:1;min-width:180px">
                 <div style="font-size:13.5px;font-weight:600">{{ k.name }}</div>
                 <div style="margin-top:3px;font-family:'JetBrains Mono',monospace;font-size:12px;color:{{ tText3 }}">{{ k.masked }}</div>
+                <div style="margin-top:4px;font-size:11px;color:{{ k.expiryStyle }}">{{ k.scopesLabel }} · {{ k.expiryLabel }}</div>
               </div>
               <span style="font-size:11.5px;color:{{ tText4 }}">{{ k.created }}</span>
               <div style="display:flex;gap:6px">
                 <button onClick="{{ k.onCopy }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">{{ k.copyLabel }}</button>
+                <button onClick="{{ k.onRotate }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Renouveler</button>
                 <button onClick="{{ k.onRevoke }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Révoquer</button>
               </div>
             </div>
@@ -2196,8 +2259,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </label>
           </div>
           <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
-            <button onClick="{{ saveSettings }}" style="padding:10px 18px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer</button>
-            <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:{{ tGreen }};font-weight:600;animation:fadeUp .25s both">✓ Modifications enregistrées</span></sc-if>
+            <button onClick="{{ saveSettings }}" style="padding:10px 18px;border-radius:999px;border:none;background:{{ tInk }};color:{{ tPageBg }};font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">{{ settingsSaving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+            <button onClick="{{ undoSettings }}" style="padding:9px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.18);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:650;cursor:pointer;font-family:inherit">Annuler</button>
+            <sc-if value="{{ settingsSaving }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:{{ tText3 }};font-weight:600">Enregistrement…</span></sc-if>
+            <sc-if value="{{ settingsSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:{{ tGreen }};font-weight:600;animation:fadeUp .25s both">✓ Enregistré</span></sc-if>
+            <sc-if value="{{ settingsOffline }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#C88719;font-weight:600">Brouillon local</span></sc-if>
           </div>
         </div>
 
@@ -2589,10 +2655,17 @@ class Component extends DCLogic {
 
   initialAuthSession = this.storedAuthSession();
   initialUiState = this.storedUiState();
+  initialPage = (()=>{
+    const page = this.initialUiState.page || 'app';
+    const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
+    if(settingsPages.includes(page) && !this.initialAuthSession.access_token) return 'app';
+    if(['claudecode','plugins'].includes(page)) return 'settings';
+    return page;
+  })();
 
   state = {
     theme: ['light','dark','system'].includes(this.initialUiState.theme) ? this.initialUiState.theme : 'dark',
-    page: ['claudecode','plugins'].includes(this.initialUiState.page) ? 'settings' : (this.initialUiState.page || 'app'),
+    page: this.initialPage,
     input: this.initialUiState.input || '',
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
@@ -2682,9 +2755,11 @@ class Component extends DCLogic {
     attachmentNotice: '',
     prefs: { notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false },
     settingsName: '', settingsEmail: '', settingsCalledName: '', settingsJobDesc: 'Marketing', settingsInstructions: '', settingsFont: 'System UI',
+    settingsDraftRestored: false, settingsLastSavedSnapshot: null, settingsOffline: false,
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false,
     integrationConnections: [], integrationsLoading: false,
+    apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
     accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
     adminData: null, adminLoading: false, adminError: ''
@@ -2988,7 +3063,8 @@ class Component extends DCLogic {
     }
     const init = Object.assign({}, options || {});
     init.headers = Object.assign({ Accept:'application/json' }, init.headers || {});
-    if(init.body && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
+    const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
+    if(init.body && !isFormData && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
     if(token) init.headers.Authorization = 'Bearer ' + token;
     return fetch(this.apiBase()+path, init);
   }
@@ -3081,17 +3157,16 @@ class Component extends DCLogic {
   }
   async uploadAttachmentFile(file){
     this.validateAttachment(file);
-    const dataUrl = await this.readFileAsDataUrl(file);
     const textPreview = await this.readTextPreview(file);
+    const form = new FormData();
+    form.append('file', file, this.cleanFileName(file.name));
+    form.append('fileName', this.cleanFileName(file.name));
+    form.append('contentType', file.type || 'application/octet-stream');
+    form.append('kind', this.attachmentKind(file));
+    form.append('textPreview', textPreview);
     const res = await this.apiFetch('/api/upload', {
       method:'POST',
-      body:JSON.stringify({
-        fileName:this.cleanFileName(file.name),
-        contentType:file.type || 'application/octet-stream',
-        data:dataUrl,
-        kind:this.attachmentKind(file),
-        textPreview
-      })
+      body:form
     });
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'upload');
@@ -3116,16 +3191,17 @@ class Component extends DCLogic {
     let added = 0;
     let failed = 0;
     try{
-      for(const file of files){
-        try{
-          const attachment = await this.uploadAttachmentFile(file);
-          this.setState(s=>({ attachments:(s.attachments || []).concat([attachment]).slice(-4) }));
-          added += 1;
-        }catch(err){
-          failed += 1;
+      const results = await Promise.all(files.map(async file=>{
+        try { return { attachment: await this.uploadAttachmentFile(file) }; }
+        catch(err){
           this.notify(this.friendlyError(err && err.message, 'Impossible d ajouter ce fichier pour le moment.'));
+          return { error:err };
         }
-      }
+      }));
+      const attachments = results.filter(result=>result.attachment).map(result=>result.attachment);
+      added = attachments.length;
+      failed = results.length - added;
+      if(attachments.length) this.setState(s=>({ attachments:(s.attachments || []).concat(attachments).slice(-4) }));
       const label = failed ? (added ? added + ' fichier(s) ajoute(s), ' + failed + ' refuse(s).' : 'Aucun fichier ajoute.') : (added > 1 ? added + ' fichiers ajoutes.' : 'Fichier ajoute.');
       this.setState({ uploadingAttachment:false, attachmentNotice:label });
       if(added) this.notify('Fichier(s) ajoute(s). AgentFlow peut maintenant les analyser.');
@@ -3161,6 +3237,7 @@ class Component extends DCLogic {
       if(pending.type === 'newProject') this.newProject();
       if(pending.type === 'checkout') this.startCheckout(pending.planId);
       if(pending.type === 'attach') this.openFilePicker();
+      if(pending.type === 'settings') this.openSettingsModal(pending.section || 'settings');
     });
   }
   saveSession(data, action){
@@ -3190,7 +3267,7 @@ class Component extends DCLogic {
       window.localStorage.removeItem('huggyflow_access_token');
       window.localStorage.removeItem('huggyflow_session');
     }
-    this.setState({ authToken:'', authRefreshToken:'', authExpiresAt:0, user:null, credits:0, creditsMax:100, authStatus:status || 'Deconnecte.' });
+    this.setState({ authToken:'', authRefreshToken:'', authExpiresAt:0, user:null, credits:0, creditsMax:100, authStatus:status || 'Deconnecte.', page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
   }
   async refreshSession(silent){
     if(!this.state.authRefreshToken) return false;
@@ -3218,7 +3295,9 @@ class Component extends DCLogic {
     }
     this.setState({ authStatus: action === 'signup' ? 'Creation du compte...' : 'Connexion en cours...' });
     try{
-      const body = { email, password, displayName: this.state.authName || email.split('@')[0] };
+      let referralCode = '';
+      try{ referralCode = String(new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('hf_referral_code') || '').trim(); }catch(e){}
+      const body = { email, password, displayName: this.state.authName || email.split('@')[0], ...(action === 'signup' && referralCode ? { referralCode } : {}) };
       const res = await this.apiFetch('/api/auth/'+action, { method:'POST', body:JSON.stringify(body) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Authentification impossible.');
@@ -3609,6 +3688,22 @@ class Component extends DCLogic {
       this.setState({ backendReady:false, backendError:true });
     }
   }
+  trackAffiliateReferral(){
+    if(typeof window === 'undefined') return;
+    let code = '';
+    try{ code = String(new URLSearchParams(window.location.search).get('ref') || '').trim().toLowerCase(); }catch(e){}
+    if(!code || !/^[a-z0-9-]{3,80}$/.test(code)) return;
+    try{
+      sessionStorage.setItem('hf_referral_code', code);
+      if(sessionStorage.getItem('hf_referral_tracked') === code) return;
+      sessionStorage.setItem('hf_referral_tracked', code);
+    }catch(e){}
+    fetch(this.apiBase() + '/api/affiliate/click', {
+      method:'POST',
+      headers:{ Accept:'application/json', 'Content-Type':'application/json' },
+      body:JSON.stringify({ code, sessionId:(typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : '', landingPath:window.location.pathname })
+    }).catch(()=>{});
+  }
   componentDidMount(){
     this.chatShouldStick = true;
     this.settingsKeydown = (event)=>{
@@ -3630,6 +3725,12 @@ class Component extends DCLogic {
       }
     };
     if(typeof document !== 'undefined') document.addEventListener('keydown', this.settingsKeydown);
+    this.settingsOnlineListener = ()=>{
+      if(this.state.settingsOffline && this.state.authToken){
+        this.setState({ settingsOffline:false }, ()=>this.saveSettings());
+      }
+    };
+    if(typeof window !== 'undefined') window.addEventListener('online', this.settingsOnlineListener);
     try{
       const storedTheme = localStorage.getItem('huggyflow_theme') || localStorage.getItem('hf-theme');
       if(['light','dark','system'].includes(storedTheme)) this.setState({ theme:storedTheme });
@@ -3641,7 +3742,12 @@ class Component extends DCLogic {
       }
     }catch(e){}
     const hashSection = this.settingsSectionFromHash();
-    if(hashSection) this.setState({ page:hashSection });
+    if(hashSection && this.state.authToken) this.setState({ page:hashSection });
+    else if(hashSection){
+      this.clearSettingsHash();
+      this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:hashSection });
+    }
+    this.trackAffiliateReferral();
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -3653,6 +3759,7 @@ class Component extends DCLogic {
     this.syncChatInputSize();
   }
   componentWillUnmount(){
+    if(typeof window !== 'undefined' && this.settingsOnlineListener) window.removeEventListener('online', this.settingsOnlineListener);
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     if(this.themeMedia && this.themeMediaListener){
       if(this.themeMedia.removeEventListener) this.themeMedia.removeEventListener('change', this.themeMediaListener);
@@ -3674,6 +3781,9 @@ class Component extends DCLogic {
     this.flushAllAgentText();
   }
   componentDidUpdate(prevProps, prevState){
+    // The Streamable wrapper only supplies previous props. Treat missing state
+    // as an empty snapshot so a normal render update can never crash the app.
+    prevState = prevState || {};
     const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
@@ -3690,6 +3800,11 @@ class Component extends DCLogic {
     }
     if(prevState.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
+    if(this.isSettingsPage(this.state.page) && !this.state.authToken){
+      this.clearSettingsHash();
+      this.setState({ page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
+      return;
+    }
   }
   schedulePersistUiState(){
     clearTimeout(this.persistTimer);
@@ -3699,7 +3814,7 @@ class Component extends DCLogic {
     if(typeof window === 'undefined' || !window.localStorage) return;
     try{
       const payload = {
-        page:this.state.page === 'auth' ? 'app' : this.state.page,
+        page:(!this.state.authToken && this.isSettingsPage(this.state.page)) || this.state.page === 'auth' ? 'app' : this.state.page,
         input:this.state.input || '',
         messages:this.state.authToken ? [] : (this.state.messages || []).slice(-40),
         activeProjectId:this.state.activeProjectId || 'welcome',
@@ -3746,6 +3861,12 @@ class Component extends DCLogic {
     const section = match ? decodeURIComponent(match[1]) : '';
     return this.isSettingsPage(section) ? section : '';
   }
+  requireSettingsAccess(section){
+    if(this.state.authToken) return true;
+    const target = this.isSettingsPage(section) ? section : 'settings';
+    this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:target });
+    return false;
+  }
   focusSettingsSearch(){
     setTimeout(()=>{
       if(typeof document === 'undefined') return;
@@ -3755,6 +3876,7 @@ class Component extends DCLogic {
   }
   openSettingsModal(section){
     const target = this.isSettingsPage(section) ? section : 'settings';
+    if(!this.requireSettingsAccess(target)) return;
     if(!this.isSettingsPage(this.state.page)){
       this.settingsLastFocused = typeof document !== 'undefined' ? document.activeElement : null;
       this.settingsReturnContext = {
@@ -3767,7 +3889,10 @@ class Component extends DCLogic {
       };
     }
     this.syncSettingsHash(target);
-    this.setState({ page:target, modelMenu:false, settingsSearchQuery:'', settingsSaved:false, settingsHop:false }, ()=>{
+    const draft = this.readSettingsDraft();
+    const snapshot = this.settingsSnapshot();
+    const draftPatch = draft && draft.values ? Object.assign({}, draft.values, { settingsDraftRestored:true }) : {};
+    this.setState(Object.assign({ page:target, modelMenu:false, settingsSearchQuery:'', settingsSaved:false, settingsHop:false, settingsLastSavedSnapshot:snapshot }, draftPatch), ()=>{
       if(target === 'billing') this.loadBillingStatus();
       if(target === 'team') this.loadTeam();
       if(target === 'api') this.loadApiKeys();
@@ -3780,6 +3905,7 @@ class Component extends DCLogic {
     });
   }
   openSettingsSection(section){
+    if(!this.requireSettingsAccess(section)) return;
     if(!this.isSettingsPage(this.state.page)) return this.openSettingsModal(section);
     this.syncSettingsHash(section);
     this.setState({ page:section, settingsHop:true }, ()=>{
@@ -4628,7 +4754,10 @@ class Component extends DCLogic {
     if(!this.requireAuth('Connecte-toi pour creer une cle API.', null)) return;
     this.setState({ apiLoading:true, apiCreatedKey:'' });
     try{
-      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({ action:'create', name:'Cle API HuggyFlow' }) });
+      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
+        action:'create', name:'Cle API HuggyFlow', scopes:this.state.apiKeyScopes || ['chat','generate'],
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+      }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'API key failed');
       this.setState({ apiData:data, apiCreatedKey:data.createdKey || '', apiLoading:false });
@@ -4644,6 +4773,20 @@ class Component extends DCLogic {
       const data = await res.json().catch(()=>({}));
       if(res.ok) this.setState({ apiData:data });
     }catch(err){}
+  }
+  async rotateApiKey(id){
+    if(!id) return;
+    try{
+      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
+        action:'rotate', keyId:id, scopes:this.state.apiKeyScopes || ['chat','generate'],
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+      }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Rotation impossible');
+      this.setState({ apiData:data, apiCreatedKey:data.createdKey || '' });
+      if(data.createdKey && navigator.clipboard) navigator.clipboard.writeText(data.createdKey).catch(()=>{});
+      this.notify('Cle API renouvellee. Copie-la maintenant, elle ne sera plus affichee.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Rotation de cle impossible.')); }
   }
   async loadStats(period){
     if(!this.state.authToken) return;
@@ -4701,15 +4844,46 @@ class Component extends DCLogic {
         settingsName:(data.user && data.user.name) || this.state.settingsName,
         settingsEmail:(data.user && (data.user.billingEmail || data.user.email)) || this.state.settingsEmail,
         shareAnalytics:prefs.shareAnalytics,
-        shareDataTraining:prefs.dataTraining
+        shareDataTraining:prefs.dataTraining,
+        settingsOffline:false,
+        settingsDraftRestored:false
+      }, ()=>{
+        this.clearSettingsDraft();
+        this.setState({ settingsLastSavedSnapshot:this.settingsSnapshot() });
       });
     }catch(err){
-      this.setState({ settingsSaving:false, settingsSaved:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer les reglages pour le moment.') });
+      this.persistSettingsDraft();
+      this.setState({ settingsSaving:false, settingsSaved:false, settingsOffline:true, pricingNotice:this.friendlyError(err && err.message, 'Modifications conservées localement : synchronisation dès le retour du réseau.') });
     }
   }
+  settingsSnapshot(){
+    return {
+      settingsName:this.state.settingsName || '', settingsEmail:this.state.settingsEmail || '',
+      settingsCalledName:this.state.settingsCalledName || '', settingsJobDesc:this.state.settingsJobDesc || 'Marketing',
+      settingsInstructions:this.state.settingsInstructions || '', settingsFont:this.state.settingsFont || 'System UI',
+      prefs:Object.assign({}, this.state.prefs || {}), theme:this.state.theme || 'dark',
+      shareAnalytics:this.state.shareAnalytics !== false, shareDataTraining:this.state.shareDataTraining === true
+    };
+  }
+  settingsDraftKey(){ return 'huggyflow_settings_draft_' + String((this.state.user && this.state.user.id) || this.state.authEmail || 'anonymous'); }
+  readSettingsDraft(){
+    try{ const raw = localStorage.getItem(this.settingsDraftKey()); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+  }
+  persistSettingsDraft(){
+    try{ localStorage.setItem(this.settingsDraftKey(), JSON.stringify({ values:this.settingsSnapshot(), updatedAt:Date.now() })); }catch(e){}
+  }
+  clearSettingsDraft(){ try{ localStorage.removeItem(this.settingsDraftKey()); }catch(e){} }
+  restoreSettingsSnapshot(){
+    const snapshot = this.state.settingsLastSavedSnapshot;
+    if(!snapshot) return;
+    this.clearSettingsDraft();
+    this.setState(Object.assign({}, snapshot, { settingsSaved:true, settingsSaving:false, settingsDraftRestored:false }), ()=>this.notify('Modifications annulées.'));
+  }
   scheduleSettingsSave(){
+    this.persistSettingsDraft();
     if(!this.state.authToken) return;
     clearTimeout(this.settingsSaveTimer);
+    this.setState({ settingsSaving:true, settingsSaved:false });
     this.settingsSaveTimer = setTimeout(()=>this.saveSettings(), 900);
   }
   copyApiCreatedKey(){
@@ -4863,11 +5037,22 @@ class Component extends DCLogic {
   async configureIntegration(provider){
     if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
     try{
-      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider }) });
+      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider, permissions:{ requested:true } }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
-      this.setState({ integrationConnections:data.connections || [], pricingNotice:'Connecteur en attente. Ajoute les identifiants OAuth du fournisseur pour finaliser la liaison.' });
+      this.setState({ integrationConnections:data.connections || [], pricingNotice:'Autorisation demandee. Termine OAuth pour activer ce connecteur.' });
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
+  }
+  async connectorAction(provider, action){
+    if(!this.requireAuth('Connecte-toi pour gerer tes connecteurs.', null)) return;
+    const labels = { test:'Verification', reconnect:'Reconnexion', disconnect:'Deconnexion' };
+    try{
+      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action, provider }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
+      this.setState({ integrationConnections:data.connections || [] });
+      this.notify(data.testOk === false ? (data.testMessage || 'Connexion non validee.') : (labels[action] || 'Action') + ' terminee.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
   }
   downloadJson(fileName, payload){
     if(typeof window === 'undefined') return;
@@ -4941,6 +5126,16 @@ class Component extends DCLogic {
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'affiliate');
       this.setState({ affiliateData:data }, ()=>this.notify('E-mail de versement enregistre.'));
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Impossible de configurer le versement.')); }
+  }
+  async requestAffiliatePayout(){
+    if(!this.requireAuth('Connecte-toi pour demander un versement.', null)) return;
+    try{
+      const res = await this.apiFetch('/api/affiliate', { method:'POST', body:JSON.stringify({ action:'request_payout' }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Versement indisponible');
+      this.setState({ affiliateData:data });
+      this.notify('Demande de versement enregistree.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Versement indisponible pour le moment.')); }
   }
   requestPasswordReset(){
     const email = String((this.state.user && this.state.user.email) || this.state.settingsEmail || '').trim();
@@ -5167,12 +5362,13 @@ class Component extends DCLogic {
   ADMIN_REPORTS = [];
   API_KEYS_DEFAULT = [];
   INTEGRATIONS = [
-    { id:'zapier', name:'Zapier', glyph:'Z', bg:'#F2D8B0', desc:'Déclenche des générations depuis 6 000+ apps.' },
+    { id:'google_drive', name:'Google Drive', glyph:'G', bg:'#D8E8F4', desc:'Importe les fichiers autorisés dans tes workflows.' },
+    { id:'whatsapp_business', name:'WhatsApp Business', glyph:'W', bg:'#D1F0D9', desc:'Reçois les notifications de rendu de ton équipe.' },
+    { id:'meta_ads', name:'Meta Ads', glyph:'M', bg:'#D8E2F4', desc:'Consulte les campagnes et performances autorisées.' },
+    { id:'tiktok', name:'TikTok Ads', glyph:'T', bg:'#E6DDF0', desc:'Prépare tes créations pour TikTok Ads.' },
     { id:'slack', name:'Slack', glyph:'S', bg:'#D5E3F0', desc:'Reçois tes rendus terminés dans un canal.' },
     { id:'notion', name:'Notion', glyph:'N', bg:'#E6E7E9', desc:'Archive tes créations dans une base Notion.' },
-    { id:'make', name:'Make', glyph:'M', bg:'#E4D5F0', desc:'Scénarios d\'automatisation visuels.' },
-    { id:'discord', name:'Discord', glyph:'D', bg:'#D8DCF2', desc:'Génère depuis ton serveur avec /huggyflow.' },
-    { id:'webhooks', name:'Webhooks', glyph:'W', bg:'#D1FE17', desc:'Notifie ton backend à chaque rendu terminé.' }
+    { id:'webhook', name:'Webhooks', glyph:'W', bg:'#D1FE17', desc:'Notifie ton backend à chaque rendu terminé.' }
   ];
 
   obSeg(i){
@@ -5251,18 +5447,18 @@ class Component extends DCLogic {
     const settingsMatch = (label, terms=[]) => !settingsQuery || [label].concat(terms).some(value=>normalizeSearch(value).includes(settingsQuery));
     const settingItem = (id, label, short, terms) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', ariaCurrent:st.page === id ? 'page' : 'false', onClick:()=>this.openSettingsSection(id), visible:settingsMatch(label, terms) });
     const settingsPrimaryItems = [
-      settingItem('settings','Profil','◉',['general','personnalisation','apparence'],()=>this.setState({ page:'settings', settingsSaved:false, settingsHop:false })),
-      settingItem('account','Compte','◎',['email','securite','mot de passe'],()=>this.setState({ page:'account', settingsHop:true })),
-      settingItem('privacy','Confidentialité','◈',['privacy','analytics','données'],()=>this.setState({ page:'privacy', settingsHop:true })),
-      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion'],()=>this.setState({ page:'billing', settingsHop:true },()=>this.loadBillingStatus())),
-      settingItem('team','Équipe','♧',['membres','collaboration','invitation'],()=>this.setState({ page:'team', settingsHop:true },()=>this.loadTeam())),
-      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité'],()=>this.setState({ page:'stats', settingsHop:true },()=>this.loadStats())),
-      settingItem('capabilities','Capacités','✦',['marque','modèles','limites'],()=>this.setState({ page:'capabilities', settingsHop:true },()=>this.loadBrands())),
-      settingItem('api','API','<>',['clés','intégrations','développeur'],()=>this.setState({ page:'api', settingsHop:true },()=>this.loadApiKeys()))
+      settingItem('settings','Profil','◉',['general','personnalisation','apparence']),
+      settingItem('account','Compte','◎',['email','securite','mot de passe']),
+      settingItem('privacy','Confidentialité','◈',['privacy','analytics','données']),
+      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion']),
+      settingItem('team','Équipe','♧',['membres','collaboration','invitation']),
+      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité']),
+      settingItem('capabilities','Capacités','✦',['marque','modèles','limites']),
+      settingItem('api','API','<>',['clés','intégrations','développeur'])
     ].filter(item=>item.visible);
     const settingsCustomItems = [
-      settingItem('skills','Compétences','✧',['templates','workflows'],()=>this.setState({ page:'skills', settingsHop:true },()=>this.loadTemplates())),
-      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'],()=>this.setState({ page:'connectors', settingsHop:true },()=>this.loadIntegrations()))
+      settingItem('skills','Compétences','✧',['templates','workflows']),
+      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'])
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
@@ -5270,11 +5466,15 @@ class Component extends DCLogic {
     const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
       const active = task.status === 'loading';
       const failed = task.status === 'failed';
+      const rawProgress = Math.max(0, Math.min(99, Math.round(Number(task.progress || 0))));
+      const progress = active ? (rawProgress > 0 ? rawProgress : Math.round(30 + Math.random() * 20)) : (failed ? 0 : 100);
       return {
         title:this.backgroundTaskTitle(task),
         statusLabel:active ? 'En cours' : (failed ? 'Échec' : 'Terminé'),
         statusColor:active ? '#D1FE17' : (failed ? '#FF9B8C' : '#A8E8C0'),
-        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
+        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0'),
+        showProgress:active,
+        progress
       };
     });
     const backgroundWorkflowCards = (st.workflowTasks || []).slice(0, 3).map(workflow=>{
@@ -5321,12 +5521,19 @@ class Component extends DCLogic {
       creditColor,
       showToast: !!st.toast,
       toastMessage: st.toast || '',
-      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen && (backgroundTaskCards.length > 0 || backgroundWorkflowCards.length > 0),
+      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen,
       backgroundTaskCards,
       backgroundWorkflowCards,
       showBackgroundWorkflows: backgroundWorkflowCards.length > 0,
-      hasBackgroundTaskNotice: !!st.backgroundTaskUnread || backgroundTaskCards.some(task=>task.statusLabel === 'En cours'),
+      hasAnyNotifContent: backgroundTaskCards.length > 0 || backgroundWorkflowCards.length > 0,
+      noNotifContent: backgroundTaskCards.length === 0 && backgroundWorkflowCards.length === 0 && creditPct > 20,
+      hasBackgroundTaskNotice: !!st.backgroundTaskUnread || backgroundTaskCards.some(task=>task.statusLabel === 'En cours') || (creditPct <= 20 && !!st.authToken),
       toggleBackgroundTasks: ()=>this.toggleBackgroundTasks(),
+      creditLowAlert: creditPct <= 20 && !!st.authToken,
+      creditAlertMessage: 'Il te reste ' + Math.max(0, Number(st.credits || 0)) + ' crédits (' + creditPct + '%). Recharge maintenant pour ne pas interrompre tes créations.',
+      notifDotColor: creditPct <= 20 ? '#C45840' : (backgroundTaskCards.some(t=>t.statusLabel==='En cours') ? '#D1FE17' : '#555759'),
+      onRechargeCredits: ()=>{ this.trackEvent('pricing_viewed', { source:'credit_alert' }); this.setState({ page:'pricing', backgroundTaskPanelOpen:false }, ()=>this.loadPlans()); },
+      creditPct,
       showCommandPalette: !!st.commandPaletteOpen,
       commandQuery: st.commandQuery || '',
       onCommandQuery: (e)=>this.onCommandQuery(e),
@@ -5465,18 +5672,18 @@ class Component extends DCLogic {
         if (!query) return true;
         return 'plugins'.includes(query) || 'store'.includes(query) || 'tools'.includes(query);
       })(),
-      clickGeneral: ()=> this.setState({ page:'settings', settingsSaved:false, settingsHop:false }),
-      clickAccount: ()=> this.setState({ page:'account', settingsHop:false }),
-      clickPrivacy: ()=> this.setState({ page:'privacy', settingsHop:false }),
-      clickBilling: ()=> this.setState({ page:'billing', settingsHop:false }, ()=> this.loadBillingStatus()),
-      clickTeam: ()=> this.setState({ page:'team', settingsHop:false }, ()=> this.loadTeam()),
-      clickUsage: ()=> this.setState({ page:'stats', settingsHop:false }, ()=> this.loadStats()),
-      clickCapabilities: ()=> this.setState({ page:'capabilities', settingsHop:false }),
-      clickClaudeCode: ()=> this.setState({ page:'claudecode', settingsHop:false }),
-      clickApi: ()=> this.setState({ page:'api', settingsHop:false }, ()=> this.loadApiKeys()),
-      clickSkills: ()=> this.setState({ page:'skills', settingsHop:false }),
-      clickConnectors: ()=> this.setState({ page:'connectors', settingsHop:false }),
-      clickPlugins: ()=> this.setState({ page:'plugins', settingsHop:false }),
+      clickGeneral: ()=> this.openSettingsSection('settings'),
+      clickAccount: ()=> this.openSettingsSection('account'),
+      clickPrivacy: ()=> this.openSettingsSection('privacy'),
+      clickBilling: ()=> this.openSettingsSection('billing'),
+      clickTeam: ()=> this.openSettingsSection('team'),
+      clickUsage: ()=> this.openSettingsSection('stats'),
+      clickCapabilities: ()=> this.openSettingsSection('capabilities'),
+      clickClaudeCode: ()=> this.openSettingsSection('claudecode'),
+      clickApi: ()=> this.openSettingsSection('api'),
+      clickSkills: ()=> this.openSettingsSection('skills'),
+      clickConnectors: ()=> this.openSettingsSection('connectors'),
+      clickPlugins: ()=> this.openSettingsSection('plugins'),
       generalButtonStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
       generalButtonIconColor: st.page === 'settings' ? '#FFF' : '#898A8B',
       accountButtonStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
@@ -5686,9 +5893,12 @@ class Component extends DCLogic {
         provider:c.provider,
         label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
         status:c.status || 'disconnected',
-        statusLabel: ({connected:'Connecté',pending:'Prêt à autoriser',error:'À vérifier',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
-        buttonLabel: c.status === 'connected' ? 'Gérer' : 'Configurer',
-        onConfigure:()=>this.configureIntegration(c.provider)
+        statusLabel: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
+        syncLabel: ({healthy:'Synchronisé',pending:'En attente',error:'Synchronisation en erreur',idle:'Pas encore testé'})[c.sync_status || 'idle'] || 'Pas encore testé',
+        buttonLabel: c.status === 'connected' ? 'Tester' : (c.status === 'pending' ? 'Autoriser' : 'Configurer'),
+        onConfigure:()=>c.status === 'connected' ? this.connectorAction(c.provider,'test') : (c.status === 'pending' ? this.connectorAction(c.provider,'reconnect') : this.configureIntegration(c.provider)),
+        onDisconnect:()=>this.connectorAction(c.provider,'disconnect'),
+        showDisconnect:c.status === 'connected' || c.status === 'pending'
       })),
       connectorsEmpty: !(st.integrationConnections || []).length,
       integrationsLoading: !!st.integrationsLoading,
@@ -5699,12 +5909,7 @@ class Component extends DCLogic {
       settingsNav: [['settings','Profil'],['billing','Facturation'],['team','Équipe'],['api','API'],['stats','Statistiques']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.page === p[0]) + ';flex:0 0 auto;white-space:nowrap',
-        onClick: ()=> this.setState({ page: p[0], modelMenu:false, settingsHop:true }, ()=>{
-          if(p[0] === 'billing') this.loadBillingStatus();
-          if(p[0] === 'team') this.loadTeam();
-          if(p[0] === 'api') this.loadApiKeys();
-          if(p[0] === 'stats') this.loadStats();
-        })
+        onClick: ()=> this.openSettingsSection(p[0])
       })),
       settingsAnim: st.settingsHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
       sidebarStyle: 'width:' + (st.sidebarCollapsed ? '72px' : '258px') + ';flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#F7F7F8;transition:width .24s ease;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both',
@@ -5718,7 +5923,7 @@ class Component extends DCLogic {
       showTeam: false,
       showApi: false,
       showStats: false,
-      openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
+      openStats: ()=> this.openSettingsSection('stats'),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label: p[1],
         style: this.tabStyle((st.statsPeriod || '30') === p[0]),
@@ -5741,31 +5946,41 @@ class Component extends DCLogic {
       })),
       modelUsage: [],
       highlights: [],
-      openApi: ()=> this.setState({ page:'api', modelMenu:false }),
+      openApi: ()=> this.openSettingsSection('api'),
       apiKeys: (st.apiKeys || this.API_KEYS_DEFAULT).map((k,i)=>({
         name: k.name, masked: k.masked, created: k.created,
         copyLabel: st.copiedKey === i ? '✓ Copiée' : 'Copier',
         onCopy: ()=>{
           this.setState({ copiedKey: i });
           setTimeout(()=> this.setState({ copiedKey: null }), 1600);
-        }
+        },
+        scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
+        expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
+        expiryStyle:k.expiresAt && new Date(k.expiresAt).getTime() < Date.now() ? 'color:#C45840' : 'color:' + T.text4,
+        onRevoke:()=>this.revokeApiKey(k.id),
+        onRotate:()=>this.rotateApiKey(k.id)
       })),
       createKey: ()=> this.createApiKey(),
       integrations: this.INTEGRATIONS.map(ig=>{
         const current = (st.integrationConnections || []).find(c=>c.provider === ig.id);
         const on = !!(current && current.status === 'connected');
+        const status = current && current.status || 'disconnected';
         return {
           name: ig.name, desc: ig.desc, glyph: ig.glyph, bg: ig.bg,
           trackStyle: this.switchTrack(on), knobStyle: this.switchKnob(on),
-          status: on ? 'Connecté' : 'Non connecté',
+          status: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[status] || 'Non connecté',
           statusStyle: 'align-self:flex-start;padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:700;' +
             (on
               ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
               : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text4),
-          onToggle: ()=> this.configureIntegration(ig.id)
+          onToggle: ()=> status === 'connected' ? this.connectorAction(ig.id,'test') : this.configureIntegration(ig.id),
+          actionLabel: status === 'connected' ? 'Tester' : (status === 'pending' ? 'Autoriser' : 'Configurer'),
+          onReconnect: ()=>this.connectorAction(ig.id,'reconnect'),
+          onDisconnect: ()=>this.connectorAction(ig.id,'disconnect'),
+          showDisconnect: status === 'connected' || status === 'pending'
         };
       }),
-      openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }),
+      openTeam: ()=> this.openSettingsSection('team'),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
       inviteEmail: st.inviteEmail || '',
@@ -5813,6 +6028,9 @@ class Component extends DCLogic {
       saveSettings: ()=> this.saveSettings(),
       settingsSaved: !!st.settingsSaved,
       settingsSaving: !!st.settingsSaving,
+      settingsOffline: !!st.settingsOffline,
+      settingsDraftRestored: !!st.settingsDraftRestored,
+      undoSettings: ()=>this.restoreSettingsSnapshot(),
       prefItems: [
         { key:'notif', label:'Notifications par e-mail', hint:'Rendus terminés et nouveautés produit' },
         { key:'autoplay', label:'Lecture automatique des vidéos', hint:'Lance les aperçus dès qu\'ils sont prêts' },
@@ -5846,7 +6064,7 @@ class Component extends DCLogic {
       })),
       galleryItems,
       galleryEmpty: galleryItems.length === 0,
-      openBilling: ()=> this.setState({ page:'billing', modelMenu:false }),
+      openBilling: ()=> this.openSettingsSection('billing'),
       billingPlanName: (st.user && st.user.plan) || 'Free',
       billingPlanPrice: st.billingLoading ? 'Chargement...' : 'Aucun abonnement actif',
       billingNextDate: 'non planifié',
@@ -5974,6 +6192,27 @@ class Component extends DCLogic {
       attachButtonStyle: 'width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       attachButtonStyleSmall: 'width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       hasAttachments: ((st.attachments || []).length > 0),
+      attachmentsReactElement: (() => {
+        if (!window.HFComponents || !window.React) return null;
+        const R = window.React;
+        const HFC = window.HFComponents;
+        const list = st.attachments || [];
+        if (list.length === 0) return null;
+        const items = list.map(a => ({
+          type: a.kind === 'image' ? 'image' : (a.kind === 'video' ? 'video' : (a.kind === 'audio' ? 'audio' : 'file')),
+          name: a.name || 'Fichier',
+          url: a.previewUrl || a.url || '',
+          mimeType: a.mimeType || '',
+        }));
+        return R.createElement(HFC.AttachmentList, { variant: 'compact' },
+          items.map((item, idx) => R.createElement(HFC.Attachment, {
+            key: idx,
+            variant: 'compact',
+            attachment: item,
+            onRemove: () => this.removeAttachment(list[idx].id)
+          }))
+        );
+      })(),
       attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', icon:this.attachmentIcon(a.kind), meta:this.attachmentMeta(a), statusLabel:a.status === 'uploading' ? 'Ajout...' : 'Pret', hasPreview:a.kind === 'image' && !!(a.previewUrl || a.url), showIcon:!(a.kind === 'image' && !!(a.previewUrl || a.url)), previewUrl:a.previewUrl || (a.kind === 'image' ? a.url : ''), onRemove:()=>this.removeAttachment(a.id) })),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
@@ -5982,8 +6221,8 @@ class Component extends DCLogic {
       sendHint: st.uploadingAttachment ? (st.attachmentNotice || 'ajout...') : (st.sendLocked ? 'stop' : '↵ envoyer'),
       isSending: !!st.sendLocked,
       isIdle: !st.sendLocked,
-      sendButtonStyleLarge: 'width:48px;height:48px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px -14px rgba(209,254,23,.8)',
-      sendButtonStyleSmall: 'width:38px;height:38px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -14px rgba(209,254,23,.75)',
+      sendButtonStyleLarge: 'width:42px;height:42px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 9px 22px -15px rgba(209,254,23,.72)',
+      sendButtonStyleSmall: 'width:34px;height:34px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -15px rgba(209,254,23,.68)',
       toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '' })),
       onModelMenuSearch: (e)=> this.setState({ modelMenuSearch: e.target.value || '' }),
       modelMenu: st.modelMenu,
@@ -6001,7 +6240,7 @@ class Component extends DCLogic {
         });
         const sections = curated.length ? [{
           label:'Disponible',
-          headStyle:'padding:7px 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
+          headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
             name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc:m.desc,
@@ -6015,7 +6254,7 @@ class Component extends DCLogic {
         }] : [];
         return sections.concat(Object.keys(grouped).sort((a,b)=>a.localeCompare(b)).map((g,gi)=>({
           label: g,
-          headStyle: 'padding:' + (gi === 0 ? '7px' : '12px') + ' 11px 5px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:' + T.text4 + ';font-weight:700',
+          headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items: grouped[g].map(m=>({
             activeClass: m.id === st.modelId ? 'is-active' : '',
             name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc: m.desc,
@@ -6148,7 +6387,7 @@ class Component extends DCLogic {
         onDelete:(e)=>this.openDeleteProject(p, e)
       })),
       newProject: ()=> this.newProject(),
-      openBilling: ()=>{ this.setState({ page:'billing', modelMenu:false }); this.loadBillingStatus(); },
+      openBilling: ()=> this.openSettingsSection('billing'),
       openAuth: ()=> st.authToken ? this.logout() : this.setState({ page:'auth', authMode:'login', modelMenu:false }),
       selectPro: ()=> this.startCheckout('pro'),
       pricingNotice: st.pricingNotice || '',
@@ -6179,7 +6418,7 @@ class Component extends DCLogic {
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       plansGridCols: 'repeat(' + Math.max(1, renderedPlans.length) + ',1fr)',
-      openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
+      openStats: ()=> this.openSettingsSection('stats'),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label:p[1],
         style:this.tabStyle((st.statsPeriod || '30') === p[0]),
@@ -6197,18 +6436,22 @@ class Component extends DCLogic {
       modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D1FE17','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
       modelUsageEmpty: !((st.statsData && st.statsData.models && st.statsData.models.length) || 0),
       highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
-      openApi: ()=> this.setState({ page:'api', modelMenu:false }, ()=>this.loadApiKeys()),
+      openApi: ()=> this.openSettingsSection('api'),
       apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
         name:k.name, masked:k.masked, created:k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : 'recente',
         copyLabel:st.copiedKey === i ? 'Copiee' : 'Copier',
         onCopy:()=>{ if(st.apiCreatedKey && navigator.clipboard) navigator.clipboard.writeText(st.apiCreatedKey).catch(()=>{}); this.setState({ copiedKey:i }); setTimeout(()=>this.setState({ copiedKey:null }), 1600); },
-        onRevoke:()=>this.revokeApiKey(k.id)
+        scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
+        expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
+        expiryStyle:k.expiresAt && new Date(k.expiresAt).getTime() < Date.now() ? 'color:#C45840' : 'color:' + T.text4,
+        onRevoke:()=>this.revokeApiKey(k.id),
+        onRotate:()=>this.rotateApiKey(k.id)
       })),
       apiCreatedKey: st.apiCreatedKey || '',
       copyApiCreatedKey: ()=>this.copyApiCreatedKey(),
       apiEmpty: !((st.apiData && st.apiData.keys && st.apiData.keys.length) || 0),
       createKey: ()=> this.createApiKey(),
-      openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }, ()=>this.loadTeam()),
+      openTeam: ()=> this.openSettingsSection('team'),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
       sendInvite: ()=> this.sendTeamInvite(),
@@ -6244,12 +6487,20 @@ class Component extends DCLogic {
       affStats: [
         { label:'Clics ce mois', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.clicks) || 0), hint:'via ton lien' },
         { label:'Abonnes actifs', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.activeSubscribers) || 0), hint:'filleuls avec abonnement' },
-        { label:'Gains cumules', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.earningsUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'suivi affiliation' }
+        { label:'Gains cumules', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.earningsUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'suivi affiliation' },
+        { label:'Disponible', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.availableUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'versable au seuil' },
+        { label:'Deja verse', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.paidUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'historique confirme' }
       ],
       referrals: (((st.affiliateData && st.affiliateData.referrals) || [])).map(r=>({
         name:r.name, amount:Number(r.amountUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), status:r.status,
         statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
+      affiliatePayouts: (((st.affiliateData && st.affiliateData.payouts) || [])).map(p=>({
+        label:new Date(p.requested_at || Date.now()).toLocaleDateString('fr-FR'),
+        amount:Number(p.amount_usd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }),
+        status:p.status || 'pending'
+      })),
+      requestAffiliatePayout: ()=>this.requestAffiliatePayout(),
       messages: st.messages.map((m,i)=>{
         const media = (m.media && typeof m.media === 'object') ? m.media : null;
         const status = media ? media.status : m.media;
