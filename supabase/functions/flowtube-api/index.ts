@@ -7834,23 +7834,24 @@ async function affiliateRoute(req: Request) {
     const payoutEmail = String(body.payoutEmail || body.email || "").trim().toLowerCase();
     if (payoutEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payoutEmail)) throw new FlowtubeError(400, "Entre un e-mail de paiement valide.", { code: "INVALID_PAYOUT_EMAIL" });
     if (action === "request_payout") {
-      const { data: current } = await supabase.from("affiliate_accounts").select("available_earnings_usd,min_payout_usd,payout_email,payout_method").eq("user_id", userId).maybeSingle();
-      const available = Number(current?.available_earnings_usd || 0);
-      const minimum = Number(current?.min_payout_usd || 50);
-      if (!current?.payout_email) throw new FlowtubeError(400, "Configure d abord ton moyen de paiement.", { code: "PAYOUT_NOT_CONFIGURED" });
-      if (available < minimum) throw new FlowtubeError(400, `Le seuil minimum est de ${minimum} USD.`, { code: "PAYOUT_THRESHOLD" });
-      await supabase.from("affiliate_payouts").insert({ affiliate_user_id: userId, amount_usd: available, payout_method: current.payout_method || "email", destination_masked: String(current.payout_email).replace(/(^.).*(@.*$)/, "$1***$2") });
-      await supabase.from("affiliate_referrals").update({ status: "paid" }).eq("affiliate_user_id", userId).eq("status", "active");
-      await supabase.rpc("sync_affiliate_account_totals", { p_user_id: userId });
+      const { error: payoutError } = await supabase.rpc("request_affiliate_payout", { p_user_id: userId });
+      if (payoutError) {
+        const code = String(payoutError.message || "").includes("PAYOUT_THRESHOLD") ? "PAYOUT_THRESHOLD" : (String(payoutError.message || "").includes("PAYOUT_NOT_CONFIGURED") ? "PAYOUT_NOT_CONFIGURED" : "PAYOUT_FAILED");
+        const message = code === "PAYOUT_THRESHOLD" ? "Le seuil minimum est de 50 USD." : (code === "PAYOUT_NOT_CONFIGURED" ? "Configure d abord ton moyen de paiement." : "Le versement n a pas pu etre prepare.");
+        throw new FlowtubeError(400, message, { code });
+      }
     }
-    await supabase.from("affiliate_accounts").upsert({
+    const affiliatePatch: Record<string, unknown> = {
       user_id: userId,
       code: affiliateCode(profile),
-      payout_email: payoutEmail || profile.billing_email || profile.email || null,
-      payout_method: compactText(body.payoutMethod || "email", 30) || "email",
-      payout_status: payoutEmail ? "configured" : "not_configured",
       status: "active",
-    }, { onConflict: "user_id" });
+    };
+    if (action !== "request_payout") {
+      affiliatePatch.payout_email = payoutEmail || profile.billing_email || profile.email || null;
+      affiliatePatch.payout_method = compactText(body.payoutMethod || "email", 30) || "email";
+      affiliatePatch.payout_status = payoutEmail ? "configured" : "not_configured";
+    }
+    await supabase.from("affiliate_accounts").upsert(affiliatePatch, { onConflict: "user_id" });
   }
 
   const { data: account } = await supabase.from("affiliate_accounts").upsert({
