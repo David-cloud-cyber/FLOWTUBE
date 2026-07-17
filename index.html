@@ -3045,7 +3045,8 @@ class Component extends DCLogic {
     }
     const init = Object.assign({}, options || {});
     init.headers = Object.assign({ Accept:'application/json' }, init.headers || {});
-    if(init.body && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
+    const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
+    if(init.body && !isFormData && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
     if(token) init.headers.Authorization = 'Bearer ' + token;
     return fetch(this.apiBase()+path, init);
   }
@@ -3138,17 +3139,16 @@ class Component extends DCLogic {
   }
   async uploadAttachmentFile(file){
     this.validateAttachment(file);
-    const dataUrl = await this.readFileAsDataUrl(file);
     const textPreview = await this.readTextPreview(file);
+    const form = new FormData();
+    form.append('file', file, this.cleanFileName(file.name));
+    form.append('fileName', this.cleanFileName(file.name));
+    form.append('contentType', file.type || 'application/octet-stream');
+    form.append('kind', this.attachmentKind(file));
+    form.append('textPreview', textPreview);
     const res = await this.apiFetch('/api/upload', {
       method:'POST',
-      body:JSON.stringify({
-        fileName:this.cleanFileName(file.name),
-        contentType:file.type || 'application/octet-stream',
-        data:dataUrl,
-        kind:this.attachmentKind(file),
-        textPreview
-      })
+      body:form
     });
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'upload');
@@ -3173,16 +3173,17 @@ class Component extends DCLogic {
     let added = 0;
     let failed = 0;
     try{
-      for(const file of files){
-        try{
-          const attachment = await this.uploadAttachmentFile(file);
-          this.setState(s=>({ attachments:(s.attachments || []).concat([attachment]).slice(-4) }));
-          added += 1;
-        }catch(err){
-          failed += 1;
+      const results = await Promise.all(files.map(async file=>{
+        try { return { attachment: await this.uploadAttachmentFile(file) }; }
+        catch(err){
           this.notify(this.friendlyError(err && err.message, 'Impossible d ajouter ce fichier pour le moment.'));
+          return { error:err };
         }
-      }
+      }));
+      const attachments = results.filter(result=>result.attachment).map(result=>result.attachment);
+      added = attachments.length;
+      failed = results.length - added;
+      if(attachments.length) this.setState(s=>({ attachments:(s.attachments || []).concat(attachments).slice(-4) }));
       const label = failed ? (added ? added + ' fichier(s) ajoute(s), ' + failed + ' refuse(s).' : 'Aucun fichier ajoute.') : (added > 1 ? added + ' fichiers ajoutes.' : 'Fichier ajoute.');
       this.setState({ uploadingAttachment:false, attachmentNotice:label });
       if(added) this.notify('Fichier(s) ajoute(s). AgentFlow peut maintenant les analyser.');

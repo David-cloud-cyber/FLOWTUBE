@@ -6569,7 +6569,22 @@ function hasExpectedUploadSignature(bytes: Uint8Array, contentType: string) {
 }
 
 async function uploadRoute(req: Request) {
-  const body = await bodyJson(req);
+  const requestContentType = String(req.headers.get("content-type") || "").toLowerCase();
+  let body: Record<string, unknown> = {};
+  let uploadedFile: File | null = null;
+  if (requestContentType.startsWith("multipart/form-data")) {
+    const form = await req.formData();
+    const candidate = form.get("file");
+    if (candidate instanceof File) uploadedFile = candidate;
+    body = {
+      fileName: form.get("fileName") || form.get("file_name") || uploadedFile?.name || "fichier",
+      contentType: form.get("contentType") || form.get("content_type") || uploadedFile?.type || "application/octet-stream",
+      kind: form.get("kind") || "",
+      textPreview: form.get("textPreview") || form.get("text_preview") || "",
+    };
+  } else {
+    body = await bodyJson(req);
+  }
   const supabase = adminClient();
   const userId = await userIdFromRequest(req, supabase);
   const profile = await ensureProfile(supabase, userId);
@@ -6579,7 +6594,9 @@ async function uploadRoute(req: Request) {
   if (!uploadAllowedContentType(contentType)) {
     throw new FlowtubeError(415, "Format de fichier non pris en charge.", { code: "UNSUPPORTED_UPLOAD_TYPE" });
   }
-  const bytes = bytesFromDataUrl(body.data || body.base64);
+  const bytes = uploadedFile
+    ? new Uint8Array(await uploadedFile.arrayBuffer())
+    : bytesFromDataUrl(body.data || body.base64);
   if (!hasExpectedUploadSignature(bytes, contentType)) {
     throw new FlowtubeError(415, "Le contenu du fichier ne correspond pas au format annonce.", { code: "UPLOAD_SIGNATURE_INVALID" });
   }
