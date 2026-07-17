@@ -2646,10 +2646,17 @@ class Component extends DCLogic {
 
   initialAuthSession = this.storedAuthSession();
   initialUiState = this.storedUiState();
+  initialPage = (()=>{
+    const page = this.initialUiState.page || 'app';
+    const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
+    if(settingsPages.includes(page) && !this.initialAuthSession.access_token) return 'app';
+    if(['claudecode','plugins'].includes(page)) return 'settings';
+    return page;
+  })();
 
   state = {
     theme: ['light','dark','system'].includes(this.initialUiState.theme) ? this.initialUiState.theme : 'dark',
-    page: ['claudecode','plugins'].includes(this.initialUiState.page) ? 'settings' : (this.initialUiState.page || 'app'),
+    page: this.initialPage,
     input: this.initialUiState.input || '',
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
@@ -3219,6 +3226,7 @@ class Component extends DCLogic {
       if(pending.type === 'newProject') this.newProject();
       if(pending.type === 'checkout') this.startCheckout(pending.planId);
       if(pending.type === 'attach') this.openFilePicker();
+      if(pending.type === 'settings') this.openSettingsModal(pending.section || 'settings');
     });
   }
   saveSession(data, action){
@@ -3248,7 +3256,7 @@ class Component extends DCLogic {
       window.localStorage.removeItem('huggyflow_access_token');
       window.localStorage.removeItem('huggyflow_session');
     }
-    this.setState({ authToken:'', authRefreshToken:'', authExpiresAt:0, user:null, credits:0, creditsMax:100, authStatus:status || 'Deconnecte.' });
+    this.setState({ authToken:'', authRefreshToken:'', authExpiresAt:0, user:null, credits:0, creditsMax:100, authStatus:status || 'Deconnecte.', page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
   }
   async refreshSession(silent){
     if(!this.state.authRefreshToken) return false;
@@ -3699,7 +3707,11 @@ class Component extends DCLogic {
       }
     }catch(e){}
     const hashSection = this.settingsSectionFromHash();
-    if(hashSection) this.setState({ page:hashSection });
+    if(hashSection && this.state.authToken) this.setState({ page:hashSection });
+    else if(hashSection){
+      this.clearSettingsHash();
+      this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:hashSection });
+    }
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -3751,6 +3763,11 @@ class Component extends DCLogic {
     }
     if(prevState.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
+    if(this.isSettingsPage(this.state.page) && !this.state.authToken){
+      this.clearSettingsHash();
+      this.setState({ page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
+      return;
+    }
   }
   schedulePersistUiState(){
     clearTimeout(this.persistTimer);
@@ -3760,7 +3777,7 @@ class Component extends DCLogic {
     if(typeof window === 'undefined' || !window.localStorage) return;
     try{
       const payload = {
-        page:this.state.page === 'auth' ? 'app' : this.state.page,
+        page:(!this.state.authToken && this.isSettingsPage(this.state.page)) || this.state.page === 'auth' ? 'app' : this.state.page,
         input:this.state.input || '',
         messages:this.state.authToken ? [] : (this.state.messages || []).slice(-40),
         activeProjectId:this.state.activeProjectId || 'welcome',
@@ -3807,6 +3824,12 @@ class Component extends DCLogic {
     const section = match ? decodeURIComponent(match[1]) : '';
     return this.isSettingsPage(section) ? section : '';
   }
+  requireSettingsAccess(section){
+    if(this.state.authToken) return true;
+    const target = this.isSettingsPage(section) ? section : 'settings';
+    this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:target });
+    return false;
+  }
   focusSettingsSearch(){
     setTimeout(()=>{
       if(typeof document === 'undefined') return;
@@ -3816,6 +3839,7 @@ class Component extends DCLogic {
   }
   openSettingsModal(section){
     const target = this.isSettingsPage(section) ? section : 'settings';
+    if(!this.requireSettingsAccess(target)) return;
     if(!this.isSettingsPage(this.state.page)){
       this.settingsLastFocused = typeof document !== 'undefined' ? document.activeElement : null;
       this.settingsReturnContext = {
@@ -3841,6 +3865,7 @@ class Component extends DCLogic {
     });
   }
   openSettingsSection(section){
+    if(!this.requireSettingsAccess(section)) return;
     if(!this.isSettingsPage(this.state.page)) return this.openSettingsModal(section);
     this.syncSettingsHash(section);
     this.setState({ page:section, settingsHop:true }, ()=>{
@@ -5312,18 +5337,18 @@ class Component extends DCLogic {
     const settingsMatch = (label, terms=[]) => !settingsQuery || [label].concat(terms).some(value=>normalizeSearch(value).includes(settingsQuery));
     const settingItem = (id, label, short, terms) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', ariaCurrent:st.page === id ? 'page' : 'false', onClick:()=>this.openSettingsSection(id), visible:settingsMatch(label, terms) });
     const settingsPrimaryItems = [
-      settingItem('settings','Profil','◉',['general','personnalisation','apparence'],()=>this.setState({ page:'settings', settingsSaved:false, settingsHop:false })),
-      settingItem('account','Compte','◎',['email','securite','mot de passe'],()=>this.setState({ page:'account', settingsHop:true })),
-      settingItem('privacy','Confidentialité','◈',['privacy','analytics','données'],()=>this.setState({ page:'privacy', settingsHop:true })),
-      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion'],()=>this.setState({ page:'billing', settingsHop:true },()=>this.loadBillingStatus())),
-      settingItem('team','Équipe','♧',['membres','collaboration','invitation'],()=>this.setState({ page:'team', settingsHop:true },()=>this.loadTeam())),
-      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité'],()=>this.setState({ page:'stats', settingsHop:true },()=>this.loadStats())),
-      settingItem('capabilities','Capacités','✦',['marque','modèles','limites'],()=>this.setState({ page:'capabilities', settingsHop:true },()=>this.loadBrands())),
-      settingItem('api','API','<>',['clés','intégrations','développeur'],()=>this.setState({ page:'api', settingsHop:true },()=>this.loadApiKeys()))
+      settingItem('settings','Profil','◉',['general','personnalisation','apparence']),
+      settingItem('account','Compte','◎',['email','securite','mot de passe']),
+      settingItem('privacy','Confidentialité','◈',['privacy','analytics','données']),
+      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion']),
+      settingItem('team','Équipe','♧',['membres','collaboration','invitation']),
+      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité']),
+      settingItem('capabilities','Capacités','✦',['marque','modèles','limites']),
+      settingItem('api','API','<>',['clés','intégrations','développeur'])
     ].filter(item=>item.visible);
     const settingsCustomItems = [
-      settingItem('skills','Compétences','✧',['templates','workflows'],()=>this.setState({ page:'skills', settingsHop:true },()=>this.loadTemplates())),
-      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'],()=>this.setState({ page:'connectors', settingsHop:true },()=>this.loadIntegrations()))
+      settingItem('skills','Compétences','✧',['templates','workflows']),
+      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'])
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
@@ -5537,18 +5562,18 @@ class Component extends DCLogic {
         if (!query) return true;
         return 'plugins'.includes(query) || 'store'.includes(query) || 'tools'.includes(query);
       })(),
-      clickGeneral: ()=> this.setState({ page:'settings', settingsSaved:false, settingsHop:false }),
-      clickAccount: ()=> this.setState({ page:'account', settingsHop:false }),
-      clickPrivacy: ()=> this.setState({ page:'privacy', settingsHop:false }),
-      clickBilling: ()=> this.setState({ page:'billing', settingsHop:false }, ()=> this.loadBillingStatus()),
-      clickTeam: ()=> this.setState({ page:'team', settingsHop:false }, ()=> this.loadTeam()),
-      clickUsage: ()=> this.setState({ page:'stats', settingsHop:false }, ()=> this.loadStats()),
-      clickCapabilities: ()=> this.setState({ page:'capabilities', settingsHop:false }),
-      clickClaudeCode: ()=> this.setState({ page:'claudecode', settingsHop:false }),
-      clickApi: ()=> this.setState({ page:'api', settingsHop:false }, ()=> this.loadApiKeys()),
-      clickSkills: ()=> this.setState({ page:'skills', settingsHop:false }),
-      clickConnectors: ()=> this.setState({ page:'connectors', settingsHop:false }),
-      clickPlugins: ()=> this.setState({ page:'plugins', settingsHop:false }),
+      clickGeneral: ()=> this.openSettingsSection('settings'),
+      clickAccount: ()=> this.openSettingsSection('account'),
+      clickPrivacy: ()=> this.openSettingsSection('privacy'),
+      clickBilling: ()=> this.openSettingsSection('billing'),
+      clickTeam: ()=> this.openSettingsSection('team'),
+      clickUsage: ()=> this.openSettingsSection('stats'),
+      clickCapabilities: ()=> this.openSettingsSection('capabilities'),
+      clickClaudeCode: ()=> this.openSettingsSection('claudecode'),
+      clickApi: ()=> this.openSettingsSection('api'),
+      clickSkills: ()=> this.openSettingsSection('skills'),
+      clickConnectors: ()=> this.openSettingsSection('connectors'),
+      clickPlugins: ()=> this.openSettingsSection('plugins'),
       generalButtonStyle: st.page === 'settings' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
       generalButtonIconColor: st.page === 'settings' ? '#FFF' : '#898A8B',
       accountButtonStyle: st.page === 'account' ? 'background:rgba(255,255,255,0.08);color:#FFF;font-weight:600' : 'background:transparent;color:#A8A8A8',
@@ -5771,12 +5796,7 @@ class Component extends DCLogic {
       settingsNav: [['settings','Profil'],['billing','Facturation'],['team','Équipe'],['api','API'],['stats','Statistiques']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.page === p[0]) + ';flex:0 0 auto;white-space:nowrap',
-        onClick: ()=> this.setState({ page: p[0], modelMenu:false, settingsHop:true }, ()=>{
-          if(p[0] === 'billing') this.loadBillingStatus();
-          if(p[0] === 'team') this.loadTeam();
-          if(p[0] === 'api') this.loadApiKeys();
-          if(p[0] === 'stats') this.loadStats();
-        })
+        onClick: ()=> this.openSettingsSection(p[0])
       })),
       settingsAnim: st.settingsHop ? 'tabFade .22s ease both' : 'pageRise .4s cubic-bezier(.22,1,.36,1) both',
       sidebarStyle: 'width:' + (st.sidebarCollapsed ? '72px' : '258px') + ';flex:0 0 auto;background:#131418;border-right:1px solid rgba(242,243,245,.06);display:flex;flex-direction:column;padding:14px 12px 12px;overflow:hidden;color:#F7F7F8;transition:width .24s ease;animation:sideIn .45s cubic-bezier(.22,1,.36,1) both',
@@ -5790,7 +5810,7 @@ class Component extends DCLogic {
       showTeam: false,
       showApi: false,
       showStats: false,
-      openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
+      openStats: ()=> this.openSettingsSection('stats'),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label: p[1],
         style: this.tabStyle((st.statsPeriod || '30') === p[0]),
@@ -5813,7 +5833,7 @@ class Component extends DCLogic {
       })),
       modelUsage: [],
       highlights: [],
-      openApi: ()=> this.setState({ page:'api', modelMenu:false }),
+      openApi: ()=> this.openSettingsSection('api'),
       apiKeys: (st.apiKeys || this.API_KEYS_DEFAULT).map((k,i)=>({
         name: k.name, masked: k.masked, created: k.created,
         copyLabel: st.copiedKey === i ? '✓ Copiée' : 'Copier',
@@ -5837,7 +5857,7 @@ class Component extends DCLogic {
           onToggle: ()=> this.configureIntegration(ig.id)
         };
       }),
-      openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }),
+      openTeam: ()=> this.openSettingsSection('team'),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
       inviteEmail: st.inviteEmail || '',
@@ -5918,7 +5938,7 @@ class Component extends DCLogic {
       })),
       galleryItems,
       galleryEmpty: galleryItems.length === 0,
-      openBilling: ()=> this.setState({ page:'billing', modelMenu:false }),
+      openBilling: ()=> this.openSettingsSection('billing'),
       billingPlanName: (st.user && st.user.plan) || 'Free',
       billingPlanPrice: st.billingLoading ? 'Chargement...' : 'Aucun abonnement actif',
       billingNextDate: 'non planifié',
@@ -6241,7 +6261,7 @@ class Component extends DCLogic {
         onDelete:(e)=>this.openDeleteProject(p, e)
       })),
       newProject: ()=> this.newProject(),
-      openBilling: ()=>{ this.setState({ page:'billing', modelMenu:false }); this.loadBillingStatus(); },
+      openBilling: ()=> this.openSettingsSection('billing'),
       openAuth: ()=> st.authToken ? this.logout() : this.setState({ page:'auth', authMode:'login', modelMenu:false }),
       selectPro: ()=> this.startCheckout('pro'),
       pricingNotice: st.pricingNotice || '',
@@ -6272,7 +6292,7 @@ class Component extends DCLogic {
             : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
       plansGridCols: 'repeat(' + Math.max(1, renderedPlans.length) + ',1fr)',
-      openStats: ()=> this.setState({ page:'stats', modelMenu:false }, ()=>this.loadStats()),
+      openStats: ()=> this.openSettingsSection('stats'),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label:p[1],
         style:this.tabStyle((st.statsPeriod || '30') === p[0]),
@@ -6290,7 +6310,7 @@ class Component extends DCLogic {
       modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D1FE17','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
       modelUsageEmpty: !((st.statsData && st.statsData.models && st.statsData.models.length) || 0),
       highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
-      openApi: ()=> this.setState({ page:'api', modelMenu:false }, ()=>this.loadApiKeys()),
+      openApi: ()=> this.openSettingsSection('api'),
       apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
         name:k.name, masked:k.masked, created:k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : 'recente',
         copyLabel:st.copiedKey === i ? 'Copiee' : 'Copier',
@@ -6301,7 +6321,7 @@ class Component extends DCLogic {
       copyApiCreatedKey: ()=>this.copyApiCreatedKey(),
       apiEmpty: !((st.apiData && st.apiData.keys && st.apiData.keys.length) || 0),
       createKey: ()=> this.createApiKey(),
-      openTeam: ()=> this.setState({ page:'team', modelMenu:false, inviteSent:false }, ()=>this.loadTeam()),
+      openTeam: ()=> this.openSettingsSection('team'),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
       sendInvite: ()=> this.sendTeamInvite(),
