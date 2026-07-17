@@ -1518,8 +1518,38 @@ async function userIdFromApiKey(req: Request, supabase: ReturnType<typeof adminC
 
 async function userIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
   const userId = await optionalUserIdFromRequest(req, supabase);
-  if (userId) return userId;
+  if (userId) {
+    await enforceApiKeyScope(req, supabase);
+    return userId;
+  }
   throw new FlowtubeError(401, "Connecte-toi a Huggyflow pour continuer.", { code: "AUTH_REQUIRED" });
+}
+
+function apiScopeForRequest(req: Request) {
+  const parts = new URL(req.url).pathname.split("/").filter(Boolean);
+  const first = parts[parts.indexOf("flowtube-api") + 1] || parts[0] || "";
+  if (first === "chat") return "chat";
+  if (first === "generate" || first === "upload") return "generate";
+  if (["projects", "profile", "memory", "artifacts", "generations", "agent-tasks", "background-tasks", "skills", "skill-evals", "stats", "pricing"].includes(first)) return "read";
+  if (first === "exports" || first === "publish") return "publish";
+  if (first === "team") return "team";
+  return null;
+}
+
+async function enforceApiKeyScope(req: Request, supabase: ReturnType<typeof adminClient>) {
+  const auth = req.headers.get("authorization") || "";
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  const raw = String(req.headers.get("x-huggyflow-api-key") || req.headers.get("x-api-key") || bearer).trim();
+  if (!raw.startsWith("hf_")) return;
+  const required = apiScopeForRequest(req);
+  if (!required) return;
+  const keyHash = await sha256Hex(raw);
+  const { data } = await supabase.from("api_keys").select("scopes,expires_at,revoked_at").eq("key_hash", keyHash).maybeSingle();
+  const scopes = Array.isArray(data?.scopes) ? data.scopes.map((scope: unknown) => String(scope)) : [];
+  const expired = Boolean(data?.expires_at && new Date(String(data.expires_at)).getTime() <= Date.now());
+  if (data?.revoked_at || expired || !scopes.includes(required)) {
+    throw new FlowtubeError(403, `Cette cle API ne possede pas la permission ${required}.`, { code: "API_SCOPE_REQUIRED", required });
+  }
 }
 
 async function authenticatedUserIdFromRequest(req: Request, supabase: ReturnType<typeof adminClient>) {
