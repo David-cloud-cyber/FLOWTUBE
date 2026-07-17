@@ -1233,7 +1233,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:16px">
           <sc-for list="{{ affStats }}" as="a" hint-placeholder-count="3">
             <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:16px;padding:18px">
               <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700">{{ a.label }}</div>
@@ -1266,10 +1266,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 </div>
               </sc-for>
             </div>
-            <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba({{ tLineRGB }},.08);display:flex;align-items:center;justify-content:space-between;gap:10px">
-              <span style="font-size:12px;color:{{ tText3 }}">Prochain versement le 1<sup>er</sup> août</span>
-              <button onClick="{{ configureAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">Configurer le paiement</button>
+            <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba({{ tLineRGB }},.08);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <span style="font-size:12px;color:{{ tText3 }}">Versement disponible au seuil de 50 USD.</span>
+              <div style="display:flex;gap:7px;flex-wrap:wrap"><button onClick="{{ configureAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.16);background:transparent;color:{{ tText2 }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">Configurer le paiement</button><button onClick="{{ requestAffiliatePayout }}" style="padding:8px 14px;border-radius:999px;border:0;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Demander un versement</button></div>
             </div>
+            <sc-if value="{{ affiliatePayouts.length }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba({{ tLineRGB }},.08)"><div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }};font-weight:700;margin-bottom:8px">Derniers versements</div><sc-for list="{{ affiliatePayouts }}" as="payout" hint-placeholder-count="3"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;font-size:12px"><span style="color:{{ tText3 }}">{{ payout.label }}</span><span style="font-family:'JetBrains Mono',monospace">{{ payout.amount }}</span><span style="color:{{ tText3 }}">{{ payout.status }}</span></div></sc-for></div></sc-if>
           </div>
         </div>
       </div>
@@ -1894,7 +1895,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 
             <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>API</h3><p>Crée des clés personnelles pour connecter HuggyFlow à tes outils.</p></div><button class="hf-settings-primary" onClick="{{ createKey }}">Nouvelle clé</button></div>
-              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div><div style="margin-top:5px;font-size:11px;color:{{ key.expiryStyle }}">{{ key.scopesLabel }} · {{ key.expiryLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hf-settings-secondary" onClick="{{ key.onRotate }}">Renouveler</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
@@ -1918,7 +1919,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div class="hf-settings-card"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button></div></sc-for></div>
+              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div class="hf-settings-card"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }} · {{ connector.syncLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button><sc-if value="{{ connector.showDisconnect }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connector.onDisconnect }}">Déconnecter</button></sc-if></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
@@ -2065,10 +2066,12 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div style="flex:1;min-width:180px">
                 <div style="font-size:13.5px;font-weight:600">{{ k.name }}</div>
                 <div style="margin-top:3px;font-family:'JetBrains Mono',monospace;font-size:12px;color:{{ tText3 }}">{{ k.masked }}</div>
+                <div style="margin-top:4px;font-size:11px;color:{{ k.expiryStyle }}">{{ k.scopesLabel }} · {{ k.expiryLabel }}</div>
               </div>
               <span style="font-size:11.5px;color:{{ tText4 }}">{{ k.created }}</span>
               <div style="display:flex;gap:6px">
                 <button onClick="{{ k.onCopy }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">{{ k.copyLabel }}</button>
+                <button onClick="{{ k.onRotate }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.05)">Renouveler</button>
                 <button onClick="{{ k.onRevoke }}" style="padding:7px 13px;border-radius:999px;border:1px solid rgba(196,88,64,.35);background:transparent;color:#C45840;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:rgba(196,88,64,.07)">Révoquer</button>
               </div>
             </div>
@@ -2749,6 +2752,7 @@ class Component extends DCLogic {
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false,
     integrationConnections: [], integrationsLoading: false,
+    apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
     accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
     adminData: null, adminLoading: false, adminError: ''
@@ -3284,7 +3288,9 @@ class Component extends DCLogic {
     }
     this.setState({ authStatus: action === 'signup' ? 'Creation du compte...' : 'Connexion en cours...' });
     try{
-      const body = { email, password, displayName: this.state.authName || email.split('@')[0] };
+      let referralCode = '';
+      try{ referralCode = String(new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('hf_referral_code') || '').trim(); }catch(e){}
+      const body = { email, password, displayName: this.state.authName || email.split('@')[0], ...(action === 'signup' && referralCode ? { referralCode } : {}) };
       const res = await this.apiFetch('/api/auth/'+action, { method:'POST', body:JSON.stringify(body) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Authentification impossible.');
@@ -3675,6 +3681,22 @@ class Component extends DCLogic {
       this.setState({ backendReady:false, backendError:true });
     }
   }
+  trackAffiliateReferral(){
+    if(typeof window === 'undefined') return;
+    let code = '';
+    try{ code = String(new URLSearchParams(window.location.search).get('ref') || '').trim().toLowerCase(); }catch(e){}
+    if(!code || !/^[a-z0-9-]{3,80}$/.test(code)) return;
+    try{
+      sessionStorage.setItem('hf_referral_code', code);
+      if(sessionStorage.getItem('hf_referral_tracked') === code) return;
+      sessionStorage.setItem('hf_referral_tracked', code);
+    }catch(e){}
+    fetch(this.apiBase() + '/api/affiliate/click', {
+      method:'POST',
+      headers:{ Accept:'application/json', 'Content-Type':'application/json' },
+      body:JSON.stringify({ code, sessionId:(typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : '', landingPath:window.location.pathname })
+    }).catch(()=>{});
+  }
   componentDidMount(){
     this.chatShouldStick = true;
     this.settingsKeydown = (event)=>{
@@ -3712,6 +3734,7 @@ class Component extends DCLogic {
       this.clearSettingsHash();
       this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:hashSection });
     }
+    this.trackAffiliateReferral();
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -4714,7 +4737,10 @@ class Component extends DCLogic {
     if(!this.requireAuth('Connecte-toi pour creer une cle API.', null)) return;
     this.setState({ apiLoading:true, apiCreatedKey:'' });
     try{
-      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({ action:'create', name:'Cle API HuggyFlow' }) });
+      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
+        action:'create', name:'Cle API HuggyFlow', scopes:this.state.apiKeyScopes || ['chat','generate'],
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+      }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'API key failed');
       this.setState({ apiData:data, apiCreatedKey:data.createdKey || '', apiLoading:false });
@@ -4730,6 +4756,20 @@ class Component extends DCLogic {
       const data = await res.json().catch(()=>({}));
       if(res.ok) this.setState({ apiData:data });
     }catch(err){}
+  }
+  async rotateApiKey(id){
+    if(!id) return;
+    try{
+      const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
+        action:'rotate', keyId:id, scopes:this.state.apiKeyScopes || ['chat','generate'],
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+      }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Rotation impossible');
+      this.setState({ apiData:data, apiCreatedKey:data.createdKey || '' });
+      if(data.createdKey && navigator.clipboard) navigator.clipboard.writeText(data.createdKey).catch(()=>{});
+      this.notify('Cle API renouvellee. Copie-la maintenant, elle ne sera plus affichee.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Rotation de cle impossible.')); }
   }
   async loadStats(period){
     if(!this.state.authToken) return;
@@ -4949,11 +4989,22 @@ class Component extends DCLogic {
   async configureIntegration(provider){
     if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
     try{
-      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider }) });
+      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider, permissions:{ requested:true } }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
-      this.setState({ integrationConnections:data.connections || [], pricingNotice:'Connecteur en attente. Ajoute les identifiants OAuth du fournisseur pour finaliser la liaison.' });
+      this.setState({ integrationConnections:data.connections || [], pricingNotice:'Autorisation demandee. Termine OAuth pour activer ce connecteur.' });
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
+  }
+  async connectorAction(provider, action){
+    if(!this.requireAuth('Connecte-toi pour gerer tes connecteurs.', null)) return;
+    const labels = { test:'Verification', reconnect:'Reconnexion', disconnect:'Deconnexion' };
+    try{
+      const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action, provider }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
+      this.setState({ integrationConnections:data.connections || [] });
+      this.notify(data.testOk === false ? (data.testMessage || 'Connexion non validee.') : (labels[action] || 'Action') + ' terminee.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
   }
   downloadJson(fileName, payload){
     if(typeof window === 'undefined') return;
@@ -5027,6 +5078,16 @@ class Component extends DCLogic {
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'affiliate');
       this.setState({ affiliateData:data }, ()=>this.notify('E-mail de versement enregistre.'));
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Impossible de configurer le versement.')); }
+  }
+  async requestAffiliatePayout(){
+    if(!this.requireAuth('Connecte-toi pour demander un versement.', null)) return;
+    try{
+      const res = await this.apiFetch('/api/affiliate', { method:'POST', body:JSON.stringify({ action:'request_payout' }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Versement indisponible');
+      this.setState({ affiliateData:data });
+      this.notify('Demande de versement enregistree.');
+    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Versement indisponible pour le moment.')); }
   }
   requestPasswordReset(){
     const email = String((this.state.user && this.state.user.email) || this.state.settingsEmail || '').trim();
@@ -5253,12 +5314,13 @@ class Component extends DCLogic {
   ADMIN_REPORTS = [];
   API_KEYS_DEFAULT = [];
   INTEGRATIONS = [
-    { id:'zapier', name:'Zapier', glyph:'Z', bg:'#F2D8B0', desc:'Déclenche des générations depuis 6 000+ apps.' },
+    { id:'google_drive', name:'Google Drive', glyph:'G', bg:'#D8E8F4', desc:'Importe les fichiers autorisés dans tes workflows.' },
+    { id:'whatsapp_business', name:'WhatsApp Business', glyph:'W', bg:'#D1F0D9', desc:'Reçois les notifications de rendu de ton équipe.' },
+    { id:'meta_ads', name:'Meta Ads', glyph:'M', bg:'#D8E2F4', desc:'Consulte les campagnes et performances autorisées.' },
+    { id:'tiktok', name:'TikTok Ads', glyph:'T', bg:'#E6DDF0', desc:'Prépare tes créations pour TikTok Ads.' },
     { id:'slack', name:'Slack', glyph:'S', bg:'#D5E3F0', desc:'Reçois tes rendus terminés dans un canal.' },
     { id:'notion', name:'Notion', glyph:'N', bg:'#E6E7E9', desc:'Archive tes créations dans une base Notion.' },
-    { id:'make', name:'Make', glyph:'M', bg:'#E4D5F0', desc:'Scénarios d\'automatisation visuels.' },
-    { id:'discord', name:'Discord', glyph:'D', bg:'#D8DCF2', desc:'Génère depuis ton serveur avec /huggyflow.' },
-    { id:'webhooks', name:'Webhooks', glyph:'W', bg:'#D1FE17', desc:'Notifie ton backend à chaque rendu terminé.' }
+    { id:'webhook', name:'Webhooks', glyph:'W', bg:'#D1FE17', desc:'Notifie ton backend à chaque rendu terminé.' }
   ];
 
   obSeg(i){
@@ -5783,9 +5845,12 @@ class Component extends DCLogic {
         provider:c.provider,
         label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
         status:c.status || 'disconnected',
-        statusLabel: ({connected:'Connecté',pending:'Prêt à autoriser',error:'À vérifier',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
-        buttonLabel: c.status === 'connected' ? 'Gérer' : 'Configurer',
-        onConfigure:()=>this.configureIntegration(c.provider)
+        statusLabel: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
+        syncLabel: ({healthy:'Synchronisé',pending:'En attente',error:'Synchronisation en erreur',idle:'Pas encore testé'})[c.sync_status || 'idle'] || 'Pas encore testé',
+        buttonLabel: c.status === 'connected' ? 'Tester' : (c.status === 'pending' ? 'Autoriser' : 'Configurer'),
+        onConfigure:()=>c.status === 'connected' ? this.connectorAction(c.provider,'test') : (c.status === 'pending' ? this.connectorAction(c.provider,'reconnect') : this.configureIntegration(c.provider)),
+        onDisconnect:()=>this.connectorAction(c.provider,'disconnect'),
+        showDisconnect:c.status === 'connected' || c.status === 'pending'
       })),
       connectorsEmpty: !(st.integrationConnections || []).length,
       integrationsLoading: !!st.integrationsLoading,
@@ -5840,21 +5905,31 @@ class Component extends DCLogic {
         onCopy: ()=>{
           this.setState({ copiedKey: i });
           setTimeout(()=> this.setState({ copiedKey: null }), 1600);
-        }
+        },
+        scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
+        expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
+        expiryStyle:k.expiresAt && new Date(k.expiresAt).getTime() < Date.now() ? 'color:#C45840' : 'color:' + T.text4,
+        onRevoke:()=>this.revokeApiKey(k.id),
+        onRotate:()=>this.rotateApiKey(k.id)
       })),
       createKey: ()=> this.createApiKey(),
       integrations: this.INTEGRATIONS.map(ig=>{
         const current = (st.integrationConnections || []).find(c=>c.provider === ig.id);
         const on = !!(current && current.status === 'connected');
+        const status = current && current.status || 'disconnected';
         return {
           name: ig.name, desc: ig.desc, glyph: ig.glyph, bg: ig.bg,
           trackStyle: this.switchTrack(on), knobStyle: this.switchKnob(on),
-          status: on ? 'Connecté' : 'Non connecté',
+          status: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[status] || 'Non connecté',
           statusStyle: 'align-self:flex-start;padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:700;' +
             (on
               ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A')
               : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text4),
-          onToggle: ()=> this.configureIntegration(ig.id)
+          onToggle: ()=> status === 'connected' ? this.connectorAction(ig.id,'test') : this.configureIntegration(ig.id),
+          actionLabel: status === 'connected' ? 'Tester' : (status === 'pending' ? 'Autoriser' : 'Configurer'),
+          onReconnect: ()=>this.connectorAction(ig.id,'reconnect'),
+          onDisconnect: ()=>this.connectorAction(ig.id,'disconnect'),
+          showDisconnect: status === 'connected' || status === 'pending'
         };
       }),
       openTeam: ()=> this.openSettingsSection('team'),
@@ -6315,7 +6390,11 @@ class Component extends DCLogic {
         name:k.name, masked:k.masked, created:k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : 'recente',
         copyLabel:st.copiedKey === i ? 'Copiee' : 'Copier',
         onCopy:()=>{ if(st.apiCreatedKey && navigator.clipboard) navigator.clipboard.writeText(st.apiCreatedKey).catch(()=>{}); this.setState({ copiedKey:i }); setTimeout(()=>this.setState({ copiedKey:null }), 1600); },
-        onRevoke:()=>this.revokeApiKey(k.id)
+        scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
+        expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
+        expiryStyle:k.expiresAt && new Date(k.expiresAt).getTime() < Date.now() ? 'color:#C45840' : 'color:' + T.text4,
+        onRevoke:()=>this.revokeApiKey(k.id),
+        onRotate:()=>this.rotateApiKey(k.id)
       })),
       apiCreatedKey: st.apiCreatedKey || '',
       copyApiCreatedKey: ()=>this.copyApiCreatedKey(),
@@ -6357,12 +6436,20 @@ class Component extends DCLogic {
       affStats: [
         { label:'Clics ce mois', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.clicks) || 0), hint:'via ton lien' },
         { label:'Abonnes actifs', value:String((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.activeSubscribers) || 0), hint:'filleuls avec abonnement' },
-        { label:'Gains cumules', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.earningsUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'suivi affiliation' }
+        { label:'Gains cumules', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.earningsUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'suivi affiliation' },
+        { label:'Disponible', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.availableUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'versable au seuil' },
+        { label:'Deja verse', value:(((st.affiliateData && st.affiliateData.stats && st.affiliateData.stats.paidUsd) || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' })), hint:'historique confirme' }
       ],
       referrals: (((st.affiliateData && st.affiliateData.referrals) || [])).map(r=>({
         name:r.name, amount:Number(r.amountUsd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }), status:r.status,
         statusStyle:'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;' + (String(r.status).match(/active|paid/) ? (st.theme === 'dark' ? 'background:rgba(209,254,23,.14);color:#D1FE17' : 'background:rgba(209,254,23,.35);color:#5C6B2A') : 'background:rgba(' + T.lineRGB + ',.07);color:' + T.text3)
       })),
+      affiliatePayouts: (((st.affiliateData && st.affiliateData.payouts) || [])).map(p=>({
+        label:new Date(p.requested_at || Date.now()).toLocaleDateString('fr-FR'),
+        amount:Number(p.amount_usd || 0).toLocaleString('fr-FR', { style:'currency', currency:'USD' }),
+        status:p.status || 'pending'
+      })),
+      requestAffiliatePayout: ()=>this.requestAffiliatePayout(),
       messages: st.messages.map((m,i)=>{
         const media = (m.media && typeof m.media === 'object') ? m.media : null;
         const status = media ? media.status : m.media;

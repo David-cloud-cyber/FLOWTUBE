@@ -1501,11 +1501,12 @@ async function userIdFromApiKey(req: Request, supabase: ReturnType<typeof adminC
   if (!raw || !raw.startsWith("hf_")) return null;
   const keyHash = await sha256Hex(raw);
   const { data } = await supabase.from("api_keys")
-    .select("id,user_id,scopes")
+    .select("id,user_id,scopes,expires_at")
     .eq("key_hash", keyHash)
     .is("revoked_at", null)
     .maybeSingle();
   if (!data?.user_id) return null;
+  if (data.expires_at && new Date(String(data.expires_at)).getTime() <= Date.now()) return null;
   await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id);
   await supabase.from("app_events").insert({
     user_id: data.user_id,
@@ -7082,29 +7083,48 @@ async function integrationsRoute(req: Request) {
   const userId = await authenticatedUserIdFromRequest(req, supabase);
   const providers = ["google_drive", "whatsapp_business", "meta_ads", "tiktok", "slack", "notion", "webhook"];
   const list = async () => {
-    const { data, error } = await supabase.from("integration_connections").select("id,provider,status,account_label,configuration,last_error,connected_at,updated_at").eq("user_id", userId).order("provider");
+    const { data, error } = await supabase.from("integration_connections").select("id,provider,status,account_label,configuration,permissions,sync_status,last_error,connected_at,updated_at,last_tested_at,last_synced_at").eq("user_id", userId).order("provider");
     if (error) throw error;
     const connected = new Map((data || []).map((item) => [item.provider, item]));
-    return providers.map((provider) => connected.get(provider) || { provider, status: "disconnected", account_label: null, configuration: {} });
+    return providers.map((provider) => connected.get(provider) || { provider, status: "disconnected", account_label: null, configuration: {}, permissions: {}, sync_status: "idle" });
   };
   if (req.method === "GET") return json({ connections: await list() });
   const body = await bodyJson(req);
   const provider = String(body.provider || "");
   if (!providers.includes(provider)) throw new FlowtubeError(400, "Connecteur invalide.", { code: "INVALID_CONNECTOR" });
   const action = String(body.action || "configure");
+  if (action === "test") {
+    const { data: current } = await supabase.from("integration_connections").select("id,status,configuration").eq("user_id", userId).eq("provider", provider).maybeSingle();
+    if (!current || current.status !== "connected") return json({ connections: await list(), testOk: false, testMessage: "Ce connecteur n est pas encore autorise." });
+    const { error } = await supabase.from("integration_connections").update({ last_tested_at: new Date().toISOString(), sync_status: "healthy", last_error: null }).eq("id", current.id).eq("user_id", userId);
+    if (error) throw error;
+    return json({ connections: await list(), testOk: true, testMessage: "Connexion validee." });
+  }
+  if (action === "reconnect") {
+    const { error } = await supabase.from("integration_connections").update({ status: "pending", sync_status: "pending", last_error: null }).eq("user_id", userId).eq("provider", provider);
+    if (error) throw error;
+    await recordProductEvent(supabase, userId, "connector_reconnect_requested", { provider });
+    return json({ connections: await list(), authorizationRequired: true });
+  }
   if (action === "disconnect") {
-    const { error } = await supabase.from("integration_connections").upsert({ user_id: userId, provider, status: "disconnected", account_label: null, credentials_ref: null, configuration: {}, last_error: null, connected_at: null }, { onConflict: "user_id,provider" });
+    const { error } = await supabase.from("integration_connections").upsert({ user_id: userId, provider, status: "disconnected", account_label: null, credentials_ref: null, configuration: {}, permissions: {}, sync_status: "idle", last_error: null, connected_at: null, last_tested_at: null, last_synced_at: null }, { onConflict: "user_id,provider" });
     if (error) throw error;
     await recordProductEvent(supabase, userId, "connector_disconnected", { provider });
     return json({ connections: await list() });
   }
   const configuration = safeStructuredContent(body.configuration || {}, 12_000);
+  if (/(access[_ -]?token|refresh[_ -]?token|client[_ -]?secret|password|private[_ -]?key)/i.test(JSON.stringify(configuration))) {
+    throw new FlowtubeError(400, "Ne stocke pas de secret dans la configuration du connecteur. Utilise OAuth.", { code: "CONNECTOR_SECRET_NOT_ALLOWED" });
+  }
+  const permissions = safeStructuredContent(body.permissions || {}, 4_000);
   const { error } = await supabase.from("integration_connections").upsert({
     user_id: userId,
     provider,
     status: "pending",
     account_label: compactText(body.accountLabel || "", 120) || null,
     configuration,
+    permissions,
+    sync_status: "pending",
     last_error: null,
   }, { onConflict: "user_id,provider" });
   if (error) throw error;
@@ -7274,6 +7294,7 @@ async function authRoute(req: Request, action: string) {
         credits_max: 100,
         currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
       }, { onConflict: "id" });
+      await attachAffiliateReferral(supabase, data.user.id, email, String(body.referralCode || body.referral_code || ""));
     }
     return json({ user: data.user, session: data.session, needsEmailConfirmation: !data.session });
   }
@@ -7656,13 +7677,35 @@ async function apiKeysRoute(req: Request) {
       createdKey = `hf_${randomToken(28)}`;
       const keyHash = await sha256Hex(createdKey);
       const name = String(body.name || "Cle API HuggyFlow").replace(/\s+/g, " ").trim().slice(0, 80) || "Cle API HuggyFlow";
+      const allowedScopes = ["chat", "generate", "read", "publish", "team"];
+      const requestedScopes = Array.isArray(body.scopes) ? body.scopes.map((scope: unknown) => String(scope)) : ["chat", "generate"];
+      const scopes = [...new Set(requestedScopes.filter((scope: string) => allowedScopes.includes(scope)))];
+      if (!scopes.length) throw new FlowtubeError(400, "Selectionne au moins une permission API.", { code: "API_SCOPES_REQUIRED" });
+      const expirationDays = Math.max(0, Math.min(365, Number(body.expirationDays || body.expiration_days || 0)));
+      const expiresAt = expirationDays ? new Date(Date.now() + expirationDays * 86400000).toISOString() : null;
       await supabase.from("api_keys").insert({
         user_id: userId,
         name,
         key_hash: keyHash,
         key_prefix: `${createdKey.slice(0, 10)}...`,
-        scopes: ["chat", "generate"],
+        scopes,
+        expires_at: expiresAt,
+        last_rotated_at: new Date().toISOString(),
       });
+    }
+    if (action === "rotate") {
+      const keyId = String(body.keyId || body.id || "");
+      if (!keyId) throw new FlowtubeError(400, "Cle API introuvable.", { code: "API_KEY_REQUIRED" });
+      await supabase.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", keyId).eq("user_id", userId);
+      createdKey = `hf_${randomToken(28)}`;
+      const keyHash = await sha256Hex(createdKey);
+      const expirationDays = Math.max(0, Math.min(365, Number(body.expirationDays || body.expiration_days || 0)));
+      const expiresAt = expirationDays ? new Date(Date.now() + expirationDays * 86400000).toISOString() : null;
+      const allowedScopes = ["chat", "generate", "read", "publish", "team"];
+      const requestedScopes = Array.isArray(body.scopes) ? body.scopes.map((scope: unknown) => String(scope)) : ["chat", "generate"];
+      const scopes = [...new Set(requestedScopes.filter((scope: string) => allowedScopes.includes(scope)))];
+      if (!scopes.length) throw new FlowtubeError(400, "Selectionne au moins une permission API.", { code: "API_SCOPES_REQUIRED" });
+      await supabase.from("api_keys").insert({ user_id: userId, name: String(body.name || "Cle API HuggyFlow").slice(0, 80), key_hash: keyHash, key_prefix: `${createdKey.slice(0, 10)}...`, scopes, expires_at: expiresAt, last_rotated_at: new Date().toISOString() });
     }
     if (action === "revoke") {
       const keyId = String(body.keyId || body.id || "");
@@ -7671,7 +7714,7 @@ async function apiKeysRoute(req: Request) {
   }
 
   const { data: keys } = await supabase.from("api_keys")
-    .select("id,name,key_prefix,scopes,last_used_at,revoked_at,created_at")
+    .select("id,name,key_prefix,scopes,last_used_at,revoked_at,created_at,expires_at,last_rotated_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   return json({
@@ -7683,9 +7726,93 @@ async function apiKeysRoute(req: Request) {
       scopes: key.scopes || [],
       createdAt: key.created_at,
       lastUsedAt: key.last_used_at,
+      expiresAt: key.expires_at,
+      lastRotatedAt: key.last_rotated_at,
       revoked: Boolean(key.revoked_at),
     })),
   });
+}
+
+async function affiliateClickRoute(req: Request) {
+  if (req.method !== "POST") return json({ ok: true });
+  const body = await bodyJson(req);
+  const code = compactText(body.code || body.ref || "", 80).toLowerCase();
+  if (!code) return json({ ok: true });
+  const supabase = adminClient();
+  const { data: account } = await supabase.from("affiliate_accounts")
+    .select("user_id,code,status")
+    .eq("code", code)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!account?.user_id) return json({ ok: true });
+  const ipHash = await sha256Hex(`${requestIp(req)}:${Deno.env.get("FLOWTUBE_RATE_LIMIT_SALT") || "flowtube"}`);
+  const userAgentHash = await sha256Hex(req.headers.get("user-agent") || "unknown");
+  const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const { count } = await supabase.from("affiliate_clicks")
+    .select("id", { count: "exact", head: true })
+    .eq("affiliate_user_id", account.user_id)
+    .eq("ip_hash", ipHash)
+    .gte("created_at", since);
+  if (!count) {
+    await supabase.from("affiliate_clicks").insert({
+      affiliate_user_id: account.user_id,
+      code,
+      ip_hash: ipHash,
+      user_agent_hash: userAgentHash,
+      session_id: compactText(body.sessionId || "", 120) || null,
+      landing_path: compactText(body.landingPath || "", 300) || null,
+    });
+  }
+  return json({ ok: true });
+}
+
+async function attachAffiliateReferral(
+  supabase: ReturnType<typeof adminClient>,
+  referredUserId: string,
+  email: string,
+  referralCode: string,
+) {
+  const code = compactText(referralCode, 80).toLowerCase();
+  if (!code) return;
+  const { data: account } = await supabase.from("affiliate_accounts")
+    .select("user_id,code,status")
+    .eq("code", code)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!account?.user_id || String(account.user_id) === referredUserId) return;
+  await supabase.from("affiliate_referrals").upsert({
+    affiliate_user_id: account.user_id,
+    referred_user_id: referredUserId,
+    email: email || null,
+    status: "trial",
+    metadata: { code, attribution: "signup" },
+  }, { onConflict: "referred_user_id" });
+}
+
+async function settleAffiliateConversion(
+  supabase: ReturnType<typeof adminClient>,
+  referredUserId: string,
+  amountUsd: number,
+  source: string,
+) {
+  const gross = Math.max(0, Number(amountUsd || 0));
+  if (!gross) return;
+  const { data: referral } = await supabase.from("affiliate_referrals")
+    .select("id,affiliate_user_id,status,amount_usd")
+    .eq("referred_user_id", referredUserId)
+    .maybeSingle();
+  if (!referral?.id) return;
+  const commission = Number((gross * 0.30).toFixed(2));
+  const nextAmount = Number((Number(referral.amount_usd || 0) + commission).toFixed(2));
+  const referralPatch: Record<string, unknown> = {
+    status: "active",
+    amount_usd: nextAmount,
+    metadata: { source, gross_usd: gross, commission_rate: 0.30 },
+  };
+  if (referral.status !== "active") referralPatch.converted_at = new Date().toISOString();
+  const { error: referralError } = await supabase.from("affiliate_referrals").update(referralPatch).eq("id", referral.id);
+  if (referralError) throw referralError;
+  await supabase.rpc("sync_affiliate_account_totals", { p_user_id: referral.affiliate_user_id });
 }
 
 function affiliateCode(profile: Record<string, unknown>) {
@@ -7703,12 +7830,25 @@ async function affiliateRoute(req: Request) {
 
   if (req.method === "POST") {
     const body = await bodyJson(req);
+    const action = String(body.action || "configure_payout");
     const payoutEmail = String(body.payoutEmail || body.email || "").trim().toLowerCase();
     if (payoutEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payoutEmail)) throw new FlowtubeError(400, "Entre un e-mail de paiement valide.", { code: "INVALID_PAYOUT_EMAIL" });
+    if (action === "request_payout") {
+      const { data: current } = await supabase.from("affiliate_accounts").select("available_earnings_usd,min_payout_usd,payout_email,payout_method").eq("user_id", userId).maybeSingle();
+      const available = Number(current?.available_earnings_usd || 0);
+      const minimum = Number(current?.min_payout_usd || 50);
+      if (!current?.payout_email) throw new FlowtubeError(400, "Configure d abord ton moyen de paiement.", { code: "PAYOUT_NOT_CONFIGURED" });
+      if (available < minimum) throw new FlowtubeError(400, `Le seuil minimum est de ${minimum} USD.`, { code: "PAYOUT_THRESHOLD" });
+      await supabase.from("affiliate_payouts").insert({ affiliate_user_id: userId, amount_usd: available, payout_method: current.payout_method || "email", destination_masked: String(current.payout_email).replace(/(^.).*(@.*$)/, "$1***$2") });
+      await supabase.from("affiliate_referrals").update({ status: "paid" }).eq("affiliate_user_id", userId).eq("status", "active");
+      await supabase.rpc("sync_affiliate_account_totals", { p_user_id: userId });
+    }
     await supabase.from("affiliate_accounts").upsert({
       user_id: userId,
       code: affiliateCode(profile),
       payout_email: payoutEmail || profile.billing_email || profile.email || null,
+      payout_method: compactText(body.payoutMethod || "email", 30) || "email",
+      payout_status: payoutEmail ? "configured" : "not_configured",
       status: "active",
     }, { onConflict: "user_id" });
   }
@@ -7720,6 +7860,8 @@ async function affiliateRoute(req: Request) {
     status: "active",
   }, { onConflict: "user_id" }).select("*").single();
   const { data: referrals } = await supabase.from("affiliate_referrals").select("*").eq("affiliate_user_id", userId).order("created_at", { ascending: false });
+  const { count: clicks } = await supabase.from("affiliate_clicks").select("id", { count: "exact", head: true }).eq("affiliate_user_id", userId);
+  const { data: payouts } = await supabase.from("affiliate_payouts").select("id,amount_usd,status,payout_method,destination_masked,requested_at,processed_at").eq("affiliate_user_id", userId).order("requested_at", { ascending: false }).limit(20);
   const rows = referrals || [];
   const active = rows.filter((row) => ["active", "paid"].includes(String(row.status))).length;
   const earnings = rows.reduce((sum, row) => sum + Number(row.amount_usd || 0), 0);
@@ -7727,9 +7869,12 @@ async function affiliateRoute(req: Request) {
     account,
     link: `${APP_BASE_URL}/?ref=${account.code}`,
     stats: {
-      clicks: Number((account.metadata || {}).clicks || 0),
+      clicks: Number(clicks || 0),
       activeSubscribers: active,
       earningsUsd: earnings,
+      pendingUsd: rows.filter((row) => ["pending", "trial"].includes(String(row.status))).reduce((sum, row) => sum + Number(row.amount_usd || 0), 0),
+      availableUsd: rows.filter((row) => String(row.status) === "active").reduce((sum, row) => sum + Number(row.amount_usd || 0), 0),
+      paidUsd: rows.filter((row) => String(row.status) === "paid").reduce((sum, row) => sum + Number(row.amount_usd || 0), 0),
     },
     referrals: rows.map((row) => ({
       id: row.id,
@@ -7738,6 +7883,7 @@ async function affiliateRoute(req: Request) {
       amountUsd: Number(row.amount_usd || 0),
       createdAt: row.created_at,
     })),
+    payouts: payouts || [],
   });
 }
 
@@ -8038,6 +8184,12 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
     balance_after: nextCredits,
     metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null },
   });
+  await settleAffiliateConversion(
+    supabase,
+    userId,
+    interval === "annual" ? Number(plan.annualPriceUsd || 0) : Number(plan.monthlyPriceUsd || 0),
+    "subscription_renewal",
+  );
   if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
 }
 
@@ -8383,6 +8535,7 @@ Deno.serve(async (req: Request) => {
     if (first === "events" && req.method === "POST") return await productEventRoute(req);
     if (first === "team" && (req.method === "GET" || req.method === "POST")) return await teamRoute(req);
     if (((first === "api" && route[1] === "keys") || first === "keys") && (req.method === "GET" || req.method === "POST")) return await apiKeysRoute(req);
+    if (first === "affiliate" && route[1] === "click" && req.method === "POST") return await affiliateClickRoute(req);
     if (first === "affiliate" && (req.method === "GET" || req.method === "POST")) return await affiliateRoute(req);
     if (first === "stats" && req.method === "GET") return await statsRoute(req);
     if (first === "pricing" && req.method === "GET") return await pricingRoute();
