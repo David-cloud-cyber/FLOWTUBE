@@ -1,0 +1,12 @@
+@tailwind components;
+@tailwind utilities;
+
+:root { --af-panel:#17191b; --af-panel-soft:#1d2023; --af-ink:#f7f7f8; --af-muted:#8d9094; --af-line:rgba(247,247,248,.09); --af-accent:#d1fe17; }
+[data-theme="light"] { --af-panel:#fff; --af-panel-soft:#f5f5f3; --af-ink:#202124; --af-muted:#70737a; --af-line:rgba(32,33,36,.12); }
+.af-island { color:var(--af-ink); font-family:inherit; }
+.af-control-card { background:var(--af-panel); border:1px solid var(--af-line); border-radius:12px; padding:14px; transition:border-color 160ms cubic-bezier(.22,1,.36,1),background 160ms cubic-bezier(.22,1,.36,1); }
+.af-control-card:hover { border-color:rgba(209,254,23,.32); }
+.af-control-button { appearance:none; min-height:30px; border:1px solid var(--af-line); border-radius:7px; padding:0 10px; background:transparent; color:var(--af-ink); font:inherit; font-size:11px; font-weight:650; cursor:pointer; transition:background 140ms cubic-bezier(.22,1,.36,1),border-color 140ms cubic-bezier(.22,1,.36,1),transform 140ms cubic-bezier(.22,1,.36,1); }
+.af-control-button:hover { background:var(--af-panel-soft); border-color:rgba(209,254,23,.38); }.af-control-button:active { transform:scale(.98); }.af-control-button:focus-visible { outline:2px solid var(--af-accent); outline-offset:2px; }.af-control-button[disabled] { cursor:wait; opacity:.56; }
+.af-status-dot { width:7px; height:7px; border-radius:99px; background:var(--af-accent); box-shadow:0 0 10px rgba(209,254,23,.4); }.af-status-dot[data-status="warning"] { background:#f4b740; box-shadow:none; }.af-status-dot[data-status="offline"] { background:#898a8b; box-shadow:none; }
+@media (prefers-reduced-motion:reduce) { .af-island *,.af-island *::before,.af-island *::after { animation-duration:1ms!important;transition-duration:1ms!important; } }

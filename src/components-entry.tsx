@@ -15,6 +15,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Attachment, AttachmentList, type AttachmentMeta } from '@/components/nexus-ui/attachments';
+import { startAgentFlowIslands } from './agentflow-islands';
 
 // Re-export for use as React elements within dc-runtime computed props
 export { Attachment, AttachmentList };
@@ -59,4 +60,5 @@ declare global {
     HFComponents: typeof import('./components-entry');
   }
 }
-(window as any).HFComponents = { Attachment, AttachmentList, mountAttachments };
+(window as any).HFComponents = { Attachment, AttachmentList, mountAttachments, startAgentFlowIslands };
+startAgentFlowIslands();

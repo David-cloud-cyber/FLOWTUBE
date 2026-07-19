@@ -1445,6 +1445,65 @@ async function sha256Hex(value: string) {
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function bearerToken(req: Request) {
+  const header = req.headers.get("authorization") || "";
+  return header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
+}
+
+async function supabaseAuthFetch(path: string, token: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers || {});
+  headers.set("apikey", publishableKey());
+  headers.set("authorization", `Bearer ${token}`);
+  if (init.body && !headers.has("content-type")) headers.set("content-type", "application/json");
+  return fetch(`${SUPABASE_URL}/auth/v1${path}`, { ...init, headers });
+}
+
+async function mfaRoute(req: Request) {
+  const token = bearerToken(req);
+  if (!token) throw new FlowtubeError(401, "Connecte-toi pour gérer la double authentification.", { code: "AUTH_REQUIRED" });
+  const body = await bodyJson(req);
+  const action = String(body.action || "status");
+  if (req.method === "GET" || action === "status") {
+    const response = await supabaseAuthFetch("/factors", token);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new FlowtubeError(response.status, "Impossible de lire l’état MFA.", { code: "MFA_STATUS_FAILED" });
+    const factors = Array.isArray(payload) ? payload : (Array.isArray(payload.factors) ? payload.factors : []);
+    return json({ enabled: factors.some((factor: Record<string, unknown>) => factor.status === "verified" && factor.factor_type === "totp"), factors: factors.map((factor: Record<string, unknown>) => ({ id: factor.id, type: factor.factor_type, status: factor.status, friendlyName: factor.friendly_name })) });
+  }
+  if (action === "enroll") {
+    const response = await supabaseAuthFetch("/factors", token, { method: "POST", body: JSON.stringify({ factor_type: "totp", friendly_name: compactText(body.friendlyName || "AgentFlow", 40) }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new FlowtubeError(response.status, String(payload.msg || payload.message || "Impossible de démarrer l’activation MFA."), { code: "MFA_ENROLL_FAILED" });
+    return json({ factor: { id: payload.id, type: payload.factor_type, status: payload.status, qrCode: payload.totp?.qr_code || null, secret: payload.totp?.secret || null, uri: payload.totp?.uri || null } });
+  }
+  if (action === "challenge") {
+    const factorId = String(body.factorId || "");
+    if (!isUuid(factorId)) throw new FlowtubeError(400, "Facteur MFA invalide.", { code: "MFA_FACTOR_REQUIRED" });
+    const response = await supabaseAuthFetch(`/factors/${factorId}/challenge`, token, { method: "POST" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new FlowtubeError(response.status, "Impossible de créer le challenge MFA.", { code: "MFA_CHALLENGE_FAILED" });
+    return json({ challengeId: payload.id });
+  }
+  if (action === "verify") {
+    const factorId = String(body.factorId || "");
+    const challengeId = String(body.challengeId || "");
+    const code = String(body.code || "").replace(/\s/g, "");
+    if (!isUuid(factorId) || !isUuid(challengeId) || !/^\d{6}$/.test(code)) throw new FlowtubeError(400, "Code MFA invalide.", { code: "MFA_CODE_INVALID" });
+    const response = await supabaseAuthFetch(`/factors/${factorId}/verify`, token, { method: "POST", body: JSON.stringify({ challenge_id: challengeId, code }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new FlowtubeError(response.status, "Le code MFA est incorrect ou expiré.", { code: "MFA_VERIFY_FAILED" });
+    return json({ verified: true, factor: { id: factorId, status: "verified" }, session: payload });
+  }
+  if (action === "unenroll") {
+    const factorId = String(body.factorId || "");
+    if (!isUuid(factorId)) throw new FlowtubeError(400, "Facteur MFA invalide.", { code: "MFA_FACTOR_REQUIRED" });
+    const response = await supabaseAuthFetch(`/factors/${factorId}`, token, { method: "DELETE" });
+    if (!response.ok) throw new FlowtubeError(response.status, "Impossible de désactiver la double authentification.", { code: "MFA_UNENROLL_FAILED" });
+    return json({ enabled: false });
+  }
+  throw new FlowtubeError(400, "Action MFA inconnue.", { code: "MFA_ACTION_INVALID" });
+}
+
 async function hmacSha256Hex(secret: string, payload: string) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
@@ -2757,6 +2816,34 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "nike-air-force-ad", label: "style campagne mode", triggers: ["sneaker", "chaussure", "mode", "streetwear", "campagne produit"], use: "adapter l'energie publicitaire mode a une creation originale, sans copier une marque protegee." },
 ];
 
+const CORE_AGENT_SKILLS: HuggySkill[] = [
+  { id: "intent-understanding", label: "compréhension de l’intention", triggers: ["comprends", "objectif", "je veux", "besoin", "demande"], use: "extraire objectif, format, audience, contraintes et informations manquantes avant toute exécution." },
+  { id: "project-memory", label: "mémoire projet", triggers: ["souviens", "retiens", "mon projet", "ma marque", "comme avant"], use: "récupérer uniquement les souvenirs pertinents avec portée, source et niveau de confiance." },
+  { id: "creative-planner", label: "plan créatif", triggers: ["plan", "workflow", "storyboard", "campagne", "étapes"], use: "transformer l’intention en livrables, étapes, dépendances, critères de qualité et devis." },
+  { id: "model-router", label: "routeur de modèles", triggers: ["meilleur modèle", "auto", "qualité", "rapide", "moins cher"], use: "choisir un modèle disponible selon tâche, qualité, délai, coût, droits et fallback." },
+  { id: "task-orchestrator", label: "orchestrateur de tâches", triggers: ["en parallèle", "lot", "plusieurs", "arrière-plan", "workflow"], use: "exécuter un graphe de tâches persistant avec dépendances, reprise, annulation et validation." },
+  { id: "quality-control", label: "contrôle qualité", triggers: ["vérifie", "qualité", "valide", "corrige", "erreur"], use: "contrôler le brief, le fichier, le rendu et les critères de publication avant de déclarer terminé." },
+  { id: "artifact-manager", label: "gestionnaire d’artifacts", triggers: ["artifact", "version", "restaure", "compare", "modifie le fichier"], use: "créer, versionner, comparer, restaurer et exporter les résultats sans écraser l’historique." },
+  { id: "background-tasks", label: "tâches en arrière-plan", triggers: ["continue", "quitte la page", "notification", "longue tâche"], use: "maintenir une tâche côté serveur et notifier l’utilisateur sans dépendre du navigateur." },
+  { id: "ui-control", label: "contrôle de l’interface", triggers: ["ouvre le panneau", "ferme le panneau", "studio", "galerie", "paramètres"], use: "exécuter les commandes UI avec état vérifiable, navigation cohérente et respect des permissions." },
+  { id: "storyboard-director", label: "direction storyboard", triggers: ["plan caméra", "scène", "shot list", "lumière", "mouvement caméra"], use: "décomposer un concept en scènes, plans, caméra, lumière, action, raccords et prompts." },
+  { id: "video-motion", label: "génération motion vidéo", triggers: ["image to video", "text to video", "anime", "mouvement", "vidéo"], use: "générer ou animer des plans cohérents selon durée, ratio, mouvement, références et qualité." },
+  { id: "image-generation", label: "génération image", triggers: ["image", "visuel", "retouche", "flux", "image produit"], use: "générer, éditer, varier et vérifier des images avec références et cohérence visuelle." },
+  { id: "voice-audio", label: "voix et audio", triggers: ["voix off", "musique", "audio", "doublage", "sous-titres", "lipsync"], use: "produire voix, musique, effets, sous-titres et synchronisation en respectant consentement et licences." },
+  { id: "scriptwriter", label: "rédaction de scripts", triggers: ["script", "hook", "dialogue", "narration", "CTA", "publicité"], use: "écrire des scripts adaptés au canal, au public, à la durée et à l’objectif sans inventer de preuve." },
+  { id: "brand-consistency", label: "cohérence de marque", triggers: ["charte", "brand kit", "couleurs", "ton", "logo", "style"], use: "appliquer les règles de marque et détecter les incohérences avant production ou publication." },
+  { id: "file-intelligence", label: "intelligence fichiers", triggers: ["PDF", "fichier", "document", "pièce jointe", "analyse ce fichier"], use: "extraire texte, tableaux, scènes, métadonnées et contexte avec preuves et limites d’extraction." },
+  { id: "research-agent", label: "recherche vérifiée", triggers: ["recherche", "sources", "vérifie sur le web", "benchmark", "concurrent"], use: "collecter, comparer et citer des sources fiables en séparant faits, déductions et incertitudes." },
+  { id: "editing-remix", label: "édition ciblée", triggers: ["remplace seulement", "modifie la scène", "remix", "garde le reste"], use: "modifier uniquement la partie demandée et créer une nouvelle version réversible." },
+  { id: "publishing-export", label: "export et publication", triggers: ["exporte", "publie", "MP4", "PDF", "Instagram", "télécharge"], use: "préparer, valider et publier la version exacte dans le bon format avec confirmation." },
+  { id: "analytics-optimizer", label: "optimisation analytics", triggers: ["performance", "statistiques", "meilleure variante", "conversion", "rétention"], use: "analyser les résultats et recommander des tests proportionnés aux données disponibles." },
+  { id: "cost-performance-manager", label: "coût et performance", triggers: ["coût", "crédits", "budget", "prix", "délai", "rapide"], use: "estimer et contrôler coût, durée, crédits, qualité et limites avant et après exécution." },
+  { id: "safety-rights-checker", label: "sécurité et droits", triggers: ["droit", "consentement", "personne réelle", "voix réelle", "conformité"], use: "vérifier droits, consentement, confidentialité, sécurité et risques de publication." },
+  { id: "collaboration-review", label: "revue collaborative", triggers: ["équipe", "commentaire", "validation", "approbation", "collaborateur"], use: "gérer rôles, commentaires, validations, approbations et conflits de versions." },
+];
+
+const HUGGYFLOW_SKILL_LIBRARY_ALL = [...HUGGYFLOW_SKILL_LIBRARY, ...CORE_AGENT_SKILLS];
+
 const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
   "ugc-15s-production-pipeline": {
     requiredInputs: ["produit nom/URL/image", "video UGC de reference", "2 references faciales", "public cible", "accroche ou Auto"],
@@ -2977,7 +3064,7 @@ function scoreSkill(skill: HuggySkill, text: string, type: string) {
 }
 
 function skillHintsForPrompt(prompt: string, type: string) {
-  const ranked = HUGGYFLOW_SKILL_LIBRARY
+  const ranked = HUGGYFLOW_SKILL_LIBRARY_ALL
     .map((skill) => ({ skill, score: scoreSkill(skill, prompt, type) }))
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -2985,7 +3072,7 @@ function skillHintsForPrompt(prompt: string, type: string) {
     ? ["kling-3-prompt-director", "seedance-prompting-skills-for-cinematic-films", "cinematic-motion-language"]
     : ["gpt-image-2-director", "copywriting", "asset-extraction"];
   const picked = ranked.length ? ranked.map((row) => row.skill) : defaults
-    .map((id) => HUGGYFLOW_SKILL_LIBRARY.find((skill) => skill.id === id))
+    .map((id) => HUGGYFLOW_SKILL_LIBRARY_ALL.find((skill) => skill.id === id))
     .filter(Boolean) as HuggySkill[];
   return picked.slice(0, 2).map((skill) => {
     const recipe = HUGGYFLOW_SKILL_RECIPES[skill.id];
@@ -3702,7 +3789,7 @@ async function skillsRoute(req: Request) {
   if (req.method === "GET") {
     const { data, error } = await supabase.from("agent_skills").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(100);
     if (error) throw error;
-    return json({ skills: data || [] });
+    return json({ skills: data || [], coreSkills: CORE_AGENT_SKILLS.map((skill) => ({ ...skill, builtIn: true, status: "active" })) });
   }
   if (req.method !== "POST") return json({ error: { message: "Skills route not found" } }, 404);
   const body = await bodyJson(req);
@@ -7108,6 +7195,124 @@ async function templatesRoute(req: Request) {
   return json({ templates: await list() });
 }
 
+type OAuthProviderConfig = {
+  authorizeUrl: string;
+  tokenUrl: string;
+  scopes: string[];
+  clientIdEnv: string;
+  clientSecretEnv: string;
+  authStyle?: "basic" | "body";
+};
+
+const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
+  google_drive: { authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth", tokenUrl: "https://oauth2.googleapis.com/token", scopes: ["openid", "email", "https://www.googleapis.com/auth/drive.readonly"], clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID", clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET" },
+  slack: { authorizeUrl: "https://slack.com/oauth/v2/authorize", tokenUrl: "https://slack.com/api/oauth.v2.access", scopes: ["identity.basic", "files:read", "search:read"], clientIdEnv: "SLACK_OAUTH_CLIENT_ID", clientSecretEnv: "SLACK_OAUTH_CLIENT_SECRET" },
+  notion: { authorizeUrl: "https://api.notion.com/v1/oauth/authorize", tokenUrl: "https://api.notion.com/v1/oauth/token", scopes: [], clientIdEnv: "NOTION_OAUTH_CLIENT_ID", clientSecretEnv: "NOTION_OAUTH_CLIENT_SECRET", authStyle: "basic" },
+};
+
+function oauthCallbackUrl() {
+  return Deno.env.get("FLOWTUBE_OAUTH_CALLBACK_URL") || `${SUPABASE_URL}/functions/v1/flowtube-api/integrations/oauth/callback`;
+}
+
+function oauthConfig(provider: string) {
+  const config = OAUTH_PROVIDERS[provider];
+  if (!config) throw new FlowtubeError(400, "Ce connecteur ne propose pas encore OAuth.", { code: "OAUTH_PROVIDER_UNSUPPORTED" });
+  const clientId = Deno.env.get(config.clientIdEnv) || "";
+  const clientSecret = Deno.env.get(config.clientSecretEnv) || "";
+  if (!clientId || !clientSecret) throw new FlowtubeError(503, "OAuth n’est pas configuré pour ce connecteur.", { code: "OAUTH_NOT_CONFIGURED", provider });
+  return { ...config, clientId, clientSecret };
+}
+
+async function connectorCryptoKey() {
+  const raw = Deno.env.get("FLOWTUBE_CONNECTOR_ENCRYPTION_KEY") || "";
+  if (!raw) throw new FlowtubeError(503, "Le coffre de connecteurs n’est pas configuré.", { code: "CONNECTOR_VAULT_NOT_CONFIGURED" });
+  const bytes = base64UrlBytes(raw);
+  if (bytes.length !== 32) throw new FlowtubeError(503, "La clé du coffre de connecteurs doit faire 32 octets.", { code: "CONNECTOR_VAULT_KEY_INVALID" });
+  return crypto.subtle.importKey("raw", bytes, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptConnectorSecret(value: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await connectorCryptoKey(), new TextEncoder().encode(value));
+  return `${base64FromBytes(iv)}.${base64FromBytes(new Uint8Array(encrypted))}`;
+}
+
+async function decryptConnectorSecret(value: string) {
+  const [ivRaw, cipherRaw] = String(value || "").split(".");
+  if (!ivRaw || !cipherRaw) throw new FlowtubeError(500, "Secret de connecteur illisible.", { code: "CONNECTOR_SECRET_INVALID" });
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: base64UrlBytes(ivRaw) }, await connectorCryptoKey(), base64UrlBytes(cipherRaw));
+  return new TextDecoder().decode(plain);
+}
+
+async function integrationsOAuthStart(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const provider = new URL(req.url).searchParams.get("provider") || "";
+  const config = oauthConfig(provider);
+  const rawState = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
+  await supabase.from("integration_oauth_states").delete().lt("expires_at", new Date().toISOString());
+  const { error } = await supabase.from("integration_oauth_states").insert({ state_hash: await sha256Hex(rawState), user_id: userId, provider, expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+  if (error) throw error;
+  const params = new URLSearchParams({ client_id: config.clientId, redirect_uri: oauthCallbackUrl(), response_type: "code", state: rawState });
+  if (config.scopes.length) params.set("scope", config.scopes.join(" "));
+  if (provider === "google_drive") params.set("access_type", "offline");
+  if (provider === "google_drive") params.set("prompt", "consent");
+  return json({ authorizationUrl: `${config.authorizeUrl}?${params.toString()}`, provider, expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+}
+
+async function integrationsOAuthCallback(req: Request) {
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code") || "";
+  const state = url.searchParams.get("state") || "";
+  const errorDescription = url.searchParams.get("error_description") || url.searchParams.get("error") || "";
+  const supabase = adminClient();
+  if (errorDescription) return new Response(`<script>location.replace(${JSON.stringify(`${APP_BASE_URL}/?oauth_error=${encodeURIComponent(errorDescription)}`)})</script>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+  if (!code || !state) throw new FlowtubeError(400, "Réponse OAuth incomplète.", { code: "OAUTH_CALLBACK_INVALID" });
+  const { data: oauthState } = await supabase.from("integration_oauth_states").select("id,user_id,provider,expires_at").eq("state_hash", await sha256Hex(state)).maybeSingle();
+  if (!oauthState || new Date(String(oauthState.expires_at)).getTime() < Date.now()) throw new FlowtubeError(400, "Session OAuth expirée.", { code: "OAUTH_STATE_EXPIRED" });
+  await supabase.from("integration_oauth_states").delete().eq("id", oauthState.id);
+  const config = oauthConfig(String(oauthState.provider));
+  const form = new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: oauthCallbackUrl() });
+  if (config.authStyle === "basic") {
+    form.set("redirect_uri", oauthCallbackUrl());
+  } else {
+    form.set("client_id", config.clientId);
+    form.set("client_secret", config.clientSecret);
+  }
+  const headers = new Headers({ "content-type": "application/x-www-form-urlencoded", accept: "application/json" });
+  if (config.authStyle === "basic") headers.set("authorization", `Basic ${btoa(`${config.clientId}:${config.clientSecret}`)}`);
+  const tokenResponse = await fetch(config.tokenUrl, { method: "POST", headers, body: form });
+  const tokenPayload = await tokenResponse.json().catch(() => ({}));
+  if (!tokenResponse.ok || !tokenPayload.access_token) throw new FlowtubeError(502, "Le fournisseur a refusé l’autorisation.", { code: "OAUTH_TOKEN_EXCHANGE_FAILED" });
+  const accessCiphertext = await encryptConnectorSecret(String(tokenPayload.access_token));
+  const refreshCiphertext = tokenPayload.refresh_token ? await encryptConnectorSecret(String(tokenPayload.refresh_token)) : null;
+  const expiresAt = tokenPayload.expires_in ? new Date(Date.now() + Number(tokenPayload.expires_in) * 1000).toISOString() : null;
+  const provider = String(oauthState.provider);
+  await supabase.from("integration_secrets").upsert({ user_id: oauthState.user_id, provider, access_token_ciphertext: accessCiphertext, refresh_token_ciphertext: refreshCiphertext, token_type: String(tokenPayload.token_type || "Bearer"), scope: String(tokenPayload.scope || config.scopes.join(" ")), expires_at: expiresAt }, { onConflict: "user_id,provider" });
+  await supabase.from("integration_connections").upsert({ user_id: oauthState.user_id, provider, status: "connected", account_label: String(tokenPayload.team?.name || tokenPayload.workspace_name || tokenPayload.user?.name || provider), credentials_ref: `vault:${oauthState.user_id}:${provider}`, permissions: { scopes: String(tokenPayload.scope || config.scopes.join(" ")).split(/[ ,]+/).filter(Boolean) }, sync_status: "ready", connected_at: new Date().toISOString(), last_error: null }, { onConflict: "user_id,provider" });
+  return new Response(`<script>location.replace(${JSON.stringify(`${APP_BASE_URL}/?oauth_connected=${encodeURIComponent(provider)}`)})</script>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
+
+async function integrationsSync(req: Request, provider: string) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const { data: secret } = await supabase.from("integration_secrets").select("access_token_ciphertext,refresh_token_ciphertext,expires_at").eq("user_id", userId).eq("provider", provider).maybeSingle();
+  if (!secret) throw new FlowtubeError(409, "Ce connecteur n’est pas connecté.", { code: "CONNECTOR_NOT_CONNECTED" });
+  const accessToken = await decryptConnectorSecret(String(secret.access_token_ciphertext));
+  const endpoints: Record<string, string> = { google_drive: "https://www.googleapis.com/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,modifiedTime)", slack: "https://slack.com/api/auth.test", notion: "https://api.notion.com/v1/users/me" };
+  const endpoint = endpoints[provider];
+  if (!endpoint) throw new FlowtubeError(409, "La synchronisation de ce fournisseur n’est pas encore activée.", { code: "CONNECTOR_SYNC_UNAVAILABLE" });
+  const response = await fetch(endpoint, { headers: { authorization: `Bearer ${accessToken}`, ...(provider === "notion" ? { "Notion-Version": "2022-06-28" } : {}) } });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || (provider === "slack" && payload.ok === false)) {
+    await supabase.from("integration_connections").update({ status: "error", sync_status: "error", last_error: String(payload.error || "Synchronisation refusée") }).eq("user_id", userId).eq("provider", provider);
+    throw new FlowtubeError(502, "La synchronisation du connecteur a échoué.", { code: "CONNECTOR_SYNC_FAILED" });
+  }
+  await supabase.from("integration_connections").update({ status: "connected", sync_status: "healthy", last_synced_at: new Date().toISOString(), last_error: null }).eq("user_id", userId).eq("provider", provider);
+  await recordProductEvent(supabase, userId, "connector_synced", { provider });
+  return json({ provider, syncedAt: new Date().toISOString(), summary: provider === "google_drive" ? { files: Array.isArray(payload.files) ? payload.files.length : 0 } : { ok: true } });
+}
+
 async function integrationsRoute(req: Request) {
   const supabase = adminClient();
   const userId = await authenticatedUserIdFromRequest(req, supabase);
@@ -7123,6 +7328,8 @@ async function integrationsRoute(req: Request) {
   const provider = String(body.provider || "");
   if (!providers.includes(provider)) throw new FlowtubeError(400, "Connecteur invalide.", { code: "INVALID_CONNECTOR" });
   const action = String(body.action || "configure");
+  if (action === "configure" || action === "reconnect" || action === "oauth_start") return await integrationsOAuthStart(new Request(`${new URL(req.url).origin}${new URL(req.url).pathname}?provider=${encodeURIComponent(provider)}`, { method: "GET", headers: req.headers }));
+  if (action === "sync") return await integrationsSync(req, provider);
   if (action === "test") {
     const { data: current } = await supabase.from("integration_connections").select("id,status,configuration").eq("user_id", userId).eq("provider", provider).maybeSingle();
     if (!current || current.status !== "connected") return json({ connections: await list(), testOk: false, testMessage: "Ce connecteur n est pas encore autorise." });
@@ -7130,12 +7337,7 @@ async function integrationsRoute(req: Request) {
     if (error) throw error;
     return json({ connections: await list(), testOk: true, testMessage: "Connexion validee." });
   }
-  if (action === "reconnect") {
-    const { error } = await supabase.from("integration_connections").update({ status: "pending", sync_status: "pending", last_error: null }).eq("user_id", userId).eq("provider", provider);
-    if (error) throw error;
-    await recordProductEvent(supabase, userId, "connector_reconnect_requested", { provider });
-    return json({ connections: await list(), authorizationRequired: true });
-  }
+  if (action === "reconnect") return await integrationsOAuthStart(new Request(`${new URL(req.url).origin}${new URL(req.url).pathname}?provider=${encodeURIComponent(provider)}`, { method: "GET", headers: req.headers }));
   if (action === "disconnect") {
     const { error } = await supabase.from("integration_connections").upsert({ user_id: userId, provider, status: "disconnected", account_label: null, credentials_ref: null, configuration: {}, permissions: {}, sync_status: "idle", last_error: null, connected_at: null, last_tested_at: null, last_synced_at: null }, { onConflict: "user_id,provider" });
     if (error) throw error;
@@ -7159,7 +7361,7 @@ async function integrationsRoute(req: Request) {
   }, { onConflict: "user_id,provider" });
   if (error) throw error;
   await recordProductEvent(supabase, userId, "connector_configuration_requested", { provider });
-  return json({ connections: await list(), authorizationRequired: true });
+  return await integrationsOAuthStart(new Request(`${new URL(req.url).origin}${new URL(req.url).pathname}?provider=${encodeURIComponent(provider)}`, { method: "GET", headers: req.headers }));
 }
 
 async function exportPackageRoute(req: Request) {
@@ -8561,6 +8763,7 @@ Deno.serve(async (req: Request) => {
     if (first === "brands" && (req.method === "GET" || req.method === "POST")) return await brandKitsRoute(req);
     if (first === "templates" && (req.method === "GET" || req.method === "POST")) return await templatesRoute(req);
     if (first === "exports" && req.method === "POST") return await exportPackageRoute(req);
+    if (first === "integrations" && route[1] === "oauth" && route[2] === "callback" && req.method === "GET") return await integrationsOAuthCallback(req);
     if (first === "integrations" && (req.method === "GET" || req.method === "POST")) return await integrationsRoute(req);
     if (first === "feedback" && (req.method === "GET" || req.method === "POST")) return await feedbackRoute(req);
     if (first === "events" && req.method === "POST") return await productEventRoute(req);
@@ -8570,6 +8773,7 @@ Deno.serve(async (req: Request) => {
     if (first === "affiliate" && (req.method === "GET" || req.method === "POST")) return await affiliateRoute(req);
     if (first === "stats" && req.method === "GET") return await statsRoute(req);
     if (first === "pricing" && req.method === "GET") return await pricingRoute();
+    if (first === "auth" && route[1] === "mfa") return await mfaRoute(req);
     if (first === "auth" && route[1]) return await authRoute(req, route[1]);
     if (first === "billing" && route[1] === "checkout" && req.method === "POST") return await createCheckout(req);
     if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);

@@ -3,39 +3,26 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [
-    react({
-      jsxRuntime: 'classic',
-    }),
-  ],
+  // TanStack Query includes development guards behind this flag. The static
+  // shell has no Node `process` global, so resolve it while bundling.
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
+  plugins: [react({ jsxRuntime: 'classic' })],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: { '@': path.resolve(__dirname, './src') },
   },
   build: {
-    // Build as a library so it can be included in the existing HTML
     lib: {
       entry: path.resolve(__dirname, 'src/components-entry.tsx'),
       name: 'HFComponents',
       fileName: 'hf-components',
-      formats: ['iife'], // IIFE so it runs directly in a <script> tag
+      formats: ['iife'],
     },
     outDir: 'dist-components',
-    rollupOptions: {
-      // React is already on window via support.js, so externalize it
-      external: ['react', 'react-dom', 'react-dom/client'],
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          'react-dom/client': 'ReactDOM',
-        },
-        // No code splitting — single bundle file
-        inlineDynamicImports: true,
-      },
-    },
-    // Enable minification for production performance
+    // Keep React islands self-contained. The legacy shell can retain its own
+    // runtime, but the new controls remain reliable without any CDN.
+    rollupOptions: { output: { inlineDynamicImports: true } },
     minify: 'esbuild',
     sourcemap: false,
   },

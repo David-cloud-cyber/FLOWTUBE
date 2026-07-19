@@ -9,30 +9,8 @@
 <link rel="apple-touch-icon" href="/huggyflow-logo.png">
 <meta name="theme-color" content="#0F1113">
 <script src="./support.js"></script>
-<script>
-(function loadHF() {
-  const check = () => {
-    if (window.React && window.ReactDOM) {
-      const s = document.createElement("script");
-      s.src = "./dist-components/hf-components.iife.js";
-      s.onload = () => {
-        if (window.__dcRegistry) {
-          for (const key in window.__dcRegistry) {
-            const entry = window.__dcRegistry[key];
-            if (entry && entry.subs) {
-              entry.subs.forEach(fn => { try { fn(); } catch(e){} });
-            }
-          }
-        }
-      };
-      document.head.appendChild(s);
-    } else {
-      setTimeout(check, 10);
-    }
-  };
-  check();
-})();
-</script>
+<link rel="stylesheet" href="./dist-components/hf-components.css">
+<script src="./dist-components/hf-components.iife.js"></script>
 </head>
 <body>
 <x-dc>
@@ -1661,15 +1639,19 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div style="margin-top:12px"><button onClick="{{ saveSettings }}" style="padding:9px 16px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer mes choix</button></div>
             </sc-if>
 
-            <!-- ===== Capabilities placeholder ===== -->
+            <!-- ===== Capabilities overview ===== -->
             <sc-if value="{{ modalShowCapabilities }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:20px;font-weight:700;margin-bottom:12px">Capacités</div>
-              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:20px">Ta marque guide les scripts, les visuels et les campagnes de ce compte.</div>
+              <div style="font-size:13.5px;color:#898A8B;line-height:1.6;margin-bottom:20px">Modèles, services, crédits et génération disponibles dans ton espace.</div>
               <div style="padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025)">
                 <div style="font-size:13px;font-weight:700;color:#F7F7F8">Identité de marque</div>
                 <input value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Nom de ta marque" style="width:100%;box-sizing:border-box;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit"/>
                 <textarea value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Promesse, public, ton et univers visuel" style="width:100%;box-sizing:border-box;min-height:76px;margin-top:8px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#F7F7F8;font-size:13px;font-family:inherit;line-height:1.45"></textarea>
                 <div style="margin-top:10px"><button onClick="{{ saveBrand }}" style="padding:9px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Enregistrer la marque</button></div>
+              </div>
+              <div style="margin-top:14px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025)">
+                <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px;font-weight:700;color:#F7F7F8">Catalogue actif</div><span style="font-size:11px;color:#D1FE17">{{ capabilityModelCount }} modèles</span></div>
+                <sc-for list="{{ capabilityModelCards }}" as="model" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font-size:12px;color:#F7F7F8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ model.name }}</span><span style="font-size:11px;color:#898A8B;white-space:nowrap">{{ model.cost }}</span></div></sc-for>
               </div>
               <sc-for list="{{ brandCards }}" as="brand" hint-placeholder-count="1">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
@@ -1910,7 +1892,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <sc-if value="{{ modalShowCapabilities }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>Capacités</h3><p>Configure l’identité de marque qui guide tes workflows créatifs.</p></div><button class="hf-settings-primary" onClick="{{ saveBrand }}" disabled="{{ brandSaving }}">{{ brandSaving ? 'Enregistrement…' : 'Enregistrer' }}</button></div>
               <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Nom de la marque</div><div class="hf-settings-row-hint">Utilisé dans les briefs et les scripts.</div></div><input class="hf-settings-control" value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Ma marque"/></div><div style="padding:18px"><div class="hf-settings-row-label">Positionnement</div><div class="hf-settings-row-hint" style="margin-bottom:12px">Décris les codes, le ton et le public à respecter.</div><textarea class="hf-settings-textarea" value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Ex. Une marque moderne, accessible et audacieuse…"></textarea></div></div>
-              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Modèles disponibles</span><span style="color:#898A8B">Selon ton forfait et tes crédits</span></div><div class="hf-settings-empty">L’orchestrateur choisit automatiquement le meilleur modèle pour chaque tâche.</div></div>
+              <div data-agentflow-island="capabilities"></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Modèles disponibles</span><span style="color:#898A8B">{{ capabilityModelCount }} modèles · {{ creditsLabel }} disponibles</span></div><sc-for list="{{ capabilityModelCards }}" as="model" hint-placeholder-count="6"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ model.name }}</div><div style="margin-top:4px;font-size:11px">{{ model.provider }} · {{ model.capabilities }}</div></div><div style="text-align:right;white-space:nowrap"><div style="color:#D1FE17;font-weight:700">{{ model.cost }}</div><div style="margin-top:3px;font-size:10px;color:#898A8B">{{ model.tier }}</div></div></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Services</span><span style="color:#898A8B">État actuel</span></div><sc-for list="{{ capabilityServices }}" as="service" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ service.label }}</div><div style="margin-top:4px;font-size:11px;color:#898A8B">{{ service.detail }}</div></div><span class="hf-settings-badge">{{ service.status }}</span></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowClaudeCode }}" hint-placeholder-val="{{ false }}">
@@ -1922,7 +1906,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div class="hf-settings-card"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }} · {{ connector.syncLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button><sc-if value="{{ connector.showDisconnect }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connector.onDisconnect }}">Déconnecter</button></sc-if></div></div></sc-for></div>
+              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div data-agentflow-island="connectors"></div><div class="hf-settings-card" style="margin-top:14px"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }} · {{ connector.syncLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button><sc-if value="{{ connector.showDisconnect }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connector.onDisconnect }}">Déconnecter</button></sc-if></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
@@ -2302,7 +2286,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <div style="display:flex;align-items:center;gap:14px;padding-top:14px">
             <div style="flex:1">
               <div style="font-size:13.5px;font-weight:600">Double authentification</div>
-              <div style="margin-top:2px;font-size:12px;color:{{ tText3 }}">Un code de vérification à chaque connexion</div>
+              <div style="margin-top:2px;font-size:12px;color:{{ tText3 }}">{{ mfaStatusLabel }}</div>
             </div>
             <div onClick="{{ toggle2fa }}" style="{{ tfaTrackStyle }}"><span style="{{ tfaKnobStyle }}"></span></div>
           </div>
@@ -2758,7 +2742,7 @@ class Component extends DCLogic {
     settingsDraftRestored: false, settingsLastSavedSnapshot: null, settingsOffline: false,
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false,
-    integrationConnections: [], integrationsLoading: false,
+    integrationConnections: [], integrationsLoading: false, tfa: false, mfaFactors: [], mfaSetup: null, mfaLoading: false,
     apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
     accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
@@ -3260,7 +3244,7 @@ class Component extends DCLogic {
       authStatus:'Connecte.',
       page: nextPage,
       modelMenu:false
-    }, ()=>{ if(action) this.trackEvent(action === 'signup' ? 'signup_completed' : 'login_completed', { method:'password' }); this.bootstrap().then(()=>this.runPendingAuthAction()); });
+    }, ()=>{ if(action) this.trackEvent(action === 'signup' ? 'signup_completed' : 'login_completed', { method:'password' }); this.bootstrap().then(()=>{ this.loadMfa(); this.runPendingAuthAction(); }); });
   }
   clearSession(status){
     if(typeof window !== 'undefined' && window.localStorage){
@@ -3706,6 +3690,7 @@ class Component extends DCLogic {
   }
   componentDidMount(){
     this.chatShouldStick = true;
+    if(typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
     this.settingsKeydown = (event)=>{
       if(!event) return;
       this.trapSettingsFocus(event);
@@ -3756,6 +3741,7 @@ class Component extends DCLogic {
     this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
     this.loadPublicArtifactFromUrl();
     this.restoreAuthSession();
+    if(this.state.authToken) this.loadMfa();
     this.syncChatInputSize();
   }
   componentWillUnmount(){
@@ -3784,6 +3770,9 @@ class Component extends DCLogic {
     // The Streamable wrapper only supplies previous props. Treat missing state
     // as an empty snapshot so a normal render update can never crash the app.
     prevState = prevState || {};
+    if(typeof document !== 'undefined' && prevState.theme !== this.state.theme){
+      document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
+    }
     const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
@@ -5034,13 +5023,54 @@ class Component extends DCLogic {
       this.setState({ integrationConnections:data.connections || [], integrationsLoading:false });
     }catch(err){ this.setState({ integrationsLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les connecteurs.') }); }
   }
+  async loadMfa(){
+    if(!this.state.authToken) return;
+    try{
+      const res = await this.apiFetch('/api/auth/mfa');
+      const data = await res.json().catch(()=>({}));
+      if(res.ok) this.setState({ tfa:!!data.enabled, mfaFactors:data.factors || [] });
+    }catch(err){}
+  }
+  async toggle2fa(){
+    if(!this.requireAuth('Connecte-toi pour activer la double authentification.', null)) return;
+    if(this.state.tfa){
+      const factor = (this.state.mfaFactors || []).find(item=>item.status === 'verified') || (this.state.mfaFactors || [])[0];
+      if(!factor || !window.confirm('Désactiver la double authentification sur ce compte ?')) return;
+      this.setState({ mfaLoading:true });
+      try{
+        const res = await this.apiFetch('/api/auth/mfa', { method:'POST', body:JSON.stringify({ action:'unenroll', factorId:factor.id }) });
+        if(!res.ok) throw new Error('MFA_UNENROLL_FAILED');
+        this.setState({ tfa:false, mfaFactors:[], mfaSetup:null, mfaLoading:false });
+        this.notify('Double authentification désactivée.');
+      }catch(err){ this.setState({ mfaLoading:false }); this.notify('Impossible de désactiver la double authentification.'); }
+      return;
+    }
+    this.setState({ mfaLoading:true });
+    try{
+      const enrollRes = await this.apiFetch('/api/auth/mfa', { method:'POST', body:JSON.stringify({ action:'enroll', friendlyName:'AgentFlow' }) });
+      const enroll = await enrollRes.json().catch(()=>({}));
+      if(!enrollRes.ok || !enroll.factor) throw new Error('MFA_ENROLL_FAILED');
+      this.setState({ mfaSetup:enroll.factor, mfaLoading:false });
+      const code = window.prompt('Scanne le QR code avec ton application d’authentification, puis saisis le code à 6 chiffres :', '');
+      if(!code) return;
+      const challengeRes = await this.apiFetch('/api/auth/mfa', { method:'POST', body:JSON.stringify({ action:'challenge', factorId:enroll.factor.id }) });
+      const challenge = await challengeRes.json().catch(()=>({}));
+      if(!challengeRes.ok) throw new Error('MFA_CHALLENGE_FAILED');
+      const verifyRes = await this.apiFetch('/api/auth/mfa', { method:'POST', body:JSON.stringify({ action:'verify', factorId:enroll.factor.id, challengeId:challenge.challengeId, code }) });
+      if(!verifyRes.ok) throw new Error('MFA_VERIFY_FAILED');
+      await this.loadMfa();
+      this.setState({ mfaSetup:null });
+      this.notify('Double authentification activée.');
+    }catch(err){ this.setState({ mfaLoading:false, mfaSetup:null }); this.notify('Activation MFA impossible. Vérifie le code et réessaie.'); }
+  }
   async configureIntegration(provider){
     if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
     try{
       const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider, permissions:{ requested:true } }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
-      this.setState({ integrationConnections:data.connections || [], pricingNotice:'Autorisation demandee. Termine OAuth pour activer ce connecteur.' });
+      if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
+      this.setState({ integrationConnections:data.connections || [], pricingNotice:'OAuth non configuré pour ce connecteur.' });
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
   }
   async connectorAction(provider, action){
@@ -5050,6 +5080,7 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action, provider }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
+      if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
       this.setState({ integrationConnections:data.connections || [] });
       this.notify(data.testOk === false ? (data.testMessage || 'Connexion non validee.') : (labels[action] || 'Action') + ' terminee.');
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
@@ -5889,14 +5920,26 @@ class Component extends DCLogic {
       templatesLoading: !!st.templatesLoading,
       templateCards: (st.creativeTemplates || []).map(t=>({ title:t.title || 'Template', kind:(t.kind || 'creative').toUpperCase(), remixes:Number(t.remix_count || 0), onRemix:()=>this.remixTemplate(t.id) })),
       templatesEmpty: !(st.creativeTemplates || []).length,
+      capabilityModelCount: (st.pricingModels && st.pricingModels.length) || this.MODELS.length,
+      capabilityModelCards: ((st.pricingModels && st.pricingModels.length) ? st.pricingModels : this.MODELS).slice(0, 18).map(m=>({
+        name:m.label || m.name || m.id || 'Modèle', provider:m.provider || 'AgentFlow',
+        capabilities:(Array.isArray(m.capabilities) ? m.capabilities : (Array.isArray(m.metadata && m.metadata.capabilities) ? m.metadata.capabilities : [])).join(' · ') || 'agent',
+        cost:m.creditsLabel || ((m.creditsPerDefaultUnit || m.credits || 0) + ' cr'), tier:m.tier || m.qualityTier || 'standard'
+      })),
+      capabilityServices: [
+        { label:'Agent maître', detail:'Compréhension, planification et routage', status:'Actif' },
+        { label:'Génération média', detail:'Image, vidéo, audio et documents', status:(st.pricingMeta && st.pricingMeta.providers && st.pricingMeta.providers.mediaPrivatePipeline) ? 'Actif' : 'À configurer' },
+        { label:'OpenRouter', detail:'Modèles agent et raisonnement', status:(st.pricingMeta && st.pricingMeta.providers && st.pricingMeta.providers.openRouterEnabled) ? 'Actif' : 'Indisponible' },
+        { label:'Mémoire et artifacts', detail:'Projet, versions et contrôle qualité', status:st.authToken ? 'Actif' : 'Connexion requise' }
+      ],
       connectorCards: (st.integrationConnections || []).map(c=>({
         provider:c.provider,
         label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
         status:c.status || 'disconnected',
         statusLabel: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
-        syncLabel: ({healthy:'Synchronisé',pending:'En attente',error:'Synchronisation en erreur',idle:'Pas encore testé'})[c.sync_status || 'idle'] || 'Pas encore testé',
-        buttonLabel: c.status === 'connected' ? 'Tester' : (c.status === 'pending' ? 'Autoriser' : 'Configurer'),
-        onConfigure:()=>c.status === 'connected' ? this.connectorAction(c.provider,'test') : (c.status === 'pending' ? this.connectorAction(c.provider,'reconnect') : this.configureIntegration(c.provider)),
+        syncLabel: ({healthy:'Synchronisé',ready:'Prêt à synchroniser',pending:'En attente',error:'Synchronisation en erreur',idle:'Pas encore testé'})[c.sync_status || 'idle'] || 'Pas encore testé',
+        buttonLabel: c.status === 'connected' ? 'Synchroniser' : (c.status === 'pending' ? 'Autoriser' : 'Connecter'),
+        onConfigure:()=>c.status === 'connected' ? this.connectorAction(c.provider,'sync') : (c.status === 'pending' ? this.connectorAction(c.provider,'reconnect') : this.configureIntegration(c.provider)),
         onDisconnect:()=>this.connectorAction(c.provider,'disconnect'),
         showDisconnect:c.status === 'connected' || c.status === 'pending'
       })),
@@ -6051,9 +6094,10 @@ class Component extends DCLogic {
       setDarkTheme: ()=>{ try{ localStorage.setItem('hf-theme','dark'); }catch(e){} this.setState({ theme:'dark', settingsSaved:false },()=>this.scheduleSettingsSave()); },
       lightTabStyle: this.tabStyle(st.theme !== 'dark'),
       darkTabStyle: this.tabStyle(st.theme === 'dark'),
-      toggle2fa: ()=> this.setState(s=>({ tfa: !s.tfa })),
+      toggle2fa: ()=> this.toggle2fa(),
       tfaTrackStyle: this.switchTrack(!!st.tfa),
       tfaKnobStyle: this.switchKnob(!!st.tfa),
+      mfaStatusLabel: st.mfaLoading ? 'Configuration sécurisée en cours…' : (st.tfa ? 'MFA TOTP actif sur ce compte' : 'Ajoute une application d’authentification pour sécuriser ton compte'),
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),
