@@ -692,27 +692,17 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   <sc-if value="{{ showStudioPanel }}" hint-placeholder-val="{{ false }}">
     <aside data-hf-studio-panel="true" style="position:absolute;top:0;right:0;bottom:0;width:{{ studioPanelWidthStyle }};min-width:360px;z-index:16;background:{{ tSurface }};border-left:1px solid rgba({{ tLineRGB }},.14);box-shadow:-24px 0 60px -42px rgba(0,0,0,.85);display:flex;flex-direction:column;animation:panelIn .24s cubic-bezier(.22,1,.36,1) both">
       <div onMouseDown="{{ startStudioResize }}" title="Redimensionner le panneau" style="position:absolute;left:-3px;top:0;bottom:0;width:6px;z-index:3;cursor:col-resize;background:transparent" style-hover="background:rgba(209,254,23,.45)"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border-bottom:1px solid rgba({{ tLineRGB }},.10)">
-        <div style="min-width:0"><div style="font-family:'Space Grotesk',ui-sans-serif;font-size:17px;font-weight:700;color:{{ tInk }}">Studio AgentFlow</div><div style="margin-top:3px;font-size:11px;color:{{ tText4 }}">Rendus, artifacts et compétences en direct</div></div>
-        <button onClick="{{ closeStudioPanel }}" title="Fermer le studio" style="width:31px;height:31px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.12);background:transparent;color:{{ tText3 }};cursor:pointer;font-size:18px;line-height:1" style-hover="background:rgba({{ tLineRGB }},.07);color:{{ tInk }}">×</button>
+      <div style="height:48px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid rgba({{ tLineRGB }},.10);background:rgba({{ tLineRGB }},.018)">
+        <div title="{{ studioBarTitle }}" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ tText3 }};font-size:11px;font-weight:650">{{ studioBarTitle }}</div>
+        <button onClick="{{ refreshArtifactPreview }}" title="Actualiser l’aperçu" style="width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:{{ tText3 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path></svg></button>
+        <button onClick="{{ openArtifactInTab }}" title="Ouvrir l’aperçu dans un nouvel onglet" style="height:28px;padding:0 10px;border:1px solid rgba({{ tLineRGB }},.14);border-radius:7px;background:{{ tSurface }};color:{{ tInk }};cursor:pointer;font:650 10px ui-sans-serif,system-ui,sans-serif;display:flex;align-items:center;gap:5px" style-hover="border-color:rgba(209,254,23,.45)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>Open in tab</button>
+        <button onClick="{{ closeStudioPanel }}" title="Fermer" style="width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:{{ tText3 }};cursor:pointer;font-size:17px;line-height:1" style-hover="background:rgba({{ tLineRGB }},.08);color:{{ tInk }}">×</button>
       </div>
       <div style="display:flex;gap:6px;padding:10px 14px 8px;border-bottom:1px solid rgba({{ tLineRGB }},.07)">
         <button onClick="{{ studioMediaTab }}" style="{{ studioMediaTabStyle }}">Médias <span style="opacity:.6">{{ studioMediaCount }}</span></button>
         <button onClick="{{ studioArtifactTab }}" style="{{ studioArtifactTabStyle }}">Artifacts <span style="opacity:.6">{{ artifactCount }}</span></button>
         <button onClick="{{ studioSkillTab }}" style="{{ studioSkillTabStyle }}">Skills</button>
-        <button onClick="{{ studioEvalTab }}" style="{{ studioEvalTabStyle }}">Évaluations</button>
       </div>
-      <sc-if value="{{ studioIsArtifact }}" hint-placeholder-val="{{ false }}">
-        <div style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-bottom:1px solid rgba({{ tLineRGB }},.08);background:rgba({{ tLineRGB }},.025)">
-          <button onClick="{{ artifactPreviewView }}" title="Apercu" style="{{ artifactToolbarPreviewStyle }}">◉</button>
-          <button onClick="{{ artifactCodeView }}" title="Code" style="{{ artifactToolbarCodeStyle }}">&lt;/&gt;</button>
-          <button onClick="{{ refreshArtifactPreview }}" title="Actualiser l apercu" style="{{ artifactToolbarButtonStyle }}">↻</button>
-          <div style="flex:1"></div>
-          <button onClick="{{ copyActiveArtifact }}" title="Copier" style="{{ artifactToolbarButtonStyle }}">Copier</button>
-          <button onClick="{{ toggleArtifactFullscreen }}" title="Agrandir" style="{{ artifactToolbarButtonStyle }}">{{ artifactFullscreenLabel }}</button>
-          <button onClick="{{ publishActiveArtifact }}" title="Publier" style="{{ artifactToolbarPublishStyle }}">Publier</button>
-        </div>
-      </sc-if>
       <div style="flex:1;min-height:0;overflow-y:auto;padding:13px 14px 26px">
         <sc-if value="{{ studioIsMedia }}" hint-placeholder-val="{{ true }}">
           <sc-if value="{{ studioMediaEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 18px;text-align:center;border:1px dashed rgba({{ tLineRGB }},.14);border-radius:14px;color:{{ tText3 }};font-size:13px;line-height:1.5">Les images et vidéos apparaîtront ici dès que AgentFlow les produit.</div></sc-if>
@@ -1902,7 +1892,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowSkills }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Compétences</h3><p>Transforme tes workflows récurrents en templates réutilisables. Le laboratoire évalue les résultats sans détourner AgentFlow.</p></div><div style="display:flex;gap:7px;align-items:center"><button class="hf-settings-secondary" onClick="{{ openEvalLab }}">Ouvrir le laboratoire</button><button class="hf-settings-secondary" onClick="{{ saveProjectTemplate }}">Sauvegarder le projet actif</button></div></div><div class="hf-settings-card"><sc-if value="{{ templatesEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune compétence sauvegardée pour le moment.</div></sc-if><sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ template.title }}</div><div style="margin-top:4px;font-size:11px">{{ template.kind }} · {{ template.remixes }} remixes</div></div><button class="hf-settings-secondary" onClick="{{ template.onRemix }}">Remixer</button></div></sc-for></div>
+              <div class="hf-settings-section-head"><div><h3>Compétences</h3><p>Transforme tes workflows récurrents en templates réutilisables.</p></div><button class="hf-settings-secondary" onClick="{{ saveProjectTemplate }}">Sauvegarder le projet actif</button></div><div class="hf-settings-card"><sc-if value="{{ templatesEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune compétence sauvegardée pour le moment.</div></sc-if><sc-for list="{{ templateCards }}" as="template" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ template.title }}</div><div style="margin-top:4px;font-size:11px">{{ template.kind }} · {{ template.remixes }} remixes</div></div><button class="hf-settings-secondary" onClick="{{ template.onRemix }}">Remixer</button></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
@@ -2710,7 +2700,7 @@ class Component extends DCLogic {
     deleteProjectId: '',
     compareOpen: false,
     studioPanelOpen: this.initialUiState.studioPanelOpen === true,
-    studioTab: this.initialUiState.studioTab || 'media',
+    studioTab: ['media','artifact','skill'].includes(this.initialUiState.studioTab) ? this.initialUiState.studioTab : 'media',
     studioPanelWidth: Math.max(360, Number(this.initialUiState.studioPanelWidth || 560)),
     artifactView: this.initialUiState.artifactView || 'preview',
     artifactPreviewDevice: this.initialUiState.artifactPreviewDevice || 'desktop',
@@ -3375,7 +3365,6 @@ class Component extends DCLogic {
       const artifacts = (data.artifacts || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
       const active = this.state.activeArtifact && artifacts.find(a=>a.id === this.state.activeArtifact.id) || artifacts[0] || null;
       this.setState({ artifactItems:artifacts, skillItems:Array.isArray(skillData.skills) ? skillData.skills : [], studioLoading:false }, ()=>{ if(active) this.setActiveArtifact(active); });
-      this.loadSkillEvaluations();
     }catch(err){ this.setState({ studioLoading:false }); }
   }
   evalKindLabel(kind){
@@ -3540,6 +3529,14 @@ class Component extends DCLogic {
     if(!artifact) return;
     this.buildArtifactPreview(artifact);
     this.notify('Apercu de l artifact actualise.');
+  }
+  openArtifactInTab(){
+    const previewUrl = this.state.artifactPreviewUrl;
+    if(!previewUrl || typeof window === 'undefined'){
+      this.notify('Aucun apercu a ouvrir pour le moment.');
+      return;
+    }
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
   }
   startStudioResize(event){
     if(!event || typeof window === 'undefined' || window.innerWidth < 760) return;
@@ -5780,7 +5777,7 @@ class Component extends DCLogic {
       studioIsMedia: st.studioTab === 'media',
       studioIsArtifact: st.studioTab === 'artifact',
       studioIsSkill: st.studioTab === 'skill',
-      studioIsEval: st.studioTab === 'eval',
+      studioIsEval: false,
       studioMediaItems,
       studioMediaEmpty: !studioMediaItems.length,
       studioMediaCount: studioMediaItems.length,
@@ -5789,6 +5786,7 @@ class Component extends DCLogic {
       artifactEmpty: !artifactItems.length,
       activeArtifactReady: !!(st.activeArtifact && st.artifactPreviewUrl),
       activeArtifactTitle: st.activeArtifact ? st.activeArtifact.title : '',
+      studioBarTitle: st.activeArtifact ? (st.activeArtifact.title || 'Aperçu de l’artifact') : 'AgentFlow',
       activeArtifactVersion: st.activeArtifact && st.activeArtifact.version ? (st.activeArtifact.version.number || 1) : 1,
       artifactPreviewUrl: st.artifactPreviewUrl || '',
       activeArtifactType: st.activeArtifact ? (st.activeArtifact.type || 'artifact') : 'artifact',
@@ -5840,11 +5838,9 @@ class Component extends DCLogic {
       studioMediaTab: ()=>this.setState({ studioTab:'media' }),
       studioArtifactTab: ()=>this.setState({ studioTab:'artifact' }),
       studioSkillTab: ()=>this.setState({ studioTab:'skill' }),
-      studioEvalTab: ()=>this.setState(s=>({ studioTab:'eval', evalInput:s.evalInput || this.evalInputTemplate(s.evalKind || 'blind_comparator') })),
       studioMediaTabStyle: st.studioTab === 'media' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
       studioArtifactTabStyle: st.studioTab === 'artifact' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
       studioSkillTabStyle: st.studioTab === 'skill' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
-      studioEvalTabStyle: st.studioTab === 'eval' ? 'padding:7px 10px;border:0;border-radius:8px;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer' : 'padding:7px 10px;border:0;border-radius:8px;background:transparent;color:' + T.text3 + ';font-size:11px;font-weight:700;cursor:pointer',
       selectEvalComparator: ()=>this.selectEvalKind('blind_comparator'),
       selectEvalPosthoc: ()=>this.selectEvalKind('posthoc_analyzer'),
       selectEvalGrader: ()=>this.selectEvalKind('grader'),
@@ -5865,7 +5861,6 @@ class Component extends DCLogic {
         statusColor:run.status === 'completed' ? '#D1FE17' : (run.status === 'failed' ? '#E58C72' : '#A8A8A8'),
         date:run.created_at ? new Date(run.created_at).toLocaleDateString('fr-FR') : 'À l’instant'
       })),
-      openEvalLab: ()=>this.setState(s=>({ studioPanelOpen:true, studioTab:'eval', evalInput:s.evalInput || this.evalInputTemplate(s.evalKind || 'blind_comparator'), page:'app' })),
       closeStudioPanel: ()=>this.closeStudioPanel(),
       toggleArtifactFullscreen: ()=>this.toggleArtifactFullscreen(),
       startStudioResize: (e)=>this.startStudioResize(e),
@@ -5873,6 +5868,7 @@ class Component extends DCLogic {
       copyActiveArtifact: ()=>this.copyActiveArtifact(),
       downloadActiveArtifact: ()=>this.downloadActiveArtifact(),
       refreshArtifactPreview: ()=>this.refreshArtifactPreview(),
+      openArtifactInTab: ()=>this.openArtifactInTab(),
       onArtifactEditor:(e)=>this.onArtifactEditor(e),
       saveArtifactVersion:()=>this.saveArtifactVersion(),
       onArtifactCommentDraft:(e)=>this.onArtifactCommentDraft(e),
