@@ -129,6 +129,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-toast]{position:fixed;right:24px;bottom:24px;z-index:140;display:flex;align-items:center;gap:10px;max-width:min(390px,calc(100vw - 32px));padding:12px 14px;border:1px solid rgba(209,254,23,.22);border-radius:12px;background:rgba(28,30,32,.94);color:#F7F7F8;box-shadow:0 18px 44px -18px rgba(0,0,0,.62);backdrop-filter:blur(12px);animation:toastIn .24s cubic-bezier(.22,1,.36,1) both}
 [data-hf-toast]::before{content:"";width:7px;height:7px;flex:0 0 auto;border-radius:999px;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.48)}
 [data-hf-message-row]{content-visibility:auto;contain-intrinsic-size:120px}
+[data-hf-studio-panel="true"]{will-change:width,transform;transition:width .28s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1);contain:layout paint}
+[data-hf-settings-scroll="true"]{overflow-anchor:none}
 [data-hf-command-backdrop]{position:fixed;inset:0;z-index:150;display:flex;align-items:flex-start;justify-content:center;padding:12vh 18px 24px;background:rgba(5,6,8,.58);backdrop-filter:blur(12px);animation:modalFadeIn .18s ease both}
 [data-hf-command-dialog]{width:min(620px,100%);overflow:hidden;border:1px solid rgba(247,247,248,.14);border-radius:16px;background:#1C1E20;box-shadow:0 30px 100px -30px rgba(0,0,0,.8);animation:modalScale .22s cubic-bezier(.22,1,.36,1) both}
 [data-hf-command-dialog] input{width:100%;height:54px;padding:0 17px;border:0;border-bottom:1px solid rgba(247,247,248,.09);outline:none;background:transparent;color:#F7F7F8;font-size:15px}
@@ -168,9 +170,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-plan-panel] + [data-hf-plan-panel]{margin-top:16px!important}
 @media (max-width:900px){.hf-pricing-grid{grid-template-columns:1fr!important}}
 @media (max-width:760px){.hf-cost-row{grid-template-columns:minmax(0,1fr) auto!important}.hf-cost-row > span:nth-child(3),.hf-cost-row > span:nth-child(4){grid-column:1/-1}.hf-cost-row > span:last-child{text-align:left!important}}
-.hf-settings-backdrop{position:fixed;inset:0;z-index:100;background:rgba(5,6,8,.58);backdrop-filter:blur(12px);animation:modalFadeIn .18s ease both}
+.hf-settings-backdrop{display:none!important}
 .hf-settings-backdrop[data-hf-settings-theme="light"]{background:rgba(255,255,255,.68)}
-.hf-settings-shell{--hf-settings-page:#131517;--hf-settings-rail:#17191c;--hf-settings-surface:#1C1E20;--hf-settings-control:#23262A;--hf-settings-ink:#F7F7F8;--hf-settings-muted:#898A8B;--hf-settings-line:247,247,248;position:fixed;inset:0;margin:auto;z-index:101;width:min(1080px,calc(100vw - 40px));height:min(740px,calc(100vh - 40px));display:flex;overflow:hidden;background:var(--hf-settings-page);border:1px solid rgba(var(--hf-settings-line),.12);border-radius:16px;box-shadow:0 28px 80px -34px rgba(0,0,0,.72);animation:modalScale .22s cubic-bezier(.22,1,.36,1) both}
+.hf-settings-shell{--hf-settings-page:#131517;--hf-settings-rail:#17191c;--hf-settings-surface:#1C1E20;--hf-settings-control:#23262A;--hf-settings-ink:#F7F7F8;--hf-settings-muted:#898A8B;--hf-settings-line:247,247,248;position:absolute;inset:0;z-index:20;width:auto;height:auto;margin:0;display:flex;overflow:hidden;background:var(--hf-settings-page);border:0;border-radius:0;box-shadow:none;animation:pageRise .28s cubic-bezier(.22,1,.36,1) both}
 .hf-settings-shell[data-hf-settings-theme="light"]{--hf-settings-page:#F7F7F8;--hf-settings-rail:#FFFFFF;--hf-settings-surface:#FFFFFF;--hf-settings-control:#F0F1F2;--hf-settings-ink:#131517;--hf-settings-muted:#656970;--hf-settings-line:46,48,49}
 .hf-settings-rail{width:232px;flex:0 0 232px;display:flex;flex-direction:column;background:var(--hf-settings-rail);border-right:1px solid rgba(var(--hf-settings-line),.08);overflow:hidden}
 .hf-settings-brand{display:flex;align-items:center;gap:10px;padding:17px 16px 14px;border-bottom:1px solid rgba(var(--hf-settings-line),.07)}
@@ -196,8 +198,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(247,247,248,.12);border-radius:10px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-close:hover{background:rgba(247,247,248,.08);color:#F7F7F8}
 .hf-settings-close:active{transform:scale(.94)}
-.hf-settings-content{flex:1;overflow:auto;padding:24px 28px 34px;scroll-behavior:smooth;scrollbar-width:none;overscroll-behavior:contain}
-.hf-settings-content-inner{width:min(720px,100%);margin:0 auto;animation:pageRise .2s cubic-bezier(.22,1,.36,1) both}
+.hf-settings-content{flex:1;overflow:auto;padding:28px clamp(20px,4vw,56px) 44px;scroll-behavior:smooth;scrollbar-width:none;overscroll-behavior:contain;scrollbar-gutter:stable;contain:layout paint}
+.hf-settings-content-inner{width:min(860px,100%);margin:0 auto;animation:pageRise .2s cubic-bezier(.22,1,.36,1) both}
 .hf-settings-intro{margin-bottom:22px;color:#898A8B;font-size:13px;line-height:1.6}
 .hf-settings-card{border:1px solid rgba(var(--hf-settings-line),.10);border-radius:11px;background:var(--hf-settings-surface);overflow:hidden}
 .hf-settings-card + .hf-settings-card{margin-top:14px}
@@ -233,7 +235,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-shell[data-hf-settings-theme="light"] [style*="#F7F7F8"]{color:#131517!important}
 .hf-settings-shell[data-hf-settings-theme="light"] [style*="#898A8B"]{color:#656970!important}
 .hf-settings-shell[data-hf-settings-theme="light"] [style*="rgba(247,247,248"]{border-color:rgba(46,48,49,.10)!important}
-@media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary,[data-hf-studio-panel="true"]{transition:none!important}}
 @media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
@@ -1782,8 +1784,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   </sc-if>
   <!-- ========== HUGGYFLOW SETTINGS EXPERIENCE ========== -->
   <sc-if value="{{ showSettingsModal }}" hint-placeholder-val="{{ false }}">
-    <div class="hf-settings-backdrop" data-hf-settings-theme="{{ settingsResolvedTheme }}" onClick="{{ closeSettings }}"></div>
-    <section class="hf-settings-shell" data-hf-settings-theme="{{ settingsResolvedTheme }}" role="dialog" aria-modal="true" aria-label="Paramètres HuggyFlow">
+    <section class="hf-settings-shell" data-hf-settings-theme="{{ settingsResolvedTheme }}" data-hf-settings-page="true" role="main" aria-label="Paramètres HuggyFlow">
       <aside class="hf-settings-rail">
         <div class="hf-settings-brand">
           <div class="hf-settings-brand-mark">»</div>
@@ -1833,7 +1834,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <span class="hf-settings-badge">{{ settingsPlanBadge }}</span>
           </div>
         </header>
-        <div class="hf-settings-content">
+        <div class="hf-settings-content" data-hf-settings-scroll="true" onScroll="{{ onSettingsScroll }}">
           <div class="hf-settings-content-inner" style="animation:{{ settingsAnim }}">
 
             <sc-if value="{{ modalShowSettings }}" hint-placeholder-val="{{ false }}">
@@ -3769,7 +3770,6 @@ class Component extends DCLogic {
     if(typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
     this.settingsKeydown = (event)=>{
       if(!event) return;
-      this.trapSettingsFocus(event);
       if((event.metaKey || event.ctrlKey) && String(event.key || '').toLowerCase() === 'k'){
         event.preventDefault();
         this.openCommandPalette();
@@ -3864,6 +3864,8 @@ class Component extends DCLogic {
       else if(!this.state.chatUnread) this.setState({ chatUnread:true });
     }
     if(prevState.page !== this.state.page){
+      if(this.isSettingsPage(prevState.page)) this.persistSettingsScroll(prevState.page);
+      if(this.isSettingsPage(this.state.page)) this.restoreSettingsScroll(this.state.page);
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
       if(this.state.page === 'capabilities') this.loadBrands();
@@ -3946,6 +3948,31 @@ class Component extends DCLogic {
       if(input && typeof input.focus === 'function') input.focus();
     }, 0);
   }
+  settingsScrollKey(section){
+    return 'huggyflow_settings_scroll_' + String(section || 'settings');
+  }
+  persistSettingsScroll(section){
+    if(typeof window === 'undefined' || !window.localStorage) return;
+    const el = typeof document !== 'undefined' ? document.querySelector('[data-hf-settings-scroll="true"]') : null;
+    if(!el) return;
+    try{ window.localStorage.setItem(this.settingsScrollKey(section || this.state.page), String(Math.max(0, Math.round(el.scrollTop || 0)))); }catch(e){}
+  }
+  restoreSettingsScroll(section){
+    if(typeof window === 'undefined' || !window.localStorage) return;
+    const target = String(section || this.state.page || 'settings');
+    let top = 0;
+    try{ top = Math.max(0, Number(window.localStorage.getItem(this.settingsScrollKey(target)) || 0)); }catch(e){}
+    setTimeout(()=>{
+      const el = typeof document !== 'undefined' ? document.querySelector('[data-hf-settings-scroll="true"]') : null;
+      if(!el) return;
+      const reduced = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollTo({ top, left:0, behavior: reduced ? 'auto' : 'smooth' });
+    }, 30);
+  }
+  onSettingsScroll(){
+    clearTimeout(this.settingsScrollTimer);
+    this.settingsScrollTimer = setTimeout(()=>this.persistSettingsScroll(this.state.page), 120);
+  }
   openSettingsModal(section){
     const target = this.isSettingsPage(section) ? section : 'settings';
     if(!this.requireSettingsAccess(target)) return;
@@ -3973,12 +4000,14 @@ class Component extends DCLogic {
       if(target === 'capabilities') this.loadBrands();
       if(target === 'skills') this.loadTemplates();
       if(target === 'connectors') this.loadIntegrations();
+      this.restoreSettingsScroll(target);
       this.focusSettingsSearch();
     });
   }
   openSettingsSection(section){
     if(!this.requireSettingsAccess(section)) return;
     if(!this.isSettingsPage(this.state.page)) return this.openSettingsModal(section);
+    this.persistSettingsScroll(this.state.page);
     this.syncSettingsHash(section);
     this.setState({ page:section, settingsHop:true }, ()=>{
       if(section === 'billing') this.loadBillingStatus();
@@ -3989,10 +4018,11 @@ class Component extends DCLogic {
       if(section === 'capabilities') this.loadBrands();
       if(section === 'skills') this.loadTemplates();
       if(section === 'connectors') this.loadIntegrations();
-      this.focusSettingsSearch();
+      this.restoreSettingsScroll(section);
     });
   }
   closeSettingsModal(){
+    if(this.isSettingsPage(this.state.page)) this.persistSettingsScroll(this.state.page);
     const restore = this.settingsReturnContext || { page:'app' };
     this.settingsReturnContext = null;
     this.clearSettingsHash();
@@ -5553,14 +5583,16 @@ class Component extends DCLogic {
       settingItem('team','Équipe','♧',['membres','collaboration','invitation']),
       settingItem('stats','Utilisation','▥',['statistiques','crédits','activité']),
       settingItem('capabilities','Capacités','✦',['marque','modèles','limites']),
-      settingItem('api','API','<>',['clés','intégrations','développeur'])
+      settingItem('api','API','<>',['clés','intégrations','développeur']),
+      settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth'])
     ].filter(item=>item.visible);
     const settingsCustomItems = [
       settingItem('skills','Compétences','✧',['templates','workflows']),
-      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'])
+      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils']),
+      settingItem('plugins','Plugins','✧',['store','tools','extensions'])
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
-    const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', skills:'Compétences', connectors:'Connecteurs' };
+    const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
     const paywallPlan = this.paywallPlanDetails();
     const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
       const active = task.status === 'loading';
@@ -5668,7 +5700,7 @@ class Component extends DCLogic {
       hasPricingNotice: !!st.pricingNotice,
       pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
       pricingEmpty: !!st.backendError && renderedPlans.length === 0,
-      showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'skills', 'connectors'].includes(st.page),
+      showSettingsModal: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       showLegacySettingsModal: false,
       closeSettings: ()=> this.closeSettingsModal(),
       settingsPrimaryItems,
@@ -5832,7 +5864,7 @@ class Component extends DCLogic {
       systemTabStyle: st.theme === 'system' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       lightTabStyle: st.theme === 'light' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       darkTabStyle: st.theme === 'dark' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
-      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'skills', 'connectors'].includes(st.page),
+      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{
