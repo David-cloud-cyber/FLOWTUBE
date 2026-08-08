@@ -5714,6 +5714,7 @@ class Component extends DCLogic {
       settingsSavingLabel: st.settingsSaving ? 'Enregistrement…' : (st.settingsSaved ? 'Enregistré' : 'Enregistrer'),
       settingsSearchQuery: st.settingsSearchQuery || '',
       onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
+      onSettingsScroll: ()=> this.onSettingsScroll(),
       avatarInitial: (st.settingsName || (st.user && st.user.name) || 'D')[0].toUpperCase(),
       showSettingsSection: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
