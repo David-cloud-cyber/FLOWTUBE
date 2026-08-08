@@ -4051,7 +4051,16 @@ class Component extends DCLogic {
     if(this.chatShouldStick === false || typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
     requestAnimationFrame(()=>{
       const list = document.querySelector('[data-hf-chat-scroll="true"]');
-      if(list){ list.scrollTop = list.scrollHeight; if(this.state.chatUnread) this.setState({ chatUnread:false }); }
+      if(!list) return;
+      const distanceFromBottom = Math.max(0, list.scrollHeight - list.scrollTop - list.clientHeight);
+      const explicitRequest = this.chatScrollRequested === true;
+      this.chatScrollRequested = false;
+      if(distanceFromBottom > 96 && !explicitRequest){
+        this.chatShouldStick = false;
+        return;
+      }
+      list.scrollTop = list.scrollHeight;
+      if(this.state.chatUnread) this.setState({ chatUnread:false });
     });
   }
   resizeChatInput(element){
@@ -4069,6 +4078,7 @@ class Component extends DCLogic {
   }
   jumpToLatest(){
     this.chatShouldStick = true;
+    this.chatScrollRequested = true;
     this.setState({ chatUnread:false });
     const list = typeof document !== 'undefined' ? document.querySelector('[data-hf-chat-scroll="true"]') : null;
     if(list && typeof list.scrollTo === 'function') list.scrollTo({ top:list.scrollHeight, behavior:'smooth' });
@@ -4183,7 +4193,7 @@ class Component extends DCLogic {
     this.setState({ input:prompt, mode });
   }
   onChatScroll(e){
-    const el = e && e.currentTarget;
+    const el = (e && (e.currentTarget || e.target)) || (typeof document !== 'undefined' ? document.querySelector('[data-hf-chat-scroll="true"]') : null);
     if(!el) return;
     this.chatShouldStick = (el.scrollHeight - el.scrollTop - el.clientHeight) < 96;
     if(this.chatShouldStick && this.state.chatUnread) this.setState({ chatUnread:false });
@@ -4591,6 +4601,7 @@ class Component extends DCLogic {
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
     const agentMsg = { id:agentId, role:'agent', typing:true, kind, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande' };
     this.chatShouldStick = true;
+    this.chatScrollRequested = true;
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
       input:'',
