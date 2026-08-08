@@ -7413,6 +7413,27 @@ async function decryptConnectorSecret(value: string) {
   return new TextDecoder().decode(plain);
 }
 
+async function refreshConnectorAccessToken(supabase: any, userId: string, provider: string, secret: any) {
+  const expiresAt = secret && secret.expires_at ? new Date(String(secret.expires_at)).getTime() : 0;
+  const stillValid = expiresAt > Date.now() + 60_000;
+  if (stillValid || !secret?.refresh_token_ciphertext) return decryptConnectorSecret(String(secret.access_token_ciphertext));
+  const config = oauthConfig(provider);
+  const refreshToken = await decryptConnectorSecret(String(secret.refresh_token_ciphertext));
+  const form = new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken });
+  const headers = new Headers({ 'content-type':'application/x-www-form-urlencoded', accept:'application/json' });
+  if (config.authStyle === 'basic') headers.set('authorization', `Basic ${btoa(`${config.clientId}:${config.clientSecret}`)}`);
+  else { form.set('client_id', config.clientId); form.set('client_secret', config.clientSecret); }
+  const response = await fetch(config.tokenUrl, { method:'POST', headers, body:form });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.access_token) throw new FlowtubeError(502, 'La session du connecteur a expiré. Reconnecte ce service.', { code:'CONNECTOR_REFRESH_FAILED', provider });
+  const accessCiphertext = await encryptConnectorSecret(String(payload.access_token));
+  const nextRefreshCiphertext = payload.refresh_token ? await encryptConnectorSecret(String(payload.refresh_token)) : secret.refresh_token_ciphertext;
+  const nextExpiresAt = payload.expires_in ? new Date(Date.now() + Number(payload.expires_in) * 1000).toISOString() : null;
+  const { error } = await supabase.from('integration_secrets').update({ access_token_ciphertext:accessCiphertext, refresh_token_ciphertext:nextRefreshCiphertext, expires_at:nextExpiresAt }).eq('user_id', userId).eq('provider', provider);
+  if (error) throw error;
+  return String(payload.access_token);
+}
+
 async function integrationsOAuthStart(req: Request) {
   const supabase = adminClient();
   const userId = await authenticatedUserIdFromRequest(req, supabase);
@@ -7467,7 +7488,13 @@ async function integrationsSync(req: Request, provider: string) {
   const userId = await authenticatedUserIdFromRequest(req, supabase);
   const { data: secret } = await supabase.from("integration_secrets").select("access_token_ciphertext,refresh_token_ciphertext,expires_at").eq("user_id", userId).eq("provider", provider).maybeSingle();
   if (!secret) throw new FlowtubeError(409, "Ce connecteur n’est pas connecté.", { code: "CONNECTOR_NOT_CONNECTED" });
-  const accessToken = await decryptConnectorSecret(String(secret.access_token_ciphertext));
+  let accessToken = "";
+  try {
+    accessToken = await refreshConnectorAccessToken(supabase, userId, provider, secret);
+  } catch (error) {
+    await supabase.from("integration_connections").update({ status: "error", sync_status: "error", last_error: error instanceof Error ? error.message : "Session du connecteur expirée" }).eq("user_id", userId).eq("provider", provider);
+    throw error;
+  }
   const endpoints: Record<string, string> = { google_drive: "https://www.googleapis.com/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,modifiedTime)", slack: "https://slack.com/api/auth.test", notion: "https://api.notion.com/v1/users/me" };
   const endpoint = endpoints[provider];
   if (!endpoint) throw new FlowtubeError(409, "La synchronisation de ce fournisseur n’est pas encore activée.", { code: "CONNECTOR_SYNC_UNAVAILABLE" });
@@ -7499,17 +7526,13 @@ async function integrationsRoute(req: Request) {
   const action = String(body.action || "configure");
   if (action === "configure" || action === "reconnect" || action === "oauth_start") return await integrationsOAuthStart(new Request(`${new URL(req.url).origin}${new URL(req.url).pathname}?provider=${encodeURIComponent(provider)}`, { method: "GET", headers: req.headers }));
   if (action === "sync") return await integrationsSync(req, provider);
-  if (action === "test") {
-    const { data: current } = await supabase.from("integration_connections").select("id,status,configuration").eq("user_id", userId).eq("provider", provider).maybeSingle();
-    if (!current || current.status !== "connected") return json({ connections: await list(), testOk: false, testMessage: "Ce connecteur n est pas encore autorise." });
-    const { error } = await supabase.from("integration_connections").update({ last_tested_at: new Date().toISOString(), sync_status: "healthy", last_error: null }).eq("id", current.id).eq("user_id", userId);
-    if (error) throw error;
-    return json({ connections: await list(), testOk: true, testMessage: "Connexion validee." });
-  }
+  if (action === "test") return await integrationsSync(req, provider);
   if (action === "reconnect") return await integrationsOAuthStart(new Request(`${new URL(req.url).origin}${new URL(req.url).pathname}?provider=${encodeURIComponent(provider)}`, { method: "GET", headers: req.headers }));
   if (action === "disconnect") {
     const { error } = await supabase.from("integration_connections").upsert({ user_id: userId, provider, status: "disconnected", account_label: null, credentials_ref: null, configuration: {}, permissions: {}, sync_status: "idle", last_error: null, connected_at: null, last_tested_at: null, last_synced_at: null }, { onConflict: "user_id,provider" });
     if (error) throw error;
+    const { error: secretError } = await supabase.from("integration_secrets").delete().eq("user_id", userId).eq("provider", provider);
+    if (secretError) throw secretError;
     await recordProductEvent(supabase, userId, "connector_disconnected", { provider });
     return json({ connections: await list() });
   }
