@@ -776,111 +776,52 @@ function publicErrorPayload(err: FlowtubeError) {
 
 const FAL_ENDPOINTS = [
   "bytedance/seedance-2.0/image-to-video",
-  "bytedance/seedance-2.0/fast/image-to-video",
-  "bytedance/seedance-2.0/fast/reference-to-video",
-  "bytedance/seedance-2.0/fast/text-to-video",
-  "bytedance/seedance-2.0/mini/image-to-video",
-  "bytedance/seedance-2.0/mini/reference-to-video",
-  "bytedance/seedance-2.0/mini/text-to-video",
   "bytedance/seedance-2.0/reference-to-video",
   "bytedance/seedance-2.0/text-to-video",
-  "fal-ai/krea-2/turbo",
-  "fal-ai/krea-2/turbo/lora",
-  "alibaba/happy-horse/v1.1/image-to-video",
-  "alibaba/happy-horse/v1.1/reference-to-video",
-  "alibaba/happy-horse/v1.1/text-to-video",
   "fal-ai/kling-video/v3/pro/image-to-video",
+  "fal-ai/kling-video/v3/pro/text-to-video",
   "fal-ai/kling-video/v3/4k/image-to-video",
   "fal-ai/kling-video/v3/4k/text-to-video",
-  "fal-ai/kling-video/v3/pro/text-to-video",
-  "fal-ai/kling-video/v3/standard/image-to-video",
-  "fal-ai/kling-video/v3/standard/text-to-video",
-  "fal-ai/pixverse/v6/image-to-video",
-  "fal-ai/nano-banana-2/edit",
-  "fal-ai/nano-banana-2",
-  "openai/gpt-image-2/edit",
-  "openai/gpt-image-2",
+  "fal-ai/veo3.1",
+  "fal-ai/veo3.1/image-to-video",
+  "fal-ai/veo3.1/first-last-frame-to-video",
+  "fal-ai/veo3.1/reference-to-video",
+  "fal-ai/veo3.1/fast",
+  "fal-ai/veo3.1/fast/image-to-video",
+  "fal-ai/veo3.1/fast/first-last-frame-to-video",
+  "fal-ai/veo3.1/extend-video",
+  "fal-ai/veo3.1/fast/extend-video",
   "fal-ai/nano-banana-pro/edit",
   "fal-ai/nano-banana-pro",
-  "fal-ai/flux/schnell",
-  "fal-ai/flux/dev",
-  "fal-ai/flux/dev/image-to-image",
-  "fal-ai/flux/dev/redux",
-  "fal-ai/flux/schnell/redux",
-  "fal-ai/bytedance/seedream/v4.5/edit",
-  "fal-ai/bytedance/seedream/v4.5/text-to-image",
-  "fal-ai/bytedance/seedream/v5/lite/text-to-image",
+  "openai/gpt-image-2/edit",
+  "openai/gpt-image-2",
   "fal-ai/flux-2-pro",
   "fal-ai/flux-2-pro/edit",
-  "fal-ai/flux-2-pro/outpaint",
-  "fal-ai/bria/background/remove",
+  "fal-ai/recraft/v3/text-to-image",
+  "fal-ai/recraft/v3/image-to-image",
+  "fal-ai/elevenlabs/tts/eleven-v3",
+  "fal-ai/elevenlabs/tts/turbo-v2.5",
+  "fal-ai/elevenlabs/tts/multilingual-v2",
+  "fal-ai/elevenlabs/text-to-dialogue/eleven-v3",
+  "fal-ai/elevenlabs/music",
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2",
   "fal-ai/elevenlabs/voice-changer",
   "fal-ai/elevenlabs/dubbing",
-  "fal-ai/elevenlabs/speech-to-text/scribe-v2",
-  "fal-ai/elevenlabs/music",
-  "fal-ai/elevenlabs/text-to-dialogue/eleven-v3",
-  "fal-ai/heygen/avatar5/digital-twin",
-  "fal-ai/heygen/v3/video-agent",
-  "fal-ai/heygen/v3/lipsync/precision",
-  "fal-ai/heygen/v3/lipsync/speed",
-  "fal-ai/heygen/avatar4/image-to-video",
-  "fal-ai/heygen/avatar4/digital-twin",
-  "fal-ai/heygen/v2/translate/speed",
-  "fal-ai/heygen/v2/translate/precision",
-  "fal-ai/heygen/avatar3/digital-twin",
-  "fal-ai/heygen/v2/video-agent",
+  "google/gemini-omni-flash",
   "google/gemini-omni-flash/image-to-video",
   "google/gemini-omni-flash/edit",
-  "google/gemini-omni-flash",
-  "fal-ai/veo3",
-  "fal-ai/veo3/fast",
-  "fal-ai/veo3.1/lite/first-last-frame-to-video",
-  "fal-ai/veo3.1/lite/image-to-video",
-  "fal-ai/veo3.1/fast/extend-video",
-  "fal-ai/veo3.1/extend-video",
-  "fal-ai/gemini-3.1-flash-image-preview/edit",
-  "fal-ai/gemini-3.1-flash-image-preview",
-  "fal-ai/lyria3/pro",
-  "fal-ai/gemini-3.1-flash-tts",
-  "luma/agent/ray/v3.2/video-to-video",
-  "luma/agent/ray/v3.2/reframe",
-  "luma/agent/ray/v3.2/text-to-video",
-  "luma/agent/ray/v3.2/image-to-video",
-  "luma/agent/uni-1/v1/edit",
-  "luma/agent/uni-1/v1/max",
-  "luma/agent/uni-1/v1/max/edit",
-  "luma/agent/uni-1/v1/text-to-image",
-  "bria/fibo-edit/edit",
-  "fal-ai/minimax/speech-2.8-hd",
-  "fal-ai/minimax/speech-2.8-turbo",
-  "fal-ai/minimax/voice-clone",
-  "xai/grok-imagine-video/v1.5/image-to-video",
-  "xai/grok-imagine-image/quality/text-to-image",
-  "xai/grok-imagine-image/quality/edit",
-  "xai/grok-imagine-video/reference-to-video",
-  "xai/grok-imagine-video/extend-video",
-  "xai/grok-imagine-image/edit",
-  "veed/subtitles",
-  "veed/fabric-1.0/text",
-  "veed/fabric-1.0",
-  "veed/avatars/text-to-video",
-  "veed/avatars/audio-to-video",
-  "veed/video-background-removal/fast",
-  "veed/video-background-removal",
-  "veed/video-background-removal/green-screen",
-  "fal-ai/creatify/aurora",
-  "fal-ai/bytedance/omnihuman/v1.5",
-  "fal-ai/sync-lipsync/v3/image-to-video",
-  "fal-ai/sync-lipsync/v3",
-  "fal-ai/seedvr/upscale/image",
+  "google/gemini-omni-flash/reference-to-video",
+  "fal-ai/sora-2/text-to-video",
+  "fal-ai/sora-2/text-to-video/pro",
+  "fal-ai/sora-2/image-to-video",
+  "fal-ai/sora-2/video-to-video/remix",
+  "fal-ai/topaz/upscale/image",
   "fal-ai/topaz/upscale/video",
-  "fal-ai/ideogram/remove-background",
-  "sonilo/v1.1/text-to-music",
 ];
 
 const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
-  "fal-ai/nano-banana-pro": { id: "nano", label: "Nano Banana Pro", costPerUnitUsd: 0.15, qualityTier: "premium" },
-  "fal-ai/nano-banana-pro/edit": { id: "nano-pro-edit", label: "Nano Banana Pro Edit", costPerUnitUsd: 0.15, qualityTier: "premium" },
+  "fal-ai/nano-banana-pro/edit": { id: "nano-pro-edit", label: "Nano Banana Pro Edit", costPerUnitUsd: 0.15, qualityTier: "premium", metadata: { huggyflow_family: "nano-banana-pro" } },
+  "fal-ai/nano-banana-pro": { id: "nano", label: "Nano Banana Pro", costPerUnitUsd: 0.15, qualityTier: "premium", metadata: { huggyflow_family: "nano-banana-pro" } },
   "fal-ai/nano-banana-2": { id: "nano2", label: "Nano Banana 2", costPerUnitUsd: 0.08, qualityTier: "premium" },
   "fal-ai/nano-banana-2/edit": { id: "nano2-edit", label: "Nano Banana 2 Edit", costPerUnitUsd: 0.08, qualityTier: "premium" },
   "fal-ai/flux/schnell": { id: "flux", label: "Flux Schnell", costPerUnitUsd: 0.04, qualityTier: "standard" },
@@ -891,8 +832,21 @@ const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
   "fal-ai/bytedance/seedance/v1/lite/text-to-video": { id: "seedance", label: "Seedance 1.0 Lite", costPerUnitUsd: 0.08, qualityTier: "standard", maximumUnits: 15 },
   "fal-ai/veo3": { id: "veoq", label: "Veo 3.1 Quality", costPerUnitUsd: 0.4, qualityTier: "premium", maximumUnits: 8 },
   "fal-ai/veo3/fast": { id: "veol", label: "Veo 3.1 Fast", costPerUnitUsd: 0.15, qualityTier: "standard", maximumUnits: 8 },
-  "openai/gpt-image-2": { id: "gpt-image-2", label: "GPT Image 2", costPerUnitUsd: 0.211, qualityTier: "premium", metadata: { default_quality: "high", pricing_source: "fal.ai high 1024x1024" } },
-  "openai/gpt-image-2/edit": { id: "gpt-image-2-edit", label: "GPT Image 2 Edit", costPerUnitUsd: 0.219, qualityTier: "premium", metadata: { default_quality: "high", pricing_source: "fal.ai high 1024x1024 edit" } },
+  "fal-ai/veo3.1": { id: "veo31", label: "Veo 3.1", costPerUnitUsd: 0.4, pricingUnit: "second", qualityTier: "premium", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1" } },
+  "fal-ai/veo3.1/image-to-video": { id: "veo31-i2v", label: "Veo 3.1 I2V", costPerUnitUsd: 0.4, pricingUnit: "second", qualityTier: "premium", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1" } },
+  "fal-ai/veo3.1/first-last-frame-to-video": { id: "veo31-first-last", label: "Veo 3.1 First/Last Frame", costPerUnitUsd: 0.4, pricingUnit: "second", qualityTier: "premium", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1" } },
+  "fal-ai/veo3.1/reference-to-video": { id: "veo31-reference", label: "Veo 3.1 Reference", costPerUnitUsd: 0.4, pricingUnit: "second", qualityTier: "premium", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1", reference_lock: true } },
+  "fal-ai/veo3.1/fast": { id: "veo31-fast", label: "Veo 3.1 Fast", costPerUnitUsd: 0.15, pricingUnit: "second", qualityTier: "standard", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1" } },
+  "fal-ai/veo3.1/fast/image-to-video": { id: "veo31-fast-i2v", label: "Veo 3.1 Fast I2V", costPerUnitUsd: 0.15, pricingUnit: "second", qualityTier: "standard", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1" } },
+  "fal-ai/veo3.1/fast/first-last-frame-to-video": { id: "veo31-fast-first-last", label: "Veo 3.1 Fast First/Last Frame", costPerUnitUsd: 0.15, pricingUnit: "second", qualityTier: "standard", maximumUnits: 8, metadata: { huggyflow_family: "veo-3.1" } },
+  "openai/gpt-image-2/edit": { id: "gpt-image-2-edit", label: "GPT Image 2 Edit", costPerUnitUsd: 0.219, qualityTier: "premium", metadata: { default_quality: "high", pricing_source: "fal.ai high 1024x1024 edit", huggyflow_family: "gpt-image-2" } },
+  "openai/gpt-image-2": { id: "gpt-image-2", label: "GPT Image 2", costPerUnitUsd: 0.211, qualityTier: "premium", metadata: { default_quality: "high", pricing_source: "fal.ai high 1024x1024", huggyflow_family: "gpt-image-2" } },
+  "fal-ai/recraft/v3/text-to-image": { id: "recraft-v3", label: "Recraft V3", costPerUnitUsd: 0.04, qualityTier: "premium", metadata: { huggyflow_family: "recraft-v3", vector_and_brand_style: true } },
+  "fal-ai/recraft/v3/image-to-image": { id: "recraft-v3-edit", label: "Recraft V3 Edit", costPerUnitUsd: 0.04, qualityTier: "premium", metadata: { huggyflow_family: "recraft-v3", vector_and_brand_style: true } },
+  "fal-ai/elevenlabs/tts/eleven-v3": { id: "eleven-v3-tts", label: "ElevenLabs Eleven V3", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", defaultUnits: 1, minimumUnits: 1, maximumUnits: 20, qualityTier: "premium", metadata: { huggyflow_family: "elevenlabs-v3" } },
+  "fal-ai/elevenlabs/tts/turbo-v2.5": { id: "eleven-turbo-v25", label: "ElevenLabs Turbo v2.5", costPerUnitUsd: 0.05, pricingUnit: "thousand_chars", defaultUnits: 1, minimumUnits: 1, maximumUnits: 20, qualityTier: "standard", metadata: { huggyflow_family: "elevenlabs-v3" } },
+  "fal-ai/elevenlabs/tts/multilingual-v2": { id: "eleven-multilingual-v2", label: "ElevenLabs Multilingual v2", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", defaultUnits: 1, minimumUnits: 1, maximumUnits: 20, qualityTier: "premium", metadata: { huggyflow_family: "elevenlabs-v3" } },
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2": { id: "eleven-scribe-v2", label: "ElevenLabs Scribe V2", costPerUnitUsd: 0.01, pricingUnit: "second", defaultUnits: 60, minimumUnits: 1, maximumUnits: 3600, qualityTier: "premium", metadata: { huggyflow_family: "elevenlabs-v3" } },
   "fal-ai/gemini-3.1-flash-image-preview": { id: "gemini-flash-image", label: "Gemini 3.1 Flash Image", costPerUnitUsd: 0.08, qualityTier: "standard" },
   "fal-ai/gemini-3.1-flash-image-preview/edit": { id: "gemini-flash-image-edit", label: "Gemini 3.1 Flash Image Edit", costPerUnitUsd: 0.08, qualityTier: "standard" },
   "fal-ai/minimax/speech-2.8-hd": { id: "minimax-tts", label: "MiniMax Speech 2.8 HD", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", maximumUnits: 20, qualityTier: "premium" },
@@ -931,7 +885,6 @@ const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
   "xai/grok-imagine-video/reference-to-video": { label: "Grok Video Reference", costPerUnitUsd: 0.07, pricingUnit: "second", qualityTier: "standard" },
   "xai/grok-imagine-video/extend-video": { label: "Grok Video Extend", costPerUnitUsd: 0.08, pricingUnit: "second", qualityTier: "standard" },
   "fal-ai/pixverse/v6/image-to-video": { label: "PixVerse 6 I2V", costPerUnitUsd: 0.06, pricingUnit: "second", qualityTier: "standard" },
-  "google/gemini-omni-flash/image-to-video": { label: "Gemini Omni I2V", costPerUnitUsd: 0.13, pricingUnit: "second", qualityTier: "standard" },
   "fal-ai/creatify/aurora": { label: "Creatify Aurora", costPerUnitUsd: 0.14, pricingUnit: "second", qualityTier: "standard" },
   "fal-ai/bytedance/omnihuman/v1.5": { label: "OmniHuman 1.5", costPerUnitUsd: 0.16, pricingUnit: "second", qualityTier: "premium" },
   "fal-ai/heygen/avatar3/digital-twin": { label: "HeyGen Avatar 3 Twin", costPerUnitUsd: 0.034, pricingUnit: "second", qualityTier: "standard" },
@@ -959,7 +912,16 @@ const FAL_ENDPOINT_OVERRIDES: Record<string, ModelOverride> = {
   "fal-ai/elevenlabs/text-to-dialogue/eleven-v3": { label: "ElevenLabs Dialogue", costPerUnitUsd: 0.1, pricingUnit: "thousand_chars", defaultUnits: 1, minimumUnits: 1, maximumUnits: 20, qualityTier: "premium" },
   "fal-ai/elevenlabs/voice-changer": { label: "ElevenLabs Voice Changer", costPerUnitUsd: 0.005, pricingUnit: "second", defaultUnits: 60, minimumUnits: 1, maximumUnits: 600, qualityTier: "standard" },
   "fal-ai/bria/background/remove": { label: "Bria Background Remove", costPerUnitUsd: 0.018, qualityTier: "standard" },
-  "fal-ai/topaz/upscale/video": { label: "Topaz Video Upscale", costPerUnitUsd: 0.02, pricingUnit: "second", qualityTier: "standard" },
+  "fal-ai/topaz/upscale/image": { id: "topaz-image-upscale", label: "Topaz Image Upscale", costPerUnitUsd: 0.004, qualityTier: "standard", metadata: { huggyflow_family: "topaz-upscale" } },
+  "fal-ai/topaz/upscale/video": { id: "topaz-video-upscale", label: "Topaz Video Upscale", costPerUnitUsd: 0.02, pricingUnit: "second", qualityTier: "standard", metadata: { huggyflow_family: "topaz-upscale" } },
+  "fal-ai/sora-2/text-to-video": { id: "sora-2", label: "Sora 2", costPerUnitUsd: 0.1, pricingUnit: "second", maximumUnits: 20, qualityTier: "premium", metadata: { huggyflow_family: "sora-2" } },
+  "fal-ai/sora-2/text-to-video/pro": { id: "sora-2-pro", label: "Sora 2 Pro", costPerUnitUsd: 0.2, pricingUnit: "second", maximumUnits: 20, qualityTier: "premium", metadata: { huggyflow_family: "sora-2" } },
+  "fal-ai/sora-2/image-to-video": { id: "sora-2-i2v", label: "Sora 2 Image to Video", costPerUnitUsd: 0.1, pricingUnit: "second", maximumUnits: 20, qualityTier: "premium", metadata: { huggyflow_family: "sora-2" } },
+  "fal-ai/sora-2/video-to-video/remix": { id: "sora-2-remix", label: "Sora 2 Remix", costPerUnitUsd: 0.1, pricingUnit: "second", maximumUnits: 20, qualityTier: "premium", metadata: { huggyflow_family: "sora-2" } },
+  "google/gemini-omni-flash": { id: "gemini-omni-flash", label: "Gemini Omni Flash", costPerUnitUsd: 0.125, pricingUnit: "second", defaultUnits: 8, minimumUnits: 3, maximumUnits: 10, qualityTier: "premium", metadata: { huggyflow_family: "gemini-omni-flash" } },
+  "google/gemini-omni-flash/image-to-video": { id: "gemini-omni-flash-i2v", label: "Gemini Omni Flash I2V", costPerUnitUsd: 0.13, pricingUnit: "second", defaultUnits: 8, minimumUnits: 3, maximumUnits: 10, qualityTier: "premium", metadata: { huggyflow_family: "gemini-omni-flash" } },
+  "google/gemini-omni-flash/edit": { id: "gemini-omni-flash-edit", label: "Gemini Omni Flash Edit", type: "video_edit", capabilities: ["video-to-video", "edit"], costPerUnitUsd: 0.13, pricingUnit: "second", defaultUnits: 8, minimumUnits: 3, maximumUnits: 10, qualityTier: "premium", metadata: { huggyflow_family: "gemini-omni-flash", runway_equivalent: true } },
+  "google/gemini-omni-flash/reference-to-video": { id: "gemini-omni-flash-reference", label: "Gemini Omni Flash Reference", costPerUnitUsd: 0.13, pricingUnit: "second", defaultUnits: 8, minimumUnits: 3, maximumUnits: 10, qualityTier: "premium", metadata: { huggyflow_family: "gemini-omni-flash", reference_lock: true } },
   "fal-ai/seedvr/upscale/image": { label: "SeedVR Image Upscale", costPerUnitUsd: 0.004, qualityTier: "economy" },
   "xai/grok-imagine-image/edit": { label: "Grok Image Edit", costPerUnitUsd: 0.022, qualityTier: "standard" },
 };
@@ -1161,6 +1123,29 @@ function inputProfileForCapabilities(caps: string[]) {
   return "text_prompt";
 }
 
+type HuggyflowPriorityRoute = {
+  family: string;
+  label: string;
+  aliases: string[];
+  referenceStrategy?: string;
+};
+
+function priorityRouteForEndpoint(endpoint: string): HuggyflowPriorityRoute | null {
+  const e = endpoint.toLowerCase();
+  if (e.startsWith("bytedance/seedance-2.0/")) return { family: "seedance-2.0", label: "Seedance 2.0", aliases: ["seedance", "video", "cinematic"], referenceStrategy: "reference_images_and_frames" };
+  if (e.startsWith("fal-ai/kling-video/v3/")) return { family: "kling-3.0", label: "Kling 3.0", aliases: ["kling", "video", "character"], referenceStrategy: "element_reference" };
+  if (e.startsWith("fal-ai/veo3.1")) return { family: "veo-3.1", label: "Veo 3.1", aliases: ["veo", "cinematic", "audio"], referenceStrategy: "reference_images_and_frames" };
+  if (e.includes("nano-banana-pro")) return { family: "nano-banana-pro", label: "Nano Banana Pro", aliases: ["nano", "image", "text", "character"], referenceStrategy: "reference_images" };
+  if (e.includes("gpt-image-2")) return { family: "gpt-image-2", label: "GPT Image 2", aliases: ["gpt image", "image", "text", "edit"], referenceStrategy: "reference_images" };
+  if (e.startsWith("fal-ai/recraft/v3/")) return { family: "recraft-v3", label: "Recraft V3", aliases: ["recraft", "vector", "brand style", "typography"], referenceStrategy: "reference_images" };
+  if (e.includes("flux-2-pro")) return { family: "flux-2-pro", label: "FLUX.2 Pro", aliases: ["flux", "style transfer", "image", "edit"], referenceStrategy: "reference_images" };
+  if (e.includes("elevenlabs/")) return { family: "elevenlabs-v3", label: "ElevenLabs Eleven V3", aliases: ["voice", "audio", "tts", "dubbing"], referenceStrategy: "voice_reference" };
+  if (e.startsWith("google/gemini-omni-flash")) return { family: "gemini-omni-flash", label: "Gemini Omni Flash", aliases: ["omni", "video", "transform", "style", "reference"], referenceStrategy: "reference_images_and_video" };
+  if (e.startsWith("fal-ai/sora-2/")) return { family: "sora-2", label: "Sora 2", aliases: ["sora", "premium", "cinematic", "video"], referenceStrategy: "reference_images_and_video" };
+  if (e.startsWith("fal-ai/topaz/upscale/")) return { family: "topaz-upscale", label: "Topaz Upscale", aliases: ["topaz", "upscale", "finish", "resolution"], referenceStrategy: "source_asset" };
+  return null;
+}
+
 function falModel(endpoint: string, override: ModelOverride = {}): PricingModel {
   const caps = override.capabilities || capabilitiesForEndpoint(endpoint);
   const type = override.type || mediaTypeForCapabilities(caps);
@@ -1198,6 +1183,13 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
       family: override.family || endpoint.split("/")[0],
       fal_only: true,
       cost_estimate: true,
+      ...(priorityRouteForEndpoint(endpoint) ? {
+        huggyflow_priority: true,
+        huggyflow_family: priorityRouteForEndpoint(endpoint)!.family,
+        huggyflow_route_label: priorityRouteForEndpoint(endpoint)!.label,
+        routing_aliases: priorityRouteForEndpoint(endpoint)!.aliases,
+        reference_strategy: priorityRouteForEndpoint(endpoint)!.referenceStrategy || "project_memory",
+      } : {}),
       ...(override.metadata || {}),
     },
   };
@@ -1247,12 +1239,50 @@ const OPENROUTER_PHASE2_MODELS: PricingModel[] = [
 ];
 
 function enabledModelRegistry() {
-  return OPENROUTER_MEDIA_ENABLED && Deno.env.get("OPENROUTER_API_KEY")
-    ? [...modelRegistry, ...OPENROUTER_PHASE2_MODELS]
-    : modelRegistry;
+  // HuggyFlow exposes one curated media stack. Experimental OpenRouter and
+  // legacy FAL routes stay out of the product catalog and auto-router.
+  return modelRegistry;
 }
 
 const FEATURED_MODEL_IDS: string[] = [];
+
+function isHuggyflowPriorityModel(model: PricingModel) {
+  return Boolean(model.endpoint && (model.metadata?.huggyflow_priority || priorityRouteForEndpoint(String(model.endpoint))));
+}
+
+function priorityModelCatalog(catalog: PricingModel[]) {
+  return catalog
+    .filter(isHuggyflowPriorityModel)
+    .sort((a, b) => {
+      const familyA = String(a.metadata?.huggyflow_family || "");
+      const familyB = String(b.metadata?.huggyflow_family || "");
+      return familyA.localeCompare(familyB) || String(a.name).localeCompare(String(b.name));
+    });
+}
+
+function priorityRoutePlan(model: PricingModel, type: string, prompt: string, body: Record<string, unknown> = {}) {
+  const route = priorityRouteForEndpoint(String(model.endpoint || ""));
+  const referenceUrls = stringArray(body.referenceUrls || body.reference_urls || body.referenceImageUrls || body.reference_image_urls);
+  const hasReference = Boolean(
+    body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url
+    || body.firstFrameUrl || body.first_frame_url || body.lastFrameUrl || body.last_frame_url
+    || referenceUrls.length,
+  );
+  return {
+    planner: "creative-planner",
+    router: "model-router",
+    orchestrator: "task-orchestrator",
+    qualityGate: "quality-control",
+    selectedFamily: route?.family || "huggyflow-priority",
+    selectedModel: model.name,
+    mediaType: type,
+    intentSignals: prompt.slice(0, 500),
+    referenceLock: hasReference,
+    referenceStrategy: route?.referenceStrategy || "project_memory",
+    stages: ["intent", "plan", "route", hasReference ? "preserve_references" : "prepare_inputs", "generate", "quality_check", "deliver"],
+    fallbackPolicy: "same_priority_family_or_next_priority_family",
+  };
+}
 
 const MODEL_SHORT_NAMES: Record<string, string> = {
   "gpt-image-2": "GPT Image 2",
@@ -1685,9 +1715,9 @@ async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
         metadata: { ...(model.metadata || {}), provider: "fal.ai", fal_only: true },
       });
     }
-    return merged.filter((model) => Boolean(model.endpoint));
+    return priorityModelCatalog(merged);
   }
-  return baseRegistry;
+  return priorityModelCatalog(baseRegistry);
 }
 
 function modelCapabilities(model: PricingModel) {
@@ -1706,7 +1736,7 @@ function requestTypeFromBody(body: Record<string, unknown>, prompt: string) {
   if (/clone.*voix|clonage.*voix|voice clone|digital twin/.test(text)) return "voice_clone";
   if (/musique|music|chanson|soundtrack|bande son|tts|voix off|voice over|audio|doublage|transcri/.test(text)) return "audio";
   if (/retouche|modifier|edite|edit|background|arriere-plan|upscale|agrandir|remove/.test(text) && raw === "image") return "image_edit";
-  if (/reframe|extend|prolonge|upscale.*video|sous-titre|subtitle|fond.*video/.test(text) && raw === "video") return "video_edit";
+  if (/reframe|extend|prolonge|upscale.*video|sous-titre|subtitle|fond.*video|restyle|style.*video|transform.*video|remix.*video|runway/.test(text) && (raw === "video" || Boolean(body.videoUrl || body.video_url))) return "video_edit";
   if (/\b(video|clip|reels?|tiktok|ugc|pub video|spot|storyboard anime|animation)\b/.test(text)) return "video";
   if (/\b(image|photo|visuel|affiche|poster|miniature|thumbnail|packshot)\b/.test(text)) return raw === "video" ? "video" : "image";
   if (allowedTypes.includes(raw)) return raw;
@@ -1765,6 +1795,7 @@ function scoreModel(model: PricingModel, type: string, capability: string, promp
   if (!caps.includes(capability)) return -200;
   const text = prompt.toLowerCase();
   const tier = String((model.metadata || {}).quality_tier || "standard");
+  const family = String(model.metadata?.huggyflow_family || "").toLowerCase();
   let score = 100;
   score += tier === "premium" ? 40 : tier === "standard" ? 24 : 12;
   if (model.premium) score += 12;
@@ -1777,6 +1808,13 @@ function scoreModel(model: PricingModel, type: string, capability: string, promp
   if (/ugc|createur|face camera|temoignage|testimonial|tiktok|reels/.test(text) && endpoint.includes("kling-video/v3")) score += 40;
   if (/visage|portrait|createur|creator|ugc|personne/.test(text) && endpoint.includes("nano-banana-pro")) score += 28;
   if (capability.includes("video") && /seedance-2.0|kling-video\/v3|veo3.1|ray\/v3.2|grok-imagine-video/.test(endpoint)) score += 18;
+  if (/premium|hero|final|haut de gamme|cinema|cinematique/.test(text) && family === "sora-2") score += 32;
+  if (/style|transform|transforme|remix|restyle|retouche video/.test(text) && family === "gemini-omni-flash") score += 36;
+  if (/vector|vecteur|logo|charte|brand style|typographie/.test(text) && family === "recraft-v3") score += 34;
+  if (/coherence|cohérent|personnage|character|reference|référence|meme personne/.test(text) && String(model.metadata?.reference_strategy || "").includes("reference")) score += 24;
+  if (/voix|voice|tts|narration|doublage|audio|musique|music/.test(text) && family === "elevenlabs-v3") score += 36;
+  if (/upscale|4k|nettoie|resolution|résolution|fini|finish/.test(text) && family === "topaz-upscale") score += 40;
+  if (/rapid|rapide|test|brouillon/.test(text) && (family === "gemini-omni-flash" || endpoint.includes("fast"))) score += 18;
   score -= Math.min(30, quoteFor(model).credits / 80);
   return score;
 }
@@ -1847,7 +1885,7 @@ function creditsFor(model: PricingModel, duration?: number) {
 }
 
 function publicPricingModels(catalog: PricingModel[]) {
-  const media = catalog.filter((model) => Boolean(model.endpoint)).map((model) => {
+  const media = priorityModelCatalog(catalog).map((model) => {
     const quote = quoteFor(model);
     const costPerUnitXof = usdToXof(model.costPerUnitUsd);
     return {
@@ -1868,6 +1906,10 @@ function publicPricingModels(catalog: PricingModel[]) {
       retailCreditUsd: model.retailCreditUsd,
       qualityTier: String(model.metadata?.quality_tier || "standard"),
       marginClass: String(model.metadata?.margin_class || "standard"),
+      capabilities: modelCapabilities(model),
+      family: String(model.metadata?.huggyflow_family || ""),
+      routingAliases: Array.isArray(model.metadata?.routing_aliases) ? model.metadata.routing_aliases : [],
+      referenceStrategy: String(model.metadata?.reference_strategy || "project_memory"),
       costLabel: `${model.costPerUnitUsd.toFixed(model.costPerUnitUsd < 0.1 ? 3 : 2)} USD / ${model.pricingUnit}`,
     };
   });
@@ -1903,7 +1945,9 @@ function publicPricingModels(catalog: PricingModel[]) {
       costLabel: `${price.input} USD / MTok entree · ${price.output} USD / MTok sortie`,
     };
   });
-  return [...media, ...agent];
+  // Agent LLMs remain available through `agentModels` for chat orchestration,
+  // but are intentionally not mixed into the curated media model catalog.
+  return media;
 }
 
 function normalizePlanId(plan: string | null | undefined) {
@@ -4880,12 +4924,28 @@ function stringArray(value: unknown) {
   return value.map((item) => firstString(item)).filter(Boolean);
 }
 
+function gptImageSizeForAspectRatio(aspectRatio: string) {
+  const sizes: Record<string, { width: number; height: number }> = {
+    "1:1": { width: 1024, height: 1024 },
+    "4:5": { width: 1024, height: 1280 },
+    "3:4": { width: 1024, height: 1360 },
+    "9:16": { width: 864, height: 1536 },
+    "16:9": { width: 1536, height: 864 },
+  };
+  return sizes[aspectRatio] || sizes["1:1"];
+}
+
 function falInput(model: PricingModel, prompt: string, aspectRatio: string, duration: number, params: Record<string, unknown> = {}) {
   const caps = modelCapabilities(model);
-  const input: Record<string, unknown> = {
-    prompt,
-    aspect_ratio: aspectRatio,
-  };
+  const endpoint = String(model.endpoint || "").toLowerCase();
+  const input: Record<string, unknown> = { prompt };
+  if (model.type === "video" || model.type === "video_edit" || model.type === "lipsync") input.aspect_ratio = aspectRatio;
+  if (endpoint.includes("nano-banana-pro")) input.aspect_ratio = aspectRatio;
+  if (endpoint.includes("gpt-image-2")) input.image_size = gptImageSizeForAspectRatio(aspectRatio);
+  if (endpoint.includes("flux-2-pro")) {
+    const fluxSizes: Record<string, string> = { "1:1": "square", "4:5": "portrait_4_3", "3:4": "portrait_4_3", "9:16": "portrait_16_9", "16:9": "landscape_16_9" };
+    input.image_size = fluxSizes[aspectRatio] || "square_hd";
+  }
   const imageUrl = firstString(params.imageUrl || params.image_url || params.referenceImageUrl || params.reference_image_url || params.sourceImageUrl || params.source_image_url);
   const videoUrl = firstString(params.videoUrl || params.video_url || params.sourceVideoUrl || params.source_video_url);
   const audioUrl = firstString(params.audioUrl || params.audio_url || params.voiceUrl || params.voice_url);
@@ -4908,8 +4968,31 @@ function falInput(model: PricingModel, prompt: string, aspectRatio: string, dura
     input.reference_image_urls = refs;
     input.reference_images = refs;
   }
-  if (caps.includes("tts") || caps.includes("music") || caps.includes("speech-to-text")) {
+  if (imageUrl && /gpt-image-2|nano-banana-pro|flux-2-pro|recraft\/v3\/image-to-image/.test(endpoint)) {
+    const editImages = Array.from(new Set([imageUrl, ...refs]));
+    input.image_urls = editImages;
+  }
+  if (caps.includes("tts") || caps.includes("speech-to-text")) {
     input.text = prompt;
+    delete input.prompt;
+  }
+  if (endpoint.includes("recraft/v3")) {
+    input.style = String(params.style || params.imageStyle || "realistic_image");
+    input.size = String(params.size || "square");
+  }
+  if (endpoint.includes("sora-2")) {
+    input.resolution = String(params.resolution || "720p");
+    input.model = endpoint.includes("/pro") ? "sora-2-pro" : "sora-2";
+  }
+  if (endpoint.includes("veo3.1") || endpoint.includes("gemini-omni-flash")) {
+    input.resolution = String(params.resolution || "1080p");
+    if (params.generateAudio !== undefined || params.generate_audio !== undefined) {
+      input.generate_audio = Boolean(params.generateAudio ?? params.generate_audio);
+    }
+  }
+  if (endpoint.includes("topaz/upscale")) {
+    input.upscale_factor = Number(params.upscaleFactor || params.upscale_factor || 2);
+    delete input.prompt;
   }
   if (caps.includes("remove-background")) {
     delete input.prompt;
@@ -5783,6 +5866,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
         scene: String(body.scene || sceneFromPrompt(prompt)),
         pricing: quote,
         pricing_unit: model.pricingUnit,
+        route_plan: priorityRoutePlan(model, type, prompt, body),
         selected_capability: requestedCapability(type, prompt, body),
         imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url || null,
         videoUrl: body.videoUrl || body.video_url || null,
@@ -6095,6 +6179,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
       scene: String(body.scene || sceneFromPrompt(prompt)),
       pricing: quote,
       pricing_unit: model.pricingUnit,
+      route_plan: priorityRoutePlan(model, type, prompt, body),
       selected_capability: requestedCapability(type, prompt, body),
       imageUrl: body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url || null,
       videoUrl: body.videoUrl || body.video_url || null,

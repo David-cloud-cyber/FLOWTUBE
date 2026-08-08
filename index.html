@@ -5996,7 +5996,7 @@ class Component extends DCLogic {
       capabilityServices: [
         { label:'Agent maître', detail:'Compréhension, planification et routage', status:'Actif' },
         { label:'Génération média', detail:'Image, vidéo, audio et documents', status:(st.pricingMeta && st.pricingMeta.providers && st.pricingMeta.providers.mediaPrivatePipeline) ? 'Actif' : 'À configurer' },
-        { label:'OpenRouter', detail:'Modèles agent et raisonnement', status:(st.pricingMeta && st.pricingMeta.providers && st.pricingMeta.providers.openRouterEnabled) ? 'Actif' : 'Indisponible' },
+        { label:'Routage références', detail:'Mémoire projet, cohérence personnages et transformations', status:'Actif' },
         { label:'Mémoire et artifacts', detail:'Projet, versions et contrôle qualité', status:st.authToken ? 'Actif' : 'Connexion requise' }
       ],
       connectorCards: (st.integrationConnections || []).map(c=>({
