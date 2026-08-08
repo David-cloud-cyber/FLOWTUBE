@@ -5,5 +5,9 @@
   "rewrites": [
     { "source": "/callback", "destination": "/api/callback" },
     { "source": "/((?!api/.*).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/(auth|settings|admin|gallery|affiliate|onboarding)(/.*)?", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }] },
+    { "source": "/api/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
   ]
 }

@@ -5,7 +5,8 @@ const files = ["index.html"];
 const contents = await Promise.all(files.map((file) => readFile(new URL(file, root), "utf8")));
 
 for (const [file, html] of files.map((file, index) => [file, contents[index]])) {
-  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+    .filter(([tag]) => !/type=["']application\/ld\+json["']/i.test(tag));
   if (!scripts.length) throw new Error(`${file}: no inline script found`);
   for (const [, source] of scripts) {
     new Function(source);

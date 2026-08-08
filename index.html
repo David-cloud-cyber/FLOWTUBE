@@ -8,11 +8,27 @@
 <link rel="alternate icon" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/huggyflow-logo.png">
 <meta name="theme-color" content="#0F1113">
-<script src="./support.js"></script>
-<link rel="stylesheet" href="./dist-components/hf-components.css">
-<script src="./dist-components/hf-components.iife.js"></script>
+<title>HuggyFlow | Création multimédia par IA</title>
+<meta name="description" content="HuggyFlow transforme une intention en images, vidéos, documents et campagnes créatives vérifiées, depuis un espace de production fluide.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://www.huggyflow.fun/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HuggyFlow">
+<meta property="og:title" content="HuggyFlow | Création multimédia par IA">
+<meta property="og:description" content="Conçois, génère, vérifie et organise tes créations multimédia dans un seul workspace.">
+<meta property="og:url" content="https://www.huggyflow.fun/">
+<meta property="og:image" content="https://www.huggyflow.fun/huggyflow-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HuggyFlow | Création multimédia par IA">
+<meta name="twitter:description" content="Un workspace fluide pour produire des images, vidéos, documents et campagnes avec l'IA.">
+<meta name="twitter:image" content="https://www.huggyflow.fun/huggyflow-logo.png">
+<script type="application/ld+json" id="hf-structured-data">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HuggyFlow","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://www.huggyflow.fun/","description":"Workspace de production créative multimédia assisté par IA.","offers":{"@type":"AggregateOffer","url":"https://www.huggyflow.fun/pricing","priceCurrency":"XOF","availability":"https://schema.org/OnlineOnly"},"publisher":{"@type":"Organization","name":"HuggyFlow","url":"https://www.huggyflow.fun/"}}</script>
+<script src="/support.js"></script>
+<link rel="stylesheet" href="/dist-components/hf-components.css">
+<script src="/dist-components/hf-components.iife.js"></script>
 </head>
 <body>
+<noscript><main style="max-width:760px;margin:0 auto;padding:48px 24px;font:16px/1.6 system-ui;color:#17191c"><h1>HuggyFlow, le workspace créatif multimédia par IA</h1><p>HuggyFlow aide les équipes à transformer une intention en images, vidéos, voix, documents et campagnes organisées, avec mémoire de projet, exécution en arrière-plan et contrôle qualité.</p><h2>Que peut faire HuggyFlow&nbsp;?</h2><ul><li>Planifier et produire des contenus multimédia.</li><li>Générer des variantes et conserver les versions.</li><li>Continuer les tâches longues même lorsque la page change.</li><li>Vérifier les résultats avant livraison.</li></ul><h2>Questions fréquentes</h2><p><strong>HuggyFlow est-il un générateur vidéo&nbsp;?</strong> Oui. Il coordonne la préparation, la génération, la vérification et l’organisation de créations vidéo et d’autres formats.</p><p><strong>Où voir les tarifs&nbsp;?</strong> Consulte la page <a href="/pricing">Pricing</a>.</p></main></noscript>
 <x-dc>
 <helmet>
 <link rel="icon" type="image/png" href="/huggyflow-logo.png">
@@ -849,7 +865,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               </div>
               <div style="margin-top:5px;font-size:13px;color:{{ tText3 }}">{{ pl.tagline }}</div>
 
-              <div data-hf-plan-panel="true" style="margin-top:16px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.07);border-radius:14px;padding:14px 15px">
+              <div data-hf-plan-panel="true" style="display:none">
                 <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700">
                   <svg width="13" height="13" style="color:{{ tGreen }}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"></path></svg>
                   {{ pl.creditsTitle }}
@@ -886,7 +902,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 </sc-for>
               </div>
 
-              <div data-hf-plan-panel="true" style="margin-top:18px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.07);border-radius:14px;padding:14px 15px">
+              <div data-hf-plan-panel="true" style="display:none">
                 <div style="display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText3 }};font-weight:700">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                   Créations phares
@@ -904,7 +920,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 </div>
               </div>
 
-              <div data-hf-plan-panel="true" style="margin-top:12px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.07);border-radius:14px;padding:14px 15px">
+              <div data-hf-plan-panel="true" style="display:none">
                 <div style="display:flex;align-items:center;justify-content:space-between">
                   <div style="display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:{{ tText3 }};font-weight:700">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
@@ -926,7 +942,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
          </sc-for>
         </div>
 
-        <section aria-labelledby="hf-cost-title" style="margin-top:28px;padding:20px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:16px;background:rgba({{ tLineRGB }},.025)">
+        <section aria-labelledby="hf-cost-title" style="display:none">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
             <div>
               <div id="hf-cost-title" style="font-family:'Space Grotesk',ui-sans-serif;font-size:21px;font-weight:700">Coût par modèle</div>
@@ -2629,10 +2645,72 @@ class Component extends DCLogic {
     return defaults;
   }
 
+  routeStateFromLocation(){
+    if(typeof window === 'undefined') return { page:'app', projectId:'' };
+    const path = String(window.location.pathname || '/').replace(/^\/+|\/+$/g, '');
+    const parts = path ? path.split('/').filter(Boolean) : [];
+    const route = String(parts[0] || '').toLowerCase();
+    const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
+    if(route === 'pricing') return { page:'pricing', requiresAuth:false };
+    if(route === 'auth' || route === 'login' || route === 'signup') return { page:'auth', requiresAuth:false };
+    if(route === 'gallery') return { page:'gallery', requiresAuth:true };
+    if(route === 'affiliate') return { page:'affiliate', requiresAuth:true };
+    if(route === 'onboarding') return { page:'onboarding', requiresAuth:true };
+    if(route === 'admin') return { page:'admin', requiresAuth:true };
+    if(route === 'share' && parts[1]) return { page:'app', projectId:'', publicArtifactId:decodeURIComponent(parts.slice(1).join('/')) };
+    if(route === 'project' && parts[1]) return { page:'app', projectId:decodeURIComponent(parts[1]), requiresAuth:true };
+    if(route === 'settings'){
+      const section = settingsPages.includes(String(parts[1] || '').toLowerCase()) ? String(parts[1]).toLowerCase() : 'settings';
+      return { page:section, requiresAuth:true };
+    }
+    if(settingsPages.includes(route)) return { page:route, requiresAuth:true };
+    return { page:'app', requiresAuth:false };
+  }
+
+  pagePath(page){
+    const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
+    if(settingsPages.includes(page)) return page === 'settings' ? '/settings' : '/settings/' + page;
+    if(page === 'pricing') return '/pricing';
+    if(page === 'auth') return '/auth';
+    if(page === 'gallery') return '/gallery';
+    if(page === 'affiliate') return '/affiliate';
+    if(page === 'onboarding') return '/onboarding';
+    if(page === 'admin') return '/admin';
+    if(page === 'app' && this.initialRoute && this.initialRoute.projectId && this.state && this.state.activeProjectId === this.initialRoute.projectId) return '/project/' + encodeURIComponent(this.initialRoute.projectId);
+    return '/';
+  }
+
+  syncPageRoute(mode='push'){
+    if(typeof window === 'undefined' || !window.history) return;
+    const nextPath = this.pagePath(this.state.page);
+    if(window.location.pathname !== nextPath){
+      const nextUrl = nextPath + (this.state.page === 'affiliate' ? window.location.search : '');
+      window.history[mode === 'replace' ? 'replaceState' : 'pushState']({ huggyflow:true, page:this.state.page }, '', nextUrl);
+    }
+    this.applyDocumentMetadata();
+  }
+
+  applyDocumentMetadata(){
+    if(typeof document === 'undefined') return;
+    const publicPage = ['app','pricing','auth'].includes(this.state.page);
+    const title = this.state.page === 'pricing' ? 'Tarifs | HuggyFlow' : this.state.page === 'auth' ? 'Connexion | HuggyFlow' : 'HuggyFlow | Création multimédia par IA';
+    const description = this.state.page === 'pricing' ? 'Découvre les offres HuggyFlow pour produire des créations multimédia avec l’IA.' : this.state.page === 'auth' ? 'Connecte-toi à HuggyFlow pour retrouver tes projets et créations.' : 'HuggyFlow transforme une intention en images, vidéos, documents et campagnes créatives vérifiées.';
+    document.title = title;
+    const setMeta = (selector, attrs) => { let node = document.head.querySelector(selector); if(!node){ node = document.createElement('meta'); document.head.appendChild(node); } Object.keys(attrs).forEach(key=>node.setAttribute(key, attrs[key])); };
+    setMeta('meta[name="description"]', { name:'description', content:description });
+    setMeta('meta[name="robots"]', { name:'robots', content:publicPage ? 'index,follow,max-image-preview:large' : 'noindex,nofollow,noarchive' });
+    let canonical = document.head.querySelector('link[rel="canonical"]');
+    if(!canonical){ canonical = document.createElement('link'); canonical.rel='canonical'; document.head.appendChild(canonical); }
+    canonical.href = 'https://www.huggyflow.fun' + (this.state.page === 'pricing' ? '/pricing' : '/');
+    const structured = document.head.querySelector('#hf-structured-data');
+    if(structured) structured.textContent = JSON.stringify({ '@context':'https://schema.org', '@type':this.state.page === 'pricing' ? 'WebPage' : 'SoftwareApplication', name:title.replace(' | HuggyFlow',''), url:'https://www.huggyflow.fun' + (this.state.page === 'pricing' ? '/pricing' : '/'), description, isPartOf:{ '@type':'WebSite', name:'HuggyFlow', url:'https://www.huggyflow.fun/' } });
+  }
+
   initialAuthSession = this.storedAuthSession();
   initialUiState = this.storedUiState();
+  initialRoute = this.routeStateFromLocation();
   initialPage = (()=>{
-    const page = this.initialUiState.page || 'app';
+    const page = this.initialRoute.page || this.initialUiState.page || 'app';
     const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
     if(settingsPages.includes(page) && !this.initialAuthSession.access_token) return 'app';
     if(['claudecode','plugins'].includes(page)) return 'settings';
@@ -2878,15 +2956,6 @@ class Component extends DCLogic {
       const free = d.m === 0;
       return {
         name: d.name, tag: d.tag, tagStyle: tagStyles[d.tagKind], tagline: d.tagline,
-        creditsTitle: fmt(d.credits) + ' crédits/mois',
-        equivalences: [
-           fmt(d.credits) + ' crédits réellement débités',
-           ...d.estimates,
-           d.imgJobs + ' génération(s) image simultanée(s)',
-          hasVid ? (d.vidJobs + ' génération(s) vidéo simultanée(s)') : 'Création image uniquement',
-          fmt(d.gb) + ' Go de stockage inclus'
-        ],
-        creditsNote: fmt(d.credits) + ' crédits inclus à chaque période',
         hasOldPrice: annual && !free,
         oldPrice: fmtXof(toXof(d.m, d.mXof)),
         price: fmtXof(free ? 0 : (annual ? toXof(d.aM, d.aMXof) : toXof(d.m, d.mXof))),
@@ -2901,12 +2970,6 @@ class Component extends DCLogic {
           feat(true, d.types.map(t=>TYPE_LABELS[t]).join(', ')),
           feat(d.priority, 'Traitement prioritaire'),
           feat(d.seats > 1, d.seats + (d.seats > 1 ? ' utilisateurs' : ' utilisateur'))
-        ],
-        models: [
-          { name:'Crédits inclus', cost:fmt(d.credits) + ' cr.', ok:true, no:false, color:T.inkSoft, alloc:'par période', allocStyle:allocOn },
-          { name:'Images en parallèle', cost:String(d.imgJobs), ok:d.imgJobs > 0, no:d.imgJobs <= 0, color:d.imgJobs > 0 ? T.inkSoft : T.text4, alloc:d.imgJobs > 0 ? 'Actif' : 'Non inclus', allocStyle:d.imgJobs > 0 ? allocOn : allocOff },
-          { name:'Vidéos en parallèle', cost:String(d.vidJobs), ok:hasVid, no:!hasVid, color:hasVid ? T.inkSoft : T.text4, alloc:hasVid ? 'Actif' : 'Non inclus', allocStyle:hasVid ? allocOn : allocOff },
-          { name:'Rétention médias', cost:d.days + ' j', ok:true, no:false, color:T.inkSoft, alloc:fmt(d.gb) + ' Go', allocStyle:allocOn }
         ],
         rhythm: [
           feat(true, fmt(d.gb) + ' Go pour tes médias'),
@@ -3631,7 +3694,8 @@ class Component extends DCLogic {
       }
       const projects = this.normalizeProjects(data.projects || []);
       const currentId = this.state.activeProjectId;
-      const active = projects.find(p=>p.id === currentId) || projects[0] || null;
+      const requestedId = this.initialRoute && this.initialRoute.projectId;
+      const active = projects.find(p=>p.id === requestedId) || projects.find(p=>p.id === currentId) || projects[0] || null;
       const prefs = data.user && data.user.preferences ? Object.assign({ notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false }, data.user.preferences) : this.state.prefs;
       this.setState({
         projectsData: projects,
@@ -3689,6 +3753,19 @@ class Component extends DCLogic {
   }
   componentDidMount(){
     this.chatShouldStick = true;
+    this.routePopstate = ()=>{
+      const next = this.routeStateFromLocation();
+      if(next.requiresAuth && !this.state.authToken){
+        this.requireAuth('Connecte-toi pour acceder a cette page.', { type:'route', page:next.page });
+        return;
+      }
+      this.restoringRoute = true;
+      this.setState({ page:next.page || 'app', modelMenu:false }, ()=>{
+        this.restoringRoute = false;
+        this.applyDocumentMetadata();
+      });
+    };
+    if(typeof window !== 'undefined') window.addEventListener('popstate', this.routePopstate);
     if(typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
     this.settingsKeydown = (event)=>{
       if(!event) return;
@@ -3731,6 +3808,10 @@ class Component extends DCLogic {
       this.clearSettingsHash();
       this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:hashSection });
     }
+    if(this.initialRoute.requiresAuth && !this.state.authToken && !hashSection){
+      this.requireAuth('Connecte-toi pour acceder a cette page.', { type:'route', page:this.initialRoute.page });
+    }
+    if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
     this.trackAffiliateReferral();
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
@@ -3744,6 +3825,7 @@ class Component extends DCLogic {
     this.syncChatInputSize();
   }
   componentWillUnmount(){
+    if(typeof window !== 'undefined' && this.routePopstate) window.removeEventListener('popstate', this.routePopstate);
     if(typeof window !== 'undefined' && this.settingsOnlineListener) window.removeEventListener('online', this.settingsOnlineListener);
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     if(this.themeMedia && this.themeMediaListener){
@@ -3782,6 +3864,8 @@ class Component extends DCLogic {
       else if(!this.state.chatUnread) this.setState({ chatUnread:true });
     }
     if(prevState.page !== this.state.page){
+      if(!this.restoringRoute) this.syncPageRoute('push');
+      else this.applyDocumentMetadata();
       if(this.state.page === 'capabilities') this.loadBrands();
       if(this.state.page === 'skills') this.loadTemplates();
       if(this.state.page === 'connectors') this.loadIntegrations();
@@ -5433,23 +5517,8 @@ class Component extends DCLogic {
     const studioMediaItems = this.studioMediaItems();
     const artifactItems = (st.artifactItems || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
     const renderedPlans = this.buildPlans();
-    const pricingCategory = type => {
-      const t = String(type || '').toLowerCase();
-      if(t === 'video' || t === 'video_edit') return 'video';
-      if(t === 'image' || t === 'image_edit') return 'image';
-      if(t === 'document') return 'document';
-      return 'other';
-    };
-    const pricingCategoryLabel = { image:'Image', video:'Vidéo', document:'Document', other:'Autre' };
-    const pricingCostFilters = [['all','Tout'],['video','Vidéo'],['image','Image'],['document','Document'],['other','Autre']];
-    const pricingCostRows = (st.pricingModels || []).filter(model => st.pricingCostFilter === 'all' || pricingCategory(model.type) === st.pricingCostFilter).sort((a,b)=>String(a.type).localeCompare(String(b.type)) || String(a.name).localeCompare(String(b.name))).map(model=>{
-      const category = pricingCategory(model.type);
-      const unit = String(model.pricingUnit || 'unité');
-      const isAgent = category === 'document';
-      const creditText = '≈' + Number(model.creditsPerDefaultUnit || 0) + ' cr';
-      const currencyText = isAgent && model.outputCostPerUnitXof ? Number(model.costPerUnitXof || 0).toLocaleString('fr-FR') + ' FCFA in · ' + Number(model.outputCostPerUnitXof || 0).toLocaleString('fr-FR') + ' FCFA out / MTok' : Number(model.costPerUnitXof || 0).toLocaleString('fr-FR') + ' FCFA / ' + unit;
-      return { name:model.name, category:pricingCategoryLabel[category], categoryStyle:'padding:3px 8px;border-radius:999px;background:rgba(' + T.lineRGB + ',.07);color:' + T.text2 + ';font-size:10px;font-weight:700', unit, creditText, currencyText, quality:String(model.qualityTier || 'standard'), provider:String(model.provider || 'fal.ai') };
-    });
+    const pricingCostFilters = [];
+    const pricingCostRows = [];
     const sidebarSearchQuery = String(st.sidebarSearchQuery || '').trim().toLowerCase();
     const sidebarProjects = (st.projectsData && st.projectsData.length) ? st.projectsData : [{ id:st.activeProjectId || 'welcome', title:st.activeTitle || 'Nouveau projet', messages:st.messages || [] }];
     const sidebarSearchResults = sidebarSearchQuery ? sidebarProjects.flatMap(project=>{

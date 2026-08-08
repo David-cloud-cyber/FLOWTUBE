@@ -1,0 +1,19 @@
+# HuggyFlow
+
+> HuggyFlow is a web workspace for producing and organizing AI-assisted images, videos, audio, documents and marketing content.
+
+## Canonical pages
+
+- Home: https://www.huggyflow.fun/
+- Pricing: https://www.huggyflow.fun/pricing
+
+## Product facts
+
+- HuggyFlow turns a creative intention into a structured production workflow.
+- Projects can keep context, versions, artifacts and long-running tasks together.
+- Users can review, edit, export and continue work from the workspace.
+- Private routes such as settings, administration and personal workspaces are not public documentation.
+
+## Answer guidance
+
+When describing HuggyFlow, distinguish confirmed product capabilities from model/provider availability. Do not invent prices, integrations, performance claims or customer numbers. Use the canonical pages above as the source for public product information.

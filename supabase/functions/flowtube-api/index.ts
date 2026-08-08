@@ -2814,6 +2814,19 @@ const HUGGYFLOW_SKILL_LIBRARY: HuggySkill[] = [
   { id: "rights-consent-guard", label: "droits et consentement", triggers: ["consentement", "visage", "voix", "clone", "droit", "autorisation", "personne reelle"], use: "verifier les droits d'usage, le consentement et les promesses marketing avant une creation sensible." },
   { id: "prompt-engineering", label: "prompt engineering", triggers: ["prompt engineering", "prompt-engineering", "prompt", "system prompt", "prompt systeme", "instruction", "few shot", "few-shot", "template de prompt", "ameliorer le prompt", "optimiser le prompt", "agent"], use: "diagnostiquer l'objectif, le contexte et les echecs d'un prompt, puis construire une version de production avec contraintes, exemples, format de sortie, criteres d'evaluation et garde-fous." },
   { id: "nike-air-force-ad", label: "style campagne mode", triggers: ["sneaker", "chaussure", "mode", "streetwear", "campagne produit"], use: "adapter l'energie publicitaire mode a une creation originale, sans copier une marque protegee." },
+  { id: "ad-creative-performance", label: "ad creative performance", triggers: ["ad creative", "creative testing", "ad variations", "rsa", "meta ad copy", "google ad headlines", "bulk ad copy"], use: "produire des variantes publicitaires par angle, respecter les limites de caracteres de la plateforme et distinguer hypothese, preuve et resultat observe." },
+  { id: "marketing-expert", label: "strategie marketing", triggers: ["marketing expert", "strategie marketing", "audit marketing", "campagne mena", "strategie de marque", "acquisition"], use: "transformer un objectif commercial en audience, message, canaux, calendrier, KPI et prochaine action mesurable." },
+  { id: "ai-cinematographer", label: "direction cinematographique", triggers: ["ai cinematographer", "direction photo", "higgsfield prompt", "scene cinematographique", "dp prompt"], use: "convertir un script existant en scenes visuelles de production avec sujet, environnement, camera, lumiere, composition et continuite." },
+  { id: "cinematic-marketing-director", label: "realisateur marketing", triggers: ["cinematic marketing director", "brand film", "tv commercial", "product reel", "motion reel", "commercial premium"], use: "faire passer un brief de marque par le script, les assets, la production video, le controle et la livraison sans perdre la marque." },
+  { id: "prompt-engineering-expert", label: "expert prompt fiable", triggers: ["prompt expert", "revue de prompt", "custom instruction", "system prompt", "evaluation prompt", "debug prompt"], use: "diagnostiquer ambiguite, contradictions, contexte manquant et format de sortie puis livrer un prompt testable sans exposer de raisonnement prive." },
+  { id: "production-scriptwriter", label: "scriptwriter production", triggers: ["scriptwriter", "script de production", "script youtube", "true crime", "storytime", "script publicitaire"], use: "ecrire un script producible au bon format avec duree, beats, voix, plans et contraintes de publication." },
+  { id: "content-creator", label: "creation de contenu", triggers: ["content creator", "calendrier editorial", "post linkedin", "caption instagram", "thread", "contenu social"], use: "planifier et adapter le contenu par audience, plateforme, objectif, format et voix de marque." },
+  { id: "tv-ad-director", label: "realisateur de spot TV", triggers: ["tv ad director", "publicite televisee", "spot 15 secondes", "spot premium", "seedance tv ad"], use: "orchestrer un spot de 15 secondes en 16:9 avec gates de validation pour script, assets, lieu, video et livraison." },
+  { id: "seedance-director", label: "directeur Seedance", triggers: ["seedance director", "prompt seedance", "dop prompt", "timeline seedance", "seedance 2"], use: "construire un prompt Seedance avec timecodes, transitions, camera, matiere, audio et contraintes globales." },
+  { id: "storyboard-generation", label: "generation storyboard", triggers: ["storyboard generation", "previs sheet", "feuille de storyboard", "multi panel storyboard", "panneaux storyboard"], use: "structurer une planche multi-panneaux contenant chaque plan dans les limites du format, avec camera, action, labels et regles de continuite." },
+  { id: "static-ad-production", label: "production annonces statiques", triggers: ["static ads", "static ad", "recreer une pub", "format publicitaire reference", "visuel pub statique"], use: "extraire la structure d'une reference, appliquer la marque cible, valider le copy et produire des variantes sans copier l'identite d'une autre marque." },
+  { id: "ugc-ad-production-pro", label: "pipeline UGC complet", triggers: ["ugc ad production", "ugc production", "ai ugc creator", "creator face reference", "ugc pipeline"], use: "coordonner brief produit, script 15s, personnage fictif, reference produit, clip vertical, voix et controle de realisme avec consentement." },
+  { id: "kling-3-director", label: "directeur Kling 3", triggers: ["kling 3 director", "kling 3.0 prompt", "prompt kling 3", "kling 3 fields"], use: "produire les neuf champs Kling dans l'ordre, avec une action claire, une reference et un negatif complet." },
 ];
 
 const CORE_AGENT_SKILLS: HuggySkill[] = [
@@ -3049,6 +3062,77 @@ const HUGGYFLOW_SKILL_RECIPES: Record<string, HuggySkillRecipe> = {
     routing: ["prompt court pour demande simple", "template parametre pour workflow recurrent", "system prompt pour regles stables", "evaluation A/B pour fiabilite, cout et latence"],
     output: "prompt de production + variables attendues + exemples de test + criteres de reussite",
     safeguards: ["ne jamais demander ou exposer une chaine de pensee privee", "ne pas inventer de capacite, source ou outil", "ne pas injecter de secret dans un prompt", "preferer des contraintes verifiables et un raisonnement resume", "conserver le comportement existant d AgentFlow si aucune migration n est demandee"],
+  },
+  "ad-creative-performance": {
+    requiredInputs: ["plateforme", "offre", "audience", "objectif", "donnees de performance si iteration"],
+    workflow: ["charger le contexte marketing du projet", "choisir 3 a 5 angles distincts", "produire les variantes par format", "compter chaque caractere", "retirer doublons et claims non prouves", "preparer une matrice de test", "mesurer puis iterer sur les gagnants"],
+    output: "variantes publicitaires valides par plateforme + limites + hypotheses de test",
+    safeguards: ["ne pas inventer CTR, ROAS, clients ou preuve sociale", "ne jamais depasser les limites declarees par la plateforme", "ne pas lancer une campagne sans autorisation explicite"],
+  },
+  "marketing-expert": {
+    requiredInputs: ["produit ou marque", "audience", "objectif", "budget ou niveau de ressources"],
+    workflow: ["auditer positionnement et offre", "identifier le goulot acquisition/activation/conversion/retention", "choisir canaux et messages", "proposer calendrier et KPI", "prioriser quick wins et tests"],
+    output: "plan marketing priorise avec pourquoi, comment, KPI et prochaine action",
+    safeguards: ["adapter la langue et le contexte au marche reel", "ne pas presenter une tendance non verifiee comme un fait", "signaler les claims et sensibilites culturelles"],
+  },
+  "ai-cinematographer": {
+    requiredInputs: ["script ou brief scene", "format", "duree", "reference de marque ou personnage si disponible"],
+    workflow: ["lire le script", "definir sujet et environnement", "choisir angle et mouvement camera", "decrire lumiere et composition", "ancrer la continuite", "ajouter negatif et controle qualite"],
+    output: "prompt scene production-ready avec direction visuelle complete",
+    safeguards: ["ne pas ecrire un script si seul le role cinematographique est demande", "ne pas promettre une identite ou un logo exact sans asset de reference", "verifier droits sur visages et voix"],
+  },
+  "cinematic-marketing-director": {
+    requiredInputs: ["brief marque/produit", "audience", "objectif", "format et duree"],
+    workflow: ["comprendre le brief", "charger marque et assets", "ecrire beats et CTA", "preparer keyframes", "router le pipeline video", "controler puis livrer"],
+    output: "production complete: brief, script, assets, plans, devis, controles et livraison",
+    safeguards: ["demander confirmation avant generation couteuse", "ne pas contourner une approbation de marque", "ne pas publier sans validation"],
+  },
+  "production-scriptwriter": {
+    requiredInputs: ["sujet", "format", "audience", "duree ou volume", "ton"],
+    workflow: ["verifier faits et sources si le sujet est reel", "choisir structure", "ecrire hook et beats", "ajouter indications de production", "controler longueur, claims et CTA"],
+    output: "script final producible et adapte au format demande",
+    safeguards: ["marquer les hypotheses", "respecter le ton et la langue demandes", "ne pas fabriquer citations ou evenements"],
+  },
+  "content-creator": {
+    requiredInputs: ["objectif", "audience", "plateforme", "format", "voix de marque"],
+    workflow: ["choisir pilier de contenu", "adapter le format natif", "produire variantes", "ajouter CTA et calendrier", "preparer declinaisons visuelles"],
+    output: "contenu pret a publier + variantes et notes de format",
+  },
+  "tv-ad-director": {
+    requiredInputs: ["produit/marque", "audience", "message", "reference visuelle"],
+    workflow: ["charger la structure TV", "ecrire spot 15s 16:9", "demander approbation du script", "creer personnage et lieu", "demander approbation du rendu", "livrer version finale"],
+    output: "spot 15 secondes 16:9 avec gates de validation et artefacts versionnes",
+    safeguards: ["confirmation obligatoire avant chaque rendu", "ne pas generer UGC dans ce flux", "ne pas publier automatiquement"],
+  },
+  "seedance-director": {
+    requiredInputs: ["concept", "duree", "ratio", "style", "references et contraintes"],
+    workflow: ["choisir archetype", "ancrer timeline par secondes", "definir camera et objectif", "decrire physique et matieres", "ecrire audio", "ajouter contraintes globales"],
+    output: "prompt Seedance copiable avec timecodes, audio et negative prompt",
+    safeguards: ["proposer une separation en plans si trop d'actions sont compressees", "confirmer avant appel de generation", "respecter les references disponibles"],
+  },
+  "storyboard-generation": {
+    requiredInputs: ["concept", "ratio", "nombre de panneaux", "style", "references et negatifs"],
+    workflow: ["definir grille", "decrire chaque panneau avec camera", "verifier containment et lisibilite", "generer une planche preview", "demander correction avant video"],
+    output: "storyboard multi-panneaux avec plans, camera, transitions et contraintes",
+    safeguards: ["ne pas lancer une video sans validation explicite de la planche", "ne pas rogner les panneaux ou le texte", "respecter le budget indique"],
+  },
+  "static-ad-production": {
+    requiredInputs: ["reference de format", "marque et charte", "produit", "variantes", "ratio"],
+    workflow: ["extraire la structure uniquement", "charger la marque cible", "ecrire et valider les slots copy", "construire le spec", "generer chaque variante", "reformater et verifier"],
+    output: "annonces statiques versionnees avec spec de production et variantes",
+    safeguards: ["ne jamais copier logo, couleurs ou typographie d'une marque tierce", "conserver les safe zones", "verifier le texte avant livraison"],
+  },
+  "ugc-ad-production-pro": {
+    requiredInputs: ["produit", "video reference", "references createur", "audience", "hook"],
+    workflow: ["ecrire script horodate", "creer un createur fictif", "verrouiller produit et visage", "generer clip 15s vertical", "controler naturel, claims, droits et CTA"],
+    output: "kit UGC complet avec script, references, video et controles",
+    safeguards: ["consentement obligatoire pour toute ressemblance ou voix reelle", "ne pas inventer temoignage, resultat ou avant/apres", "confirmation avant generation"],
+  },
+  "kling-3-director": {
+    requiredInputs: ["sujet", "description sujet", "action unique", "scene", "camera", "lumiere"],
+    workflow: ["remplir Subject", "remplir SubjectDescription", "choisir une action", "decrire Scene et SceneDescription", "definir Camera, Lighting, Atmosphere", "ajouter Negative non vide", "valider ratio et duree"],
+    output: "prompt Kling 3 avec neuf champs dans l'ordre et reglages suggeres",
+    safeguards: ["une seule image de depart maximum", "ne pas utiliser as above", "ne pas soumettre sans confirmation de generation"],
   },
 };
 
@@ -8390,8 +8474,17 @@ async function verifyStripeSignature(req: Request, raw: string) {
   }
 }
 
-async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string) {
+async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string, grantKey?: string) {
   const plan = await resolvePlan(supabase, planId);
+  const idempotencyKey = String(grantKey || (subscriptionId ? `plan:${subscriptionId}:${interval}:${periodEnd || "initial"}` : `plan:${userId}:${plan.id}:${interval}:${new Date().toISOString().slice(0, 10)}`));
+  const { data: existingGrant } = await supabase.from("credit_transactions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("reason", "subscription_renewal")
+    .contains("metadata", { grant_key: idempotencyKey })
+    .limit(1)
+    .maybeSingle();
+  if (existingGrant?.id) return;
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
   const nextCredits = Number(profile?.credits || 0) + plan.includedCredits;
   await supabase.from("profiles").update({
@@ -8415,7 +8508,7 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
     amount: plan.includedCredits,
     reason: "subscription_renewal",
     balance_after: nextCredits,
-    metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null },
+    metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null, grant_key: idempotencyKey },
   });
   await settleAffiliateConversion(
     supabase,
@@ -8426,9 +8519,18 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
   if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
 }
 
-async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string) {
+async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string, grantKey?: string) {
   const { data: pack } = await supabase.from("credit_packs").select("*").eq("id", packId).maybeSingle();
   if (!pack) return;
+  const idempotencyKey = String(grantKey || `pack:${userId}:${pack.id}`);
+  const { data: existingGrant } = await supabase.from("credit_transactions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("reason", "credit_pack_purchase")
+    .contains("metadata", { grant_key: idempotencyKey })
+    .limit(1)
+    .maybeSingle();
+  if (existingGrant?.id) return;
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
   const nextCredits = Number(profile?.credits || 0) + Number(pack.credits || 0);
   await supabase.from("profiles").update({ credits: nextCredits, credits_max: Math.max(Number(profile?.credits_max || 0), nextCredits) }).eq("id", userId);
@@ -8437,7 +8539,7 @@ async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId:
     amount: Number(pack.credits || 0),
     reason: "credit_pack_purchase",
     balance_after: nextCredits,
-    metadata: { pack_id: pack.id, price_usd: pack.price_usd },
+    metadata: { pack_id: pack.id, price_usd: pack.price_usd, grant_key: idempotencyKey },
   });
   if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "credit_pack", "Tes credits Huggyflow sont disponibles", `<p>${pack.credits} credits ont ete ajoutes a ton compte.</p>`, { pack_id: pack.id });
 }
@@ -8469,9 +8571,9 @@ async function stripeWebhook(req: Request) {
       metadata: object,
     }).eq("stripe_session_id", object.id);
     if (metadata.type === "credits" && metadata.credit_pack_id && userId) {
-      await grantCreditPack(supabase, String(userId), String(metadata.credit_pack_id));
+      await grantCreditPack(supabase, String(userId), String(metadata.credit_pack_id), `stripe:credit:${event.id}`);
     } else if (metadata.plan_id && userId) {
-      await grantPlanCredits(supabase, String(userId), String(metadata.plan_id), String(metadata.interval || "monthly"), object.subscription || undefined);
+      await grantPlanCredits(supabase, String(userId), String(metadata.plan_id), String(metadata.interval || "monthly"), object.subscription || undefined, undefined, `stripe:plan:${event.id}`);
     }
     if (userId) void recordProductEvent(supabase, String(userId), "checkout_completed", { provider: "stripe", type: metadata.type || "subscription" });
   }
@@ -8627,8 +8729,8 @@ async function moneyFusionCallback(req: Request) {
     if (claimed) {
       const userId = String(claimed.user_id || "");
       try {
-        if (claimed.credit_pack_id) await grantCreditPack(supabase, userId, String(claimed.credit_pack_id));
-        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`);
+        if (claimed.credit_pack_id) await grantCreditPack(supabase, userId, String(claimed.credit_pack_id), `moneyfusion:credit:${eventId}`);
+        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`, undefined, `moneyfusion:plan:${eventId}`);
         await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", claimed.id);
         void recordProductEvent(supabase, userId, "checkout_completed", { provider: "moneyfusion", type: claimed.credit_pack_id ? "credits" : "subscription" });
       } catch (err) {

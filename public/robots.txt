@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /settings
+Disallow: /admin
+Disallow: /gallery
+Disallow: /affiliate
+Disallow: /onboarding
+Disallow: /api/
+
+Sitemap: https://www.huggyflow.fun/sitemap.xml
