@@ -219,8 +219,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-card + .hf-settings-card{margin-top:14px}
 .hf-settings-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:62px;padding:13px 16px;border-bottom:1px solid rgba(var(--hf-settings-line),.07)}
 .hf-settings-row:last-child{border-bottom:0}
+.hf-settings-row > div:first-child,.hf-settings-section-head > div:first-child,.hf-connector-section-heading > div:first-child{min-width:0}
 .hf-settings-row-label{min-width:0;color:var(--hf-settings-ink);font-size:13.5px;font-weight:650}
-.hf-settings-row-hint{margin-top:4px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45}
+.hf-settings-row-hint{margin-top:4px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
 .hf-settings-control{min-width:190px;max-width:58%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:9px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
 .hf-settings-control:focus{outline:none;border-color:rgba(209,254,23,.7);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
 .hf-settings-textarea{width:100%;min-height:120px;box-sizing:border-box;resize:vertical;padding:12px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:10px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 13px/1.55 ui-sans-serif,system-ui,sans-serif}
@@ -228,10 +229,10 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
 .hf-settings-section-head h3{margin:0;color:var(--hf-settings-ink);font:700 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
 .hf-settings-section-head p{margin:6px 0 0;color:var(--hf-settings-muted);font-size:13px;line-height:1.5}
-.hf-settings-primary{min-height:40px;padding:0 15px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font:750 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s}
+.hf-settings-primary{min-height:40px;max-width:100%;padding:0 15px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font:750 12px/1.2 ui-sans-serif,system-ui,sans-serif;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s}
 .hf-settings-primary:hover{filter:brightness(1.05);box-shadow:0 8px 24px -12px rgba(209,254,23,.72)}
 .hf-settings-primary:active{transform:scale(.96)}
-.hf-settings-secondary{min-height:40px;padding:0 15px;border:1px solid rgba(247,247,248,.13);border-radius:9px;background:transparent;color:#A8A8A8;font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-settings-secondary{min-height:40px;max-width:100%;padding:0 15px;border:1px solid rgba(247,247,248,.13);border-radius:9px;background:transparent;color:#A8A8A8;font:650 12px/1.2 ui-sans-serif,system-ui,sans-serif;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-secondary:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
 .hf-settings-secondary:active{transform:scale(.96)}
 .hf-settings-danger{color:#F08B72!important;border-color:rgba(196,88,64,.35)!important}
@@ -254,7 +255,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-close{border-color:rgba(46,48,49,.14);color:#656970}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-close:hover{background:rgba(46,48,49,.06);color:#131517}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-search input:focus{background:#fff}
-.hf-settings-status{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 9px;border-radius:999px;background:rgba(209,254,23,.13);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.hf-settings-status{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;max-width:100%;min-height:24px;padding:4px 9px;border-radius:999px;background:rgba(209,254,23,.13);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.04em;line-height:1.2;text-align:center;text-transform:uppercase;overflow-wrap:anywhere}
 .hf-settings-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .hf-settings-status.is-warning{background:rgba(232,178,92,.15);color:#E8B25C}
 .hf-settings-status.is-error{background:rgba(196,88,64,.14);color:#E58C72}
@@ -275,10 +276,10 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-connector-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .hf-connector-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;border-radius:9px;font:800 15px 'Space Grotesk',ui-sans-serif,sans-serif;box-shadow:inset 0 0 0 1px rgba(19,21,23,.10)}
 .hf-connector-logo-large{width:54px;height:54px;flex-basis:54px;border-radius:11px;font-size:20px}
-.hf-connector-availability{display:inline-flex;align-items:center;gap:6px;color:var(--hf-settings-muted);font-size:10px;white-space:nowrap}
+.hf-connector-availability{display:inline-flex;align-items:flex-start;justify-content:flex-end;gap:6px;max-width:145px;color:var(--hf-settings-muted);font-size:10px;line-height:1.25;text-align:right;overflow-wrap:anywhere}
 .hf-connector-availability span{width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 3px rgba(209,254,23,.06)}
 .hf-connector-card-body{min-width:0;flex:1}
-.hf-connector-card-title{display:flex;align-items:center;gap:7px;min-width:0;color:var(--hf-settings-ink);font-size:14px;font-weight:750;line-height:1.3}
+.hf-connector-card-title{display:flex;align-items:flex-start;gap:7px;min-width:0;max-width:100%;color:var(--hf-settings-ink);font-size:14px;font-weight:750;line-height:1.3;overflow-wrap:anywhere}
 .hf-connector-card-desc{margin-top:6px;overflow:hidden;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.45;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .hf-connector-new{display:inline-flex;align-items:center;min-height:20px;padding:0 6px;border-radius:5px;background:rgba(83,137,255,.16);color:#7EA9FF;font-size:9px;font-weight:800}
 .hf-connector-card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--hf-settings-muted)}
@@ -313,9 +314,10 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-connector-menu-dot{width:7px;height:7px;flex:0 0 auto;margin-top:4px;border-radius:50%;background:#9BE27A;box-shadow:0 0 0 3px rgba(155,226,122,.10)}
 .hf-connector-menu-note{padding:8px 10px;border-top:1px solid rgba(var(--hf-settings-line),.08);color:var(--hf-settings-muted);font-size:10px;line-height:1.4}
 .hf-connector-connection-card,.hf-connector-feature-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:11px;background:var(--hf-settings-surface)}
-.hf-connector-connection-name{color:var(--hf-settings-ink);font-size:13px;font-weight:700}
+.hf-connector-connection-card > div:first-child{min-width:0;flex:1}.hf-connector-connection-name{color:var(--hf-settings-ink);font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .hf-connector-connection-meta{margin-top:5px;color:var(--hf-settings-muted);font-size:11px;line-height:1.35}
 .hf-connector-action-row{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.hf-connector-action-row button{min-height:36px;padding:0 10px}
 .hf-connector-feature-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:8px;background:rgba(209,254,23,.13);color:#D1FE17}
 .hf-connector-feature-card{justify-content:flex-start}
 .hf-connector-feature-card strong{color:var(--hf-settings-ink);font-size:13px}
@@ -2012,8 +2014,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 </div>
                 <div class="hf-connectors-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.5" y2="16.5"></line></svg><input value="{{ connectorSearch }}" onChange="{{ onConnectorSearch }}" placeholder="Rechercher un connecteur…" aria-label="Rechercher un connecteur" autocomplete="off"/></div>
                 <sc-if value="{{ integrationsLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-connectors-grid"><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div></div></sc-if>
-                <sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-empty"><div class="hf-connector-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><path d="M8.2 7.2l7.5 3.5M8.2 16.8l7.5-3.5"></path></svg></div><div>Aucun connecteur ne correspond à ta recherche.</div><button class="hf-settings-secondary" onClick="{{ onConnectorSearch }}">Réinitialiser la recherche</button></div></sc-if>
-                <div class="hf-connectors-grid"><sc-for list="{{ connectorList }}" as="connector" hint-placeholder-count="8"><div class="hf-connector-card" role="button" tabindex="0" onClick="{{ connector.onOpen }}" title="Ouvrir {{ connector.name }}" style-hover="border-color:rgba(209,254,23,.34);transform:translateY(-2px)"><div class="hf-connector-card-top"><div class="hf-connector-logo" style="background:{{ connector.bg }};color:#131517">{{ connector.glyph }}</div><div class="hf-connector-availability" title="{{ connector.availabilityLabel }}"><span style="background:{{ connector.dotColor }}"></span>{{ connector.availabilityLabel }}</div></div><div class="hf-connector-card-body"><div class="hf-connector-card-title">{{ connector.name }}<sc-if value="{{ connector.isNew }}" hint-placeholder-val="{{ false }}"><span class="hf-connector-new">Nouveau</span></sc-if></div><div class="hf-connector-card-desc">{{ connector.desc }}</div></div><div class="hf-connector-card-footer"><span class="hf-settings-status {{ connector.statusClass }}">{{ connector.statusLabel }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div></sc-for></div>
+                <sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-empty"><div class="hf-connector-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><path d="M8.2 7.2l7.5 3.5M8.2 16.8l7.5-3.5"></path></svg></div><div>Aucun connecteur ne correspond à ta recherche.</div><button class="hf-settings-secondary" onClick="{{ clearConnectorSearch }}">Réinitialiser la recherche</button></div></sc-if>
+                <div class="hf-connectors-grid"><sc-for list="{{ connectorList }}" as="connector" hint-placeholder-count="8"><div class="hf-connector-card" role="button" tabindex="0" onClick="{{ connector.onOpen }}" onKeyDown="{{ connector.onKeyDown }}" title="Ouvrir {{ connector.name }}" style-hover="border-color:rgba(209,254,23,.34);transform:translateY(-2px)"><div class="hf-connector-card-top"><div class="hf-connector-logo" style="background:{{ connector.bg }};color:#131517">{{ connector.glyph }}</div><div class="hf-connector-availability" title="{{ connector.availabilityLabel }}"><span style="background:{{ connector.dotColor }}"></span>{{ connector.availabilityLabel }}</div></div><div class="hf-connector-card-body"><div class="hf-connector-card-title">{{ connector.name }}<sc-if value="{{ connector.isNew }}" hint-placeholder-val="{{ false }}"><span class="hf-connector-new">Nouveau</span></sc-if></div><div class="hf-connector-card-desc">{{ connector.desc }}</div></div><div class="hf-connector-card-footer"><span class="hf-settings-status {{ connector.statusClass }}">{{ connector.statusLabel }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div></sc-for></div>
               </sc-if>
 
               <sc-if value="{{ connectorDetailVisible }}" hint-placeholder-val="{{ false }}">
@@ -3872,6 +3874,19 @@ class Component extends DCLogic {
       body:JSON.stringify({ code, sessionId:(typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : '', landingPath:window.location.pathname })
     }).catch(()=>{});
   }
+  consumeOAuthReturnNotice(){
+    if(typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const provider = params.get('oauth_connected');
+    const error = params.get('oauth_error');
+    if(!provider && !error) return;
+    const cleanUrl = window.location.pathname + (window.location.hash || '');
+    window.history.replaceState({}, document.title, cleanUrl);
+    setTimeout(()=>{
+      if(provider) this.notify('Connecteur ' + this.connectorDisplayName(provider) + ' connecté.');
+      if(error) this.notify('Connexion annulée : ' + String(error).slice(0, 120));
+    }, 180);
+  }
   componentDidMount(){
     this.chatShouldStick = true;
     this.routePopstate = ()=>{
@@ -3933,6 +3948,7 @@ class Component extends DCLogic {
     }
     if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
     this.trackAffiliateReferral();
+    this.consumeOAuthReturnNotice();
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -5422,7 +5438,15 @@ class Component extends DCLogic {
   }
   toggleConnectorAddMenu(){ this.setState(s=>({ connectorAddMenuOpen:!s.connectorAddMenuOpen })); }
   onConnectorSearch(event){ this.setState({ connectorSearch:(event && event.target ? event.target.value : '') || '' }); }
+  clearConnectorSearch(){ this.setState({ connectorSearch:'' }); }
   onConnectorSort(event){ this.setState({ connectorSort:(event && event.target ? event.target.value : 'popular') || 'popular' }); }
+  onConnectorCardKeyDown(event, provider){
+    const key = event && (event.key || event.code);
+    if(key === 'Enter' || key === ' ' || key === 'Spacebar'){
+      if(event && typeof event.preventDefault === 'function') event.preventDefault();
+      this.openConnectorDetail(provider);
+    }
+  }
   refreshConnectors(){ this.loadIntegrations(); }
   connectSelectedConnector(){
     const provider = this.state.selectedConnectorId;
@@ -5496,7 +5520,8 @@ class Component extends DCLogic {
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
       if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
       this.setState({ integrationConnections:data.connections || [], connectorBusyProvider:'', pricingNotice:'OAuth non configuré pour ce connecteur.' });
-    }catch(err){ this.setState({ connectorBusyProvider:'', pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
+      this.notify('Ce connecteur ne propose pas encore de parcours OAuth actif.');
+    }catch(err){ const message = this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.'); this.setState({ connectorBusyProvider:'', pricingNotice:message }); this.notify(message); }
   }
   async connectorAction(provider, action){
     if(!this.requireAuth('Connecte-toi pour gerer tes connecteurs.', null)) return;
@@ -5923,6 +5948,7 @@ class Component extends DCLogic {
         dotColor:status === 'connected' ? '#9BE27A' : (status === 'error' ? '#E58C72' : '#D1FE17'),
         buttonLabel:status === 'connected' ? 'Synchroniser' : (status === 'pending' ? 'Autoriser' : (supportsOAuth ? 'Connecter' : 'Voir le détail')),
         onOpen:()=>this.openConnectorDetail(item.id),
+        onKeyDown:(event)=>this.onConnectorCardKeyDown(event,item.id),
         onConnect:()=>this.configureIntegration(item.id),
         onSync:()=>this.connectorAction(item.id,'sync'),
         onTest:()=>this.connectorAction(item.id,'test'),
@@ -6414,6 +6440,7 @@ class Component extends DCLogic {
       connectorDetailFeatureLabel:selectedConnector && selectedConnector.isConnected ? 'Activé' : 'Non activé',
       connectorDetailBusy:!!(selectedConnector && st.connectorBusyProvider === selectedConnector.id),
       onConnectorSearch:(e)=>this.onConnectorSearch(e),
+      clearConnectorSearch:()=>this.clearConnectorSearch(),
       onConnectorSort:(e)=>this.onConnectorSort(e),
       refreshConnectors:()=>this.refreshConnectors(),
       openConnectorDetail:(provider)=>this.openConnectorDetail(provider),
