@@ -212,7 +212,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(247,247,248,.12);border-radius:10px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-close:hover{background:rgba(247,247,248,.08);color:#F7F7F8}
 .hf-settings-close:active{transform:scale(.94)}
-.hf-settings-content{flex:1;overflow:auto;padding:28px clamp(20px,4vw,56px) 44px;scroll-behavior:auto;scrollbar-width:none;overscroll-behavior:contain;overscroll-behavior-y:contain;scrollbar-gutter:stable;contain:layout paint}
+.hf-settings-content{flex:1;overflow:auto;padding:28px clamp(20px,4vw,56px) 44px;scroll-behavior:smooth;scrollbar-width:none;overscroll-behavior:contain;overscroll-behavior-y:contain;scrollbar-gutter:stable;contain:layout paint}
 .hf-settings-content-inner{width:min(860px,100%);margin:0 auto;animation:pageRise .2s cubic-bezier(.22,1,.36,1) both}
 .hf-settings-intro{margin-bottom:22px;color:#898A8B;font-size:13px;line-height:1.6}
 .hf-settings-card{border:1px solid rgba(var(--hf-settings-line),.10);border-radius:11px;background:var(--hf-settings-surface);overflow:hidden}
@@ -261,6 +261,72 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-status.is-neutral{background:rgba(var(--hf-settings-line),.08);color:var(--hf-settings-muted)}
 .hf-settings-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .hf-settings-inline-note{margin-top:9px;color:var(--hf-settings-muted);font-size:11px;line-height:1.5}
+.hf-connectors-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}
+.hf-connectors-toolbar-actions{display:flex;align-items:center;gap:8px}
+.hf-connectors-sort{height:40px;padding:0 31px 0 12px;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:9px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer}
+.hf-connectors-sort:focus{outline:none;border-color:rgba(209,254,23,.65);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
+.hf-connectors-search{display:flex;align-items:center;gap:9px;height:42px;padding:0 13px;margin-bottom:16px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:10px;background:var(--hf-settings-control);color:var(--hf-settings-muted);transition:border-color .18s,box-shadow .18s,background .18s}
+.hf-connectors-search:focus-within{border-color:rgba(209,254,23,.62);box-shadow:0 0 0 3px rgba(209,254,23,.08);background:var(--hf-settings-surface)}
+.hf-connectors-search input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-settings-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
+.hf-connectors-search input::placeholder{color:var(--hf-settings-muted)}
+.hf-connectors-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hf-connector-card{min-width:0;min-height:154px;display:flex;flex-direction:column;gap:14px;padding:15px;border:1px solid rgba(var(--hf-settings-line),.12);border-radius:12px;background:var(--hf-settings-surface);cursor:pointer;transition:transform .22s cubic-bezier(.22,1,.36,1),border-color .22s ease,box-shadow .22s ease,background .22s ease;will-change:transform}
+.hf-connector-card:focus-visible{outline:2px solid #D1FE17;outline-offset:2px}
+.hf-connector-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hf-connector-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;border-radius:9px;font:800 15px 'Space Grotesk',ui-sans-serif,sans-serif;box-shadow:inset 0 0 0 1px rgba(19,21,23,.10)}
+.hf-connector-logo-large{width:54px;height:54px;flex-basis:54px;border-radius:11px;font-size:20px}
+.hf-connector-availability{display:inline-flex;align-items:center;gap:6px;color:var(--hf-settings-muted);font-size:10px;white-space:nowrap}
+.hf-connector-availability span{width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 3px rgba(209,254,23,.06)}
+.hf-connector-card-body{min-width:0;flex:1}
+.hf-connector-card-title{display:flex;align-items:center;gap:7px;min-width:0;color:var(--hf-settings-ink);font-size:14px;font-weight:750;line-height:1.3}
+.hf-connector-card-desc{margin-top:6px;overflow:hidden;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.45;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hf-connector-new{display:inline-flex;align-items:center;min-height:20px;padding:0 6px;border-radius:5px;background:rgba(83,137,255,.16);color:#7EA9FF;font-size:9px;font-weight:800}
+.hf-connector-card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--hf-settings-muted)}
+.hf-settings-status.is-connected{background:rgba(155,226,122,.13);color:#9BE27A}
+.hf-connector-empty,.hf-connector-detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:172px;padding:24px;border:1px dashed rgba(var(--hf-settings-line),.15);border-radius:12px;color:var(--hf-settings-muted);text-align:center;font-size:13px;line-height:1.45}
+.hf-connector-detail-empty{margin-top:14px;min-height:200px}
+.hf-connector-empty button{margin-top:2px}
+.hf-connector-empty-icon{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:9px;color:var(--hf-settings-muted)}
+.hf-connector-skeleton{height:154px;border:1px solid rgba(var(--hf-settings-line),.08);border-radius:12px;background:linear-gradient(105deg,rgba(var(--hf-settings-line),.04) 20%,rgba(var(--hf-settings-line),.09) 38%,rgba(var(--hf-settings-line),.04) 56%);background-size:220% 100%;animation:hfConnectorShimmer 1.2s ease-in-out infinite}
+@keyframes hfConnectorShimmer{0%{background-position:120% 0}100%{background-position:-80% 0}}
+.hf-connector-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.hf-connector-back{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.12);border-radius:9px;background:transparent;color:var(--hf-settings-muted);cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-connector-back:hover{background:rgba(var(--hf-settings-line),.06);color:var(--hf-settings-ink)}
+.hf-connector-back:active{transform:scale(.94)}
+.hf-connector-breadcrumb{display:flex;align-items:center;gap:7px;min-width:0;flex:1;color:var(--hf-settings-muted);font-size:12px}
+.hf-connector-breadcrumb strong{overflow:hidden;color:var(--hf-settings-ink);font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.hf-connector-hero{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid rgba(var(--hf-settings-line),.12);border-radius:12px;background:var(--hf-settings-surface);animation:tabFade .22s ease both}
+.hf-connector-hero-title{color:var(--hf-settings-ink);font:750 20px/1.2 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-connector-hero-subtitle{margin-top:5px;color:var(--hf-settings-muted);font-size:12px}
+.hf-connector-section{margin-top:28px}
+.hf-connector-section h3{margin:0;color:var(--hf-settings-ink);font:750 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-connector-section > p{margin:7px 0 0;color:var(--hf-settings-muted);font-size:13px;line-height:1.55}
+.hf-connector-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+.hf-connector-section-heading p{margin:6px 0 0;color:var(--hf-settings-muted);font-size:12px;line-height:1.5}
+.hf-connector-add-wrap{position:relative;flex:0 0 auto}
+.hf-connector-add-wrap .hf-settings-primary{display:inline-flex;align-items:center;gap:7px}
+.hf-connector-add-menu{position:absolute;z-index:3;top:calc(100% + 8px);right:0;width:245px;padding:7px;border:1px solid rgba(var(--hf-settings-line),.14);border-radius:10px;background:var(--hf-settings-surface);box-shadow:0 18px 42px -22px rgba(0,0,0,.78);animation:modalScale .18s cubic-bezier(.22,1,.36,1) both}
+.hf-connector-add-menu > button{display:flex;align-items:flex-start;gap:8px;width:100%;padding:10px;border:0;border-radius:7px;background:transparent;color:var(--hf-settings-ink);text-align:left;cursor:pointer;font:650 12px ui-sans-serif,system-ui,sans-serif}
+.hf-connector-add-menu > button:hover{background:rgba(var(--hf-settings-line),.06)}
+.hf-connector-add-menu > button:disabled{cursor:not-allowed;opacity:.48}
+.hf-connector-add-menu > button small{display:block;margin-top:3px;color:var(--hf-settings-muted);font-size:10px;font-weight:500}
+.hf-connector-menu-dot{width:7px;height:7px;flex:0 0 auto;margin-top:4px;border-radius:50%;background:#9BE27A;box-shadow:0 0 0 3px rgba(155,226,122,.10)}
+.hf-connector-menu-note{padding:8px 10px;border-top:1px solid rgba(var(--hf-settings-line),.08);color:var(--hf-settings-muted);font-size:10px;line-height:1.4}
+.hf-connector-connection-card,.hf-connector-feature-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:11px;background:var(--hf-settings-surface)}
+.hf-connector-connection-name{color:var(--hf-settings-ink);font-size:13px;font-weight:700}
+.hf-connector-connection-meta{margin-top:5px;color:var(--hf-settings-muted);font-size:11px;line-height:1.35}
+.hf-connector-action-row{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.hf-connector-feature-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:8px;background:rgba(209,254,23,.13);color:#D1FE17}
+.hf-connector-feature-card{justify-content:flex-start}
+.hf-connector-feature-card strong{color:var(--hf-settings-ink);font-size:13px}
+.hf-connector-feature-card p{margin:5px 0 0;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.45}
+.hf-connector-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:32px;padding-top:20px;border-top:1px solid rgba(var(--hf-settings-line),.10)}
+.hf-connector-details div{min-width:0;display:flex;flex-direction:column;gap:6px}
+.hf-connector-details span{color:var(--hf-settings-muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:750}
+.hf-connector-details strong{overflow:hidden;color:var(--hf-settings-ink);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-search,.hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-sort{background:#F0F1F2}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-connector-new{background:rgba(63,102,209,.12);color:#3f66d1}
+@media(max-width:760px){.hf-connectors-toolbar{align-items:stretch;flex-direction:column;gap:12px}.hf-connectors-toolbar-actions{justify-content:flex-end}.hf-connectors-grid{grid-template-columns:1fr}.hf-connector-hero{align-items:flex-start;flex-wrap:wrap}.hf-connector-hero .hf-settings-status{margin-left:68px;margin-top:-8px}.hf-connector-section-heading{align-items:flex-start;flex-direction:column}.hf-connector-add-wrap{width:100%}.hf-connector-add-wrap .hf-settings-primary{width:100%;justify-content:center}.hf-connector-add-menu{left:0;right:auto;width:100%}.hf-connector-connection-card{align-items:flex-start;flex-direction:column}.hf-connector-action-row{justify-content:flex-start}.hf-connector-details{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary,[data-hf-studio-panel="true"]{transition:none!important}}
 @media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
@@ -1939,7 +2005,28 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div data-agentflow-island="connectors"></div><div class="hf-settings-card" style="margin-top:14px"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }} · {{ connector.syncLabel }}</div><div style="margin-top:4px;font-size:10.5px;color:#898A8B">{{ connector.lastSync }}</div><sc-if value="{{ connector.lastError }}" hint-placeholder-val="{{ false }}"><div style="margin-top:5px;color:#E58C72;font-size:10.5px">{{ connector.lastError }}</div></sc-if></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button><sc-if value="{{ connector.showTest }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary" onClick="{{ connector.onTest }}">Tester</button></sc-if><sc-if value="{{ connector.showDisconnect }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connector.onDisconnect }}">Déconnecter</button></sc-if></div></div></sc-for></div>
+              <sc-if value="{{ connectorListVisible }}" hint-placeholder-val="{{ true }}">
+                <div class="hf-connectors-toolbar">
+                  <div><div class="hf-settings-section-head" style="margin-bottom:0"><div><h3>Connecteurs</h3><p>Relie tes outils aux workflows HuggyFlow avec des autorisations explicites.</p></div></div></div>
+                  <div class="hf-connectors-toolbar-actions"><button class="hf-settings-secondary" onClick="{{ refreshConnectors }}" title="Actualiser les connecteurs" aria-label="Actualiser les connecteurs"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0 2 5"></path><path d="M20 4v7h-7"></path></svg></button><select class="hf-connectors-sort" value="{{ connectorSort }}" onChange="{{ onConnectorSort }}" aria-label="Trier les connecteurs"><option value="popular">Populaires</option><option value="status">Connectés d’abord</option><option value="name">Nom</option></select></div>
+                </div>
+                <div class="hf-connectors-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.5" y2="16.5"></line></svg><input value="{{ connectorSearch }}" onChange="{{ onConnectorSearch }}" placeholder="Rechercher un connecteur…" aria-label="Rechercher un connecteur" autocomplete="off"/></div>
+                <sc-if value="{{ integrationsLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-connectors-grid"><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div></div></sc-if>
+                <sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-empty"><div class="hf-connector-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><path d="M8.2 7.2l7.5 3.5M8.2 16.8l7.5-3.5"></path></svg></div><div>Aucun connecteur ne correspond à ta recherche.</div><button class="hf-settings-secondary" onClick="{{ onConnectorSearch }}">Réinitialiser la recherche</button></div></sc-if>
+                <div class="hf-connectors-grid"><sc-for list="{{ connectorList }}" as="connector" hint-placeholder-count="8"><div class="hf-connector-card" role="button" tabindex="0" onClick="{{ connector.onOpen }}" title="Ouvrir {{ connector.name }}" style-hover="border-color:rgba(209,254,23,.34);transform:translateY(-2px)"><div class="hf-connector-card-top"><div class="hf-connector-logo" style="background:{{ connector.bg }};color:#131517">{{ connector.glyph }}</div><div class="hf-connector-availability" title="{{ connector.availabilityLabel }}"><span style="background:{{ connector.dotColor }}"></span>{{ connector.availabilityLabel }}</div></div><div class="hf-connector-card-body"><div class="hf-connector-card-title">{{ connector.name }}<sc-if value="{{ connector.isNew }}" hint-placeholder-val="{{ false }}"><span class="hf-connector-new">Nouveau</span></sc-if></div><div class="hf-connector-card-desc">{{ connector.desc }}</div></div><div class="hf-connector-card-footer"><span class="hf-settings-status {{ connector.statusClass }}">{{ connector.statusLabel }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div></sc-for></div>
+              </sc-if>
+
+              <sc-if value="{{ connectorDetailVisible }}" hint-placeholder-val="{{ false }}">
+                <div class="hf-connector-detail-head"><button class="hf-connector-back" onClick="{{ closeConnectorDetail }}" title="Retour aux connecteurs" aria-label="Retour aux connecteurs"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button><div class="hf-connector-breadcrumb"><span>Connecteurs</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg><strong>{{ selectedConnector.name }}</strong></div><button class="hf-settings-close" onClick="{{ closeSettings }}" title="Fermer les paramètres" aria-label="Fermer les paramètres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+                <div class="hf-connector-hero"><div class="hf-connector-logo hf-connector-logo-large" style="background:{{ selectedConnector.bg }};color:#131517">{{ selectedConnector.glyph }}</div><div style="min-width:0;flex:1"><div class="hf-connector-hero-title">{{ selectedConnector.name }}</div><div class="hf-connector-hero-subtitle">{{ selectedConnector.statusLabel }} · {{ selectedConnector.availabilityLabel }}</div></div><span class="hf-settings-status {{ selectedConnector.statusClass }}">{{ selectedConnector.statusLabel }}</span></div>
+                <section class="hf-connector-section"><h3>Présentation</h3><p>{{ selectedConnector.desc }} HuggyFlow demande uniquement les permissions nécessaires et chiffre les identifiants côté serveur.</p></section>
+                <section class="hf-connector-section"><div class="hf-connector-section-heading"><div><h3>Connexions</h3><p>Crée et gère les connexions à {{ selectedConnector.name }}.</p></div><div class="hf-connector-add-wrap"><button class="hf-settings-primary" onClick="{{ toggleConnectorAddMenu }}" disabled="{{ connectorDetailBusy }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>{{ connectorDetailBusy ? 'Connexion…' : 'Ajouter une connexion' }}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button><sc-if value="{{ connectorAddMenuOpen }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-add-menu"><button onClick="{{ connectSelectedConnector }}" disabled="{{ selectedConnector.notSupported }}"><span class="hf-connector-menu-dot"></span>OAuth sécurisé<small>{{ selectedConnector.supportsOAuth ? 'Autoriser dans une nouvelle étape' : 'Bientôt disponible' }}</small></button><div class="hf-connector-menu-note">Les secrets ne sont jamais enregistrés dans le navigateur.</div></div></sc-if></div></div>
+                  <sc-if value="{{ connectorDetailEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-detail-empty"><div class="hf-connector-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l2.5 2.5"></path></svg></div><strong>Aucune connexion trouvée</strong><span>Ajoute une connexion pour autoriser HuggyFlow à utiliser ce service.</span><button class="hf-settings-primary" onClick="{{ connectorDetailConnect }}" disabled="{{ selectedConnector.notSupported || connectorDetailBusy }}">{{ selectedConnector.supportsOAuth ? 'Connecter maintenant' : 'Configuration indisponible' }}</button></div></sc-if>
+                  <sc-for list="{{ connectorDetailConnections }}" as="connection" hint-placeholder-count="1"><div class="hf-connector-connection-card"><div><div class="hf-connector-connection-name">{{ connection.accountLabel || connection.name }}</div><div class="hf-connector-connection-meta">{{ connectorDetailConnectedAt }} · {{ connectorDetailPermissionLabel }}</div><div class="hf-connector-connection-meta">{{ connectorDetailLastSync }}</div></div><div class="hf-connector-action-row"><button class="hf-settings-secondary" onClick="{{ connectorDetailTest }}" disabled="{{ connectorDetailBusy }}">Tester</button><button class="hf-settings-secondary" onClick="{{ connectorDetailSync }}" disabled="{{ connectorDetailBusy }}">Synchroniser</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connectorDetailDisconnect }}" disabled="{{ connectorDetailBusy }}">Déconnecter</button></div></div></sc-for>
+                </section>
+                <section class="hf-connector-section"><div class="hf-connector-section-heading"><div><h3>Fonctionnalités</h3><p>Ce que HuggyFlow peut faire dépend des autorisations accordées.</p></div><span class="hf-settings-badge">{{ connectorDetailFeatureLabel }}</span></div><div class="hf-connector-feature-card"><div class="hf-connector-feature-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"></path></svg></div><div><strong>Accès contrôlé au service</strong><p>{{ selectedConnector.isConnected ? 'Les workflows peuvent utiliser ce connecteur selon les permissions confirmées.' : 'Connecte ce service pour activer ses capacités dans les workflows.' }}</p></div></div></section>
+                <footer class="hf-connector-details"><div><span>Documentation</span><strong>Guide HuggyFlow ↗</strong></div><div><span>Sécurité</span><strong>OAuth et coffre chiffré ↗</strong></div><div><span>Statut</span><strong>{{ selectedConnector.availabilityLabel }}</strong></div></footer>
+              </sc-if>
             </sc-if>
 
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
@@ -2840,7 +2927,7 @@ class Component extends DCLogic {
     settingsDraftRestored: false, settingsLastSavedSnapshot: null, settingsOffline: false,
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false, capabilitiesRefreshing: false,
-    integrationConnections: [], integrationsLoading: false, tfa: false, mfaFactors: [], mfaSetup: null, mfaCode: '', mfaLoading: false, recoveryCodes: [],
+    integrationConnections: [], integrationsLoading: false, connectorSearch: '', connectorSort: 'popular', selectedConnectorId: '', connectorDetailOpen: false, connectorAddMenuOpen: false, connectorBusyProvider: '', tfa: false, mfaFactors: [], mfaSetup: null, mfaCode: '', mfaLoading: false, recoveryCodes: [],
     apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90, apiKeyDailyLimit: 1000,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
     accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
@@ -3875,6 +3962,7 @@ class Component extends DCLogic {
     clearTimeout(this.persistTimer);
     clearTimeout(this.bootstrapTimer);
     clearTimeout(this.toastTimer);
+    clearTimeout(this.settingsHopTimer);
     this.persistUiState();
     if(this.chatAbort) this.chatAbort.abort();
     if(this.activeAudio) this.activeAudio.pause();
@@ -4059,6 +4147,10 @@ class Component extends DCLogic {
       if(section === 'skills') this.loadTemplates();
       if(section === 'connectors') this.loadIntegrations();
       this.restoreSettingsScroll(section);
+      clearTimeout(this.settingsHopTimer);
+      this.settingsHopTimer = setTimeout(()=>{
+        if(this.state.settingsHop) this.setState({ settingsHop:false });
+      }, 280);
     });
   }
   closeSettingsModal(){
@@ -5299,8 +5391,44 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/integrations');
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'integrations');
-      this.setState({ integrationConnections:data.connections || [], integrationsLoading:false });
-    }catch(err){ this.setState({ integrationsLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les connecteurs.') }); }
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const connectedProvider = params && params.get('oauth_connected');
+      const oauthError = params && params.get('oauth_error');
+      if(typeof window !== 'undefined' && (connectedProvider || oauthError)){
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+      this.setState({ integrationConnections:data.connections || [], integrationsLoading:false, connectorBusyProvider:'' }, ()=>{
+        if(connectedProvider) this.notify('Connecteur ' + this.connectorDisplayName(connectedProvider) + ' connecté.');
+        if(oauthError) this.notify('Connexion annulée : ' + String(oauthError).slice(0, 120));
+      });
+    }catch(err){ this.setState({ integrationsLoading:false, connectorBusyProvider:'', pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les connecteurs.') }); }
+  }
+  connectorDisplayName(provider){
+    const entry = (this.INTEGRATIONS || []).find(item=>item.id === provider);
+    return entry ? entry.name : String(provider || '');
+  }
+  connectorProviderSupportsOAuth(provider){ return ['google_drive','slack','notion'].includes(String(provider || '')); }
+  openConnectorDetail(provider){
+    if(!provider) return;
+    this.persistSettingsScroll('connectors');
+    this.setState({ selectedConnectorId:provider, connectorDetailOpen:true, connectorAddMenuOpen:false, connectorSearch:'' }, ()=>{
+      this.restoreSettingsScroll('connectors-detail-' + provider);
+    });
+  }
+  closeConnectorDetail(){
+    this.persistSettingsScroll('connectors-detail-' + (this.state.selectedConnectorId || 'selected'));
+    this.setState({ selectedConnectorId:'', connectorDetailOpen:false, connectorAddMenuOpen:false }, ()=>this.restoreSettingsScroll('connectors'));
+  }
+  toggleConnectorAddMenu(){ this.setState(s=>({ connectorAddMenuOpen:!s.connectorAddMenuOpen })); }
+  onConnectorSearch(event){ this.setState({ connectorSearch:(event && event.target ? event.target.value : '') || '' }); }
+  onConnectorSort(event){ this.setState({ connectorSort:(event && event.target ? event.target.value : 'popular') || 'popular' }); }
+  refreshConnectors(){ this.loadIntegrations(); }
+  connectSelectedConnector(){
+    const provider = this.state.selectedConnectorId;
+    if(!provider) return;
+    this.setState({ connectorAddMenuOpen:false });
+    this.configureIntegration(provider);
   }
   async loadMfa(){
     if(!this.state.authToken) return;
@@ -5361,25 +5489,27 @@ class Component extends DCLogic {
   }
   async configureIntegration(provider){
     if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
+    this.setState({ connectorBusyProvider:provider, connectorAddMenuOpen:false });
     try{
       const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider, permissions:{ requested:true } }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
       if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
-      this.setState({ integrationConnections:data.connections || [], pricingNotice:'OAuth non configuré pour ce connecteur.' });
-    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
+      this.setState({ integrationConnections:data.connections || [], connectorBusyProvider:'', pricingNotice:'OAuth non configuré pour ce connecteur.' });
+    }catch(err){ this.setState({ connectorBusyProvider:'', pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
   }
   async connectorAction(provider, action){
     if(!this.requireAuth('Connecte-toi pour gerer tes connecteurs.', null)) return;
     const labels = { test:'Verification', reconnect:'Reconnexion', disconnect:'Deconnexion' };
+    this.setState({ connectorBusyProvider:provider });
     try{
       const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action, provider }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
       if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
-      this.setState({ integrationConnections:data.connections || [] });
+      this.setState({ integrationConnections:data.connections || [], connectorBusyProvider:'' });
       this.notify(data.testOk === false ? (data.testMessage || 'Connexion non validee.') : (labels[action] || 'Action') + ' terminee.');
-    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
+    }catch(err){ this.setState({ connectorBusyProvider:'' }); this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
   }
   downloadJson(fileName, payload){
     if(typeof window === 'undefined') return;
@@ -5775,6 +5905,42 @@ class Component extends DCLogic {
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
+    const connectorStatus = { connected:'Connecté', pending:'Autorisation requise', error:'À diagnostiquer', disconnected:'Non connecté' };
+    const connectorSyncStatus = { healthy:'Synchronisé', ready:'Prêt à synchroniser', pending:'En attente', error:'Synchronisation en erreur', idle:'Pas encore testé' };
+    const connectorCatalog = (this.INTEGRATIONS || []).map((item, index)=>{
+      const current = (st.integrationConnections || []).find(connection=>connection.provider === item.id) || {};
+      const status = current.status || 'disconnected';
+      const supportsOAuth = this.connectorProviderSupportsOAuth(item.id);
+      const permissions = current.permissions && typeof current.permissions === 'object' ? current.permissions : {};
+      const scopes = Array.isArray(permissions.scopes) ? permissions.scopes : (typeof permissions.scopes === 'string' ? permissions.scopes.split(/[ ,]+/).filter(Boolean) : []);
+      return {
+        id:item.id, name:item.name, desc:item.desc, glyph:item.glyph, bg:item.bg, index,
+        status, statusLabel:connectorStatus[status] || 'Non connecté', syncLabel:connectorSyncStatus[current.sync_status || 'idle'] || 'Pas encore testé',
+        accountLabel:current.account_label || '', lastError:current.last_error || '', lastSyncedAt:current.last_synced_at || '', connectedAt:current.connected_at || '', scopes,
+        supportsOAuth, notSupported:!supportsOAuth, isNew:index >= 4, availabilityLabel:supportsOAuth ? 'OAuth sécurisé' : 'Disponible après configuration',
+        isConnected:status === 'connected', isPending:status === 'pending', isError:status === 'error', isAvailable:supportsOAuth,
+        statusClass:status === 'connected' ? 'is-connected' : (status === 'error' ? 'is-error' : (status === 'pending' ? 'is-warning' : 'is-neutral')),
+        dotColor:status === 'connected' ? '#9BE27A' : (status === 'error' ? '#E58C72' : '#D1FE17'),
+        buttonLabel:status === 'connected' ? 'Synchroniser' : (status === 'pending' ? 'Autoriser' : (supportsOAuth ? 'Connecter' : 'Voir le détail')),
+        onOpen:()=>this.openConnectorDetail(item.id),
+        onConnect:()=>this.configureIntegration(item.id),
+        onSync:()=>this.connectorAction(item.id,'sync'),
+        onTest:()=>this.connectorAction(item.id,'test'),
+        onReconnect:()=>this.connectorAction(item.id,'reconnect'),
+        onDisconnect:()=>this.connectorAction(item.id,'disconnect'),
+        busy:st.connectorBusyProvider === item.id
+      };
+    });
+    const connectorSearch = normalizeSearch(st.connectorSearch || '').trim();
+    const connectorList = connectorCatalog.filter(item=>!connectorSearch || normalizeSearch(item.name + ' ' + item.desc).includes(connectorSearch)).sort((a,b)=>{
+      if(st.connectorSort === 'name') return a.name.localeCompare(b.name, 'fr');
+      if(st.connectorSort === 'status') return (a.isConnected ? -1 : 1) - (b.isConnected ? -1 : 1) || a.name.localeCompare(b.name, 'fr');
+      return (a.isNew ? 1 : 0) - (b.isNew ? 1 : 0) || a.index - b.index;
+    });
+    const selectedConnector = connectorCatalog.find(item=>item.id === st.selectedConnectorId) || null;
+    const connectorDetailConnections = selectedConnector && selectedConnector.isConnected ? [selectedConnector] : [];
+    const connectorDetailVisible = !!(st.connectorDetailOpen && selectedConnector);
+    const connectorListVisible = !connectorDetailVisible;
     const paywallPlan = this.paywallPlanDetails();
     const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
       const active = task.status === 'loading';
@@ -6230,22 +6396,35 @@ class Component extends DCLogic {
         { label:'Routage références', detail:'Mémoire projet, cohérence personnages et transformations', status:'Actif' },
         { label:'Mémoire et artifacts', detail:'Projet, versions et contrôle qualité', status:st.authToken ? 'Actif' : 'Connexion requise' }
       ],
-      connectorCards: (st.integrationConnections || []).map(c=>({
-        provider:c.provider,
-        label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
-        status:c.status || 'disconnected',
-        statusLabel: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
-        syncLabel: ({healthy:'Synchronisé',ready:'Prêt à synchroniser',pending:'En attente',error:'Synchronisation en erreur',idle:'Pas encore testé'})[c.sync_status || 'idle'] || 'Pas encore testé',
-        lastSync: c.last_synced_at ? ('Dernière synchronisation : ' + new Date(c.last_synced_at).toLocaleString('fr-FR',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })) : 'Aucune synchronisation effectuée',
-        lastError: c.last_error || '',
-        buttonLabel: c.status === 'connected' ? 'Synchroniser' : (c.status === 'pending' ? 'Autoriser' : 'Connecter'),
-        onConfigure:()=>c.status === 'connected' ? this.connectorAction(c.provider,'sync') : (c.status === 'pending' ? this.connectorAction(c.provider,'reconnect') : this.configureIntegration(c.provider)),
-        onTest:()=>this.connectorAction(c.provider,'test'),
-        onDisconnect:()=>this.connectorAction(c.provider,'disconnect'),
-        showTest:c.status === 'connected',
-        showDisconnect:c.status === 'connected' || c.status === 'pending'
-      })),
-      connectorsEmpty: !(st.integrationConnections || []).length,
+      connectorCatalog,
+      connectorList,
+      connectorListVisible,
+      connectorDetailVisible,
+      selectedConnector,
+      connectorDetailConnections,
+      connectorSearch:st.connectorSearch || '',
+      connectorSort:st.connectorSort || 'popular',
+      connectorAddMenuOpen:!!st.connectorAddMenuOpen,
+      connectorBusyProvider:st.connectorBusyProvider || '',
+      connectorsEmpty: !connectorList.length,
+      connectorDetailEmpty: !connectorDetailConnections.length,
+      connectorDetailLastSync:selectedConnector && selectedConnector.lastSyncedAt ? ('Dernière synchronisation : ' + new Date(selectedConnector.lastSyncedAt).toLocaleString('fr-FR',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })) : 'Aucune synchronisation effectuée',
+      connectorDetailConnectedAt:selectedConnector && selectedConnector.connectedAt ? ('Connecté le ' + new Date(selectedConnector.connectedAt).toLocaleDateString('fr-FR',{ day:'2-digit', month:'long', year:'numeric' })) : 'Pas encore connecté',
+      connectorDetailPermissionLabel:selectedConnector && selectedConnector.scopes && selectedConnector.scopes.length ? (selectedConnector.scopes.length + ' permission(s) accordée(s)') : 'Permissions à confirmer',
+      connectorDetailFeatureLabel:selectedConnector && selectedConnector.isConnected ? 'Activé' : 'Non activé',
+      connectorDetailBusy:!!(selectedConnector && st.connectorBusyProvider === selectedConnector.id),
+      onConnectorSearch:(e)=>this.onConnectorSearch(e),
+      onConnectorSort:(e)=>this.onConnectorSort(e),
+      refreshConnectors:()=>this.refreshConnectors(),
+      openConnectorDetail:(provider)=>this.openConnectorDetail(provider),
+      closeConnectorDetail:()=>this.closeConnectorDetail(),
+      toggleConnectorAddMenu:()=>this.toggleConnectorAddMenu(),
+      connectSelectedConnector:()=>this.connectSelectedConnector(),
+      connectorDetailConnect:()=>selectedConnector && this.configureIntegration(selectedConnector.id),
+      connectorDetailSync:()=>selectedConnector && this.connectorAction(selectedConnector.id,'sync'),
+      connectorDetailTest:()=>selectedConnector && this.connectorAction(selectedConnector.id,'test'),
+      connectorDetailReconnect:()=>selectedConnector && this.connectorAction(selectedConnector.id,'reconnect'),
+      connectorDetailDisconnect:()=>selectedConnector && this.connectorAction(selectedConnector.id,'disconnect'),
       integrationsLoading: !!st.integrationsLoading,
       feedbackMessage: st.feedbackMessage || '',
       onFeedbackMessage: (e)=> this.setState({ feedbackMessage:e.target.value }),
