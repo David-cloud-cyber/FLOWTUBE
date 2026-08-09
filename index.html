@@ -129,8 +129,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-attachment-status]{color:#898A8B;font-size:10px;white-space:nowrap}
 [data-hf-attachment-remove]{width:20px;height:20px;flex:0 0 20px;display:grid;place-items:center;border:0;border-radius:999px;background:transparent;color:#898A8B;cursor:pointer;font-size:15px;line-height:1}
 [data-hf-attachment-remove]:hover{background:rgba(247,247,248,.10);color:#F7F7F8}
-[data-hf-new-message]{position:absolute;left:50%;bottom:116px;z-index:24;transform:translateX(-50%);display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid rgba(209,254,23,.35);border-radius:999px;background:#1C1E20;color:#D1FE17;box-shadow:0 12px 28px -14px rgba(0,0,0,.72);font-size:11.5px;font-weight:700;cursor:pointer;animation:toastIn .2s ease both}
-[data-hf-new-message]:active{transform:translateX(-50%) scale(.965)}
+[data-hf-new-message-anchor]{position:absolute;left:0;right:var(--hf-chat-inset,0px);bottom:116px;z-index:24;display:flex;justify-content:center;align-items:center;padding:0 26px;pointer-events:none}
+[data-hf-new-message]{position:relative;left:auto;bottom:auto;z-index:1;display:inline-flex;align-items:center;gap:7px;max-width:calc(100vw - 52px);padding:8px 13px;border:1px solid rgba(209,254,23,.35);border-radius:999px;background:#1C1E20;color:#D1FE17;box-shadow:0 12px 28px -14px rgba(0,0,0,.72);font-size:11.5px;font-weight:700;cursor:pointer;pointer-events:auto;animation:toastIn .2s ease both}
+[data-hf-new-message]:active{transform:scale(.965)}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
 [data-hf-rail="true"]{align-items:center}
@@ -778,7 +779,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
       </div>
     </div>
     <sc-if value="{{ showNewMessageButton }}" hint-placeholder-val="{{ false }}">
-      <button data-hf-new-message="true" style="left:calc((100% - {{ studioContentInset }}) / 2)" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button>
+      <div data-hf-new-message-anchor="true" style="--hf-chat-inset:{{ studioContentInset }}"><button data-hf-new-message="true" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button></div>
     </sc-if>
 
     <sc-if value="{{ hasMessages }}" hint-placeholder-val="{{ false }}">
@@ -3997,7 +3998,7 @@ class Component extends DCLogic {
     if(changed) this.schedulePersistUiState();
     const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>prevState[key] !== this.state[key]);
     if(studioChanged) this.rememberStudioContext();
-    if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked){
+    if(prevState.messages !== this.state.messages){
       if(this.chatShouldStick !== false) this.scrollChatToBottom();
       else if(!this.state.chatUnread) this.setState({ chatUnread:true });
     }
@@ -6665,7 +6666,7 @@ class Component extends DCLogic {
       invoices: [],
       isEmpty: st.messages.length === 0,
       hasMessages: st.messages.length > 0,
-      showNewMessageButton: !!st.chatUnread && st.messages.length > 0,
+      showNewMessageButton: st.page === 'app' && !!st.chatUnread && st.messages.length > 0,
       jumpToLatest: ()=> this.jumpToLatest(),
       showSuggestions,
       input: st.input,
