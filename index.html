@@ -471,6 +471,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                           <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
                           <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D0D0D1">{{ workflow.title }}</span>
                           <span style="flex:0 0 auto;font-size:10px;color:#888">{{ workflow.meta }}</span>
+                          <sc-if value="{{ workflow.showAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ workflow.onAction }}" style="padding:4px 7px;border:1px solid rgba(209,254,23,.22);border-radius:6px;background:transparent;color:#D1FE17;font-size:10px;font-weight:700;cursor:pointer">{{ workflow.actionLabel }}</button></sc-if>
+                          <sc-if value="{{ workflow.showCancel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ workflow.onCancel }}" title="Annuler" style="width:22px;height:22px;border:1px solid rgba(196,88,64,.25);border-radius:6px;background:transparent;color:#E58C72;font-size:12px;cursor:pointer">×</button></sc-if>
                         </div>
                       </sc-for>
                     </sc-if>
@@ -780,7 +782,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <div style="border:1px solid rgba({{ tLineRGB }},.12);border-radius:14px;overflow:hidden;background:rgba({{ tLineRGB }},.035)">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba({{ tLineRGB }},.08)"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ activeArtifactTitle }}</span><span style="font-size:10px;color:#D1FE17">Version {{ activeArtifactVersion }}</span></div>
               <iframe title="Aperçu de l'artifact" src="{{ artifactPreviewUrl }}" sandbox="allow-scripts" referrerpolicy="no-referrer" style="display:block;width:100%;height:310px;border:0;background:#fff"></iframe>
-              <div style="display:flex;gap:7px;padding:10px 12px"><button onClick="{{ publishActiveArtifact }}" style="flex:1;padding:8px 10px;border-radius:8px;border:0;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Publier</button><button onClick="{{ copyActiveArtifact }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Copier</button></div>
+              <div style="display:flex;gap:7px;padding:10px 12px;flex-wrap:wrap"><button onClick="{{ publishActiveArtifact }}" style="flex:1;min-width:92px;padding:8px 10px;border-radius:8px;border:0;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Publier</button><button onClick="{{ requestArtifactApproval }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Demander validation</button><button onClick="{{ copyActiveArtifact }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Copier</button></div>
               <div style="display:flex;align-items:center;gap:6px;padding:0 12px 10px;overflow-x:auto"><button onClick="{{ setArtifactDesktop }}" style="{{ artifactDeviceDesktopStyle }}">Desktop</button><button onClick="{{ setArtifactTablet }}" style="{{ artifactDeviceTabletStyle }}">Tablet</button><button onClick="{{ setArtifactMobile }}" style="{{ artifactDeviceMobileStyle }}">Mobile</button><div style="flex:1"></div><button onClick="{{ downloadActiveArtifact }}" style="{{ artifactActionStyle }}" title="Telecharger">↓</button></div>
               <sc-if value="{{ artifactHasRuntimeError }}" hint-placeholder-val="{{ false }}"><div style="margin:0 12px 10px;padding:9px 10px;border-radius:9px;border:1px solid rgba(196,88,64,.28);background:rgba(196,88,64,.08);color:#E58C72;font-size:10.5px;line-height:1.45">{{ artifactRuntimeError }}</div></sc-if>
             </div>
@@ -791,7 +793,12 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="flex:1;font-size:10.5px;color:{{ artifactSaveStateColor }}">{{ artifactSaveStateLabel }}</span><button onClick="{{ downloadActiveArtifact }}" style="{{ artifactSecondaryStyle }}">Telecharger</button><button onClick="{{ saveArtifactVersion }}" disabled="{{ artifactSaveDisabled }}" style="{{ artifactPublishStyle }}">{{ artifactSaveLabel }}</button></div>
             </sc-if>
             <sc-if value="{{ artifactViewVersions }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:flex-end;margin-top:10px"><button onClick="{{ compareSelectedArtifact }}" style="padding:6px 9px;border:1px solid rgba({{ tLineRGB }},.13);border-radius:7px;background:transparent;color:{{ tText3 }};font-size:10px;font-weight:700;cursor:pointer">Comparer avec l actuelle</button></div>
               <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px"><sc-for list="{{ artifactVersionCards }}" as="version" hint-placeholder-count="4"><button onClick="{{ version.onClick }}" style="{{ version.style }}"><span style="font-weight:800">V{{ version.number }}</span><span style="flex:1;text-align:left;margin-left:8px">{{ version.label }}</span><span style="font-size:10px;color:{{ tText4 }}">{{ version.date }}</span></button></sc-for></div>
+            </sc-if>
+            <sc-if value="{{ artifactViewCompare }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px"><span style="font-size:11px;font-weight:800;color:{{ tInk }}">Comparaison des versions</span><div style="display:flex;gap:6px"><button onClick="{{ restoreSelectedArtifact }}" style="{{ artifactTinyActionStyle }}">Restaurer la sélection</button><button onClick="{{ artifactVersionsView }}" style="{{ artifactTinyActionStyle }}">Fermer</button></div></div>
+              <sc-for list="{{ artifactCompareRows }}" as="row" hint-placeholder-count="3"><div style="margin-top:9px;padding:9px;border:1px solid rgba({{ tLineRGB }},.10);border-radius:9px;background:rgba({{ tLineRGB }},.025)"><div style="font:10px 'JetBrains Mono',monospace;color:{{ row.changed ? '#E8B25C' : tText4 }}">{{ row.path }} · {{ row.changed ? 'modifié' : 'identique' }}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px"><pre style="margin:0;max-height:150px;overflow:auto;white-space:pre-wrap;font:9px/1.45 'JetBrains Mono',monospace;color:{{ tText4 }}">{{ row.left }}</pre><pre style="margin:0;max-height:150px;overflow:auto;white-space:pre-wrap;font:9px/1.45 'JetBrains Mono',monospace;color:{{ tInk }}">{{ row.right }}</pre></div></div></sc-for>
             </sc-if>
             <sc-if value="{{ artifactViewActivity }}" hint-placeholder-val="{{ false }}">
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px"><sc-for list="{{ artifactActivityCards }}" as="activity" hint-placeholder-count="4"><div style="display:flex;gap:9px;padding:10px;border:1px solid rgba({{ tLineRGB }},.09);border-radius:10px;background:rgba({{ tLineRGB }},.025)"><span style="width:7px;height:7px;flex:0 0 auto;margin-top:4px;border-radius:50%;background:{{ activity.dot }}"></span><div style="min-width:0"><div style="font-size:11.5px;font-weight:700;color:{{ tInk }}">{{ activity.title }}</div><div style="margin-top:3px;font-size:10.5px;color:{{ tText4 }}">{{ activity.meta }}</div></div></div></sc-for></div>
@@ -1872,6 +1879,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Double authentification</div><div class="hf-settings-row-hint">Protège le compte avec une application TOTP. La configuration Supabase est vérifiée avant activation.</div><div class="hf-settings-inline-note">{{ mfaStatusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ toggle2fa }}" disabled="{{ mfaLoading }}">{{ mfaLoading ? 'Configuration...' : (tfa ? 'Désactiver' : 'Activer') }}</button></div>
               </div>
               <sc-if value="{{ mfaSetup }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row-label">Finaliser la double authentification</div><div class="hf-settings-row-hint">Scanne le QR code dans 1Password, Google Authenticator ou une application TOTP, puis confirme le code affiché.</div><div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px"><sc-if value="{{ mfaSetup.qrCode }}" hint-placeholder-val="{{ false }}"><img src="{{ mfaSetup.qrCode }}" alt="QR code de configuration MFA" width="148" height="148" style="display:block;border-radius:10px;background:#fff;padding:8px"/></sc-if><div style="min-width:190px;flex:1"><label class="hf-settings-row-hint" for="hf-mfa-code">Code à 6 chiffres</label><input id="hf-mfa-code" class="hf-settings-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{ mfaCode }}" onChange="{{ onMfaCode }}" placeholder="000000"/><div class="hf-settings-action-row" style="margin-top:10px"><button class="hf-settings-secondary" onClick="{{ cancelMfaSetup }}">Annuler</button><button class="hf-settings-primary" onClick="{{ verifyMfaSetup }}" disabled="{{ mfaLoading }}">{{ mfaLoading ? 'Vérification...' : 'Confirmer' }}</button></div></div></div><sc-if value="{{ mfaSetup.secret }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-inline-note">Clé de secours : <code>{{ mfaSetup.secret }}</code></div></sc-if></div></sc-if>
+              <sc-if value="{{ tfa }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Codes de récupération</div><div class="hf-settings-row-hint">Ils permettent de récupérer l’accès si ton application TOTP est indisponible. Chaque génération invalide les anciens codes.</div></div><button class="hf-settings-secondary" onClick="{{ regenerateRecoveryCodes }}">Générer</button></div><sc-if value="{{ recoveryCodesVisible }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px"><sc-for list="{{ recoveryCodes }}" as="code" hint-placeholder-count="8"><code style="padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.05);color:#D1FE17;font:12px 'JetBrains Mono',monospace;text-align:center">{{ code }}</code></sc-for></div><div class="hf-settings-inline-note" style="margin-top:10px">Copie-les maintenant : ils ne seront plus affichés après avoir quitté cette page.</div></sc-if></div></sc-if>
+              <div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Sessions et appareils</div><div class="hf-settings-row-hint">Révoque un appareil perdu ou déconnecte toutes les autres sessions.</div></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ loadSecurity }}">Actualiser</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ revokeAllSecuritySessions }}">Déconnecter les autres</button></div></div><sc-if value="{{ securityLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Vérification des sessions…</div></sc-if><sc-for list="{{ securitySessionCards }}" as="session" hint-placeholder-count="3"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ session.deviceLabel }} {{ session.current ? '· session actuelle' : '' }}</div><div style="margin-top:4px;font-size:10.5px;color:#898A8B">{{ session.userAgent }} · dernière activité {{ session.lastSeen }}</div></div><sc-if value="{{ session.canRevoke }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ session.onRevoke }}">Révoquer</button></sc-if></div></sc-for><sc-if value="{{ securitySessionsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune autre session enregistrée.</div></sc-if></div>
               <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Zone sensible</div><div class="hf-settings-row-hint">Télécharge tes données ou supprime définitivement ton compte.</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="hf-settings-secondary" onClick="{{ exportAccountData }}">Exporter mes données</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ openAccountDeletion }}">Supprimer le compte</button></div></div>
             </sc-if>
 
@@ -1882,7 +1891,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Analyses produit</div><div class="hf-settings-row-hint">Partager des événements anonymisés pour améliorer la fluidité et la fiabilité.</div></div><button onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}" aria-label="Basculer les analyses produit"><span style="{{ analyticsKnobStyle }}"></span></button></div>
                 <sc-for list="{{ prefItems }}" as="pref" hint-placeholder-count="3"><div class="hf-settings-row"><div><div class="hf-settings-row-label">{{ pref.label }}</div><div class="hf-settings-row-hint">{{ pref.hint }}</div></div><button onClick="{{ pref.onToggle }}" style="{{ pref.trackStyle }}" aria-label="Modifier {{ pref.label }}"><span style="{{ pref.knobStyle }}"></span></button></div></sc-for>
               </div>
-              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Mémoire de l'agent</div><div style="margin-top:4px;font-size:11px">Portée, source et confiance de chaque information utilisée.</div></div><button class="hf-settings-secondary" onClick="{{ loadAgentMemory }}">Actualiser</button></div><sc-if value="{{ memoryLoading }}" hint-placeholder-val="false"><div class="hf-settings-empty">Chargement de la mémoire…</div></sc-if><sc-if value="{{ memoryEmpty }}" hint-placeholder-val="false"><div class="hf-settings-empty">Aucune information active pour ce contexte.</div></sc-if><sc-for list="{{ memoryCards }}" as="memory" hint-placeholder-count="4"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650">{{ memory.label }}</div><div style="margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;font-size:11px">{{ memory.content }}</div><div style="margin-top:5px;color:#898A8B;font-size:10px">{{ memory.scope }} · {{ memory.source }} · confiance {{ memory.confidence }}</div></div><div style="display:flex;gap:6px"><button class="hf-settings-secondary" onClick="{{ memory.onPin }}">{{ memory.pinned ? 'Désépingler' : 'Épingler' }}</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ memory.onForget }}">Oublier</button></div></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Mémoire de l'agent</div><div style="margin-top:4px;font-size:11px">Portée, source et confiance de chaque information utilisée.</div></div><button class="hf-settings-secondary" onClick="{{ loadAgentMemory }}">Actualiser</button></div><sc-if value="{{ memoryConflictVisible }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 18px;padding:10px 12px;border-radius:9px;background:rgba(232,178,92,.08);border:1px solid rgba(232,178,92,.18);color:#E8B25C;font-size:11px">Plusieurs souvenirs se contredisent. Vérifie les valeurs avant une nouvelle génération.</div></sc-if><sc-if value="{{ memoryLoading }}" hint-placeholder-val="false"><div class="hf-settings-empty">Chargement de la mémoire…</div></sc-if><sc-if value="{{ memoryEmpty }}" hint-placeholder-val="false"><div class="hf-settings-empty">Aucune information active pour ce contexte.</div></sc-if><sc-for list="{{ memoryCards }}" as="memory" hint-placeholder-count="4"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650">{{ memory.label }}</div><div style="margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;font-size:11px">{{ memory.content }}</div><div style="margin-top:5px;color:#898A8B;font-size:10px">{{ memory.scope }} · {{ memory.source }} · confiance {{ memory.confidence }}</div><div style="margin-top:4px;color:#666869;font-size:10px">{{ memory.reason }}</div></div><div style="display:flex;gap:6px"><button class="hf-settings-secondary" onClick="{{ memory.onPin }}">{{ memory.pinned ? 'Désépingler' : 'Épingler' }}</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ memory.onForget }}">Oublier</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
@@ -1896,16 +1905,20 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div class="hf-settings-section-head"><div><h3>Équipe</h3><p>Invite des collaborateurs et garde le contrôle de ton espace partagé.</p></div><span class="hf-settings-badge">{{ seatsLabel }} places</span></div>
               <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Utilisation des places</div><div style="margin:10px 0 5px" class="hf-settings-progress"><span style="width:{{ seatsPct }}"></span></div><div class="hf-settings-row-hint">{{ seatsLabel }} utilisées sur ton forfait.</div><div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><input class="hf-settings-control" value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" placeholder="collegue@entreprise.com"/><button class="hf-settings-primary" onClick="{{ sendInvite }}">Inviter</button></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Membres</span><span style="color:#898A8B">Rôles gérés par propriétaire</span></div><sc-for list="{{ teamMembers }}" as="member" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ member.name }} {{ member.isYou ? '(toi)' : '' }}</div><div style="margin-top:4px;font-size:11px">{{ member.email }} · {{ member.activity }}</div></div><sc-if value="{{ member.isYou }}" hint-placeholder-val="{{ false }}"><select class="hf-settings-control" style="min-width:120px;max-width:150px;padding:7px 9px" value="{{ member.roleValue }}" onChange="{{ member.onRoleChange }}"><option value="admin">Admin</option><option value="editor">Editeur</option><option value="viewer">Lecteur</option></select></sc-if><sc-if value="{{ member.isYou }}" hint-placeholder-val="{{ true }}"><span class="hf-settings-badge">{{ member.role }}</span></sc-if></div></sc-for><sc-if value="{{ noPending }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune invitation en attente.</div></sc-if><sc-for list="{{ pendingInvites }}" as="pending" hint-placeholder-count="3"><div class="hf-settings-table-row"><span>{{ pending.email }}</span><button class="hf-settings-secondary" onClick="{{ pending.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Accès au projet actif</div><div style="margin-top:4px;font-size:11px;color:#898A8B">{{ projectAccessCount }} autorisation(s) configurée(s) pour ce projet.</div></div><span class="hf-settings-badge">Contrôlé</span></div><sc-if value="{{ projectAccessEmpty }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucun accès projet explicite. Les membres gardent uniquement leur rôle d’équipe.</div></sc-if><sc-for list="{{ projectAccessCards }}" as="grant" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ grant.memberLabel }}</div><div style="margin-top:4px;color:#898A8B;font-size:10.5px">{{ grant.role }} · {{ grant.permissions }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ grant.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Approbations de publication</div><div style="margin-top:4px;font-size:11px;color:#898A8B">Les artifacts peuvent être validés avant diffusion.</div></div><span class="hf-settings-badge">{{ approvalPendingCount }} en attente</span></div><sc-if value="{{ approvalEmpty }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune demande d’approbation en attente.</div></sc-if><sc-for list="{{ approvalCards }}" as="approval" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ approval.label }}</div><div style="margin-top:4px;color:#898A8B;font-size:10.5px">{{ approval.meta }} · {{ approval.status }}</div></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ approval.onReject }}">Refuser</button><button class="hf-settings-primary" onClick="{{ approval.onApprove }}">Approuver</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>API</h3><p>Crée des clés personnelles pour connecter HuggyFlow à tes outils.</p></div><button class="hf-settings-primary" onClick="{{ createKey }}">Nouvelle clé</button></div>
-              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div><div style="margin-top:5px;font-size:11px;color:{{ key.expiryStyle }}">{{ key.scopesLabel }} · {{ key.expiryLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hf-settings-secondary" onClick="{{ key.onRotate }}">Renouveler</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></div></sc-for></div>
+              <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Limite quotidienne</div><div class="hf-settings-row-hint">Appliquée à chaque nouvelle clé et rotation pour éviter les abus.</div></div><div class="hf-settings-action-row"><input class="hf-settings-control" style="width:104px" type="number" min="1" max="100000" value="{{ apiKeyDailyLimit }}" onChange="{{ onApiKeyDailyLimit }}"/><span style="color:#898A8B;font-size:11px">requêtes</span></div></div></div>
+              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div><div style="margin-top:5px;font-size:11px;color:{{ key.expiryStyle }}">{{ key.scopesLabel }} · {{ key.expiryLabel }} · {{ key.dailyLimitLabel }}</div><div style="margin-top:4px;font-size:10px;color:#898A8B">{{ key.usageLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hf-settings-secondary" onClick="{{ key.onRotate }}">Renouveler</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>Utilisation</h3><p>Une vue claire de tes créations et de tes crédits réellement consommés.</p></div><div style="display:flex;gap:6px"><sc-for list="{{ statsTabs }}" as="tab" hint-placeholder-count="3"><button class="hf-settings-secondary" onClick="{{ tab.onClick }}">{{ tab.label }}</button></sc-for></div></div>
               <div class="hf-settings-metric-grid"><sc-for list="{{ statCards }}" as="stat" hint-placeholder-count="4"><div class="hf-settings-metric"><div class="hf-settings-metric-label">{{ stat.label }}</div><div class="hf-settings-metric-value">{{ stat.value }}</div><div style="margin-top:7px;color:#898A8B;font-size:11px">{{ stat.delta }}</div></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-section-head" style="margin-bottom:0"><div><div class="hf-settings-row-label">Prévision et alertes</div><div class="hf-settings-row-hint">Anticipe ta consommation à partir des créations réellement enregistrées.</div></div><button class="hf-settings-secondary" onClick="{{ exportUsage }}">Exporter CSV</button></div><div class="hf-settings-metric-grid" style="margin-top:14px"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Moyenne quotidienne</div><div class="hf-settings-metric-value">{{ usageDailyAverage }} cr</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Projection 30 jours</div><div class="hf-settings-metric-value">{{ usageForecast }} cr</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits restants</div><div class="hf-settings-metric-value">{{ usageRemaining }}</div></div></div><div class="hf-settings-row" style="margin-top:14px"><div><div class="hf-settings-row-label">Alerte de consommation</div><div class="hf-settings-row-hint">Préviens-moi lorsque l’usage atteint ce seuil du quota.</div></div><div class="hf-settings-action-row"><input class="hf-settings-control" style="width:82px" type="number" min="1" max="100" value="{{ usageThreshold }}" onChange="{{ onUsageThreshold }}"/><span style="color:#898A8B;font-size:12px">%</span><button class="hf-settings-primary" onClick="{{ saveUsageAlert }}">Enregistrer</button></div></div></div>
               <div class="hf-settings-card"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Consommation par modèle</span></div><sc-if value="{{ modelUsageEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les données apparaîtront après tes premières créations.</div></sc-if><sc-for list="{{ modelUsage }}" as="model" hint-placeholder-count="6"><div class="hf-settings-table-row"><span>{{ model.name }}</span><span style="color:#D1FE17">{{ model.credits }}</span></div></sc-for></div>
             </sc-if>
 
@@ -2775,7 +2788,9 @@ class Component extends DCLogic {
     creditLowNotified: false,
     toast: '',
     backgroundTasks: [], workflowTasks: [], backgroundTaskPanelOpen: false, backgroundTaskUnread: false,
-    memoryItems: [], memoryLoading: false,
+    memoryItems: [], memoryConflicts: [], memoryLoading: false,
+    securitySessions: [], securityEvents: [], securityLoading: false,
+    usageData: null, usageLoading: false, usageThreshold: 80, usageAlertEnabled: true,
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
@@ -2802,6 +2817,7 @@ class Component extends DCLogic {
     activeArtifact: null,
     artifactPreviewUrl: '',
     artifactVersions: [],
+    artifactCompare: null, artifactCompareVersionId: '',
     artifactComments: [],
     artifactCommentsLoading: false,
     artifactCommentDraft: '',
@@ -2824,8 +2840,8 @@ class Component extends DCLogic {
     settingsDraftRestored: false, settingsLastSavedSnapshot: null, settingsOffline: false,
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false, capabilitiesRefreshing: false,
-    integrationConnections: [], integrationsLoading: false, tfa: false, mfaFactors: [], mfaSetup: null, mfaCode: '', mfaLoading: false,
-    apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90,
+    integrationConnections: [], integrationsLoading: false, tfa: false, mfaFactors: [], mfaSetup: null, mfaCode: '', mfaLoading: false, recoveryCodes: [],
+    apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90, apiKeyDailyLimit: 1000,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
     accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
     adminData: null, adminLoading: false, adminError: ''
@@ -3553,7 +3569,7 @@ class Component extends DCLogic {
     const next = Object.assign({}, artifact, { version });
     this.prepareArtifactEditor(next);
     this.buildArtifactPreview(next);
-    this.setState({ artifactView:'preview' });
+    this.setState({ artifactView:'preview', artifactCompareVersionId:version.id || version.number });
   }
   async saveArtifactVersion(){
     const artifact = this.state.activeArtifact;
@@ -3638,6 +3654,12 @@ class Component extends DCLogic {
     const artifact = this.state.activeArtifact;
     if(!artifact || !artifact.id) return;
     this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'share', artifactId:artifact.id }) }).then(r=>r.json()).then(data=>{ if(data.artifact){ this.setActiveArtifact(this.normalizeArtifact(data.artifact)); this.setState(s=>({ artifactItems:(s.artifactItems || []).map(a=>a.id === data.artifact.id ? this.normalizeArtifact(data.artifact) : a) })); if(data.shareUrl && navigator.clipboard) navigator.clipboard.writeText(data.shareUrl).catch(()=>{}); this.notify('Artifact publie. Le lien a ete copie.'); } }).catch(()=>this.notify('Publication impossible pour le moment.'));
+  }
+  requestArtifactApproval(){
+    const artifact=this.state.activeArtifact;
+    const projectId=this.state.activeProjectId;
+    if(!artifact || !artifact.id || !projectId || projectId === 'welcome') return this.notify('Ouvre un projet pour demander une approbation.');
+    this.apiFetch('/api/team',{method:'POST',body:JSON.stringify({action:'request_approval',projectId,artifactId:artifact.id})}).then(res=>{ if(!res.ok) throw new Error('approval'); this.notify('Demande d approbation envoyée.'); }).catch(()=>this.notify('Impossible de demander une approbation.'));
   }
   copyActiveArtifact(){
     const artifact = this.state.activeArtifact;
@@ -3880,7 +3902,8 @@ class Component extends DCLogic {
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
       if(this.state.page === 'capabilities') this.loadBrands();
-      if(this.state.page === 'account') this.loadMfa();
+      if(this.state.page === 'account'){ this.loadMfa(); this.loadSecurity(); }
+      if(this.state.page === 'stats') this.loadUsage();
       if(this.state.page === 'skills') this.loadTemplates();
       if(this.state.page === 'connectors') this.loadIntegrations();
     }
@@ -4011,8 +4034,8 @@ class Component extends DCLogic {
       if(target === 'billing') this.loadBillingStatus();
       if(target === 'team') this.loadTeam();
       if(target === 'api') this.loadApiKeys();
-      if(target === 'stats') this.loadStats();
-      if(target === 'account') this.loadMfa();
+      if(target === 'stats'){ this.loadStats(); this.loadUsage(); }
+      if(target === 'account'){ this.loadMfa(); this.loadSecurity(); }
       if(target === 'privacy') this.loadAgentMemory();
       if(target === 'capabilities') this.loadBrands();
       if(target === 'skills') this.loadTemplates();
@@ -4029,8 +4052,8 @@ class Component extends DCLogic {
       if(section === 'billing') this.loadBillingStatus();
       if(section === 'team') this.loadTeam();
       if(section === 'api') this.loadApiKeys();
-      if(section === 'stats') this.loadStats();
-      if(section === 'account') this.loadMfa();
+      if(section === 'stats'){ this.loadStats(); this.loadUsage(); }
+      if(section === 'account'){ this.loadMfa(); this.loadSecurity(); }
       if(section === 'privacy') this.loadAgentMemory();
       if(section === 'capabilities') this.loadBrands();
       if(section === 'skills') this.loadTemplates();
@@ -4441,7 +4464,7 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/memory' + projectId);
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message || 'Memoire indisponible.');
-      this.setState({ memoryItems:Array.isArray(data.memory) ? data.memory : [] });
+      this.setState({ memoryItems:Array.isArray(data.memory) ? data.memory : [], memoryConflicts:Array.isArray(data.conflicts) ? data.conflicts : [] });
     }catch(err){ this.notify(String(err && err.message || 'Impossible de charger la memoire.')); }
     finally{ this.memoryLoading=false; this.setState({ memoryLoading:false }); }
   }
@@ -4829,7 +4852,8 @@ class Component extends DCLogic {
     if(!this.state.authToken) return;
     this.setState({ teamLoading:true });
     try{
-      const res = await this.apiFetch('/api/team');
+      const projectQuery = this.state.activeProjectId && this.state.activeProjectId !== 'welcome' ? ('?projectId=' + encodeURIComponent(this.state.activeProjectId)) : '';
+      const res = await this.apiFetch('/api/team' + projectQuery);
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Team failed');
       this.setState({ teamData:data, teamLoading:false });
@@ -4886,7 +4910,7 @@ class Component extends DCLogic {
     try{
       const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
         action:'create', name:'Cle API HuggyFlow', scopes:this.state.apiKeyScopes || ['chat','generate'],
-        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90), dailyLimit:Number(this.state.apiKeyDailyLimit || 1000)
       }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'API key failed');
@@ -4909,7 +4933,7 @@ class Component extends DCLogic {
     try{
       const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
         action:'rotate', keyId:id, scopes:this.state.apiKeyScopes || ['chat','generate'],
-        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90), dailyLimit:Number(this.state.apiKeyDailyLimit || 1000)
       }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Rotation impossible');
@@ -5100,6 +5124,106 @@ class Component extends DCLogic {
       this.setState({ brandKits:brands, brandName:active ? active.name : this.state.brandName, brandDescription:active && active.profile ? (active.profile.description || '') : this.state.brandDescription });
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger ton identite de marque.') }); }
   }
+  async updateApprovalRequest(request, status){
+    if(!request || !request.id) return;
+    try{
+      const res=await this.apiFetch('/api/team',{method:'POST',body:JSON.stringify({action:'approval',approvalId:request.id,status})});
+      if(!res.ok) throw new Error('approval');
+      this.loadTeam();
+      this.notify(status === 'approved' ? 'Publication approuvée.' : 'Demande mise à jour.');
+    }catch(err){ this.notify('Impossible de mettre à jour cette approbation.'); }
+  }
+  async loadSecurity(){
+    if(!this.state.authToken || this.securityLoading) return;
+    this.securityLoading = true;
+    this.setState({ securityLoading:true });
+    try{
+      const res = await this.apiFetch('/api/security');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Sécurité indisponible.');
+      this.setState({ securitySessions:Array.isArray(data.sessions) ? data.sessions : [], securityEvents:Array.isArray(data.events) ? data.events : [] });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de charger les sessions.')); }
+    finally{ this.securityLoading=false; this.setState({ securityLoading:false }); }
+  }
+  async revokeSecuritySession(id){
+    if(!id) return;
+    try{
+      const res = await this.apiFetch('/api/security', { method:'POST', body:JSON.stringify({ action:'revoke', sessionId:id }) });
+      if(res.ok) this.loadSecurity(); else this.notify('Cette session ne peut pas être révoquée.');
+    }catch(err){ this.notify('Impossible de révoquer cette session.'); }
+  }
+  async revokeAllSecuritySessions(){
+    try{
+      const res = await this.apiFetch('/api/security', { method:'POST', body:JSON.stringify({ action:'revoke_all' }) });
+      if(res.ok){ this.notify('Les autres sessions ont été déconnectées.'); this.loadSecurity(); }
+    }catch(err){ this.notify('Impossible de déconnecter les autres sessions.'); }
+  }
+  async loadUsage(period){
+    if(!this.state.authToken || this.usageLoading) return;
+    this.usageLoading = true;
+    this.setState({ usageLoading:true });
+    try{
+      const res = await this.apiFetch('/api/usage?period=' + encodeURIComponent(period || this.state.statsPeriod || '30'));
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Usage indisponible.');
+      this.setState({ usageData:data, usageThreshold:Number(data.alert && data.alert.threshold_percent || 80), usageAlertEnabled:data.alert ? data.alert.enabled !== false : true });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de charger l utilisation.')); }
+    finally{ this.usageLoading=false; this.setState({ usageLoading:false }); }
+  }
+  async saveUsageAlert(){
+    try{
+      const res = await this.apiFetch('/api/usage', { method:'POST', body:JSON.stringify({ thresholdPercent:Number(this.state.usageThreshold || 80), enabled:this.state.usageAlertEnabled !== false }) });
+      if(!res.ok) throw new Error('alert');
+      this.notify('Alerte de consommation enregistrée.');
+    }catch(err){ this.notify('Impossible d enregistrer l alerte.'); }
+  }
+  exportUsage(){
+    const token = this.state.authToken || '';
+    const url = this.apiBase() + '/api/usage?period=' + encodeURIComponent(this.state.statsPeriod || '30') + '&format=csv';
+    fetch(url, { headers:{ Authorization:'Bearer ' + token, Accept:'text/csv' } }).then(res=>res.blob()).then(blob=>{
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='huggyflow-usage.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),800);
+    }).catch(()=>this.notify('Export d utilisation indisponible.'));
+  }
+  async controlAgentTask(taskId, action){
+    if(!taskId || !action) return;
+    try{
+      const res = await this.apiFetch('/api/agent-tasks', { method:'POST', body:JSON.stringify({ taskId, action }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Tâche indisponible.');
+      this.setState({ workflowTasks:Array.isArray(data.workflows) ? data.workflows : this.state.workflowTasks });
+      this.notify(({pause:'Tâche mise en pause.',resume:'Tâche reprise.',cancel:'Tâche annulée.',retry:'Nouvelle tentative lancée.'})[action] || 'Tâche mise à jour.');
+      this.loadBackgroundTasks();
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de modifier cette tâche.')); }
+  }
+  async compareArtifactVersions(versionIds){
+    const artifact=this.state.activeArtifact;
+    if(!artifact || !artifact.id || !Array.isArray(versionIds) || versionIds.length!==2) return;
+    try{
+      const res=await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'compare', artifactId:artifact.id, versionIds }) });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Comparaison indisponible.');
+      this.setState({ artifactCompare:data, artifactView:'compare' });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de comparer les versions.')); }
+  }
+  async compareSelectedArtifact(){
+    const versions=this.state.artifactVersions || [];
+    const selected=this.state.artifactCompareVersionId;
+    const latest=versions[0] && (versions[0].id || versions[0].number);
+    if(selected && latest && String(selected)!==String(latest)) return this.compareArtifactVersions([selected,latest]);
+    this.notify('Sélectionne d abord une ancienne version.');
+  }
+  async restoreArtifactVersion(versionId){
+    const artifact=this.state.activeArtifact;
+    if(!artifact || !artifact.id || !versionId) return;
+    try{
+      const res=await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'restore', artifactId:artifact.id, versionId }) });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok || !data.artifact) throw new Error(data && data.error && data.error.message || 'Restauration indisponible.');
+      const next=this.normalizeArtifact(data.artifact);
+      this.setState(s=>({ activeArtifact:next, artifactItems:(s.artifactItems||[]).map(item=>item.id===next.id?next:item), artifactView:'preview' }), ()=>this.loadArtifactDetail(next.id));
+      this.notify('Nouvelle version restaurée.');
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de restaurer cette version.')); }
+  }
   async refreshCapabilities(){
     if(!this.state.authToken || this.state.capabilitiesRefreshing) return;
     this.setState({ capabilitiesRefreshing:true });
@@ -5219,11 +5343,21 @@ class Component extends DCLogic {
       const challenge = await challengeRes.json().catch(()=>({}));
       if(!challengeRes.ok || !challenge.challengeId) throw new Error('MFA_CHALLENGE_FAILED');
       const verifyRes = await this.apiFetch('/api/auth/mfa', { method:'POST', body:JSON.stringify({ action:'verify', factorId:setup.id, challengeId:challenge.challengeId, code }) });
+      const verified = await verifyRes.json().catch(()=>({}));
       if(!verifyRes.ok) throw new Error('MFA_VERIFY_FAILED');
       await this.loadMfa();
-      this.setState({ mfaSetup:null, mfaCode:'', mfaLoading:false });
+      this.setState({ mfaSetup:null, mfaCode:'', mfaLoading:false, recoveryCodes:Array.isArray(verified.recoveryCodes) ? verified.recoveryCodes : [] });
       this.notify('Double authentification activée.');
     }catch(err){ this.setState({ mfaLoading:false }); this.notify('Code MFA incorrect ou expiré.'); }
+  }
+  async regenerateRecoveryCodes(){
+    try{
+      const res=await this.apiFetch('/api/auth/mfa',{method:'POST',body:JSON.stringify({action:'recovery_codes'})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'codes');
+      this.setState({ recoveryCodes:Array.isArray(data.recoveryCodes) ? data.recoveryCodes : [] });
+      this.notify('Nouveaux codes de récupération générés.');
+    }catch(err){ this.notify('Impossible de générer les codes de récupération.'); }
   }
   async configureIntegration(provider){
     if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
@@ -5662,9 +5796,15 @@ class Component extends DCLogic {
       const failed = status === 'failed';
       const progress = Math.max(0, Math.min(100, Math.round(Number(workflow.progress || 0))));
       return {
+        id:String(workflow.id || workflow.rootTaskId || ''),
         title:String(workflow.title || 'Workflow AgentFlow'),
         meta:progress + '% - ' + (active ? 'orchestration en cours' : (failed ? 'a verifier' : 'verifie')),
-        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
+        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0'),
+        actionLabel:status === 'paused' ? 'Reprendre' : (failed ? 'Réessayer' : (active ? 'Pause' : '')),
+        onAction:()=>this.controlAgentTask(String(workflow.id || workflow.rootTaskId || ''), status === 'paused' ? 'resume' : (failed ? 'retry' : 'pause')),
+        onCancel:()=>this.controlAgentTask(String(workflow.id || workflow.rootTaskId || ''), 'cancel'),
+        showAction:active || failed,
+        showCancel:active
       };
     });
     const memoryCards = (st.memoryItems || []).map(memory=>({
@@ -5674,6 +5814,7 @@ class Component extends DCLogic {
       source:memory.sourceType === 'user' ? 'Ajoute par toi' : 'Ajoute par AgentFlow',
       scope:memory.projectId ? 'Projet actif' : 'Compte',
       confidence:Math.round(Number(memory.confidence || 0) * 100) + '%',
+      reason:String(memory.usedReason || 'Pertinente pour le contexte actif.'),
       pinned:!!memory.isPinned,
       onForget:()=>this.updateAgentMemory(memory, memory.status === 'forgotten' ? 'restore' : 'forget'),
       onPin:()=>this.updateAgentMemory(memory, memory.isPinned ? 'unpin' : 'pin')
@@ -5949,11 +6090,15 @@ class Component extends DCLogic {
       artifactViewPreview: artifactView === 'preview',
       artifactViewCode: artifactView === 'code',
       artifactViewVersions: artifactView === 'versions',
+      artifactViewCompare: artifactView === 'compare',
       artifactViewActivity: artifactView === 'activity',
       artifactViewComments: artifactView === 'comments',
       artifactPreviewView: ()=>this.selectArtifactView('preview'),
       artifactCodeView: ()=>this.selectArtifactView('code'),
       artifactVersionsView: ()=>this.selectArtifactView('versions'),
+      compareSelectedArtifact: ()=>this.compareSelectedArtifact(),
+      restoreSelectedArtifact: ()=>this.restoreArtifactVersion(st.artifactCompareVersionId),
+      artifactCompareRows: (st.artifactCompare && Array.isArray(st.artifactCompare.files) ? st.artifactCompare.files : []).map(row=>({ path:row.path, changed:!!row.changed, left:String(row.left || ''), right:String(row.right || '') })),
       artifactActivityView: ()=>this.selectArtifactView('activity'),
       artifactCommentsView: ()=>this.selectArtifactView('comments'),
       artifactPreviewTabStyle:artifactTabStyle(artifactView === 'preview'),
@@ -6016,6 +6161,7 @@ class Component extends DCLogic {
       toggleArtifactFullscreen: ()=>this.toggleArtifactFullscreen(),
       startStudioResize: (e)=>this.startStudioResize(e),
       publishActiveArtifact: ()=>this.publishActiveArtifact(),
+      requestArtifactApproval: ()=>this.requestArtifactApproval(),
       copyActiveArtifact: ()=>this.copyActiveArtifact(),
       downloadActiveArtifact: ()=>this.downloadActiveArtifact(),
       refreshArtifactPreview: ()=>this.refreshArtifactPreview(),
@@ -6039,6 +6185,7 @@ class Component extends DCLogic {
       memoryCards,
       memoryLoading: !!st.memoryLoading,
       memoryEmpty: !st.memoryLoading && memoryCards.length === 0,
+      memoryConflictVisible: Array.isArray(st.memoryConflicts) && st.memoryConflicts.length > 0,
       loadAgentMemory: ()=>this.loadAgentMemory(),
       modalShowCapabilities: st.page === 'capabilities',
       modalShowClaudeCode: st.page === 'claudecode',
@@ -6154,6 +6301,8 @@ class Component extends DCLogic {
         },
         scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
         expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
+        dailyLimitLabel:(Number(k.dailyLimit || 1000) + ' requêtes/jour'),
+        usageLabel:(Number(k.usageCount || 0) + ' requêtes journalisées'),
         expiryStyle:k.expiresAt && new Date(k.expiresAt).getTime() < Date.now() ? 'color:#C45840' : 'color:' + T.text4,
         onRevoke:()=>this.revokeApiKey(k.id),
         onRotate:()=>this.rotateApiKey(k.id)
@@ -6248,12 +6397,28 @@ class Component extends DCLogic {
       setLightTheme: ()=>{ try{ localStorage.setItem('huggyflow_theme','light'); localStorage.setItem('hf-theme','light'); }catch(e){} this.setState({ theme:'light', settingsSaved:false },()=>this.scheduleSettingsSave()); },
       setDarkTheme: ()=>{ try{ localStorage.setItem('huggyflow_theme','dark'); localStorage.setItem('hf-theme','dark'); }catch(e){} this.setState({ theme:'dark', settingsSaved:false },()=>this.scheduleSettingsSave()); },
       lightTabStyle: this.tabStyle(st.theme !== 'dark'),
+      securityLoading: !!st.securityLoading,
+      securitySessionCards: (st.securitySessions || []).map(session=>({
+        id:session.id,
+        deviceLabel:session.deviceLabel || 'Appareil',
+        userAgent:String(session.userAgent || '').slice(0,90),
+        current:!!session.current,
+        lastSeen:session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : 'inconnue',
+        canRevoke:!session.current && !session.revoked,
+        onRevoke:()=>this.revokeSecuritySession(session.id)
+      })),
+      securitySessionsEmpty: !st.securityLoading && !(st.securitySessions || []).some(session=>!session.current && !session.revoked),
+      loadSecurity: ()=>this.loadSecurity(),
+      revokeAllSecuritySessions: ()=>this.revokeAllSecuritySessions(),
       darkTabStyle: this.tabStyle(st.theme === 'dark'),
       toggle2fa: ()=> this.toggle2fa(),
       mfaSetup: st.mfaSetup,
       mfaCode: st.mfaCode || '',
       onMfaCode: (e)=> this.setState({ mfaCode:String(e.target.value || '').replace(/\D/g,'').slice(0,6) }),
       verifyMfaSetup: ()=>this.verifyMfaSetup(),
+      regenerateRecoveryCodes: ()=>this.regenerateRecoveryCodes(),
+      recoveryCodes: st.recoveryCodes || [],
+      recoveryCodesVisible: Array.isArray(st.recoveryCodes) && st.recoveryCodes.length > 0,
       cancelMfaSetup: ()=>this.setState({ mfaSetup:null, mfaCode:'', mfaLoading:false }),
       tfaTrackStyle: this.switchTrack(!!st.tfa),
       tfaKnobStyle: this.switchKnob(!!st.tfa),
@@ -6638,12 +6803,21 @@ class Component extends DCLogic {
         label:b.label, cur:(b.currentPct || 0) + '%', prev:(b.previousPct || 0) + '%', curTitle:(b.credits || 0) + ' credits', prevTitle:'Reference'
       })),
       modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D1FE17','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
+      usageDailyAverage: String(st.usageData && st.usageData.summary ? st.usageData.summary.dailyAverage || 0 : 0),
+      usageForecast: String(st.usageData && st.usageData.summary ? st.usageData.summary.forecast30Days || 0 : 0),
+      usageRemaining: String(st.usageData && st.usageData.summary ? st.usageData.summary.remainingCredits || 0 : st.credits || 0) + ' cr',
+      usageThreshold: Number(st.usageThreshold || 80),
+      onUsageThreshold: (e)=>this.setState({ usageThreshold:Math.max(1,Math.min(100,Number(e.target.value || 80))) }),
+      saveUsageAlert: ()=>this.saveUsageAlert(),
+      exportUsage: ()=>this.exportUsage(),
       modelUsageEmpty: !((st.statsData && st.statsData.models && st.statsData.models.length) || 0),
       highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
       openApi: ()=> this.openSettingsSection('api'),
       apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
         name:k.name, masked:k.masked, created:k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : 'recente',
         copyLabel:st.copiedKey === i ? 'Copiee' : 'Copier',
+        dailyLimitLabel:(Number(k.dailyLimit || 1000) + ' requêtes/jour'),
+        usageLabel:(Number(k.usageCount || 0) + ' requêtes journalisées'),
         onCopy:()=>{ if(st.apiCreatedKey && navigator.clipboard) navigator.clipboard.writeText(st.apiCreatedKey).catch(()=>{}); this.setState({ copiedKey:i }); setTimeout(()=>this.setState({ copiedKey:null }), 1600); },
         scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
         expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
@@ -6655,6 +6829,8 @@ class Component extends DCLogic {
       copyApiCreatedKey: ()=>this.copyApiCreatedKey(),
       apiEmpty: !((st.apiData && st.apiData.keys && st.apiData.keys.length) || 0),
       createKey: ()=> this.createApiKey(),
+      apiKeyDailyLimit: Number(st.apiKeyDailyLimit || 1000),
+      onApiKeyDailyLimit: (e)=>this.setState({ apiKeyDailyLimit:Math.max(1,Math.min(100000,Number(e.target.value || 1000))) }),
       openTeam: ()=> this.openSettingsSection('team'),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
@@ -6668,6 +6844,23 @@ class Component extends DCLogic {
       })),
       pendingInvites: (((st.teamData && st.teamData.invites) || [])).map(p=>({ email:p.email, sent:p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : 'recent', onRevoke:()=>this.revokeInvite(p.id) })),
       noPending: !((st.teamData && st.teamData.invites && st.teamData.invites.length) || 0),
+      projectAccessCount: (((st.teamData && st.teamData.projectAccess) || []).length),
+      projectAccessEmpty: !(((st.teamData && st.teamData.projectAccess) || []).length),
+      projectAccessCards: (((st.teamData && st.teamData.projectAccess) || [])).map(grant=>({
+        memberLabel: grant.memberUserId || 'Membre de l’équipe',
+        role: grant.role || 'viewer',
+        permissions: Object.entries(grant.permissions || {}).filter(([,enabled])=>enabled).map(([key])=>key).join(' · ') || 'lecture',
+        onRevoke:()=>this.apiFetch('/api/team',{method:'POST',body:JSON.stringify({action:'revoke_project_access',projectId:grant.projectId,memberUserId:grant.memberUserId})}).then(()=>this.loadTeam()).catch(()=>this.notify('Impossible de révoquer cet accès.'))
+      })),
+      approvalPendingCount: (((st.teamData && st.teamData.approvalRequests) || []).filter(request=>request.status === 'pending').length),
+      approvalEmpty: !(((st.teamData && st.teamData.approvalRequests) || []).filter(request=>request.status === 'pending').length),
+      approvalCards: (((st.teamData && st.teamData.approvalRequests) || []).filter(request=>request.status === 'pending')).map(request=>({
+        label: request.artifact_id ? 'Artifact ' + String(request.artifact_id).slice(0,8) : 'Publication de projet',
+        meta: request.created_at ? new Date(request.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : 'à l’instant',
+        status: request.status || 'pending',
+        onApprove:()=>this.updateApprovalRequest(request,'approved'),
+        onReject:()=>this.updateApprovalRequest(request,'rejected')
+      })),
       openAffiliate: ()=> this.setState({ page:'affiliate', modelMenu:false }, ()=>this.loadAffiliate()),
       copyRefLink: ()=>{ const link = st.affiliateData && st.affiliateData.link; if(link && navigator.clipboard) navigator.clipboard.writeText(link).catch(()=>{}); this.setState({ refCopied:true }); setTimeout(()=>this.setState({ refCopied:false }), 1600); },
       affiliateLink: (st.affiliateData && st.affiliateData.link) || 'Connecte-toi pour generer ton lien',

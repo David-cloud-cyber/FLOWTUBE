@@ -1522,7 +1522,20 @@ async function mfaRoute(req: Request) {
     const response = await supabaseAuthFetch(`/factors/${factorId}/verify`, token, { method: "POST", body: JSON.stringify({ challenge_id: challengeId, code }) });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new FlowtubeError(response.status, "Le code MFA est incorrect ou expiré.", { code: "MFA_VERIFY_FAILED" });
-    return json({ verified: true, factor: { id: factorId, status: "verified" }, session: payload });
+    const authAdmin = adminClient();
+    const { data: userData } = await authAdmin.auth.getUser(token);
+    const recoveryCodes = userData.user?.id ? await issueMfaRecoveryCodes(authAdmin, String(userData.user.id)) : [];
+    return json({ verified: true, factor: { id: factorId, status: "verified" }, session: payload, recoveryCodes });
+  }
+  if (action === "recovery_codes") {
+    const authAdmin = adminClient();
+    const { data: userData } = await authAdmin.auth.getUser(token);
+    if (!userData.user?.id) throw new FlowtubeError(401, "Session MFA invalide.", { code: "MFA_AUTH_REQUIRED" });
+    const factorsResponse = await supabaseAuthFetch("/factors", token);
+    const factorsPayload = await factorsResponse.json().catch(() => []);
+    const factors = Array.isArray(factorsPayload) ? factorsPayload : (Array.isArray(factorsPayload.factors) ? factorsPayload.factors : []);
+    if (!factors.some((factor: Record<string, unknown>) => factor.status === "verified" && factor.factor_type === "totp")) throw new FlowtubeError(400, "Active d abord la double authentification.", { code: "MFA_NOT_ENABLED" });
+    return json({ recoveryCodes: await issueMfaRecoveryCodes(authAdmin, String(userData.user.id)) });
   }
   if (action === "unenroll") {
     const factorId = String(body.factorId || "");
@@ -1532,6 +1545,17 @@ async function mfaRoute(req: Request) {
     return json({ enabled: false });
   }
   throw new FlowtubeError(400, "Action MFA inconnue.", { code: "MFA_ACTION_INVALID" });
+}
+
+async function issueMfaRecoveryCodes(supabase: ReturnType<typeof adminClient>, userId: string) {
+  await supabase.from("mfa_recovery_codes").delete().eq("user_id", userId);
+  const codes: string[] = [];
+  for (let index = 0; index < 8; index += 1) {
+    const raw = `${randomToken(4).slice(0, 4)}-${randomToken(4).slice(0, 4)}`.toUpperCase();
+    codes.push(raw);
+    await supabase.from("mfa_recovery_codes").insert({ user_id: userId, code_hash: await sha256Hex(raw) });
+  }
+  return codes;
 }
 
 async function hmacSha256Hex(secret: string, payload: string) {
@@ -1578,7 +1602,10 @@ async function optionalUserIdFromRequest(req: Request, supabase: ReturnType<type
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
   if (token && !token.startsWith("hf_")) {
     const { data } = await supabase.auth.getUser(token);
-    if (data.user?.id) return data.user.id;
+    if (data.user?.id) {
+      await assertSecuritySessionActive(req, supabase, data.user.id, token);
+      return data.user.id;
+    }
   }
   const apiUserId = await userIdFromApiKey(req, supabase, token);
   if (apiUserId) return apiUserId;
@@ -1590,13 +1617,27 @@ async function userIdFromApiKey(req: Request, supabase: ReturnType<typeof adminC
   if (!raw || !raw.startsWith("hf_")) return null;
   const keyHash = await sha256Hex(raw);
   const { data } = await supabase.from("api_keys")
-    .select("id,user_id,scopes,expires_at")
+    .select("id,user_id,scopes,expires_at,daily_limit")
     .eq("key_hash", keyHash)
     .is("revoked_at", null)
     .maybeSingle();
   if (!data?.user_id) return null;
   if (data.expires_at && new Date(String(data.expires_at)).getTime() <= Date.now()) return null;
+  const { count: usageToday } = await supabase.from("api_key_usage")
+    .select("id", { count: "exact", head: true })
+    .eq("api_key_id", data.id)
+    .gte("created_at", dayStartIso());
+  if ((usageToday || 0) >= Number(data.daily_limit || 1000)) {
+    throw new FlowtubeError(429, "La limite quotidienne de cette cle API est atteinte.", { code: "API_KEY_DAILY_LIMIT" });
+  }
   await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id);
+  await supabase.from("api_key_usage").insert({
+    api_key_id: data.id,
+    user_id: data.user_id,
+    route: new URL(req.url).pathname,
+    method: req.method,
+    status_code: 200,
+  });
   await supabase.from("app_events").insert({
     user_id: data.user_id,
     event_name: "api_key_used",
@@ -1619,7 +1660,7 @@ function apiScopeForRequest(req: Request) {
   const first = parts[parts.indexOf("flowtube-api") + 1] || parts[0] || "";
   if (first === "chat") return "chat";
   if (first === "generate" || first === "upload") return "generate";
-  if (["projects", "profile", "memory", "artifacts", "generations", "agent-tasks", "background-tasks", "skills", "skill-evals", "stats", "pricing"].includes(first)) return "read";
+  if (["projects", "profile", "memory", "artifacts", "generations", "agent-tasks", "background-tasks", "skills", "skill-evals", "stats", "usage", "security", "pricing"].includes(first)) return "read";
   if (first === "exports" || first === "publish") return "publish";
   if (first === "team") return "team";
   return null;
@@ -1646,7 +1687,10 @@ async function authenticatedUserIdFromRequest(req: Request, supabase: ReturnType
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
   if (token) {
     const { data } = await supabase.auth.getUser(token);
-    if (data.user?.id) return data.user.id;
+    if (data.user?.id) {
+      await assertSecuritySessionActive(req, supabase, data.user.id, token);
+      return data.user.id;
+    }
   }
   throw new FlowtubeError(401, "Connecte-toi pour continuer cette action.", { code: "AUTH_REQUIRED" });
 }
@@ -1948,6 +1992,14 @@ function publicPricingModels(catalog: PricingModel[]) {
   // Agent LLMs remain available through `agentModels` for chat orchestration,
   // but are intentionally not mixed into the curated media model catalog.
   return media;
+}
+
+async function assertSecuritySessionActive(req: Request, supabase: ReturnType<typeof adminClient>, userId: string, token: string) {
+  if (!token || token.startsWith("hf_")) return;
+  const sessionHash = await sha256Hex(token);
+  const { data, error } = await supabase.from("user_security_sessions").select("revoked_at").eq("user_id", userId).eq("session_hash", sessionHash).maybeSingle();
+  // Keep legacy deployments usable until the close-audit migration is applied.
+  if (!error && data?.revoked_at) throw new FlowtubeError(401, "Cette session a ete revoquee. Reconnecte-toi pour continuer.", { code: "SESSION_REVOKED" });
 }
 
 function normalizePlanId(plan: string | null | undefined) {
@@ -3355,6 +3407,7 @@ type AgentMemoryRecord = {
   expiresAt: string | null;
   updatedAt: string | null;
   isPinned: boolean;
+  usedReason: string;
 };
 
 // Detecte une consigne memoire dans le message ("retiens X", "ma marque s'appelle Y", "mes couleurs sont Z").
@@ -3392,7 +3445,7 @@ async function loadAgentMemory(
   projectId?: string,
 ): Promise<string[]> {
   let query = supabase.from("agent_memory")
-    .select("id,kind,label,content,project_id,source_type,confidence,expires_at,is_pinned,updated_at")
+    .select("id,kind,label,content,project_id,source_type,confidence,expires_at,is_pinned,updated_at,metadata")
     .eq("user_id", userId)
     .eq("status", "active");
   if (projectId) query = query.or(`project_id.is.null,project_id.eq.${projectId}`);
@@ -3406,7 +3459,7 @@ async function loadAgentMemory(
   const rows = (data || []).filter((row) => !row.expires_at || new Date(String(row.expires_at)).getTime() > now);
   if (rows.length) {
     void supabase.from("agent_memory")
-      .update({ last_used_at: new Date().toISOString() })
+      .update({ last_used_at: new Date().toISOString(), last_used_reason: projectId ? "Contexte du projet actif et pertinence sémantique." : "Préférence globale utile à la demande." })
       .in("id", rows.map((row) => row.id));
   }
   return rows.map((row) => `${row.label}: ${row.content}`);
@@ -3455,6 +3508,7 @@ async function saveAgentMemory(
 }
 
 function memoryPayload(row: Record<string, unknown>): AgentMemoryRecord {
+  const metadata = (row.metadata || {}) as Record<string, unknown>;
   return {
     id: String(row.id || ""),
     kind: String(row.kind || "fact"),
@@ -3468,6 +3522,7 @@ function memoryPayload(row: Record<string, unknown>): AgentMemoryRecord {
     expiresAt: row.expires_at ? String(row.expires_at) : null,
     updatedAt: row.updated_at ? String(row.updated_at) : null,
     isPinned: Boolean(row.is_pinned),
+    usedReason: String(row.last_used_reason || metadata.last_used_reason || "Pertinence élevée pour le contexte actif"),
   };
 }
 
@@ -3493,7 +3548,17 @@ async function agentMemoryRoute(req: Request) {
     const memory = (data || [])
       .filter((row) => includeInactive || !row.expires_at || new Date(String(row.expires_at)).getTime() > now)
       .map(memoryPayload);
-    return json({ memory });
+    const byLabel = new Map<string, Record<string, unknown>[]>();
+    for (const row of data || []) {
+      const key = String(row.label || "").trim().toLowerCase();
+      if (!key) continue;
+      byLabel.set(key, [...(byLabel.get(key) || []), row]);
+    }
+    const conflicts = [...byLabel.entries()].flatMap(([label, rows]) => {
+      const contents = [...new Set(rows.map((row) => String(row.content || "").trim()))];
+      return contents.length > 1 ? [{ label, memories: rows.map(memoryPayload), reason: "Plusieurs valeurs actives portent le même libellé." }] : [];
+    });
+    return json({ memory, conflicts });
   }
 
   const body = await bodyJson(req);
@@ -3535,6 +3600,7 @@ async function agentMemoryRoute(req: Request) {
     expires_at: expiresAt,
     source_type: "user",
     source_excerpt: content.slice(0, 320),
+    last_used_reason: "Ajoutée ou modifiée explicitement par l utilisateur.",
     status: "active",
   };
   const query = action === "update"
@@ -3860,6 +3926,45 @@ async function artifactRoute(req: Request, artifactId?: string) {
     if (resolveError) throw resolveError;
     if (!comment) return json({ error: { message: "Commentaire introuvable." } }, 404);
     return json({ comment: artifactCommentPayload(comment) });
+  }
+  if (action === "compare") {
+    const versionIds = Array.isArray(body.versionIds) ? body.versionIds.map(String).filter(isUuid).slice(0, 2) : [];
+    if (versionIds.length !== 2) throw new FlowtubeError(400, "Sélectionne deux versions à comparer.", { code: "TWO_VERSIONS_REQUIRED" });
+    const { data: versions, error: versionError } = await supabase.from("artifact_versions").select("*").eq("artifact_id", id).eq("user_id", userId).in("id", versionIds);
+    if (versionError) throw versionError;
+    if (!versions || versions.length !== 2) throw new FlowtubeError(404, "Versions introuvables.", { code: "ARTIFACT_VERSIONS_NOT_FOUND" });
+    const ordered = versionIds.map((versionId) => versions.find((version) => String(version.id) === versionId)).filter(Boolean) as Record<string, unknown>[];
+    const files = [...new Set(ordered.flatMap((version) => safeArtifactFiles(version.files).map((file) => file.path)))];
+    const diff = files.map((path) => {
+      const left = safeArtifactFiles(ordered[0].files).find((file) => file.path === path);
+      const right = safeArtifactFiles(ordered[1].files).find((file) => file.path === path);
+      const leftText = String(left?.content || "");
+      const rightText = String(right?.content || "");
+      return { path, changed: leftText !== rightText, left: leftText, right: rightText };
+    });
+    return json({ versions: ordered.map((version) => artifactPayload(artifact, version).version), files: diff });
+  }
+  if (action === "restore") {
+    const versionId = String(body.versionId || "");
+    if (!isUuid(versionId)) throw new FlowtubeError(400, "Version invalide.", { code: "INVALID_ARTIFACT_VERSION_ID" });
+    const { data: source, error: sourceError } = await supabase.from("artifact_versions").select("*").eq("id", versionId).eq("artifact_id", id).eq("user_id", userId).maybeSingle();
+    if (sourceError) throw sourceError;
+    if (!source) throw new FlowtubeError(404, "Version à restaurer introuvable.", { code: "ARTIFACT_VERSION_NOT_FOUND" });
+    const nextVersion = Number(artifact.current_version || 0) + 1;
+    const { data: created, error: createError } = await supabase.from("artifact_versions").insert({
+      artifact_id: id,
+      user_id: userId,
+      version_number: nextVersion,
+      entry_file: source.entry_file,
+      files: safeArtifactFiles(source.files),
+      source_prompt: `[Restauration de V${source.version_number}] ${String(source.source_prompt || "").slice(0, 3900)}`,
+      model_id: source.model_id,
+      compile_status: source.compile_status || "not_run",
+    }).select("*").single();
+    if (createError) throw createError;
+    const { data: updated, error: updateError } = await supabase.from("artifacts").update({ current_version: nextVersion, status: "ready" }).eq("id", id).eq("user_id", userId).select("*").single();
+    if (updateError) throw updateError;
+    return json({ artifact: artifactPayload(updated, created), restoredFrom: Number(source.version_number || 0) });
   }
   if (action === "version") {
     const files = safeArtifactFiles(body.files);
@@ -5665,6 +5770,40 @@ async function agentTasksRoute(req: Request) {
   const userId = await userIdFromRequest(req, supabase);
   const url = new URL(req.url);
   const projectId = isUuid(url.searchParams.get("projectId") || "") ? String(url.searchParams.get("projectId")) : "";
+  if (req.method === "POST") {
+    const body = await bodyJson(req);
+    const action = String(body.action || "");
+    const requestedId = String(body.taskId || body.id || body.rootTaskId || "");
+    if (!requestedId || !["pause", "resume", "cancel", "retry"].includes(action)) {
+      throw new FlowtubeError(400, "Action de tâche invalide.", { code: "INVALID_TASK_CONTROL" });
+    }
+    const { data: requested, error: requestedError } = await supabase.from("agent_tasks").select("*").eq("id", requestedId).eq("user_id", userId).maybeSingle();
+    if (requestedError) throw requestedError;
+    if (!requested) throw new FlowtubeError(404, "Tâche introuvable.", { code: "TASK_NOT_FOUND" });
+    const rootId = String(requested.root_task_id || requested.id);
+    const [{ data: root }, { data: children }] = await Promise.all([
+      supabase.from("agent_tasks").select("*").eq("id", rootId).eq("user_id", userId).maybeSingle(),
+      supabase.from("agent_tasks").select("*").eq("root_task_id", rootId).eq("user_id", userId).order("created_at", { ascending: true }),
+    ]);
+    const targets = [root, ...(children || [])].filter(Boolean) as AgentTaskRow[];
+    const affected = requested.root_task_id || String(requested.id) === rootId ? targets : [requested as AgentTaskRow];
+    for (const task of affected) {
+      const status = String(task.status || "queued");
+      if (action === "pause" && ["queued", "running"].includes(status)) await updateAgentTask(supabase, task, { status: "paused" }, "user_paused");
+      if (action === "resume" && status === "paused") await updateAgentTask(supabase, task, { status: "queued", last_error: null }, "user_resumed");
+      if (action === "cancel" && ["queued", "running", "paused"].includes(status)) {
+        if (task.generation_id) {
+          const { data: generation } = await supabase.from("generations").select("*").eq("id", task.generation_id).eq("user_id", userId).maybeSingle();
+          if (generation && ["pending", "running"].includes(String(generation.status))) {
+            const { data: cancelled } = await supabase.from("generations").update({ status: "cancelled", error_message: "Annulée depuis le centre de tâches.", completed_at: new Date().toISOString() }).eq("id", task.generation_id).eq("user_id", userId).select("*").single();
+            if (cancelled) await refundFailedGeneration(supabase, cancelled);
+          }
+        }
+        await updateAgentTask(supabase, task, { status: "cancelled", progress: 100, last_error: "Annulée par l utilisateur." }, "user_cancelled");
+      }
+      if (action === "retry" && ["failed", "cancelled"].includes(status)) await updateAgentTask(supabase, task, { status: "queued", progress: 0, attempts: Number(task.attempts || 0) + 1, last_error: null, completed_at: null }, "user_retry");
+    }
+  }
   let rootQuery = supabase.from("agent_tasks").select("*")
     .eq("user_id", userId).eq("task_type", "workflow").is("parent_task_id", null)
     .order("created_at", { ascending: false }).limit(24);
@@ -8060,10 +8199,55 @@ async function teamRoute(req: Request) {
       const role = normalizeTeamRole(body.role);
       if (memberId) await supabase.from("team_members").update({ role }).eq("id", memberId).eq("owner_id", userId).neq("role", "owner");
     }
+    if (action === "grant_project_access") {
+      const projectId = String(body.projectId || "");
+      const memberId = String(body.memberUserId || body.memberId || "");
+      if (!isUuid(projectId) || !isUuid(memberId)) throw new FlowtubeError(400, "Projet ou membre invalide.", { code: "INVALID_PROJECT_ACCESS" });
+      const { data: project } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", userId).maybeSingle();
+      if (!project) throw new FlowtubeError(404, "Projet introuvable.", { code: "PROJECT_NOT_FOUND" });
+      const role = ["admin", "editor", "viewer"].includes(String(body.projectRole)) ? String(body.projectRole) : "viewer";
+      const permissions = body.permissions && typeof body.permissions === "object" ? body.permissions : { read: true, edit: role !== "viewer", generate: role !== "viewer", publish: role === "admin" };
+      await supabase.from("project_access_grants").upsert({ project_id: projectId, owner_id: userId, member_user_id: memberId, role, permissions }, { onConflict: "project_id,member_user_id" });
+    }
+    if (action === "revoke_project_access") {
+      const projectId = String(body.projectId || "");
+      const memberId = String(body.memberUserId || body.memberId || "");
+      if (isUuid(projectId) && isUuid(memberId)) await supabase.from("project_access_grants").delete().eq("project_id", projectId).eq("member_user_id", memberId).eq("owner_id", userId);
+    }
+    if (action === "custom_role") {
+      const name = compactText(body.name, 60);
+      if (!name) throw new FlowtubeError(400, "Le nom du rôle est requis.", { code: "ROLE_NAME_REQUIRED" });
+      const permissions = body.permissions && typeof body.permissions === "object" ? body.permissions : {};
+      await supabase.from("team_custom_roles").upsert({ owner_id: userId, name, permissions }, { onConflict: "owner_id,name" });
+    }
+    if (action === "request_approval") {
+      const projectId = String(body.projectId || "");
+      const artifactId = String(body.artifactId || "");
+      if (!isUuid(projectId)) throw new FlowtubeError(400, "Projet invalide.", { code: "INVALID_APPROVAL_PROJECT" });
+      const { data: project } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", userId).maybeSingle();
+      if (!project) throw new FlowtubeError(404, "Projet introuvable.", { code: "PROJECT_NOT_FOUND" });
+      if (artifactId && !isUuid(artifactId)) throw new FlowtubeError(400, "Artifact invalide.", { code: "INVALID_APPROVAL_ARTIFACT" });
+      if (artifactId) {
+        const { data: artifact } = await supabase.from("artifacts").select("id").eq("id", artifactId).eq("project_id", projectId).eq("user_id", userId).maybeSingle();
+        if (!artifact) throw new FlowtubeError(404, "Artifact introuvable.", { code: "ARTIFACT_NOT_FOUND" });
+      }
+      await supabase.from("project_approval_requests").insert({ project_id: projectId, owner_id: userId, requested_by: userId, artifact_id: artifactId || null, status: "pending", comment: compactText(body.comment, 1000) });
+    }
+    if (action === "approval") {
+      const approvalId = String(body.approvalId || body.id || "");
+      const status = ["approved", "rejected", "cancelled"].includes(String(body.status)) ? String(body.status) : "pending";
+      if (isUuid(approvalId)) await supabase.from("project_approval_requests").update({ status, comment: compactText(body.comment, 1000), resolved_at: status === "pending" ? null : new Date().toISOString() }).eq("id", approvalId).eq("owner_id", userId);
+    }
   }
 
   const { data: members } = await supabase.from("team_members").select("*").eq("owner_id", userId).order("created_at", { ascending: true });
   const { data: invites } = await supabase.from("team_invites").select("*").eq("owner_id", userId).eq("status", "pending").order("created_at", { ascending: false });
+  const projectId = new URL(req.url).searchParams.get("projectId");
+  const [{ data: projectAccess }, { data: customRoles }, { data: approvals }] = await Promise.all([
+    projectId && isUuid(projectId) ? supabase.from("project_access_grants").select("*").eq("owner_id", userId).eq("project_id", projectId) : Promise.resolve({ data: [] }),
+    supabase.from("team_custom_roles").select("id,name,permissions,created_at,updated_at").eq("owner_id", userId).order("name", { ascending: true }),
+    supabase.from("project_approval_requests").select("id,project_id,requested_by,artifact_id,status,comment,created_at,resolved_at").eq("owner_id", userId).order("created_at", { ascending: false }).limit(50),
+  ]);
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
   return json({
     seatLimit: plan.seatLimit,
@@ -8085,6 +8269,9 @@ async function teamRoute(req: Request) {
       createdAt: invite.created_at,
       expiresAt: invite.expires_at,
     })),
+    projectAccess: (projectAccess || []).map((grant) => ({ id: grant.id, projectId: grant.project_id, memberUserId: grant.member_user_id, role: grant.role, permissions: grant.permissions || {} })),
+    customRoles: customRoles || [],
+    approvalRequests: approvals || [],
   });
 }
 
@@ -8107,6 +8294,7 @@ async function apiKeysRoute(req: Request) {
       if (!scopes.length) throw new FlowtubeError(400, "Selectionne au moins une permission API.", { code: "API_SCOPES_REQUIRED" });
       const expirationDays = Math.max(0, Math.min(365, Number(body.expirationDays || body.expiration_days || 0)));
       const expiresAt = expirationDays ? new Date(Date.now() + expirationDays * 86400000).toISOString() : null;
+      const dailyLimit = Math.max(1, Math.min(100000, Number(body.dailyLimit || body.daily_limit || 1000)));
       await supabase.from("api_keys").insert({
         user_id: userId,
         name,
@@ -8114,6 +8302,7 @@ async function apiKeysRoute(req: Request) {
         key_prefix: `${createdKey.slice(0, 10)}...`,
         scopes,
         expires_at: expiresAt,
+        daily_limit: dailyLimit,
         last_rotated_at: new Date().toISOString(),
       });
     }
@@ -8129,7 +8318,8 @@ async function apiKeysRoute(req: Request) {
       const requestedScopes = Array.isArray(body.scopes) ? body.scopes.map((scope: unknown) => String(scope)) : ["chat", "generate"];
       const scopes = [...new Set(requestedScopes.filter((scope: string) => allowedScopes.includes(scope)))];
       if (!scopes.length) throw new FlowtubeError(400, "Selectionne au moins une permission API.", { code: "API_SCOPES_REQUIRED" });
-      await supabase.from("api_keys").insert({ user_id: userId, name: String(body.name || "Cle API HuggyFlow").slice(0, 80), key_hash: keyHash, key_prefix: `${createdKey.slice(0, 10)}...`, scopes, expires_at: expiresAt, last_rotated_at: new Date().toISOString() });
+      const dailyLimit = Math.max(1, Math.min(100000, Number(body.dailyLimit || body.daily_limit || 1000)));
+      await supabase.from("api_keys").insert({ user_id: userId, name: String(body.name || "Cle API HuggyFlow").slice(0, 80), key_hash: keyHash, key_prefix: `${createdKey.slice(0, 10)}...`, scopes, expires_at: expiresAt, daily_limit: dailyLimit, last_rotated_at: new Date().toISOString() });
     }
     if (action === "revoke") {
       const keyId = String(body.keyId || body.id || "");
@@ -8138,9 +8328,13 @@ async function apiKeysRoute(req: Request) {
   }
 
   const { data: keys } = await supabase.from("api_keys")
-    .select("id,name,key_prefix,scopes,last_used_at,revoked_at,created_at,expires_at,last_rotated_at")
+    .select("id,name,key_prefix,scopes,last_used_at,revoked_at,created_at,expires_at,last_rotated_at,daily_limit")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  const keyIds = (keys || []).map((key) => key.id).filter(Boolean);
+  const { data: usageRows } = keyIds.length ? await supabase.from("api_key_usage").select("api_key_id,route,method,status_code,credits,created_at").eq("user_id", userId).in("api_key_id", keyIds).order("created_at", { ascending: false }).limit(100) : { data: [] };
+  const usageByKey = new Map<string, Record<string, unknown>[]>();
+  for (const row of usageRows || []) usageByKey.set(String(row.api_key_id), [...(usageByKey.get(String(row.api_key_id)) || []), row]);
   return json({
     createdKey: createdKey || undefined,
     keys: (keys || []).map((key) => ({
@@ -8152,6 +8346,9 @@ async function apiKeysRoute(req: Request) {
       lastUsedAt: key.last_used_at,
       expiresAt: key.expires_at,
       lastRotatedAt: key.last_rotated_at,
+      dailyLimit: Number(key.daily_limit || 1000),
+      usageCount: (usageByKey.get(String(key.id)) || []).length,
+      usageLogs: (usageByKey.get(String(key.id)) || []).slice(0, 10).map((row) => ({ route: row.route, method: row.method, statusCode: row.status_code, credits: row.credits, createdAt: row.created_at })),
       revoked: Boolean(key.revoked_at),
     })),
   });
@@ -8218,24 +8415,34 @@ async function settleAffiliateConversion(
   referredUserId: string,
   amountUsd: number,
   source: string,
+  eventKey = "",
 ) {
   const gross = Math.max(0, Number(amountUsd || 0));
   if (!gross) return;
   const { data: referral } = await supabase.from("affiliate_referrals")
-    .select("id,affiliate_user_id,status,amount_usd")
+    .select("id,affiliate_user_id,status,amount_usd,metadata")
     .eq("referred_user_id", referredUserId)
     .maybeSingle();
   if (!referral?.id) return;
+  const existingMetadata = referral.metadata && typeof referral.metadata === "object" ? referral.metadata as Record<string, unknown> : {};
+  if (eventKey && String(existingMetadata.commission_event_key || "") === eventKey) return;
   const commission = Number((gross * 0.30).toFixed(2));
   const nextAmount = Number((Number(referral.amount_usd || 0) + commission).toFixed(2));
   const referralPatch: Record<string, unknown> = {
     status: "active",
     amount_usd: nextAmount,
-    metadata: { source, gross_usd: gross, commission_rate: 0.30 },
+    metadata: { ...existingMetadata, source, gross_usd: gross, commission_rate: 0.30, commission_event_key: eventKey || `${source}:${referredUserId}:${gross}` },
   };
   if (referral.status !== "active") referralPatch.converted_at = new Date().toISOString();
   const { error: referralError } = await supabase.from("affiliate_referrals").update(referralPatch).eq("id", referral.id);
   if (referralError) throw referralError;
+  await supabase.from("affiliate_risk_reviews").upsert({
+    referral_id: referral.id,
+    affiliate_user_id: referral.affiliate_user_id,
+    score: 0,
+    status: "clear",
+    reasons: [],
+  }, { onConflict: "referral_id" });
   await supabase.rpc("sync_affiliate_account_totals", { p_user_id: referral.affiliate_user_id });
 }
 
@@ -8265,6 +8472,14 @@ async function affiliateRoute(req: Request) {
         throw new FlowtubeError(400, message, { code });
       }
     }
+    if (action === "open_dispute") {
+      const referralId = String(body.referralId || body.id || "");
+      const reason = compactText(body.reason, 1000);
+      if (!isUuid(referralId) || !reason) throw new FlowtubeError(400, "Référence et motif requis.", { code: "DISPUTE_REQUIRED" });
+      const { data: ownedReferral } = await supabase.from("affiliate_referrals").select("id").eq("id", referralId).eq("affiliate_user_id", userId).maybeSingle();
+      if (!ownedReferral) throw new FlowtubeError(404, "Conversion introuvable.", { code: "REFERRAL_NOT_FOUND" });
+      await supabase.from("affiliate_disputes").insert({ referral_id: referralId, affiliate_user_id: userId, reason, status: "open" });
+    }
     const affiliatePatch: Record<string, unknown> = {
       user_id: userId,
       code: affiliateCode(profile),
@@ -8286,7 +8501,11 @@ async function affiliateRoute(req: Request) {
   }, { onConflict: "user_id" }).select("*").single();
   const { data: referrals } = await supabase.from("affiliate_referrals").select("*").eq("affiliate_user_id", userId).order("created_at", { ascending: false });
   const { count: clicks } = await supabase.from("affiliate_clicks").select("id", { count: "exact", head: true }).eq("affiliate_user_id", userId);
-  const { data: payouts } = await supabase.from("affiliate_payouts").select("id,amount_usd,status,payout_method,destination_masked,requested_at,processed_at").eq("affiliate_user_id", userId).order("requested_at", { ascending: false }).limit(20);
+  const [{ data: payouts }, { data: riskReviews }, { data: disputes }] = await Promise.all([
+    supabase.from("affiliate_payouts").select("id,amount_usd,status,payout_method,destination_masked,requested_at,processed_at").eq("affiliate_user_id", userId).order("requested_at", { ascending: false }).limit(20),
+    supabase.from("affiliate_risk_reviews").select("id,referral_id,score,status,reasons,reviewed_at,created_at").eq("affiliate_user_id", userId).order("created_at", { ascending: false }).limit(50),
+    supabase.from("affiliate_disputes").select("id,referral_id,reason,status,resolution,created_at,resolved_at").eq("affiliate_user_id", userId).order("created_at", { ascending: false }).limit(50),
+  ]);
   const rows = referrals || [];
   const active = rows.filter((row) => ["active", "paid"].includes(String(row.status))).length;
   const earnings = rows.reduce((sum, row) => sum + Number(row.amount_usd || 0), 0);
@@ -8309,6 +8528,99 @@ async function affiliateRoute(req: Request) {
       createdAt: row.created_at,
     })),
     payouts: payouts || [],
+    riskReviews: riskReviews || [],
+    disputes: disputes || [],
+  });
+}
+
+function requestSessionMetadata(req: Request) {
+  const userAgent = req.headers.get("user-agent") || "";
+  const deviceLabel = /mobile|android|iphone|ipad/i.test(userAgent) ? "Appareil mobile" : "Navigateur desktop";
+  return {
+    userAgent: userAgent.slice(0, 500),
+    deviceLabel,
+    ipHash: requestIp(req),
+  };
+}
+
+async function securityRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const token = String((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")).trim();
+  const sessionHash = token ? await sha256Hex(token) : "";
+  const meta = requestSessionMetadata(req);
+  if (sessionHash) {
+    const ipHash = await sha256Hex(`${meta.ipHash}:${Deno.env.get("FLOWTUBE_RATE_LIMIT_SALT") || "flowtube"}`);
+    await supabase.from("user_security_sessions").update({ is_current: false }).eq("user_id", userId).neq("session_hash", sessionHash);
+    await supabase.from("user_security_sessions").upsert({
+      user_id: userId,
+      session_hash: sessionHash,
+      device_label: meta.deviceLabel,
+      user_agent: meta.userAgent,
+      ip_hash: ipHash,
+      is_current: true,
+      last_seen_at: new Date().toISOString(),
+    }, { onConflict: "session_hash" });
+  }
+
+  if (req.method === "POST") {
+    const body = await bodyJson(req);
+    const action = String(body.action || "revoke");
+    if (action === "revoke_all") {
+      await supabase.from("user_security_sessions").update({ revoked_at: new Date().toISOString(), is_current: false }).eq("user_id", userId).neq("session_hash", sessionHash);
+      await supabase.from("user_security_events").insert({ user_id: userId, event_type: "revoke_all_sessions", ip_hash: await sha256Hex(`${meta.ipHash}:${Deno.env.get("FLOWTUBE_RATE_LIMIT_SALT") || "flowtube"}`), user_agent: meta.userAgent });
+    } else if (action === "revoke") {
+      const sessionId = String(body.sessionId || "");
+      if (!isUuid(sessionId)) throw new FlowtubeError(400, "Session invalide.", { code: "INVALID_SESSION_ID" });
+      await supabase.from("user_security_sessions").update({ revoked_at: new Date().toISOString(), is_current: false }).eq("id", sessionId).eq("user_id", userId).neq("session_hash", sessionHash);
+      await supabase.from("user_security_events").insert({ user_id: userId, event_type: "revoke_session", ip_hash: await sha256Hex(`${meta.ipHash}:${Deno.env.get("FLOWTUBE_RATE_LIMIT_SALT") || "flowtube"}`), user_agent: meta.userAgent, metadata: { session_id: sessionId } });
+    }
+  }
+
+  const [{ data: sessions }, { data: events }] = await Promise.all([
+    supabase.from("user_security_sessions").select("id,device_label,user_agent,is_current,last_seen_at,created_at,revoked_at").eq("user_id", userId).order("last_seen_at", { ascending: false }).limit(20),
+    supabase.from("user_security_events").select("id,event_type,metadata,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30),
+  ]);
+  return json({
+    sessions: (sessions || []).map((row) => ({ id: row.id, deviceLabel: row.device_label, userAgent: row.user_agent, current: Boolean(row.is_current), lastSeenAt: row.last_seen_at, createdAt: row.created_at, revoked: Boolean(row.revoked_at) })),
+    events: (events || []).map((row) => ({ id: row.id, type: row.event_type, metadata: cleanMetadata(row.metadata), createdAt: row.created_at })),
+  });
+}
+
+async function usageRoute(req: Request) {
+  const supabase = adminClient();
+  const userId = await authenticatedUserIdFromRequest(req, supabase);
+  const url = new URL(req.url);
+  const days = Math.max(7, Math.min(90, Number(url.searchParams.get("period") || 30)));
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const [{ data: generations }, { data: profile }, { data: alert }] = await Promise.all([
+    supabase.from("generations").select("id,type,status,credits,created_at,model_label,project_id").eq("user_id", userId).gte("created_at", since).order("created_at", { ascending: false }).limit(5000),
+    supabase.from("profiles").select("credits,credits_max").eq("id", userId).maybeSingle(),
+    supabase.from("usage_alerts").select("id,threshold_percent,enabled,last_triggered_at").eq("user_id", userId).maybeSingle(),
+  ]);
+  const rows = generations || [];
+  const totalCredits = rows.reduce((sum, row) => sum + Number(row.credits || 0), 0);
+  const dailyAverage = totalCredits / Math.max(1, days);
+  if (url.searchParams.get("format") === "csv") {
+    const header = "id,type,status,credits,model,project_id,created_at";
+    const csvRows = rows.map((row) => [row.id, row.type, row.status, row.credits, row.model_label, row.project_id, row.created_at].map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","));
+    return new Response([header, ...csvRows].join("\n"), { status: 200, headers: { ...corsHeaders, "content-type": "text/csv; charset=utf-8", "content-disposition": "attachment; filename=huggyflow-usage.csv" } });
+  }
+  if (req.method === "POST") {
+    const body = await bodyJson(req);
+    const threshold = Math.max(1, Math.min(100, Number(body.thresholdPercent || body.threshold_percent || 80)));
+    const enabled = body.enabled !== false;
+    const { data: saved, error } = await supabase.from("usage_alerts").upsert({ user_id: userId, threshold_percent: threshold, enabled }, { onConflict: "user_id" }).select("id,threshold_percent,enabled,last_triggered_at").single();
+    if (error) throw error;
+    return json({ alert: saved });
+  }
+  const maxCredits = Number(profile?.credits_max || 0);
+  const usedRatio = maxCredits > 0 ? totalCredits / maxCredits : 0;
+  return json({
+    period: days,
+    summary: { credits: totalCredits, remainingCredits: Number(profile?.credits || 0), creditsMax: maxCredits, dailyAverage: Math.round(dailyAverage * 100) / 100, forecast30Days: Math.round(dailyAverage * 30 * 100) / 100, usedRatio: Math.round(usedRatio * 100) },
+    alert: alert || { threshold_percent: 80, enabled: true },
+    rows: rows.slice(0, 100).map((row) => ({ id: row.id, type: row.type, status: row.status, credits: Number(row.credits || 0), model: row.model_label, projectId: row.project_id, createdAt: row.created_at })),
   });
 }
 
@@ -8623,6 +8935,7 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
     userId,
     interval === "annual" ? Number(plan.annualPriceUsd || 0) : Number(plan.monthlyPriceUsd || 0),
     "subscription_renewal",
+    idempotencyKey,
   );
   if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
 }
@@ -8959,7 +9272,7 @@ Deno.serve(async (req: Request) => {
     if (first === "artifacts" && route[1] === "share" && route[2] && req.method === "GET") return await publicArtifactShareRoute(req, route[2]);
     if (first === "artifacts" && (req.method === "GET" || req.method === "POST")) return await artifactRoute(req, route[1]);
     if (first === "memory" && (req.method === "GET" || req.method === "POST")) return await agentMemoryRoute(req);
-    if (first === "agent-tasks" && req.method === "GET") return await agentTasksRoute(req);
+    if (first === "agent-tasks" && (req.method === "GET" || req.method === "POST")) return await agentTasksRoute(req);
     if (first === "skills" && (req.method === "GET" || req.method === "POST")) return await skillsRoute(req);
     if (first === "skill-evals" && (req.method === "GET" || req.method === "POST")) return await skillEvaluationsRoute(req, route[1]);
     if (first === "background-tasks" && req.method === "GET") return await backgroundTasksRoute(req);
@@ -8982,6 +9295,8 @@ Deno.serve(async (req: Request) => {
     if (first === "affiliate" && route[1] === "click" && req.method === "POST") return await affiliateClickRoute(req);
     if (first === "affiliate" && (req.method === "GET" || req.method === "POST")) return await affiliateRoute(req);
     if (first === "stats" && req.method === "GET") return await statsRoute(req);
+    if (first === "usage" && (req.method === "GET" || req.method === "POST")) return await usageRoute(req);
+    if (first === "security" && (req.method === "GET" || req.method === "POST")) return await securityRoute(req);
     if (first === "pricing" && req.method === "GET") return await pricingRoute();
     if (first === "auth" && route[1] === "mfa") return await mfaRoute(req);
     if (first === "auth" && route[1]) return await authRoute(req, route[1]);
