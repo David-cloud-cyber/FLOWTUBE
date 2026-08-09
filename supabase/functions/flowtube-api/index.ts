@@ -4016,6 +4016,98 @@ async function publicArtifactShareRoute(req: Request, token: string) {
   return json({ artifact: artifactPayload(artifact, version) });
 }
 
+function explorePublicationPayload(row: Record<string, unknown>, profile?: Record<string, unknown> | null, interactions: Set<string> = new Set()) {
+  const creator = String(profile?.display_name || "Créateur HuggyFlow").slice(0, 80);
+  return {
+    id: String(row.id),
+    title: String(row.title || "Création HuggyFlow"),
+    description: String(row.description || ""),
+    prompt: String(row.prompt || ""),
+    url: String(row.media_url || ""),
+    type: String(row.media_type || "image"),
+    model: String(row.model_label || "HuggyFlow"),
+    ratio: String(row.aspect_ratio || "1:1"),
+    duration: row.duration_seconds ? String(row.duration_seconds) + " s" : "—",
+    hasAudio: Boolean(row.has_audio),
+    creator,
+    creatorInitials: creator.split(/\s+/).map((part) => part[0] || "").join("").slice(0, 2).toUpperCase() || "HF",
+    date: row.created_at ? new Date(String(row.created_at)).toLocaleDateString("fr-FR") : "Récemment",
+    likes: Number(row.reactions_count || 0),
+    saves: Number(row.saves_count || 0),
+    remixes: Number(row.remix_count || 0),
+    views: Number(row.views_count || 0),
+    liked: interactions.has(`${String(row.id)}:reaction`),
+    saved: interactions.has(`${String(row.id)}:save`),
+  };
+}
+
+async function exploreRoute(req: Request) {
+  const supabase = adminClient();
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    const limit = Math.min(60, Math.max(1, Number(url.searchParams.get("limit") || 30)));
+    const sort = String(url.searchParams.get("sort") || "trending");
+    let query = supabase.from("explore_publications").select("*").eq("status", "published").limit(limit);
+    if (sort === "new") query = query.order("created_at", { ascending: false });
+    else if (sort === "saved") query = query.order("saves_count", { ascending: false }).order("created_at", { ascending: false });
+    else if (sort === "remixed") query = query.order("remix_count", { ascending: false }).order("created_at", { ascending: false });
+    else query = query.order("reactions_count", { ascending: false }).order("saves_count", { ascending: false }).order("created_at", { ascending: false });
+    const { data: rows, error } = await query;
+    if (error) throw error;
+    const publications = rows || [];
+    const userIds = Array.from(new Set(publications.map((row) => String(row.user_id))));
+    const { data: profiles } = userIds.length ? await supabase.from("profiles").select("id,display_name").in("id", userIds) : { data: [] };
+    const profileMap = new Map((profiles || []).map((profile) => [String(profile.id), profile]));
+    const viewerId = await optionalUserIdFromRequest(req, supabase);
+    const interactions = new Set<string>();
+    if (viewerId && publications.length) {
+      const { data: ownInteractions } = await supabase.from("explore_interactions").select("publication_id,kind").eq("user_id", viewerId).in("publication_id", publications.map((row) => row.id));
+      (ownInteractions || []).forEach((item) => interactions.add(`${String(item.publication_id)}:${String(item.kind)}`));
+    }
+    return json({ items: publications.map((row) => explorePublicationPayload(row, profileMap.get(String(row.user_id)), interactions)) });
+  }
+
+  if (req.method !== "POST") return json({ error: { message: "Méthode non autorisée." } }, 405);
+  const userId = await userIdFromRequest(req, supabase);
+  const body = await readJson(req);
+  const action = String(body.action || "");
+
+  if (action === "publish") {
+    const generationId = String(body.generationId || "");
+    if (!isUuid(generationId)) throw new FlowtubeError(400, "Génération invalide.", { code: "INVALID_GENERATION_ID" });
+    const { data: generation } = await supabase.from("generations").select("id,user_id,type,status,model_label,aspect_ratio,duration_seconds,result_url,prompt,params").eq("id", generationId).eq("user_id", userId).maybeSingle();
+    if (!generation || generation.status !== "completed" || !generation.result_url) throw new FlowtubeError(400, "Cette création doit être terminée avant publication.", { code: "GENERATION_NOT_READY" });
+    const { data: publication, error } = await supabase.from("explore_publications").upsert({
+      user_id: userId, generation_id: generation.id, title: String(body.title || "Création HuggyFlow").slice(0, 120), description: String(body.description || "").slice(0, 360), prompt: String(body.sharePrompt === false ? "" : generation.prompt || "").slice(0, 600), media_url: String(generation.result_url), media_type: String(generation.type === "audio" ? "audio" : generation.type), model_label: String(generation.model_label || "HuggyFlow"), aspect_ratio: String(generation.aspect_ratio || "1:1"), duration_seconds: generation.duration_seconds || null, has_audio: Boolean((generation.params || {}).generateAudio || (generation.params || {}).generate_audio), status: "published"
+    }, { onConflict: "generation_id" }).select("*").single();
+    if (error || !publication) throw error || new Error("Publication impossible.");
+    return json({ item: explorePublicationPayload(publication, { display_name: "Toi" }) });
+  }
+
+  const publicationId = String(body.publicationId || "");
+  if (!isUuid(publicationId)) throw new FlowtubeError(400, "Publication invalide.", { code: "INVALID_PUBLICATION_ID" });
+  const { data: publication } = await supabase.from("explore_publications").select("*").eq("id", publicationId).eq("status", "published").maybeSingle();
+  if (!publication) throw new FlowtubeError(404, "Création publique introuvable.", { code: "PUBLICATION_NOT_FOUND" });
+
+  if (action === "reaction" || action === "save") {
+    const kind = action === "save" ? "save" : "reaction";
+    const { data: existing } = await supabase.from("explore_interactions").select("id").eq("publication_id", publicationId).eq("user_id", userId).eq("kind", kind).maybeSingle();
+    if (existing?.id) await supabase.from("explore_interactions").delete().eq("id", existing.id).eq("user_id", userId);
+    else await supabase.from("explore_interactions").insert({ publication_id: publicationId, user_id: userId, kind });
+    const { count } = await supabase.from("explore_interactions").select("id", { count: "exact", head: true }).eq("publication_id", publicationId).eq("kind", kind);
+    const patch = kind === "save" ? { saves_count: count || 0 } : { reactions_count: count || 0 };
+    const { data: updated, error } = await supabase.from("explore_publications").update(patch).eq("id", publicationId).select("*").single();
+    if (error || !updated) throw error || new Error("Interaction impossible.");
+    return json({ item: explorePublicationPayload(updated), active: !Boolean(existing?.id) });
+  }
+
+  if (action === "report") {
+    await supabase.from("explore_reports").upsert({ publication_id: publicationId, user_id: userId, reason: String(body.reason || "other").slice(0, 40), details: String(body.details || "").slice(0, 600) }, { onConflict: "publication_id,user_id" });
+    return json({ reported: true });
+  }
+  throw new FlowtubeError(400, "Action Explorer inconnue.", { code: "INVALID_EXPLORE_ACTION" });
+}
+
 async function skillsRoute(req: Request) {
   const supabase = adminClient();
   const userId = await authenticatedUserIdFromRequest(req, supabase);
@@ -9269,6 +9361,7 @@ Deno.serve(async (req: Request) => {
     if (first === "chat" && req.method === "POST") return await chat(req);
     if (first === "upload" && req.method === "POST") return await uploadRoute(req);
     if (first === "generate" && req.method === "POST") return await directGenerate(req);
+    if (first === "explore" && (req.method === "GET" || req.method === "POST")) return await exploreRoute(req);
     if (first === "artifacts" && route[1] === "share" && route[2] && req.method === "GET") return await publicArtifactShareRoute(req, route[2]);
     if (first === "artifacts" && (req.method === "GET" || req.method === "POST")) return await artifactRoute(req, route[1]);
     if (first === "memory" && (req.method === "GET" || req.method === "POST")) return await agentMemoryRoute(req);

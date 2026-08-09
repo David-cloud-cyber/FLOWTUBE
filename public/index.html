@@ -129,8 +129,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-attachment-status]{color:#898A8B;font-size:10px;white-space:nowrap}
 [data-hf-attachment-remove]{width:20px;height:20px;flex:0 0 20px;display:grid;place-items:center;border:0;border-radius:999px;background:transparent;color:#898A8B;cursor:pointer;font-size:15px;line-height:1}
 [data-hf-attachment-remove]:hover{background:rgba(247,247,248,.10);color:#F7F7F8}
-[data-hf-new-message]{position:absolute;left:50%;bottom:116px;z-index:24;transform:translateX(-50%);display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid rgba(209,254,23,.35);border-radius:999px;background:#1C1E20;color:#D1FE17;box-shadow:0 12px 28px -14px rgba(0,0,0,.72);font-size:11.5px;font-weight:700;cursor:pointer;animation:toastIn .2s ease both}
-[data-hf-new-message]:active{transform:translateX(-50%) scale(.965)}
+[data-hf-new-message-anchor]{position:absolute;left:0;right:var(--hf-chat-inset,0px);bottom:116px;z-index:24;display:flex;justify-content:center;align-items:center;padding:0 26px;pointer-events:none}
+[data-hf-new-message]{position:relative;left:auto;bottom:auto;z-index:1;display:inline-flex;align-items:center;gap:7px;max-width:calc(100vw - 52px);padding:8px 13px;border:1px solid rgba(209,254,23,.35);border-radius:999px;background:#1C1E20;color:#D1FE17;box-shadow:0 12px 28px -14px rgba(0,0,0,.72);font-size:11.5px;font-weight:700;cursor:pointer;pointer-events:auto;animation:toastIn .2s ease both}
+[data-hf-new-message]:active{transform:scale(.965)}
 [data-hf-skeleton]{position:relative;overflow:hidden;background:rgba(255,255,255,.055);border-radius:10px}
 [data-hf-skeleton]::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);animation:shimmer 1.6s linear infinite}
 [data-hf-rail="true"]{align-items:center}
@@ -212,15 +213,16 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(247,247,248,.12);border-radius:10px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-close:hover{background:rgba(247,247,248,.08);color:#F7F7F8}
 .hf-settings-close:active{transform:scale(.94)}
-.hf-settings-content{flex:1;overflow:auto;padding:28px clamp(20px,4vw,56px) 44px;scroll-behavior:auto;scrollbar-width:none;overscroll-behavior:contain;overscroll-behavior-y:contain;scrollbar-gutter:stable;contain:layout paint}
+.hf-settings-content{flex:1;overflow:auto;padding:28px clamp(20px,4vw,56px) 44px;scroll-behavior:smooth;scrollbar-width:none;overscroll-behavior:contain;overscroll-behavior-y:contain;scrollbar-gutter:stable;contain:layout paint}
 .hf-settings-content-inner{width:min(860px,100%);margin:0 auto;animation:pageRise .2s cubic-bezier(.22,1,.36,1) both}
 .hf-settings-intro{margin-bottom:22px;color:#898A8B;font-size:13px;line-height:1.6}
 .hf-settings-card{border:1px solid rgba(var(--hf-settings-line),.10);border-radius:11px;background:var(--hf-settings-surface);overflow:hidden}
 .hf-settings-card + .hf-settings-card{margin-top:14px}
 .hf-settings-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:62px;padding:13px 16px;border-bottom:1px solid rgba(var(--hf-settings-line),.07)}
 .hf-settings-row:last-child{border-bottom:0}
+.hf-settings-row > div:first-child,.hf-settings-section-head > div:first-child,.hf-connector-section-heading > div:first-child{min-width:0}
 .hf-settings-row-label{min-width:0;color:var(--hf-settings-ink);font-size:13.5px;font-weight:650}
-.hf-settings-row-hint{margin-top:4px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45}
+.hf-settings-row-hint{margin-top:4px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
 .hf-settings-control{min-width:190px;max-width:58%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:9px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
 .hf-settings-control:focus{outline:none;border-color:rgba(209,254,23,.7);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
 .hf-settings-textarea{width:100%;min-height:120px;box-sizing:border-box;resize:vertical;padding:12px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:10px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:500 13px/1.55 ui-sans-serif,system-ui,sans-serif}
@@ -228,10 +230,10 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
 .hf-settings-section-head h3{margin:0;color:var(--hf-settings-ink);font:700 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
 .hf-settings-section-head p{margin:6px 0 0;color:var(--hf-settings-muted);font-size:13px;line-height:1.5}
-.hf-settings-primary{min-height:40px;padding:0 15px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font:750 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s}
+.hf-settings-primary{min-height:40px;max-width:100%;padding:0 15px;border:0;border-radius:9px;background:#D1FE17;color:#131517;font:750 12px/1.2 ui-sans-serif,system-ui,sans-serif;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s}
 .hf-settings-primary:hover{filter:brightness(1.05);box-shadow:0 8px 24px -12px rgba(209,254,23,.72)}
 .hf-settings-primary:active{transform:scale(.96)}
-.hf-settings-secondary{min-height:40px;padding:0 15px;border:1px solid rgba(247,247,248,.13);border-radius:9px;background:transparent;color:#A8A8A8;font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-settings-secondary{min-height:40px;max-width:100%;padding:0 15px;border:1px solid rgba(247,247,248,.13);border-radius:9px;background:transparent;color:#A8A8A8;font:650 12px/1.2 ui-sans-serif,system-ui,sans-serif;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 .hf-settings-secondary:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
 .hf-settings-secondary:active{transform:scale(.96)}
 .hf-settings-danger{color:#F08B72!important;border-color:rgba(196,88,64,.35)!important}
@@ -254,17 +256,109 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-close{border-color:rgba(46,48,49,.14);color:#656970}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-close:hover{background:rgba(46,48,49,.06);color:#131517}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-search input:focus{background:#fff}
-.hf-settings-status{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 9px;border-radius:999px;background:rgba(209,254,23,.13);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.hf-settings-status{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;max-width:100%;min-height:24px;padding:4px 9px;border-radius:999px;background:rgba(209,254,23,.13);color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.04em;line-height:1.2;text-align:center;text-transform:uppercase;overflow-wrap:anywhere}
 .hf-settings-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .hf-settings-status.is-warning{background:rgba(232,178,92,.15);color:#E8B25C}
 .hf-settings-status.is-error{background:rgba(196,88,64,.14);color:#E58C72}
 .hf-settings-status.is-neutral{background:rgba(var(--hf-settings-line),.08);color:var(--hf-settings-muted)}
 .hf-settings-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .hf-settings-inline-note{margin-top:9px;color:var(--hf-settings-muted);font-size:11px;line-height:1.5}
+.hf-connectors-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}
+.hf-connectors-toolbar-actions{display:flex;align-items:center;gap:8px}
+.hf-connectors-sort{height:40px;padding:0 31px 0 12px;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:9px;background:var(--hf-settings-control);color:var(--hf-settings-ink);font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer}
+.hf-connectors-sort:focus{outline:none;border-color:rgba(209,254,23,.65);box-shadow:0 0 0 3px rgba(209,254,23,.08)}
+.hf-connectors-search{display:flex;align-items:center;gap:9px;height:42px;padding:0 13px;margin-bottom:16px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:10px;background:var(--hf-settings-control);color:var(--hf-settings-muted);transition:border-color .18s,box-shadow .18s,background .18s}
+.hf-connectors-search:focus-within{border-color:rgba(209,254,23,.62);box-shadow:0 0 0 3px rgba(209,254,23,.08);background:var(--hf-settings-surface)}
+.hf-connectors-search input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-settings-ink);font:500 13px ui-sans-serif,system-ui,sans-serif}
+.hf-connectors-search input::placeholder{color:var(--hf-settings-muted)}
+.hf-connectors-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hf-connector-card{min-width:0;min-height:154px;display:flex;flex-direction:column;gap:14px;padding:15px;border:1px solid rgba(var(--hf-settings-line),.12);border-radius:12px;background:var(--hf-settings-surface);cursor:pointer;transition:transform .22s cubic-bezier(.22,1,.36,1),border-color .22s ease,box-shadow .22s ease,background .22s ease;will-change:transform}
+.hf-connector-card:focus-visible{outline:2px solid #D1FE17;outline-offset:2px}
+.hf-connector-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hf-connector-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;border-radius:9px;font:800 15px 'Space Grotesk',ui-sans-serif,sans-serif;box-shadow:inset 0 0 0 1px rgba(19,21,23,.10)}
+.hf-connector-logo-large{width:54px;height:54px;flex-basis:54px;border-radius:11px;font-size:20px}
+.hf-connector-availability{display:inline-flex;align-items:flex-start;justify-content:flex-end;gap:6px;flex:0 0 auto;width:min(145px,42%);min-width:0;max-width:145px;color:var(--hf-settings-muted);font-size:10px;line-height:1.25;text-align:right;white-space:normal;word-break:normal;overflow-wrap:normal}
+.hf-connector-availability span{width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 3px rgba(209,254,23,.06)}
+.hf-connector-card-body{min-width:0;flex:1}
+.hf-connector-card-title{display:flex;align-items:flex-start;gap:7px;min-width:0;max-width:100%;color:var(--hf-settings-ink);font-size:14px;font-weight:750;line-height:1.3;overflow-wrap:anywhere}
+.hf-connector-card-desc{margin-top:6px;overflow:hidden;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.45;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hf-connector-new{display:inline-flex;align-items:center;min-height:20px;padding:0 6px;border-radius:5px;background:rgba(83,137,255,.16);color:#7EA9FF;font-size:9px;font-weight:800}
+.hf-connector-card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--hf-settings-muted)}
+.hf-settings-status.is-connected{background:rgba(155,226,122,.13);color:#9BE27A}
+.hf-connector-empty,.hf-connector-detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:172px;padding:24px;border:1px dashed rgba(var(--hf-settings-line),.15);border-radius:12px;color:var(--hf-settings-muted);text-align:center;font-size:13px;line-height:1.45}
+.hf-connector-detail-empty{margin-top:14px;min-height:200px}
+.hf-connector-empty button{margin-top:2px}
+.hf-connector-empty-icon{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:9px;color:var(--hf-settings-muted)}
+.hf-connector-skeleton{height:154px;border:1px solid rgba(var(--hf-settings-line),.08);border-radius:12px;background:linear-gradient(105deg,rgba(var(--hf-settings-line),.04) 20%,rgba(var(--hf-settings-line),.09) 38%,rgba(var(--hf-settings-line),.04) 56%);background-size:220% 100%;animation:hfConnectorShimmer 1.2s ease-in-out infinite}
+@keyframes hfConnectorShimmer{0%{background-position:120% 0}100%{background-position:-80% 0}}
+.hf-connector-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.hf-connector-back{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.12);border-radius:9px;background:transparent;color:var(--hf-settings-muted);cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.hf-connector-back:hover{background:rgba(var(--hf-settings-line),.06);color:var(--hf-settings-ink)}
+.hf-connector-back:active{transform:scale(.94)}
+.hf-connector-breadcrumb{display:flex;align-items:center;gap:7px;min-width:0;flex:1;color:var(--hf-settings-muted);font-size:12px}
+.hf-connector-breadcrumb strong{overflow:hidden;color:var(--hf-settings-ink);font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.hf-connector-hero{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid rgba(var(--hf-settings-line),.12);border-radius:12px;background:var(--hf-settings-surface);animation:tabFade .22s ease both}
+.hf-connector-hero-title{color:var(--hf-settings-ink);font:750 20px/1.2 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-connector-hero-subtitle{margin-top:5px;color:var(--hf-settings-muted);font-size:12px}
+.hf-connector-section{margin-top:28px}
+.hf-connector-section h3{margin:0;color:var(--hf-settings-ink);font:750 18px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}
+.hf-connector-section > p{margin:7px 0 0;color:var(--hf-settings-muted);font-size:13px;line-height:1.55}
+.hf-connector-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+.hf-connector-section-heading p{margin:6px 0 0;color:var(--hf-settings-muted);font-size:12px;line-height:1.5}
+.hf-connector-add-wrap{position:relative;flex:0 0 auto}
+.hf-connector-add-wrap .hf-settings-primary{display:inline-flex;align-items:center;gap:7px}
+.hf-connector-add-menu{position:absolute;z-index:3;top:calc(100% + 8px);right:0;width:245px;padding:7px;border:1px solid rgba(var(--hf-settings-line),.14);border-radius:10px;background:var(--hf-settings-surface);box-shadow:0 18px 42px -22px rgba(0,0,0,.78);animation:modalScale .18s cubic-bezier(.22,1,.36,1) both}
+.hf-connector-add-menu > button{display:flex;align-items:flex-start;gap:8px;width:100%;padding:10px;border:0;border-radius:7px;background:transparent;color:var(--hf-settings-ink);text-align:left;cursor:pointer;font:650 12px ui-sans-serif,system-ui,sans-serif}
+.hf-connector-add-menu > button:hover{background:rgba(var(--hf-settings-line),.06)}
+.hf-connector-add-menu > button:disabled{cursor:not-allowed;opacity:.48}
+.hf-connector-add-menu > button small{display:block;margin-top:3px;color:var(--hf-settings-muted);font-size:10px;font-weight:500}
+.hf-connector-menu-dot{width:7px;height:7px;flex:0 0 auto;margin-top:4px;border-radius:50%;background:#9BE27A;box-shadow:0 0 0 3px rgba(155,226,122,.10)}
+.hf-connector-menu-note{padding:8px 10px;border-top:1px solid rgba(var(--hf-settings-line),.08);color:var(--hf-settings-muted);font-size:10px;line-height:1.4}
+.hf-connector-connection-card,.hf-connector-feature-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid rgba(var(--hf-settings-line),.11);border-radius:11px;background:var(--hf-settings-surface)}
+.hf-connector-connection-card > div:first-child{min-width:0;flex:1}.hf-connector-connection-name{color:var(--hf-settings-ink);font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.hf-connector-connection-meta{margin-top:5px;color:var(--hf-settings-muted);font-size:11px;line-height:1.35}
+.hf-connector-action-row{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.hf-connector-action-row button{min-height:36px;padding:0 10px}
+.hf-connector-feature-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:8px;background:rgba(209,254,23,.13);color:#D1FE17}
+.hf-connector-feature-card{justify-content:flex-start}
+.hf-connector-feature-card strong{color:var(--hf-settings-ink);font-size:13px}
+.hf-connector-feature-card p{margin:5px 0 0;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.45}
+.hf-connector-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:32px;padding-top:20px;border-top:1px solid rgba(var(--hf-settings-line),.10)}
+.hf-connector-details div{min-width:0;display:flex;flex-direction:column;gap:6px}
+.hf-connector-details span{color:var(--hf-settings-muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:750}
+.hf-connector-details strong{overflow:hidden;color:var(--hf-settings-ink);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}.hf-connector-footer-action{padding:0;border:0;background:transparent;color:var(--hf-settings-ink);font:700 11.5px ui-sans-serif,system-ui,sans-serif;text-align:left;text-decoration:underline;text-decoration-color:rgba(209,254,23,.65);text-underline-offset:3px;cursor:pointer}.hf-connector-footer-action:hover{color:#D1FE17}.hf-connector-info-panel{position:relative;margin-top:18px;padding:18px;border:1px solid rgba(209,254,23,.22);border-radius:12px;background:rgba(209,254,23,.055);animation:fadeUp .18s cubic-bezier(.22,1,.36,1) both}.hf-connector-info-panel h4{margin:0;color:var(--hf-settings-ink);font:750 15px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}.hf-connector-info-panel p{margin:8px 0 0;color:var(--hf-settings-muted);font-size:12px;line-height:1.55}.hf-connector-info-panel ul{margin:12px 0 0;padding-left:18px;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.6}.hf-connector-info-close{position:absolute;top:12px;right:12px;width:28px;height:28px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:7px;background:transparent;color:var(--hf-settings-muted);cursor:pointer}.hf-connector-info-close:hover{background:rgba(var(--hf-settings-line),.07);color:var(--hf-settings-ink)}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-search,.hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-sort{background:#F0F1F2}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-connector-new{background:rgba(63,102,209,.12);color:#3f66d1}
+@media(max-width:760px){.hf-connectors-toolbar{align-items:stretch;flex-direction:column;gap:12px}.hf-connectors-toolbar-actions{justify-content:flex-end}.hf-connectors-grid{grid-template-columns:1fr}.hf-connector-hero{align-items:flex-start;flex-wrap:wrap}.hf-connector-hero .hf-settings-status{margin-left:68px;margin-top:-8px}.hf-connector-section-heading{align-items:flex-start;flex-direction:column}.hf-connector-add-wrap{width:100%}.hf-connector-add-wrap .hf-settings-primary{width:100%;justify-content:center}.hf-connector-add-menu{left:0;right:auto;width:100%}.hf-connector-connection-card{align-items:flex-start;flex-direction:column}.hf-connector-action-row{justify-content:flex-start}.hf-connector-details{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary,[data-hf-studio-panel="true"]{transition:none!important}}
 @media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Explore public gallery */
+.hf-explore-shell{position:absolute;inset:0;left:var(--hf-content-inset,258px);z-index:20;overflow:auto;background:var(--hf-page-bg,#131517);color:var(--hf-ink,#F7F7F8);scroll-behavior:smooth;overscroll-behavior:contain;animation:pageRise .32s cubic-bezier(.22,1,.36,1) both}
+.hf-explore-inner{width:min(1180px,100%);margin:0 auto;padding:28px 32px 72px;box-sizing:border-box}
+.hf-explore-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px}
+.hf-explore-kicker{display:inline-flex;align-items:center;gap:7px;color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.hf-explore-title{margin-top:8px;color:var(--hf-ink,#F7F7F8);font:700 clamp(28px,4vw,42px)/1.05 'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.025em}
+.hf-explore-subtitle{max-width:650px;margin-top:10px;color:var(--hf-muted,#898A8B);font-size:14px;line-height:1.55}
+.hf-explore-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.hf-explore-search{display:flex;align-items:center;gap:9px;min-width:min(380px,100%);height:40px;padding:0 12px;border:1px solid rgba(247,247,248,.11);border-radius:10px;background:rgba(247,247,248,.045);color:#898A8B;transition:border-color .18s,box-shadow .18s,background .18s}
+.hf-explore-search:focus-within{border-color:rgba(209,254,23,.68);box-shadow:0 0 0 3px rgba(209,254,23,.09);background:rgba(247,247,248,.07)}
+.hf-explore-search input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-ink,#F7F7F8);font:500 12.5px ui-sans-serif,system-ui,sans-serif}.hf-explore-search input::placeholder{color:#898A8B}
+.hf-explore-sort{height:40px;padding:0 12px;border:1px solid rgba(247,247,248,.11);border-radius:10px;background:rgba(247,247,248,.045);color:var(--hf-ink,#F7F7F8);font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer}
+.hf-explore-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.hf-explore-card{min-width:0;overflow:hidden;border:1px solid rgba(247,247,248,.10);border-radius:15px;background:rgba(247,247,248,.035);cursor:pointer;animation:fadeUp .3s ease both;transition:transform .22s cubic-bezier(.22,1,.36,1),border-color .22s ease,box-shadow .22s ease,background .22s ease}.hf-explore-card:hover{transform:translateY(-3px);border-color:rgba(209,254,23,.32);background:rgba(247,247,248,.055);box-shadow:0 18px 42px -30px rgba(0,0,0,.88)}.hf-explore-card:focus-visible{outline:2px solid #D1FE17;outline-offset:3px}
+.hf-explore-thumb{position:relative;aspect-ratio:4/3;overflow:hidden;background:linear-gradient(145deg,#24282a,#17191b)}.hf-explore-thumb img,.hf-explore-thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}.hf-explore-thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(0,0,0,.38));pointer-events:none}.hf-explore-type{position:absolute;left:10px;top:10px;z-index:1;padding:4px 8px;border-radius:999px;background:rgba(19,21,23,.75);color:#F7F7F8;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.hf-explore-card-body{padding:13px 14px 14px}.hf-explore-card-title{overflow:hidden;color:var(--hf-ink,#F7F7F8);font-size:13.5px;font-weight:750;text-overflow:ellipsis;white-space:nowrap}.hf-explore-card-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;color:#898A8B;font-size:11px}.hf-explore-card-stats{display:flex;align-items:center;gap:9px;white-space:nowrap}.hf-explore-card-creator{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hf-explore-empty{padding:76px 20px;border:1px dashed rgba(247,247,248,.14);border-radius:15px;color:#898A8B;text-align:center;font-size:13px;line-height:1.5}
+.hf-explore-viewer{display:grid;grid-template-columns:minmax(0,1fr) 365px;min-height:min(730px,calc(100vh - 110px));overflow:hidden;border:1px solid rgba(247,247,248,.10);border-radius:18px;background:rgba(247,247,248,.035);animation:modalScale .26s cubic-bezier(.22,1,.36,1) both}.hf-explore-stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:580px;padding:44px 72px;background:radial-gradient(circle at 50% 45%,rgba(46,56,50,.52),transparent 60%),linear-gradient(145deg,#252927,#131517 70%)}.hf-explore-stage-media{max-width:100%;max-height:calc(100vh - 230px);width:auto;height:auto;object-fit:contain;border-radius:12px;box-shadow:0 24px 55px -30px rgba(0,0,0,.88);animation:mediaReveal .35s cubic-bezier(.22,1,.36,1) both}
+.hf-explore-stage-arrow{position:absolute;top:50%;z-index:2;width:38px;height:38px;border:1px solid rgba(247,247,248,.14);border-radius:11px;background:rgba(19,21,23,.72);color:#F7F7F8;cursor:pointer;transform:translateY(-50%);transition:background .18s,transform .18s,border-color .18s}.hf-explore-stage-arrow:hover{background:rgba(209,254,23,.16);border-color:rgba(209,254,23,.48)}.hf-explore-stage-arrow:active{transform:translateY(-50%) scale(.94)}.hf-explore-stage-arrow.prev{left:20px}.hf-explore-stage-arrow.next{right:20px}.hf-explore-stage-close{position:absolute;right:18px;top:16px;z-index:2;width:34px;height:34px;border:1px solid rgba(247,247,248,.13);border-radius:10px;background:rgba(19,21,23,.68);color:#F7F7F8;cursor:pointer;transition:background .18s,transform .18s}.hf-explore-stage-close:hover{background:rgba(247,247,248,.12)}.hf-explore-stage-close:active{transform:scale(.94)}
+.hf-explore-thumbs{position:absolute;right:0;bottom:0;left:0;display:flex;justify-content:center;gap:8px;padding:12px 20px;background:linear-gradient(transparent,rgba(0,0,0,.72));overflow-x:auto}.hf-explore-thumb-button{width:50px;height:38px;flex:0 0 50px;overflow:hidden;padding:0;border:1px solid rgba(247,247,248,.18);border-radius:7px;background:#232629;cursor:pointer;opacity:.66;transition:opacity .18s,border-color .18s,transform .18s}.hf-explore-thumb-button:hover,.hf-explore-thumb-button.is-active{opacity:1;border-color:#D1FE17;transform:translateY(-2px)}.hf-explore-thumb-button img,.hf-explore-thumb-button video{width:100%;height:100%;object-fit:cover;display:block}
+.hf-explore-details{display:flex;flex-direction:column;min-width:0;overflow:auto;padding:22px 20px 20px;border-left:1px solid rgba(247,247,248,.09);background:rgba(24,27,29,.92);scrollbar-width:thin}.hf-explore-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.hf-explore-creator{display:flex;align-items:center;gap:9px;min-width:0}.hf-explore-avatar{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:10px;background:#D1FE17;color:#131517;font-size:12px;font-weight:800}.hf-explore-creator-name{min-width:0;overflow:hidden;color:#F7F7F8;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.hf-explore-creator-label{margin-top:3px;color:#898A8B;font-size:10.5px}.hf-explore-icon-button{width:32px;height:32px;border:1px solid rgba(247,247,248,.12);border-radius:9px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}.hf-explore-icon-button:hover{background:rgba(247,247,248,.08);color:#F7F7F8}.hf-explore-icon-button:active{transform:scale(.94)}
+.hf-explore-detail-title{margin:25px 0 0;color:#F7F7F8;font:700 24px/1.16 'Space Grotesk',ui-sans-serif,sans-serif;overflow-wrap:anywhere}.hf-explore-detail-description{margin:9px 0 0;color:#B5B7BA;font-size:13px;line-height:1.55;overflow-wrap:anywhere}.hf-explore-prompt{margin-top:18px;padding:14px;border-radius:11px;background:rgba(247,247,248,.065);color:#E7E8E8;font-size:13px;line-height:1.55;overflow-wrap:anywhere}.hf-explore-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}.hf-explore-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:7px 9px;border-radius:999px;background:rgba(247,247,248,.075);color:#C6C8C9;font-size:10.5px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hf-explore-detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;padding:14px 0;border-top:1px solid rgba(247,247,248,.09);border-bottom:1px solid rgba(247,247,248,.09)}.hf-explore-stat{text-align:center;color:#F7F7F8;font-size:13px;font-weight:750}.hf-explore-stat small{display:block;margin-top:4px;color:#898A8B;font-size:10px;font-weight:500}.hf-explore-action-row{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:22px}.hf-explore-primary-action{min-height:42px;flex:1;border:0;border-radius:10px;background:#D1FE17;color:#131517;font:800 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:filter .18s,transform .18s,box-shadow .18s}.hf-explore-primary-action:hover{filter:brightness(1.04);box-shadow:0 12px 25px -16px rgba(209,254,23,.9)}.hf-explore-primary-action:active{transform:scale(.97)}.hf-explore-secondary-action{width:42px;height:42px;border:1px solid rgba(247,247,248,.14);border-radius:10px;background:transparent;color:#C8C9CA;cursor:pointer;transition:background .18s,transform .18s}.hf-explore-secondary-action:hover{background:rgba(247,247,248,.08)}.hf-explore-secondary-action:active{transform:scale(.94)}
+@keyframes mediaReveal{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+@media (max-width:980px){.hf-explore-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hf-explore-viewer{grid-template-columns:minmax(0,1fr) 330px}}
+@media (max-width:760px){.hf-explore-shell{left:72px}.hf-explore-inner{padding:22px 16px 48px}.hf-explore-heading{margin-bottom:18px}.hf-explore-card-grid{grid-template-columns:1fr}.hf-explore-viewer{display:flex;flex-direction:column;min-height:0;overflow:visible}.hf-explore-stage{min-height:58vh;padding:36px 48px}.hf-explore-stage-media{max-height:55vh}.hf-explore-details{max-height:none;border-top:1px solid rgba(247,247,248,.09);border-left:0}.hf-explore-action-row{margin-top:18px}.hf-explore-search{min-width:100%;flex:1}}
+@media (prefers-reduced-motion:reduce){.hf-explore-shell,.hf-explore-card,.hf-explore-viewer,.hf-explore-stage-media{animation:none}.hf-explore-shell,.hf-explore-card,.hf-explore-stage-arrow,.hf-explore-icon-button,.hf-explore-primary-action,.hf-explore-secondary-action{transition:none!important;scroll-behavior:auto}}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
@@ -333,13 +427,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
         <span data-hf-hide-rail="true" style="flex:1">Galerie</span>
       </div>
-      <sc-for list="{{ collections }}" as="c" hint-placeholder-count="3">
-        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="{{ c.style }}" style-hover="background:rgba(255,255,255,.06)">
-          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8">{{ c.icon }}</span>
-          <span data-hf-hide-rail="true" style="flex:1">{{ c.name }}</span>
-          <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:#D1FE17;color:#131517;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
-        </div>
-      </sc-for>
+      <div data-hf-rail-item="true" onClick="{{ openExplore }}" title="Explorer" style="{{ exploreNavStyle }}" style-hover="background:rgba(255,255,255,.06)">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.4 15.6l2-4.9 4.9-2-2 4.9-4.9 2z"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Explorer</span>
+        <sc-if value="{{ exploreShowNew }}" hint-placeholder-val="{{ true }}"><span data-hf-hide-rail="true" style="position:relative;top:-1px;padding:3px 7px;border-radius:5px;background:#D1FE17;color:#131517;font-size:9px;font-weight:850;letter-spacing:.06em;line-height:1">NEW</span></sc-if>
+      </div>
       </sc-if>
 
       <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
@@ -471,6 +563,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                           <span style="width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:{{ workflow.dot }}"></span>
                           <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#D0D0D1">{{ workflow.title }}</span>
                           <span style="flex:0 0 auto;font-size:10px;color:#888">{{ workflow.meta }}</span>
+                          <sc-if value="{{ workflow.showAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ workflow.onAction }}" style="padding:4px 7px;border:1px solid rgba(209,254,23,.22);border-radius:6px;background:transparent;color:#D1FE17;font-size:10px;font-weight:700;cursor:pointer">{{ workflow.actionLabel }}</button></sc-if>
+                          <sc-if value="{{ workflow.showCancel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ workflow.onCancel }}" title="Annuler" style="width:22px;height:22px;border:1px solid rgba(196,88,64,.25);border-radius:6px;background:transparent;color:#E58C72;font-size:12px;cursor:pointer">×</button></sc-if>
                         </div>
                       </sc-for>
                     </sc-if>
@@ -708,7 +802,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
       </div>
     </div>
     <sc-if value="{{ showNewMessageButton }}" hint-placeholder-val="{{ false }}">
-      <button data-hf-new-message="true" style="left:calc((100% - {{ studioContentInset }}) / 2)" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button>
+      <div data-hf-new-message-anchor="true" style="--hf-chat-inset:{{ studioContentInset }}"><button data-hf-new-message="true" onClick="{{ jumpToLatest }}" title="Revenir au dernier message"><span>↓</span> Nouveaux messages</button></div>
     </sc-if>
 
     <sc-if value="{{ hasMessages }}" hint-placeholder-val="{{ false }}">
@@ -780,7 +874,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <div style="border:1px solid rgba({{ tLineRGB }},.12);border-radius:14px;overflow:hidden;background:rgba({{ tLineRGB }},.035)">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba({{ tLineRGB }},.08)"><span style="font-size:12px;font-weight:700;color:{{ tInk }}">{{ activeArtifactTitle }}</span><span style="font-size:10px;color:#D1FE17">Version {{ activeArtifactVersion }}</span></div>
               <iframe title="Aperçu de l'artifact" src="{{ artifactPreviewUrl }}" sandbox="allow-scripts" referrerpolicy="no-referrer" style="display:block;width:100%;height:310px;border:0;background:#fff"></iframe>
-              <div style="display:flex;gap:7px;padding:10px 12px"><button onClick="{{ publishActiveArtifact }}" style="flex:1;padding:8px 10px;border-radius:8px;border:0;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Publier</button><button onClick="{{ copyActiveArtifact }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Copier</button></div>
+              <div style="display:flex;gap:7px;padding:10px 12px;flex-wrap:wrap"><button onClick="{{ publishActiveArtifact }}" style="flex:1;min-width:92px;padding:8px 10px;border-radius:8px;border:0;background:#D1FE17;color:#131517;font-size:11px;font-weight:800;cursor:pointer">Publier</button><button onClick="{{ requestArtifactApproval }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Demander validation</button><button onClick="{{ copyActiveArtifact }}" style="padding:8px 10px;border-radius:8px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInkSoft }};font-size:11px;font-weight:700;cursor:pointer">Copier</button></div>
               <div style="display:flex;align-items:center;gap:6px;padding:0 12px 10px;overflow-x:auto"><button onClick="{{ setArtifactDesktop }}" style="{{ artifactDeviceDesktopStyle }}">Desktop</button><button onClick="{{ setArtifactTablet }}" style="{{ artifactDeviceTabletStyle }}">Tablet</button><button onClick="{{ setArtifactMobile }}" style="{{ artifactDeviceMobileStyle }}">Mobile</button><div style="flex:1"></div><button onClick="{{ downloadActiveArtifact }}" style="{{ artifactActionStyle }}" title="Telecharger">↓</button></div>
               <sc-if value="{{ artifactHasRuntimeError }}" hint-placeholder-val="{{ false }}"><div style="margin:0 12px 10px;padding:9px 10px;border-radius:9px;border:1px solid rgba(196,88,64,.28);background:rgba(196,88,64,.08);color:#E58C72;font-size:10.5px;line-height:1.45">{{ artifactRuntimeError }}</div></sc-if>
             </div>
@@ -791,7 +885,12 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="flex:1;font-size:10.5px;color:{{ artifactSaveStateColor }}">{{ artifactSaveStateLabel }}</span><button onClick="{{ downloadActiveArtifact }}" style="{{ artifactSecondaryStyle }}">Telecharger</button><button onClick="{{ saveArtifactVersion }}" disabled="{{ artifactSaveDisabled }}" style="{{ artifactPublishStyle }}">{{ artifactSaveLabel }}</button></div>
             </sc-if>
             <sc-if value="{{ artifactViewVersions }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:flex-end;margin-top:10px"><button onClick="{{ compareSelectedArtifact }}" style="padding:6px 9px;border:1px solid rgba({{ tLineRGB }},.13);border-radius:7px;background:transparent;color:{{ tText3 }};font-size:10px;font-weight:700;cursor:pointer">Comparer avec l actuelle</button></div>
               <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px"><sc-for list="{{ artifactVersionCards }}" as="version" hint-placeholder-count="4"><button onClick="{{ version.onClick }}" style="{{ version.style }}"><span style="font-weight:800">V{{ version.number }}</span><span style="flex:1;text-align:left;margin-left:8px">{{ version.label }}</span><span style="font-size:10px;color:{{ tText4 }}">{{ version.date }}</span></button></sc-for></div>
+            </sc-if>
+            <sc-if value="{{ artifactViewCompare }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px"><span style="font-size:11px;font-weight:800;color:{{ tInk }}">Comparaison des versions</span><div style="display:flex;gap:6px"><button onClick="{{ restoreSelectedArtifact }}" style="{{ artifactTinyActionStyle }}">Restaurer la sélection</button><button onClick="{{ artifactVersionsView }}" style="{{ artifactTinyActionStyle }}">Fermer</button></div></div>
+              <sc-for list="{{ artifactCompareRows }}" as="row" hint-placeholder-count="3"><div style="margin-top:9px;padding:9px;border:1px solid rgba({{ tLineRGB }},.10);border-radius:9px;background:rgba({{ tLineRGB }},.025)"><div style="font:10px 'JetBrains Mono',monospace;color:{{ row.changed ? '#E8B25C' : tText4 }}">{{ row.path }} · {{ row.changed ? 'modifié' : 'identique' }}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px"><pre style="margin:0;max-height:150px;overflow:auto;white-space:pre-wrap;font:9px/1.45 'JetBrains Mono',monospace;color:{{ tText4 }}">{{ row.left }}</pre><pre style="margin:0;max-height:150px;overflow:auto;white-space:pre-wrap;font:9px/1.45 'JetBrains Mono',monospace;color:{{ tInk }}">{{ row.right }}</pre></div></div></sc-for>
             </sc-if>
             <sc-if value="{{ artifactViewActivity }}" hint-placeholder-val="{{ false }}">
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px"><sc-for list="{{ artifactActivityCards }}" as="activity" hint-placeholder-count="4"><div style="display:flex;gap:9px;padding:10px;border:1px solid rgba({{ tLineRGB }},.09);border-radius:10px;background:rgba({{ tLineRGB }},.025)"><span style="width:7px;height:7px;flex:0 0 auto;margin-top:4px;border-radius:50%;background:{{ activity.dot }}"></span><div style="min-width:0"><div style="font-size:11.5px;font-weight:700;color:{{ tInk }}">{{ activity.title }}</div><div style="margin-top:3px;font-size:10.5px;color:{{ tText4 }}">{{ activity.meta }}</div></div></div></sc-for></div>
@@ -1872,6 +1971,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Double authentification</div><div class="hf-settings-row-hint">Protège le compte avec une application TOTP. La configuration Supabase est vérifiée avant activation.</div><div class="hf-settings-inline-note">{{ mfaStatusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ toggle2fa }}" disabled="{{ mfaLoading }}">{{ mfaLoading ? 'Configuration...' : (tfa ? 'Désactiver' : 'Activer') }}</button></div>
               </div>
               <sc-if value="{{ mfaSetup }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row-label">Finaliser la double authentification</div><div class="hf-settings-row-hint">Scanne le QR code dans 1Password, Google Authenticator ou une application TOTP, puis confirme le code affiché.</div><div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px"><sc-if value="{{ mfaSetup.qrCode }}" hint-placeholder-val="{{ false }}"><img src="{{ mfaSetup.qrCode }}" alt="QR code de configuration MFA" width="148" height="148" style="display:block;border-radius:10px;background:#fff;padding:8px"/></sc-if><div style="min-width:190px;flex:1"><label class="hf-settings-row-hint" for="hf-mfa-code">Code à 6 chiffres</label><input id="hf-mfa-code" class="hf-settings-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{ mfaCode }}" onChange="{{ onMfaCode }}" placeholder="000000"/><div class="hf-settings-action-row" style="margin-top:10px"><button class="hf-settings-secondary" onClick="{{ cancelMfaSetup }}">Annuler</button><button class="hf-settings-primary" onClick="{{ verifyMfaSetup }}" disabled="{{ mfaLoading }}">{{ mfaLoading ? 'Vérification...' : 'Confirmer' }}</button></div></div></div><sc-if value="{{ mfaSetup.secret }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-inline-note">Clé de secours : <code>{{ mfaSetup.secret }}</code></div></sc-if></div></sc-if>
+              <sc-if value="{{ tfa }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Codes de récupération</div><div class="hf-settings-row-hint">Ils permettent de récupérer l’accès si ton application TOTP est indisponible. Chaque génération invalide les anciens codes.</div></div><button class="hf-settings-secondary" onClick="{{ regenerateRecoveryCodes }}">Générer</button></div><sc-if value="{{ recoveryCodesVisible }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px"><sc-for list="{{ recoveryCodes }}" as="code" hint-placeholder-count="8"><code style="padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.05);color:#D1FE17;font:12px 'JetBrains Mono',monospace;text-align:center">{{ code }}</code></sc-for></div><div class="hf-settings-inline-note" style="margin-top:10px">Copie-les maintenant : ils ne seront plus affichés après avoir quitté cette page.</div></sc-if></div></sc-if>
+              <div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Sessions et appareils</div><div class="hf-settings-row-hint">Révoque un appareil perdu ou déconnecte toutes les autres sessions.</div></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ loadSecurity }}">Actualiser</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ revokeAllSecuritySessions }}">Déconnecter les autres</button></div></div><sc-if value="{{ securityLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Vérification des sessions…</div></sc-if><sc-for list="{{ securitySessionCards }}" as="session" hint-placeholder-count="3"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ session.deviceLabel }} {{ session.current ? '· session actuelle' : '' }}</div><div style="margin-top:4px;font-size:10.5px;color:#898A8B">{{ session.userAgent }} · dernière activité {{ session.lastSeen }}</div></div><sc-if value="{{ session.canRevoke }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ session.onRevoke }}">Révoquer</button></sc-if></div></sc-for><sc-if value="{{ securitySessionsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune autre session enregistrée.</div></sc-if></div>
               <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Zone sensible</div><div class="hf-settings-row-hint">Télécharge tes données ou supprime définitivement ton compte.</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="hf-settings-secondary" onClick="{{ exportAccountData }}">Exporter mes données</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ openAccountDeletion }}">Supprimer le compte</button></div></div>
             </sc-if>
 
@@ -1882,7 +1983,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Analyses produit</div><div class="hf-settings-row-hint">Partager des événements anonymisés pour améliorer la fluidité et la fiabilité.</div></div><button onClick="{{ toggleAnalyticsSharing }}" style="{{ analyticsTrackStyle }}" aria-label="Basculer les analyses produit"><span style="{{ analyticsKnobStyle }}"></span></button></div>
                 <sc-for list="{{ prefItems }}" as="pref" hint-placeholder-count="3"><div class="hf-settings-row"><div><div class="hf-settings-row-label">{{ pref.label }}</div><div class="hf-settings-row-hint">{{ pref.hint }}</div></div><button onClick="{{ pref.onToggle }}" style="{{ pref.trackStyle }}" aria-label="Modifier {{ pref.label }}"><span style="{{ pref.knobStyle }}"></span></button></div></sc-for>
               </div>
-              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Mémoire de l'agent</div><div style="margin-top:4px;font-size:11px">Portée, source et confiance de chaque information utilisée.</div></div><button class="hf-settings-secondary" onClick="{{ loadAgentMemory }}">Actualiser</button></div><sc-if value="{{ memoryLoading }}" hint-placeholder-val="false"><div class="hf-settings-empty">Chargement de la mémoire…</div></sc-if><sc-if value="{{ memoryEmpty }}" hint-placeholder-val="false"><div class="hf-settings-empty">Aucune information active pour ce contexte.</div></sc-if><sc-for list="{{ memoryCards }}" as="memory" hint-placeholder-count="4"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650">{{ memory.label }}</div><div style="margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;font-size:11px">{{ memory.content }}</div><div style="margin-top:5px;color:#898A8B;font-size:10px">{{ memory.scope }} · {{ memory.source }} · confiance {{ memory.confidence }}</div></div><div style="display:flex;gap:6px"><button class="hf-settings-secondary" onClick="{{ memory.onPin }}">{{ memory.pinned ? 'Désépingler' : 'Épingler' }}</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ memory.onForget }}">Oublier</button></div></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Mémoire de l'agent</div><div style="margin-top:4px;font-size:11px">Portée, source et confiance de chaque information utilisée.</div></div><button class="hf-settings-secondary" onClick="{{ loadAgentMemory }}">Actualiser</button></div><sc-if value="{{ memoryConflictVisible }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 18px;padding:10px 12px;border-radius:9px;background:rgba(232,178,92,.08);border:1px solid rgba(232,178,92,.18);color:#E8B25C;font-size:11px">Plusieurs souvenirs se contredisent. Vérifie les valeurs avant une nouvelle génération.</div></sc-if><sc-if value="{{ memoryLoading }}" hint-placeholder-val="false"><div class="hf-settings-empty">Chargement de la mémoire…</div></sc-if><sc-if value="{{ memoryEmpty }}" hint-placeholder-val="false"><div class="hf-settings-empty">Aucune information active pour ce contexte.</div></sc-if><sc-for list="{{ memoryCards }}" as="memory" hint-placeholder-count="4"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650">{{ memory.label }}</div><div style="margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;font-size:11px">{{ memory.content }}</div><div style="margin-top:5px;color:#898A8B;font-size:10px">{{ memory.scope }} · {{ memory.source }} · confiance {{ memory.confidence }}</div><div style="margin-top:4px;color:#666869;font-size:10px">{{ memory.reason }}</div></div><div style="display:flex;gap:6px"><button class="hf-settings-secondary" onClick="{{ memory.onPin }}">{{ memory.pinned ? 'Désépingler' : 'Épingler' }}</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ memory.onForget }}">Oublier</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
@@ -1896,16 +1997,20 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
               <div class="hf-settings-section-head"><div><h3>Équipe</h3><p>Invite des collaborateurs et garde le contrôle de ton espace partagé.</p></div><span class="hf-settings-badge">{{ seatsLabel }} places</span></div>
               <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Utilisation des places</div><div style="margin:10px 0 5px" class="hf-settings-progress"><span style="width:{{ seatsPct }}"></span></div><div class="hf-settings-row-hint">{{ seatsLabel }} utilisées sur ton forfait.</div><div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><input class="hf-settings-control" value="{{ inviteEmail }}" onChange="{{ onInviteEmail }}" placeholder="collegue@entreprise.com"/><button class="hf-settings-primary" onClick="{{ sendInvite }}">Inviter</button></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Membres</span><span style="color:#898A8B">Rôles gérés par propriétaire</span></div><sc-for list="{{ teamMembers }}" as="member" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ member.name }} {{ member.isYou ? '(toi)' : '' }}</div><div style="margin-top:4px;font-size:11px">{{ member.email }} · {{ member.activity }}</div></div><sc-if value="{{ member.isYou }}" hint-placeholder-val="{{ false }}"><select class="hf-settings-control" style="min-width:120px;max-width:150px;padding:7px 9px" value="{{ member.roleValue }}" onChange="{{ member.onRoleChange }}"><option value="admin">Admin</option><option value="editor">Editeur</option><option value="viewer">Lecteur</option></select></sc-if><sc-if value="{{ member.isYou }}" hint-placeholder-val="{{ true }}"><span class="hf-settings-badge">{{ member.role }}</span></sc-if></div></sc-for><sc-if value="{{ noPending }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune invitation en attente.</div></sc-if><sc-for list="{{ pendingInvites }}" as="pending" hint-placeholder-count="3"><div class="hf-settings-table-row"><span>{{ pending.email }}</span><button class="hf-settings-secondary" onClick="{{ pending.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Accès au projet actif</div><div style="margin-top:4px;font-size:11px;color:#898A8B">{{ projectAccessCount }} autorisation(s) configurée(s) pour ce projet.</div></div><span class="hf-settings-badge">Contrôlé</span></div><sc-if value="{{ projectAccessEmpty }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucun accès projet explicite. Les membres gardent uniquement leur rôle d’équipe.</div></sc-if><sc-for list="{{ projectAccessCards }}" as="grant" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ grant.memberLabel }}</div><div style="margin-top:4px;color:#898A8B;font-size:10.5px">{{ grant.role }} · {{ grant.permissions }}</div></div><button class="hf-settings-secondary hf-settings-danger" onClick="{{ grant.onRevoke }}">Révoquer</button></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:700">Approbations de publication</div><div style="margin-top:4px;font-size:11px;color:#898A8B">Les artifacts peuvent être validés avant diffusion.</div></div><span class="hf-settings-badge">{{ approvalPendingCount }} en attente</span></div><sc-if value="{{ approvalEmpty }}" hint-placeholder-val="{{ true }}"><div class="hf-settings-empty">Aucune demande d’approbation en attente.</div></sc-if><sc-for list="{{ approvalCards }}" as="approval" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ approval.label }}</div><div style="margin-top:4px;color:#898A8B;font-size:10.5px">{{ approval.meta }} · {{ approval.status }}</div></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ approval.onReject }}">Refuser</button><button class="hf-settings-primary" onClick="{{ approval.onApprove }}">Approuver</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowApi }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>API</h3><p>Crée des clés personnelles pour connecter HuggyFlow à tes outils.</p></div><button class="hf-settings-primary" onClick="{{ createKey }}">Nouvelle clé</button></div>
-              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div><div style="margin-top:5px;font-size:11px;color:{{ key.expiryStyle }}">{{ key.scopesLabel }} · {{ key.expiryLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hf-settings-secondary" onClick="{{ key.onRotate }}">Renouveler</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></div></sc-for></div>
+              <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Limite quotidienne</div><div class="hf-settings-row-hint">Appliquée à chaque nouvelle clé et rotation pour éviter les abus.</div></div><div class="hf-settings-action-row"><input class="hf-settings-control" style="width:104px" type="number" min="1" max="100000" value="{{ apiKeyDailyLimit }}" onChange="{{ onApiKeyDailyLimit }}"/><span style="color:#898A8B;font-size:11px">requêtes</span></div></div></div>
+              <div class="hf-settings-card"><sc-if value="{{ apiCreatedKey }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 18px;border-bottom:1px solid rgba(247,247,248,.07);color:#D1FE17;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">Copie cette clé maintenant : <code style="font-family:monospace;color:#F7F7F8">{{ apiCreatedKey }}</code><button class="hf-settings-secondary" onClick="{{ copyApiCreatedKey }}">Copier</button></div></sc-if><sc-if value="{{ apiEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune clé active. Crée ta première clé pour commencer.</div></sc-if><sc-for list="{{ apiKeys }}" as="key" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ key.name }}</div><div style="margin-top:4px;font-family:monospace;font-size:11px">{{ key.masked }} · créée {{ key.created }}</div><div style="margin-top:5px;font-size:11px;color:{{ key.expiryStyle }}">{{ key.scopesLabel }} · {{ key.expiryLabel }} · {{ key.dailyLimitLabel }}</div><div style="margin-top:4px;font-size:10px;color:#898A8B">{{ key.usageLabel }}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hf-settings-secondary" onClick="{{ key.onRotate }}">Renouveler</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ key.onRevoke }}">Révoquer</button></div></div></sc-for></div>
             </sc-if>
 
             <sc-if value="{{ modalShowStats }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>Utilisation</h3><p>Une vue claire de tes créations et de tes crédits réellement consommés.</p></div><div style="display:flex;gap:6px"><sc-for list="{{ statsTabs }}" as="tab" hint-placeholder-count="3"><button class="hf-settings-secondary" onClick="{{ tab.onClick }}">{{ tab.label }}</button></sc-for></div></div>
               <div class="hf-settings-metric-grid"><sc-for list="{{ statCards }}" as="stat" hint-placeholder-count="4"><div class="hf-settings-metric"><div class="hf-settings-metric-label">{{ stat.label }}</div><div class="hf-settings-metric-value">{{ stat.value }}</div><div style="margin-top:7px;color:#898A8B;font-size:11px">{{ stat.delta }}</div></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-section-head" style="margin-bottom:0"><div><div class="hf-settings-row-label">Prévision et alertes</div><div class="hf-settings-row-hint">Anticipe ta consommation à partir des créations réellement enregistrées.</div></div><button class="hf-settings-secondary" onClick="{{ exportUsage }}">Exporter CSV</button></div><div class="hf-settings-metric-grid" style="margin-top:14px"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Moyenne quotidienne</div><div class="hf-settings-metric-value">{{ usageDailyAverage }} cr</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Projection 30 jours</div><div class="hf-settings-metric-value">{{ usageForecast }} cr</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits restants</div><div class="hf-settings-metric-value">{{ usageRemaining }}</div></div></div><div class="hf-settings-row" style="margin-top:14px"><div><div class="hf-settings-row-label">Alerte de consommation</div><div class="hf-settings-row-hint">Préviens-moi lorsque l’usage atteint ce seuil du quota.</div></div><div class="hf-settings-action-row"><input class="hf-settings-control" style="width:82px" type="number" min="1" max="100" value="{{ usageThreshold }}" onChange="{{ onUsageThreshold }}"/><span style="color:#898A8B;font-size:12px">%</span><button class="hf-settings-primary" onClick="{{ saveUsageAlert }}">Enregistrer</button></div></div></div>
               <div class="hf-settings-card"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Consommation par modèle</span></div><sc-if value="{{ modelUsageEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les données apparaîtront après tes premières créations.</div></sc-if><sc-for list="{{ modelUsage }}" as="model" hint-placeholder-count="6"><div class="hf-settings-table-row"><span>{{ model.name }}</span><span style="color:#D1FE17">{{ model.credits }}</span></div></sc-for></div>
             </sc-if>
 
@@ -1926,7 +2031,29 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </sc-if>
 
             <sc-if value="{{ modalShowConnectors }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Connecteurs</h3><p>Relie les outils de ton équipe aux workflows HuggyFlow.</p></div></div><div data-agentflow-island="connectors"></div><div class="hf-settings-card" style="margin-top:14px"><sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Les connecteurs disponibles apparaîtront ici.</div></sc-if><sc-for list="{{ connectorCards }}" as="connector" hint-placeholder-count="6"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ connector.label }}</div><div style="margin-top:4px;font-size:11px">{{ connector.statusLabel }} · {{ connector.syncLabel }}</div><div style="margin-top:4px;font-size:10.5px;color:#898A8B">{{ connector.lastSync }}</div><sc-if value="{{ connector.lastError }}" hint-placeholder-val="{{ false }}"><div style="margin-top:5px;color:#E58C72;font-size:10.5px">{{ connector.lastError }}</div></sc-if></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hf-settings-secondary" onClick="{{ connector.onConfigure }}">{{ connector.buttonLabel }}</button><sc-if value="{{ connector.showTest }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary" onClick="{{ connector.onTest }}">Tester</button></sc-if><sc-if value="{{ connector.showDisconnect }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connector.onDisconnect }}">Déconnecter</button></sc-if></div></div></sc-for></div>
+              <sc-if value="{{ connectorListVisible }}" hint-placeholder-val="{{ true }}">
+                <div class="hf-connectors-toolbar">
+                  <div><div class="hf-settings-section-head" style="margin-bottom:0"><div><h3>Connecteurs</h3><p>Relie tes outils aux workflows HuggyFlow avec des autorisations explicites.</p></div></div></div>
+                  <div class="hf-connectors-toolbar-actions"><button class="hf-settings-secondary" onClick="{{ refreshConnectors }}" title="Actualiser les connecteurs" aria-label="Actualiser les connecteurs"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0 2 5"></path><path d="M20 4v7h-7"></path></svg></button><select class="hf-connectors-sort" value="{{ connectorSort }}" onChange="{{ onConnectorSort }}" aria-label="Trier les connecteurs"><option value="popular">Populaires</option><option value="status">Connectés d’abord</option><option value="name">Nom</option></select></div>
+                </div>
+                <div class="hf-connectors-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16.5" y2="16.5"></line></svg><input value="{{ connectorSearch }}" onChange="{{ onConnectorSearch }}" placeholder="Rechercher un connecteur…" aria-label="Rechercher un connecteur" autocomplete="off"/></div>
+                <sc-if value="{{ connectorLoadingEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connectors-grid"><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div></div></sc-if>
+                <sc-if value="{{ connectorsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-empty"><div class="hf-connector-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><path d="M8.2 7.2l7.5 3.5M8.2 16.8l7.5-3.5"></path></svg></div><div>Aucun connecteur ne correspond à ta recherche.</div><button class="hf-settings-secondary" onClick="{{ clearConnectorSearch }}">Réinitialiser la recherche</button></div></sc-if>
+                <div class="hf-connectors-grid"><sc-for list="{{ connectorList }}" as="connector" hint-placeholder-count="8"><div class="hf-connector-card" role="button" tabindex="0" onClick="{{ connector.onOpen }}" onKeyDown="{{ connector.onKeyDown }}" title="Ouvrir {{ connector.name }}" style-hover="border-color:rgba(209,254,23,.34);transform:translateY(-2px)"><div class="hf-connector-card-top"><div class="hf-connector-logo" style="background:{{ connector.bg }};color:#131517">{{ connector.glyph }}</div><div class="hf-connector-availability" title="{{ connector.availabilityLabel }}"><span style="background:{{ connector.dotColor }}"></span>{{ connector.availabilityLabel }}</div></div><div class="hf-connector-card-body"><div class="hf-connector-card-title">{{ connector.name }}<sc-if value="{{ connector.isNew }}" hint-placeholder-val="{{ false }}"><span class="hf-connector-new">Nouveau</span></sc-if></div><div class="hf-connector-card-desc">{{ connector.desc }}</div></div><div class="hf-connector-card-footer"><span class="hf-settings-status {{ connector.statusClass }}">{{ connector.statusLabel }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div></sc-for></div>
+              </sc-if>
+
+              <sc-if value="{{ connectorDetailVisible }}" hint-placeholder-val="{{ false }}">
+                <div class="hf-connector-detail-head"><button class="hf-connector-back" onClick="{{ closeConnectorDetail }}" title="Retour aux connecteurs" aria-label="Retour aux connecteurs"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button><div class="hf-connector-breadcrumb"><span>Connecteurs</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg><strong>{{ selectedConnector.name }}</strong></div><button class="hf-settings-close" onClick="{{ closeSettings }}" title="Fermer les paramètres" aria-label="Fermer les paramètres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+                <div class="hf-connector-hero"><div class="hf-connector-logo hf-connector-logo-large" style="background:{{ selectedConnector.bg }};color:#131517">{{ selectedConnector.glyph }}</div><div style="min-width:0;flex:1"><div class="hf-connector-hero-title">{{ selectedConnector.name }}</div><div class="hf-connector-hero-subtitle">{{ selectedConnector.statusLabel }} · {{ selectedConnector.availabilityLabel }}</div></div><span class="hf-settings-status {{ selectedConnector.statusClass }}">{{ selectedConnector.statusLabel }}</span></div>
+                <section class="hf-connector-section"><h3>Présentation</h3><p>{{ selectedConnector.desc }} HuggyFlow demande uniquement les permissions nécessaires et chiffre les identifiants côté serveur.</p></section>
+                <section class="hf-connector-section"><div class="hf-connector-section-heading"><div><h3>Connexions</h3><p>Crée et gère les connexions à {{ selectedConnector.name }}.</p></div><div class="hf-connector-add-wrap"><button class="hf-settings-primary" onClick="{{ toggleConnectorAddMenu }}" disabled="{{ connectorDetailBusy }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span>{{ connectorDetailAddLabel }}</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button><sc-if value="{{ connectorAddMenuOpen }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-add-menu"><button onClick="{{ connectSelectedConnector }}" disabled="{{ connectorDetailConnectDisabled }}"><span class="hf-connector-menu-dot"></span><span>OAuth sécurisé<small>{{ connectorAddOptionLabel }}</small></span></button><div class="hf-connector-menu-note">Les secrets ne sont jamais enregistrés dans le navigateur.</div></div></sc-if></div></div>
+                  <sc-if value="{{ connectorDetailEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-detail-empty"><div class="hf-connector-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l2.5 2.5"></path></svg></div><strong>Aucune connexion trouvée</strong><span>Ajoute une connexion pour autoriser HuggyFlow à utiliser ce service.</span><button class="hf-settings-primary" onClick="{{ connectorDetailConnect }}" disabled="{{ connectorDetailConnectDisabled }}"><span>{{ connectorDetailConnectLabel }}</span></button></div></sc-if>
+                  <sc-for list="{{ connectorDetailConnections }}" as="connection" hint-placeholder-count="1"><div class="hf-connector-connection-card"><div><div class="hf-connector-connection-name">{{ connectorDetailConnectionName }}</div><div class="hf-connector-connection-meta">{{ connectorDetailConnectedAt }} · {{ connectorDetailPermissionLabel }}</div><div class="hf-connector-connection-meta">{{ connectorDetailLastSync }}</div></div><div class="hf-connector-action-row"><button class="hf-settings-secondary" onClick="{{ connectorDetailTest }}" disabled="{{ connectorDetailBusy }}">Tester</button><button class="hf-settings-secondary" onClick="{{ connectorDetailSync }}" disabled="{{ connectorDetailBusy }}">Synchroniser</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ connectorDetailDisconnect }}" disabled="{{ connectorDetailBusy }}">Déconnecter</button></div></div></sc-for>
+                </section>
+                <section class="hf-connector-section"><div class="hf-connector-section-heading"><div><h3>Fonctionnalités</h3><p>Ce que HuggyFlow peut faire dépend des autorisations accordées.</p></div><span class="hf-settings-badge">{{ connectorDetailFeatureLabel }}</span></div><div class="hf-connector-feature-card"><div class="hf-connector-feature-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"></path></svg></div><div><strong>Accès contrôlé au service</strong><p>{{ connectorDetailFeatureText }}</p></div></div></section>
+                <sc-if value="{{ connectorInfoOpen }}" hint-placeholder-val="{{ false }}"><div class="hf-connector-info-panel"><button class="hf-connector-info-close" onClick="{{ closeConnectorInfo }}" title="Fermer les informations" aria-label="Fermer les informations"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"></path></svg></button><sc-if value="{{ connectorInfoDocs }}" hint-placeholder-val="{{ false }}"><h4>Guide de connexion</h4><p>Connecte {{ selectedConnector.name }} en quelques étapes, puis utilise-le uniquement dans les workflows autorisés.</p><ul><li>Clique sur « Ajouter une connexion ».</li><li>Autorise les permissions affichées par le fournisseur.</li><li>Reviens dans HuggyFlow pour tester ou synchroniser.</li></ul></sc-if><sc-if value="{{ connectorInfoSecurity }}" hint-placeholder-val="{{ false }}"><h4>Sécurité et permissions</h4><p>Les secrets OAuth sont échangés côté serveur et chiffrés dans le coffre HuggyFlow. Ils ne sont jamais affichés ni enregistrés dans ton navigateur.</p><ul><li>Les permissions sont limitées au connecteur sélectionné.</li><li>Le bouton « Déconnecter » supprime la connexion et les secrets associés.</li><li>Une session expirée peut être reconnectée sans exposer tes identifiants.</li></ul></sc-if></div></sc-if>
+                <footer class="hf-connector-details"><div><span>Documentation</span><button class="hf-connector-footer-action" onClick="{{ openConnectorDocs }}" title="Ouvrir le guide de connexion">Guide HuggyFlow ↗</button></div><div><span>Sécurité</span><button class="hf-connector-footer-action" onClick="{{ openConnectorSecurity }}" title="Voir les garanties de sécurité">OAuth et coffre chiffré ↗</button></div><div><span>Statut</span><strong>{{ selectedConnector.availabilityLabel }}</strong></div></footer>
+              </sc-if>
             </sc-if>
 
             <sc-if value="{{ modalShowPlugins }}" hint-placeholder-val="{{ false }}">
@@ -2400,6 +2527,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                     <button onClick="{{ g.onRecreate }}" title="Recréer" style="width:28px;height:28px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                     </button>
+                    <sc-if value="{{ g.canPublish }}" hint-placeholder-val="{{ false }}"><button onClick="{{ g.onPublish }}" title="Publier dans Explorer" style="width:28px;height:28px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(209,254,23,.12);color:#D1FE17">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M5 20h14"></path></svg>
+                      </button></sc-if>
                   </div>
                 </div>
               </div>
@@ -2409,6 +2539,50 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 
         <sc-if value="{{ galleryEmpty }}" hint-placeholder-val="{{ false }}">
           <div style="text-align:center;padding:70px 0;color:{{ tText4 }};font-size:14px"><div>Aucune création dans cette catégorie pour l'instant.</div><button onClick="{{ newProject }}" style="margin-top:14px;padding:9px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Créer la première</button></div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showExplore }}" hint-placeholder-val="{{ false }}">
+    <div class="hf-explore-shell" data-screen-label="Explorer public" style="--hf-content-inset:{{ contentInset }};--hf-page-bg:{{ tPageBg }};--hf-ink:{{ tInk }};--hf-muted:{{ tText3 }}">
+      <div class="hf-explore-inner">
+        <sc-if value="{{ exploreHasActive }}" hint-placeholder-val="{{ false }}">
+          <div class="hf-explore-viewer">
+            <div class="hf-explore-stage">
+              <button class="hf-explore-stage-close" onClick="{{ closeExploreItem }}" title="Fermer" aria-label="Fermer">×</button>
+              <button class="hf-explore-stage-arrow prev" onClick="{{ explorePrevious }}" title="Projet précédent" aria-label="Projet précédent">‹</button>
+              <sc-if value="{{ exploreActiveIsVideo }}" hint-placeholder-val="{{ false }}"><video class="hf-explore-stage-media" src="{{ exploreActiveUrl }}" controls playsinline preload="metadata"></video></sc-if>
+              <sc-if value="{{ exploreActiveIsImage }}" hint-placeholder-val="{{ true }}"><img class="hf-explore-stage-media" src="{{ exploreActiveUrl }}" alt="{{ exploreActiveTitle }}" loading="eager" decoding="async"/></sc-if>
+              <sc-if value="{{ exploreActiveIsAudio }}" hint-placeholder-val="{{ false }}"><div style="width:min(420px,100%);padding:42px 24px;border-radius:16px;background:linear-gradient(145deg,#272d2c,#131517);text-align:center;color:#F7F7F8"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M6 6v12"></path><path d="M18 6v12"></path><path d="M3 9v6"></path><path d="M21 9v6"></path></svg><div style="margin-top:18px;font-size:16px;font-weight:700">{{ exploreActiveTitle }}</div><audio src="{{ exploreActiveUrl }}" controls style="width:100%;margin-top:20px"></audio></div></sc-if>
+              <button class="hf-explore-stage-arrow next" onClick="{{ exploreNext }}" title="Projet suivant" aria-label="Projet suivant">›</button>
+              <div class="hf-explore-thumbs">
+                <sc-for list="{{ exploreThumbs }}" as="thumb" hint-placeholder-count="6">
+                  <button class="hf-explore-thumb-button {{ thumb.activeClass }}" onClick="{{ thumb.onOpen }}" title="{{ thumb.title }}" aria-label="{{ thumb.title }}"><sc-if value="{{ thumb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ thumb.url }}" muted preload="metadata"></video></sc-if><sc-if value="{{ thumb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ thumb.url }}" alt="" loading="lazy" decoding="async"/></sc-if></button>
+                </sc-for>
+              </div>
+            </div>
+            <aside class="hf-explore-details">
+              <div class="hf-explore-detail-head">
+                <div class="hf-explore-creator"><div class="hf-explore-avatar">{{ exploreActiveInitials }}</div><div style="min-width:0"><div class="hf-explore-creator-name">{{ exploreActiveCreator }}</div><div class="hf-explore-creator-label">Création publique · {{ exploreActiveDate }}</div></div></div>
+                <button class="hf-explore-icon-button" onClick="{{ shareExploreItem }}" title="Partager" aria-label="Partager"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"></line><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"></line></svg></button>
+              </div>
+              <h1 class="hf-explore-detail-title">{{ exploreActiveTitle }}</h1>
+              <div class="hf-explore-detail-description">{{ exploreActiveDescription }}</div>
+              <div class="hf-explore-prompt">{{ exploreActivePrompt }}</div>
+              <div class="hf-explore-chips"><span class="hf-explore-chip">✦ {{ exploreActiveModel }}</span><span class="hf-explore-chip">▣ {{ exploreActiveRatio }}</span><span class="hf-explore-chip">◷ {{ exploreActiveDuration }}</span><sc-if value="{{ exploreActiveHasAudio }}" hint-placeholder-val="{{ false }}"><span class="hf-explore-chip">◖ Audio</span></sc-if></div>
+              <div class="hf-explore-detail-stats"><div class="hf-explore-stat">{{ exploreActiveLikes }}<small>Réactions</small></div><div class="hf-explore-stat">{{ exploreActiveRemixes }}<small>Remixes</small></div><div class="hf-explore-stat">{{ exploreActiveSaves }}<small>Enregistrements</small></div></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:14px"><button class="hf-explore-secondary-action" onClick="{{ toggleExploreLike }}" title="Réagir" aria-label="Réagir">{{ exploreActiveLiked ? '♥' : '♡' }}</button><button class="hf-explore-secondary-action" onClick="{{ toggleExploreSave }}" title="Enregistrer" aria-label="Enregistrer">{{ exploreActiveSaved ? '★' : '☆' }}</button><button class="hf-explore-secondary-action" onClick="{{ shareExploreItem }}" title="Partager" aria-label="Partager"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"></line><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"></line></svg></button></div>
+              <div class="hf-explore-action-row"><button class="hf-explore-primary-action" onClick="{{ remixExploreItem }}">Remixer cette création</button><button class="hf-explore-secondary-action" onClick="{{ reportExploreItem }}" title="Signaler" aria-label="Signaler">⋯</button></div>
+            </aside>
+          </div>
+        </sc-if>
+        <sc-if value="{{ exploreListVisible }}" hint-placeholder-val="{{ true }}">
+          <div class="hf-explore-heading"><div><div class="hf-explore-kicker"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.4 15.6l2-4.9 4.9-2-2 4.9-4.9 2z"></path></svg> Galerie publique</div><div class="hf-explore-title">Explorer</div><div class="hf-explore-subtitle">Découvre des créations publiques, enregistre les idées qui t’inspirent et remixe les workflows qui peuvent accélérer ton prochain projet.</div></div><button class="hf-explore-icon-button" onClick="{{ refreshExplore }}" title="Actualiser" aria-label="Actualiser"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.9-4L3 9"></path><path d="M3 4v5h5"></path><path d="M4 13a8 8 0 0 0 14.9 4L21 15"></path><path d="M21 20v-5h-5"></path></svg></button></div>
+          <div class="hf-explore-toolbar"><label class="hf-explore-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input value="{{ exploreSearch }}" onChange="{{ onExploreSearch }}" placeholder="Rechercher une création, un style ou un modèle" aria-label="Rechercher dans Explorer"/></label><select class="hf-explore-sort" value="{{ exploreSort }}" onChange="{{ onExploreSort }}" aria-label="Trier Explorer"><option value="trending">Tendances</option><option value="new">Nouveautés</option><option value="remixed">Plus remixés</option><option value="saved">Plus enregistrés</option></select></div>
+          <sc-if value="{{ exploreLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-explore-card-grid"><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div></div></sc-if>
+          <sc-if value="{{ exploreEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-explore-empty">Aucune création publique ne correspond à ta recherche.<br/><span style="color:#D1FE17">Essaie un autre mot ou reviens plus tard.</span></div></sc-if>
+          <sc-if value="{{ exploreHasItems }}" hint-placeholder-val="{{ true }}"><div class="hf-explore-card-grid"><sc-for list="{{ exploreCards }}" as="item" hint-placeholder-count="6"><article class="hf-explore-card" tabindex="0" onClick="{{ item.onOpen }}" onKeyDown="{{ item.onKeyDown }}"><div class="hf-explore-thumb"><span class="hf-explore-type">{{ item.typeLabel }}</span><sc-if value="{{ item.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ item.url }}" muted loop playsinline preload="metadata"></video></sc-if><sc-if value="{{ item.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ item.url }}" alt="{{ item.title }}" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ item.isAudio }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(140deg,#26312c,#151817);color:#D1FE17"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2v20"></path><path d="M6 6v12"></path><path d="M18 6v12"></path><path d="M3 9v6"></path><path d="M21 9v6"></path></svg></div></sc-if></div><div class="hf-explore-card-body"><div class="hf-explore-card-title">{{ item.title }}</div><div class="hf-explore-card-meta"><span class="hf-explore-card-creator">{{ item.creator }}</span><span class="hf-explore-card-stats">♥ {{ item.likes }} · ↗ {{ item.remixes }}</span></div></div></article></sc-for></div></sc-if>
         </sc-if>
       </div>
     </div>
@@ -2666,6 +2840,7 @@ class Component extends DCLogic {
     if(route === 'pricing') return { page:'pricing', requiresAuth:false };
     if(route === 'auth' || route === 'login' || route === 'signup') return { page:'auth', requiresAuth:false };
     if(route === 'gallery') return { page:'gallery', requiresAuth:true };
+    if(route === 'explore') return { page:'explore', exploreId:parts[1] ? decodeURIComponent(parts.slice(1).join('/')) : '', requiresAuth:false };
     if(route === 'affiliate') return { page:'affiliate', requiresAuth:true };
     if(route === 'onboarding') return { page:'onboarding', requiresAuth:true };
     if(route === 'admin') return { page:'admin', requiresAuth:true };
@@ -2685,6 +2860,7 @@ class Component extends DCLogic {
     if(page === 'pricing') return '/pricing';
     if(page === 'auth') return '/auth';
     if(page === 'gallery') return '/gallery';
+    if(page === 'explore') return '/explore' + (this.state && this.state.exploreActiveId ? '/' + encodeURIComponent(this.state.exploreActiveId) : '');
     if(page === 'affiliate') return '/affiliate';
     if(page === 'onboarding') return '/onboarding';
     if(page === 'admin') return '/admin';
@@ -2704,18 +2880,22 @@ class Component extends DCLogic {
 
   applyDocumentMetadata(){
     if(typeof document === 'undefined') return;
-    const publicPage = ['app','pricing','auth'].includes(this.state.page);
+    const publicPage = ['app','pricing','auth','explore'].includes(this.state.page);
     const title = this.state.page === 'pricing' ? 'Tarifs | HuggyFlow' : this.state.page === 'auth' ? 'Connexion | HuggyFlow' : 'HuggyFlow | Création multimédia par IA';
     const description = this.state.page === 'pricing' ? 'Découvre les offres HuggyFlow pour produire des créations multimédia avec l’IA.' : this.state.page === 'auth' ? 'Connecte-toi à HuggyFlow pour retrouver tes projets et créations.' : 'HuggyFlow transforme une intention en images, vidéos, documents et campagnes créatives vérifiées.';
-    document.title = title;
+    const metadataTitle = this.state.page === 'explore' ? 'Explorer | HuggyFlow' : title;
+    const safeMetadataDescription = this.state.page === 'explore' ? 'Decouvre, partage et remixe les creations publiques de la communaute HuggyFlow.' : description;
+    const metadataDescription = this.state.page === 'explore' ? 'DÃ©couvre, partage et remixe les crÃ©ations publiques de la communautÃ© HuggyFlow.' : description;
+    const metadataPath = this.state.page === 'explore' ? '/explore' : (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/');
+    document.title = metadataTitle;
     const setMeta = (selector, attrs) => { let node = document.head.querySelector(selector); if(!node){ node = document.createElement('meta'); document.head.appendChild(node); } Object.keys(attrs).forEach(key=>node.setAttribute(key, attrs[key])); };
-    setMeta('meta[name="description"]', { name:'description', content:description });
+    setMeta('meta[name="description"]', { name:'description', content:safeMetadataDescription });
     setMeta('meta[name="robots"]', { name:'robots', content:publicPage ? 'index,follow,max-image-preview:large' : 'noindex,nofollow,noarchive' });
     let canonical = document.head.querySelector('link[rel="canonical"]');
     if(!canonical){ canonical = document.createElement('link'); canonical.rel='canonical'; document.head.appendChild(canonical); }
-    canonical.href = 'https://www.huggyflow.fun' + (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/');
+    canonical.href = 'https://www.huggyflow.fun' + metadataPath;
     const structured = document.head.querySelector('#hf-structured-data');
-    if(structured) structured.textContent = JSON.stringify({ '@context':'https://schema.org', '@type':this.state.page === 'pricing' || this.state.page === 'auth' ? 'WebPage' : 'SoftwareApplication', name:title.replace(' | HuggyFlow',''), url:'https://www.huggyflow.fun' + (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/'), description, isPartOf:{ '@type':'WebSite', name:'HuggyFlow', url:'https://www.huggyflow.fun/' } });
+    if(structured) structured.textContent = JSON.stringify({ '@context':'https://schema.org', '@type':this.state.page === 'pricing' || this.state.page === 'auth' || this.state.page === 'explore' ? 'WebPage' : 'SoftwareApplication', name:metadataTitle.replace(' | HuggyFlow',''), url:'https://www.huggyflow.fun' + metadataPath, description:safeMetadataDescription, isPartOf:{ '@type':'WebSite', name:'HuggyFlow', url:'https://www.huggyflow.fun/' } });
   }
 
   initialAuthSession = this.storedAuthSession();
@@ -2746,6 +2926,7 @@ class Component extends DCLogic {
     billing: this.initialUiState.billing || 'annual',
     segment: this.initialUiState.segment || 'solo',
     faqOpen: 0,
+    exploreItems: [], exploreLoading: false, exploreSort: this.initialUiState.exploreSort || 'trending', exploreSearch: '', exploreActiveId: this.initialRoute.exploreId || '', exploreNewDismissed: this.initialUiState.exploreNewDismissed === true, exploreLikedIds: {}, exploreSavedIds: {},
     authMode: 'login',
     authName: '', authEmail: '', authPassword: '',
     authStatus: '',
@@ -2775,7 +2956,9 @@ class Component extends DCLogic {
     creditLowNotified: false,
     toast: '',
     backgroundTasks: [], workflowTasks: [], backgroundTaskPanelOpen: false, backgroundTaskUnread: false,
-    memoryItems: [], memoryLoading: false,
+    memoryItems: [], memoryConflicts: [], memoryLoading: false,
+    securitySessions: [], securityEvents: [], securityLoading: false,
+    usageData: null, usageLoading: false, usageThreshold: 80, usageAlertEnabled: true,
     checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
@@ -2802,6 +2985,7 @@ class Component extends DCLogic {
     activeArtifact: null,
     artifactPreviewUrl: '',
     artifactVersions: [],
+    artifactCompare: null, artifactCompareVersionId: '',
     artifactComments: [],
     artifactCommentsLoading: false,
     artifactCommentDraft: '',
@@ -2824,8 +3008,8 @@ class Component extends DCLogic {
     settingsDraftRestored: false, settingsLastSavedSnapshot: null, settingsOffline: false,
     brandKits: [], brandName: '', brandDescription: '', brandSaving: false,
     creativeTemplates: [], templatesLoading: false, capabilitiesRefreshing: false,
-    integrationConnections: [], integrationsLoading: false, tfa: false, mfaFactors: [], mfaSetup: null, mfaCode: '', mfaLoading: false,
-    apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90,
+    integrationConnections: [], integrationsLoading: false, connectorSearch: '', connectorSort: 'popular', selectedConnectorId: '', connectorDetailOpen: false, connectorAddMenuOpen: false, connectorInfoPanel: '', connectorBusyProvider: '', tfa: false, mfaFactors: [], mfaSetup: null, mfaCode: '', mfaLoading: false, recoveryCodes: [],
+    apiKeyScopes: ['chat','generate'], apiKeyExpirationDays: 90, apiKeyDailyLimit: 1000,
     feedbackMessage: '', feedbackKind: 'feedback', feedbackSending: false,
     accountDeletionOpen: false, accountDeletionConfirmation: '', accountDeleting: false,
     adminData: null, adminLoading: false, adminError: ''
@@ -3553,7 +3737,7 @@ class Component extends DCLogic {
     const next = Object.assign({}, artifact, { version });
     this.prepareArtifactEditor(next);
     this.buildArtifactPreview(next);
-    this.setState({ artifactView:'preview' });
+    this.setState({ artifactView:'preview', artifactCompareVersionId:version.id || version.number });
   }
   async saveArtifactVersion(){
     const artifact = this.state.activeArtifact;
@@ -3638,6 +3822,12 @@ class Component extends DCLogic {
     const artifact = this.state.activeArtifact;
     if(!artifact || !artifact.id) return;
     this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'share', artifactId:artifact.id }) }).then(r=>r.json()).then(data=>{ if(data.artifact){ this.setActiveArtifact(this.normalizeArtifact(data.artifact)); this.setState(s=>({ artifactItems:(s.artifactItems || []).map(a=>a.id === data.artifact.id ? this.normalizeArtifact(data.artifact) : a) })); if(data.shareUrl && navigator.clipboard) navigator.clipboard.writeText(data.shareUrl).catch(()=>{}); this.notify('Artifact publie. Le lien a ete copie.'); } }).catch(()=>this.notify('Publication impossible pour le moment.'));
+  }
+  requestArtifactApproval(){
+    const artifact=this.state.activeArtifact;
+    const projectId=this.state.activeProjectId;
+    if(!artifact || !artifact.id || !projectId || projectId === 'welcome') return this.notify('Ouvre un projet pour demander une approbation.');
+    this.apiFetch('/api/team',{method:'POST',body:JSON.stringify({action:'request_approval',projectId,artifactId:artifact.id})}).then(res=>{ if(!res.ok) throw new Error('approval'); this.notify('Demande d approbation envoyée.'); }).catch(()=>this.notify('Impossible de demander une approbation.'));
   }
   copyActiveArtifact(){
     const artifact = this.state.activeArtifact;
@@ -3763,6 +3953,19 @@ class Component extends DCLogic {
       body:JSON.stringify({ code, sessionId:(typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : '', landingPath:window.location.pathname })
     }).catch(()=>{});
   }
+  consumeOAuthReturnNotice(){
+    if(typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const provider = params.get('oauth_connected');
+    const error = params.get('oauth_error');
+    if(!provider && !error) return;
+    const cleanUrl = window.location.pathname + (window.location.hash || '');
+    window.history.replaceState({}, document.title, cleanUrl);
+    setTimeout(()=>{
+      if(provider) this.notify('Connecteur ' + this.connectorDisplayName(provider) + ' connecté.');
+      if(error) this.notify('Connexion annulée : ' + String(error).slice(0, 120));
+    }, 180);
+  }
   componentDidMount(){
     this.chatShouldStick = true;
     this.routePopstate = ()=>{
@@ -3772,7 +3975,7 @@ class Component extends DCLogic {
         return;
       }
       this.restoringRoute = true;
-      this.setState({ page:next.page || 'app', modelMenu:false }, ()=>{
+      this.setState({ page:next.page || 'app', exploreActiveId:next.exploreId || '', modelMenu:false }, ()=>{
         this.restoringRoute = false;
         this.applyDocumentMetadata();
       });
@@ -3824,6 +4027,7 @@ class Component extends DCLogic {
     }
     if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
     this.trackAffiliateReferral();
+    this.consumeOAuthReturnNotice();
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -3831,6 +4035,7 @@ class Component extends DCLogic {
     }, 3000);
     this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
     this.loadPublicArtifactFromUrl();
+    if(this.state.page === 'explore') this.loadExploreFeed();
     this.restoreAuthSession();
     if(this.state.authToken) this.loadMfa();
     this.syncChatInputSize();
@@ -3853,6 +4058,7 @@ class Component extends DCLogic {
     clearTimeout(this.persistTimer);
     clearTimeout(this.bootstrapTimer);
     clearTimeout(this.toastTimer);
+    clearTimeout(this.settingsHopTimer);
     this.persistUiState();
     if(this.chatAbort) this.chatAbort.abort();
     if(this.activeAudio) this.activeAudio.pause();
@@ -3865,12 +4071,12 @@ class Component extends DCLogic {
     if(typeof document !== 'undefined' && prevState.theme !== this.state.theme){
       document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
     }
-    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','exploreSort','exploreNewDismissed','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
     const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>prevState[key] !== this.state[key]);
     if(studioChanged) this.rememberStudioContext();
-    if(prevState.messages !== this.state.messages || prevState.sendLocked !== this.state.sendLocked){
+    if(prevState.messages !== this.state.messages){
       if(this.chatShouldStick !== false) this.scrollChatToBottom();
       else if(!this.state.chatUnread) this.setState({ chatUnread:true });
     }
@@ -3880,9 +4086,11 @@ class Component extends DCLogic {
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
       if(this.state.page === 'capabilities') this.loadBrands();
-      if(this.state.page === 'account') this.loadMfa();
+      if(this.state.page === 'account'){ this.loadMfa(); this.loadSecurity(); }
+      if(this.state.page === 'stats') this.loadUsage();
       if(this.state.page === 'skills') this.loadTemplates();
       if(this.state.page === 'connectors') this.loadIntegrations();
+      if(this.state.page === 'explore') this.loadExploreFeed();
     }
     if(prevState.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
@@ -3916,6 +4124,8 @@ class Component extends DCLogic {
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         creationsExpanded:this.state.creationsExpanded !== false,
         projectsExpanded:this.state.projectsExpanded !== false,
+        exploreSort:this.state.exploreSort || 'trending',
+        exploreNewDismissed:this.state.exploreNewDismissed === true,
         studioContextByProject:this.state.studioContextByProject || {},
         studioPanelOpen:!!this.state.studioPanelOpen,
         studioTab:this.state.studioTab || 'media',
@@ -4011,8 +4221,8 @@ class Component extends DCLogic {
       if(target === 'billing') this.loadBillingStatus();
       if(target === 'team') this.loadTeam();
       if(target === 'api') this.loadApiKeys();
-      if(target === 'stats') this.loadStats();
-      if(target === 'account') this.loadMfa();
+      if(target === 'stats'){ this.loadStats(); this.loadUsage(); }
+      if(target === 'account'){ this.loadMfa(); this.loadSecurity(); }
       if(target === 'privacy') this.loadAgentMemory();
       if(target === 'capabilities') this.loadBrands();
       if(target === 'skills') this.loadTemplates();
@@ -4029,13 +4239,17 @@ class Component extends DCLogic {
       if(section === 'billing') this.loadBillingStatus();
       if(section === 'team') this.loadTeam();
       if(section === 'api') this.loadApiKeys();
-      if(section === 'stats') this.loadStats();
-      if(section === 'account') this.loadMfa();
+      if(section === 'stats'){ this.loadStats(); this.loadUsage(); }
+      if(section === 'account'){ this.loadMfa(); this.loadSecurity(); }
       if(section === 'privacy') this.loadAgentMemory();
       if(section === 'capabilities') this.loadBrands();
       if(section === 'skills') this.loadTemplates();
       if(section === 'connectors') this.loadIntegrations();
       this.restoreSettingsScroll(section);
+      clearTimeout(this.settingsHopTimer);
+      this.settingsHopTimer = setTimeout(()=>{
+        if(this.state.settingsHop) this.setState({ settingsHop:false });
+      }, 280);
     });
   }
   closeSettingsModal(){
@@ -4441,7 +4655,7 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/memory' + projectId);
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message || 'Memoire indisponible.');
-      this.setState({ memoryItems:Array.isArray(data.memory) ? data.memory : [] });
+      this.setState({ memoryItems:Array.isArray(data.memory) ? data.memory : [], memoryConflicts:Array.isArray(data.conflicts) ? data.conflicts : [] });
     }catch(err){ this.notify(String(err && err.message || 'Impossible de charger la memoire.')); }
     finally{ this.memoryLoading=false; this.setState({ memoryLoading:false }); }
   }
@@ -4829,7 +5043,8 @@ class Component extends DCLogic {
     if(!this.state.authToken) return;
     this.setState({ teamLoading:true });
     try{
-      const res = await this.apiFetch('/api/team');
+      const projectQuery = this.state.activeProjectId && this.state.activeProjectId !== 'welcome' ? ('?projectId=' + encodeURIComponent(this.state.activeProjectId)) : '';
+      const res = await this.apiFetch('/api/team' + projectQuery);
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Team failed');
       this.setState({ teamData:data, teamLoading:false });
@@ -4886,7 +5101,7 @@ class Component extends DCLogic {
     try{
       const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
         action:'create', name:'Cle API HuggyFlow', scopes:this.state.apiKeyScopes || ['chat','generate'],
-        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90), dailyLimit:Number(this.state.apiKeyDailyLimit || 1000)
       }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'API key failed');
@@ -4909,7 +5124,7 @@ class Component extends DCLogic {
     try{
       const res = await this.apiFetch('/api/keys', { method:'POST', body:JSON.stringify({
         action:'rotate', keyId:id, scopes:this.state.apiKeyScopes || ['chat','generate'],
-        expirationDays:Number(this.state.apiKeyExpirationDays || 90)
+        expirationDays:Number(this.state.apiKeyExpirationDays || 90), dailyLimit:Number(this.state.apiKeyDailyLimit || 1000)
       }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Rotation impossible');
@@ -5100,6 +5315,106 @@ class Component extends DCLogic {
       this.setState({ brandKits:brands, brandName:active ? active.name : this.state.brandName, brandDescription:active && active.profile ? (active.profile.description || '') : this.state.brandDescription });
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger ton identite de marque.') }); }
   }
+  async updateApprovalRequest(request, status){
+    if(!request || !request.id) return;
+    try{
+      const res=await this.apiFetch('/api/team',{method:'POST',body:JSON.stringify({action:'approval',approvalId:request.id,status})});
+      if(!res.ok) throw new Error('approval');
+      this.loadTeam();
+      this.notify(status === 'approved' ? 'Publication approuvée.' : 'Demande mise à jour.');
+    }catch(err){ this.notify('Impossible de mettre à jour cette approbation.'); }
+  }
+  async loadSecurity(){
+    if(!this.state.authToken || this.securityLoading) return;
+    this.securityLoading = true;
+    this.setState({ securityLoading:true });
+    try{
+      const res = await this.apiFetch('/api/security');
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Sécurité indisponible.');
+      this.setState({ securitySessions:Array.isArray(data.sessions) ? data.sessions : [], securityEvents:Array.isArray(data.events) ? data.events : [] });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de charger les sessions.')); }
+    finally{ this.securityLoading=false; this.setState({ securityLoading:false }); }
+  }
+  async revokeSecuritySession(id){
+    if(!id) return;
+    try{
+      const res = await this.apiFetch('/api/security', { method:'POST', body:JSON.stringify({ action:'revoke', sessionId:id }) });
+      if(res.ok) this.loadSecurity(); else this.notify('Cette session ne peut pas être révoquée.');
+    }catch(err){ this.notify('Impossible de révoquer cette session.'); }
+  }
+  async revokeAllSecuritySessions(){
+    try{
+      const res = await this.apiFetch('/api/security', { method:'POST', body:JSON.stringify({ action:'revoke_all' }) });
+      if(res.ok){ this.notify('Les autres sessions ont été déconnectées.'); this.loadSecurity(); }
+    }catch(err){ this.notify('Impossible de déconnecter les autres sessions.'); }
+  }
+  async loadUsage(period){
+    if(!this.state.authToken || this.usageLoading) return;
+    this.usageLoading = true;
+    this.setState({ usageLoading:true });
+    try{
+      const res = await this.apiFetch('/api/usage?period=' + encodeURIComponent(period || this.state.statsPeriod || '30'));
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Usage indisponible.');
+      this.setState({ usageData:data, usageThreshold:Number(data.alert && data.alert.threshold_percent || 80), usageAlertEnabled:data.alert ? data.alert.enabled !== false : true });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de charger l utilisation.')); }
+    finally{ this.usageLoading=false; this.setState({ usageLoading:false }); }
+  }
+  async saveUsageAlert(){
+    try{
+      const res = await this.apiFetch('/api/usage', { method:'POST', body:JSON.stringify({ thresholdPercent:Number(this.state.usageThreshold || 80), enabled:this.state.usageAlertEnabled !== false }) });
+      if(!res.ok) throw new Error('alert');
+      this.notify('Alerte de consommation enregistrée.');
+    }catch(err){ this.notify('Impossible d enregistrer l alerte.'); }
+  }
+  exportUsage(){
+    const token = this.state.authToken || '';
+    const url = this.apiBase() + '/api/usage?period=' + encodeURIComponent(this.state.statsPeriod || '30') + '&format=csv';
+    fetch(url, { headers:{ Authorization:'Bearer ' + token, Accept:'text/csv' } }).then(res=>res.blob()).then(blob=>{
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='huggyflow-usage.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),800);
+    }).catch(()=>this.notify('Export d utilisation indisponible.'));
+  }
+  async controlAgentTask(taskId, action){
+    if(!taskId || !action) return;
+    try{
+      const res = await this.apiFetch('/api/agent-tasks', { method:'POST', body:JSON.stringify({ taskId, action }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Tâche indisponible.');
+      this.setState({ workflowTasks:Array.isArray(data.workflows) ? data.workflows : this.state.workflowTasks });
+      this.notify(({pause:'Tâche mise en pause.',resume:'Tâche reprise.',cancel:'Tâche annulée.',retry:'Nouvelle tentative lancée.'})[action] || 'Tâche mise à jour.');
+      this.loadBackgroundTasks();
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de modifier cette tâche.')); }
+  }
+  async compareArtifactVersions(versionIds){
+    const artifact=this.state.activeArtifact;
+    if(!artifact || !artifact.id || !Array.isArray(versionIds) || versionIds.length!==2) return;
+    try{
+      const res=await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'compare', artifactId:artifact.id, versionIds }) });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Comparaison indisponible.');
+      this.setState({ artifactCompare:data, artifactView:'compare' });
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de comparer les versions.')); }
+  }
+  async compareSelectedArtifact(){
+    const versions=this.state.artifactVersions || [];
+    const selected=this.state.artifactCompareVersionId;
+    const latest=versions[0] && (versions[0].id || versions[0].number);
+    if(selected && latest && String(selected)!==String(latest)) return this.compareArtifactVersions([selected,latest]);
+    this.notify('Sélectionne d abord une ancienne version.');
+  }
+  async restoreArtifactVersion(versionId){
+    const artifact=this.state.activeArtifact;
+    if(!artifact || !artifact.id || !versionId) return;
+    try{
+      const res=await this.apiFetch('/api/artifacts', { method:'POST', body:JSON.stringify({ action:'restore', artifactId:artifact.id, versionId }) });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok || !data.artifact) throw new Error(data && data.error && data.error.message || 'Restauration indisponible.');
+      const next=this.normalizeArtifact(data.artifact);
+      this.setState(s=>({ activeArtifact:next, artifactItems:(s.artifactItems||[]).map(item=>item.id===next.id?next:item), artifactView:'preview' }), ()=>this.loadArtifactDetail(next.id));
+      this.notify('Nouvelle version restaurée.');
+    }catch(err){ this.notify(String(err && err.message || 'Impossible de restaurer cette version.')); }
+  }
   async refreshCapabilities(){
     if(!this.state.authToken || this.state.capabilitiesRefreshing) return;
     this.setState({ capabilitiesRefreshing:true });
@@ -5175,8 +5490,57 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/integrations');
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'integrations');
-      this.setState({ integrationConnections:data.connections || [], integrationsLoading:false });
-    }catch(err){ this.setState({ integrationsLoading:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les connecteurs.') }); }
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const connectedProvider = params && params.get('oauth_connected');
+      const oauthError = params && params.get('oauth_error');
+      if(typeof window !== 'undefined' && (connectedProvider || oauthError)){
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+      this.setState({ integrationConnections:data.connections || [], integrationsLoading:false, connectorBusyProvider:'' }, ()=>{
+        if(connectedProvider) this.notify('Connecteur ' + this.connectorDisplayName(connectedProvider) + ' connecté.');
+        if(oauthError) this.notify('Connexion annulée : ' + String(oauthError).slice(0, 120));
+      });
+    }catch(err){ this.setState({ integrationsLoading:false, connectorBusyProvider:'', pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger les connecteurs.') }); }
+  }
+  connectorDisplayName(provider){
+    const entry = (this.INTEGRATIONS || []).find(item=>item.id === provider);
+    return entry ? entry.name : String(provider || '');
+  }
+  connectorProviderSupportsOAuth(provider){ return ['google_drive','slack','notion'].includes(String(provider || '')); }
+  openConnectorDetail(provider){
+    if(!provider) return;
+    this.persistSettingsScroll('connectors');
+    this.setState({ selectedConnectorId:provider, connectorDetailOpen:true, connectorAddMenuOpen:false, connectorInfoPanel:'', connectorSearch:'' }, ()=>{
+      this.restoreSettingsScroll('connectors-detail-' + provider);
+    });
+  }
+  closeConnectorDetail(){
+    this.persistSettingsScroll('connectors-detail-' + (this.state.selectedConnectorId || 'selected'));
+    this.setState({ selectedConnectorId:'', connectorDetailOpen:false, connectorAddMenuOpen:false, connectorInfoPanel:'' }, ()=>this.restoreSettingsScroll('connectors'));
+  }
+  openConnectorInfo(kind){
+    const value = kind === 'security' ? 'security' : 'docs';
+    this.setState({ connectorInfoPanel:value, connectorAddMenuOpen:false });
+  }
+  closeConnectorInfo(){ this.setState({ connectorInfoPanel:'' }); }
+  toggleConnectorAddMenu(){ this.setState(s=>({ connectorAddMenuOpen:!s.connectorAddMenuOpen })); }
+  onConnectorSearch(event){ this.setState({ connectorSearch:(event && event.target ? event.target.value : '') || '' }); }
+  clearConnectorSearch(){ this.setState({ connectorSearch:'' }); }
+  onConnectorSort(event){ this.setState({ connectorSort:(event && event.target ? event.target.value : 'popular') || 'popular' }); }
+  onConnectorCardKeyDown(event, provider){
+    const key = event && (event.key || event.code);
+    if(key === 'Enter' || key === ' ' || key === 'Spacebar'){
+      if(event && typeof event.preventDefault === 'function') event.preventDefault();
+      this.openConnectorDetail(provider);
+    }
+  }
+  refreshConnectors(){ this.loadIntegrations(); }
+  connectSelectedConnector(){
+    const provider = this.state.selectedConnectorId;
+    if(!provider) return;
+    this.setState({ connectorAddMenuOpen:false });
+    this.configureIntegration(provider);
   }
   async loadMfa(){
     if(!this.state.authToken) return;
@@ -5219,33 +5583,46 @@ class Component extends DCLogic {
       const challenge = await challengeRes.json().catch(()=>({}));
       if(!challengeRes.ok || !challenge.challengeId) throw new Error('MFA_CHALLENGE_FAILED');
       const verifyRes = await this.apiFetch('/api/auth/mfa', { method:'POST', body:JSON.stringify({ action:'verify', factorId:setup.id, challengeId:challenge.challengeId, code }) });
+      const verified = await verifyRes.json().catch(()=>({}));
       if(!verifyRes.ok) throw new Error('MFA_VERIFY_FAILED');
       await this.loadMfa();
-      this.setState({ mfaSetup:null, mfaCode:'', mfaLoading:false });
+      this.setState({ mfaSetup:null, mfaCode:'', mfaLoading:false, recoveryCodes:Array.isArray(verified.recoveryCodes) ? verified.recoveryCodes : [] });
       this.notify('Double authentification activée.');
     }catch(err){ this.setState({ mfaLoading:false }); this.notify('Code MFA incorrect ou expiré.'); }
   }
+  async regenerateRecoveryCodes(){
+    try{
+      const res=await this.apiFetch('/api/auth/mfa',{method:'POST',body:JSON.stringify({action:'recovery_codes'})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'codes');
+      this.setState({ recoveryCodes:Array.isArray(data.recoveryCodes) ? data.recoveryCodes : [] });
+      this.notify('Nouveaux codes de récupération générés.');
+    }catch(err){ this.notify('Impossible de générer les codes de récupération.'); }
+  }
   async configureIntegration(provider){
     if(!this.requireAuth('Connecte-toi pour configurer un connecteur.', null)) return;
+    this.setState({ connectorBusyProvider:provider, connectorAddMenuOpen:false });
     try{
       const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action:'configure', provider, permissions:{ requested:true } }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
       if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
-      this.setState({ integrationConnections:data.connections || [], pricingNotice:'OAuth non configuré pour ce connecteur.' });
-    }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.') }); }
+      this.setState({ integrationConnections:data.connections || [], connectorBusyProvider:'', pricingNotice:'OAuth non configuré pour ce connecteur.' });
+      this.notify('Ce connecteur ne propose pas encore de parcours OAuth actif.');
+    }catch(err){ const message = this.friendlyError(err && err.message, 'Impossible de preparer ce connecteur.'); this.setState({ connectorBusyProvider:'', pricingNotice:message }); this.notify(message); }
   }
   async connectorAction(provider, action){
     if(!this.requireAuth('Connecte-toi pour gerer tes connecteurs.', null)) return;
     const labels = { test:'Verification', reconnect:'Reconnexion', disconnect:'Deconnexion' };
+    this.setState({ connectorBusyProvider:provider });
     try{
       const res = await this.apiFetch('/api/integrations', { method:'POST', body:JSON.stringify({ action, provider }) });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'connector');
       if(data.authorizationUrl){ window.location.assign(data.authorizationUrl); return; }
-      this.setState({ integrationConnections:data.connections || [] });
+      this.setState({ integrationConnections:data.connections || [], connectorBusyProvider:'' });
       this.notify(data.testOk === false ? (data.testMessage || 'Connexion non validee.') : (labels[action] || 'Action') + ' terminee.');
-    }catch(err){ this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
+    }catch(err){ this.setState({ connectorBusyProvider:'' }); this.notify(this.friendlyError(err && err.message, 'Action impossible sur ce connecteur.')); }
   }
   downloadJson(fileName, payload){
     if(typeof window === 'undefined') return;
@@ -5540,12 +5917,119 @@ class Component extends DCLogic {
           isVoice:type === 'voice',
           onDownload:()=>this.downloadMedia(media.resultUrl),
           onPlay:()=>this.playMedia(media.resultUrl),
-          onRecreate:()=>this.remixCreation(media.prompt || msg.text || 'cette creation', type)
+            onRecreate:()=>this.remixCreation(media.prompt || msg.text || 'cette creation', type),
+            canPublish:!!media.generationId,
+          onPublish:()=>this.publishExploreItem({ generationId:media.generationId, title:(media.prompt || msg.text || project.title || 'Création HuggyFlow').slice(0,120), type })
         });
       });
     });
     if(items.length) return items.reverse();
     return [];
+  }
+
+  exploreFallbackItems(){
+    return this.galleryItems().slice(0, 24).map((item, index)=>({
+      id:'local-explore-' + String(item.slotId || index),
+      title:item.title || 'Création HuggyFlow',
+      description:'Une création partagée depuis la Galerie HuggyFlow.',
+      prompt:item.title || 'Création multimédia HuggyFlow',
+      creator:'Ma création',
+      creatorInitials:'MC',
+      date:'à l’instant',
+      url:item.resultUrl || '',
+      type:item.isVideo ? 'video' : (item.isVoice ? 'audio' : 'image'),
+      model:item.model || 'HuggyFlow',
+      ratio:item.ratio || '1:1',
+      duration:item.duration || '—',
+      hasAudio:item.isVideo,
+      likes:Math.max(0, 18 - index),
+      saves:Math.max(0, 6 - Math.floor(index / 2)),
+      remixes:Math.max(0, 3 - Math.floor(index / 4)),
+      views:Math.max(0, 90 - index * 3),
+      isLocalPreview:true
+    }));
+  }
+  normalizeExploreItem(item, index=0){
+    if(!item || typeof item !== 'object') return null;
+    const type = String(item.type || item.mediaType || 'image').toLowerCase() === 'voice' ? 'audio' : String(item.type || item.mediaType || 'image').toLowerCase();
+    return {
+      id:String(item.id || 'explore-' + index), title:String(item.title || 'Création HuggyFlow').slice(0,120), description:String(item.description || 'Création publique HuggyFlow.').slice(0,360), prompt:String(item.prompt || item.sourcePrompt || item.description || 'Création multimédia HuggyFlow').slice(0,600), creator:String(item.creator || item.creatorName || 'Créateur HuggyFlow').slice(0,80), creatorInitials:String(item.creatorInitials || item.creator || 'HF').slice(0,2).toUpperCase(), date:String(item.date || item.createdAt || 'Récemment').slice(0,40), url:String(item.url || item.mediaUrl || item.resultUrl || ''), type, model:String(item.model || item.modelLabel || 'HuggyFlow').slice(0,80), ratio:String(item.ratio || item.aspectRatio || '1:1'), duration:String(item.duration || item.durationSeconds || '—'), hasAudio:Boolean(item.hasAudio || item.audio), likes:Number(item.likes || item.reactions || 0), saves:Number(item.saves || item.bookmarks || 0), remixes:Number(item.remixes || item.remixCount || 0), views:Number(item.views || 0), isLocalPreview:Boolean(item.isLocalPreview)
+    };
+  }
+  exploreItemsForView(){
+    const source = Array.isArray(this.state.exploreItems) && this.state.exploreItems.length ? this.state.exploreItems : this.exploreFallbackItems();
+    const q = String(this.state.exploreSearch || '').trim().toLowerCase();
+    let list = source.map((item,index)=>this.normalizeExploreItem(item,index)).filter(Boolean).filter(item=>!q || [item.title,item.description,item.prompt,item.creator,item.model].join(' ').toLowerCase().includes(q));
+    const sort = this.state.exploreSort || 'trending';
+    if(sort === 'new') list = list.slice().reverse();
+    if(sort === 'remixed') list = list.slice().sort((a,b)=>b.remixes-a.remixes);
+    if(sort === 'saved') list = list.slice().sort((a,b)=>b.saves-a.saves);
+    if(sort === 'trending') list = list.slice().sort((a,b)=>(b.likes + b.saves * 2 + b.remixes * 3 + b.views * .05) - (a.likes + a.saves * 2 + a.remixes * 3 + a.views * .05));
+    return list;
+  }
+  async loadExploreFeed(){
+    this.setState({ exploreLoading:true });
+    try{
+      const res = await this.apiFetch('/api/explore?sort=' + encodeURIComponent(this.state.exploreSort || 'trending'));
+      if(res.ok){ const data = await res.json(); this.setState({ exploreItems:Array.isArray(data.items) ? data.items : [], exploreLoading:false }); return; }
+    }catch(err){}
+    this.setState({ exploreItems:[], exploreLoading:false });
+  }
+  openExplore(){
+    const wasSeen = this.state.exploreNewDismissed === true;
+    this.setState({ page:'explore', exploreActiveId:'', exploreSearch:'', modelMenu:false, exploreNewDismissed:true }, ()=>{
+      try{ localStorage.setItem('huggyflow_explore_seen','1'); }catch(e){}
+      if(!wasSeen) this.notify('Explorer est ouvert. Découvre les créations publiques.');
+      this.loadExploreFeed();
+    });
+  }
+  openExploreItem(item){
+    if(!item || !item.id) return;
+    this.setState({ page:'explore', exploreActiveId:String(item.id), exploreNewDismissed:true }, ()=>this.syncPageRoute('push'));
+  }
+  closeExploreItem(){ this.setState({ exploreActiveId:'' }, ()=>this.syncPageRoute('push')); }
+  exploreStep(direction){
+    const items = this.exploreItemsForView(); if(!items.length) return;
+    const current = Math.max(0, items.findIndex(item=>item.id === this.state.exploreActiveId));
+    const next = (current + direction + items.length) % items.length;
+    this.openExploreItem(items[next]);
+  }
+  toggleExploreReaction(kind){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId); if(!item) return;
+    const field = kind === 'save' ? 'exploreSavedIds' : 'exploreLikedIds';
+    const current = Boolean((this.state[field] || {})[item.id]);
+    this.setState(s=>({ [field]:Object.assign({}, s[field] || {}, { [item.id]:!current }) }));
+    this.notify(kind === 'save' ? (current ? 'Création retirée des sauvegardes.' : 'Création enregistrée.') : (current ? 'Réaction retirée.' : 'Réaction ajoutée.'));
+    if(this.state.authToken && /^[0-9a-f-]{36}$/i.test(item.id)){
+      this.apiFetch('/api/explore', { method:'POST', body:JSON.stringify({ action:kind === 'save' ? 'save' : 'reaction', publicationId:item.id }) }).then(async res=>{
+        if(!res.ok) throw new Error('interaction');
+        const data = await res.json();
+        if(data.item) this.setState(s=>({ exploreItems:(s.exploreItems || []).map(entry=>String(entry.id) === item.id ? Object.assign({}, entry, { likes:data.item.likes, saves:data.item.saves }) : entry) }));
+      }).catch(()=>this.notify('La réaction est restée locale, synchronisation indisponible.'));
+    }
+  }
+  remixExploreItem(){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId); if(!item) return;
+    this.setState({ page:'app', mode:item.type === 'video' ? 'video' : (item.type === 'audio' ? 'audio' : 'image'), input:'Remixe cette création en gardant son intention et son style : ' + item.prompt, exploreActiveId:'', modelMenu:false }, ()=>this.notify('Copie remixable créée. Ajuste la consigne puis lance la génération.'));
+  }
+  shareExploreItem(){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId); if(!item) return;
+    const url = (typeof window !== 'undefined' ? window.location.origin : 'https://www.huggyflow.fun') + '/explore/' + encodeURIComponent(item.id);
+    if(typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(url).catch(()=>{});
+    this.notify('Lien Explorer copié.');
+  }
+  publishExploreItem(source){
+    if(!this.state.authToken || !source || !source.generationId) return this.notify('Connecte-toi pour publier une création dans Explorer.');
+    this.apiFetch('/api/explore',{method:'POST',body:JSON.stringify({action:'publish',generationId:source.generationId,title:source.title,description:'Création publiée depuis la Galerie HuggyFlow.'})}).then(async res=>{
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.item) throw new Error(data && data.error && data.error.message || 'publication');
+      this.notify('Création publiée dans Explorer.');
+    }).catch(err=>this.notify(String(err && err.message || 'Publication impossible pour le moment.')));
+  }
+  reportExploreItem(){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId);
+    if(this.state.authToken && item && /^[0-9a-f-]{36}$/i.test(item.id)) this.apiFetch('/api/explore',{method:'POST',body:JSON.stringify({action:'report',publicationId:item.id,reason:'other'})}).catch(()=>{});
+    this.notify('Merci. Le contenu a été signalé pour vérification.');
   }
 
   TEAM = [];
@@ -5593,6 +6077,8 @@ class Component extends DCLogic {
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
     const galleryItems = this.galleryItems();
+    const exploreItems = this.exploreItemsForView();
+    const exploreActive = exploreItems.find(item=>item.id === st.exploreActiveId) || null;
     const studioMediaItems = this.studioMediaItems();
     const artifactItems = (st.artifactItems || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
     const renderedPlans = this.buildPlans();
@@ -5641,6 +6127,43 @@ class Component extends DCLogic {
     ].filter(item=>item.visible);
     const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
+    const connectorStatus = { connected:'Connecté', pending:'Autorisation requise', error:'À diagnostiquer', disconnected:'Non connecté' };
+    const connectorSyncStatus = { healthy:'Synchronisé', ready:'Prêt à synchroniser', pending:'En attente', error:'Synchronisation en erreur', idle:'Pas encore testé' };
+    const connectorCatalog = (this.INTEGRATIONS || []).map((item, index)=>{
+      const current = (st.integrationConnections || []).find(connection=>connection.provider === item.id) || {};
+      const status = current.status || 'disconnected';
+      const supportsOAuth = this.connectorProviderSupportsOAuth(item.id);
+      const permissions = current.permissions && typeof current.permissions === 'object' ? current.permissions : {};
+      const scopes = Array.isArray(permissions.scopes) ? permissions.scopes : (typeof permissions.scopes === 'string' ? permissions.scopes.split(/[ ,]+/).filter(Boolean) : []);
+      return {
+        id:item.id, name:item.name, desc:item.desc, glyph:item.glyph, bg:item.bg, index,
+        status, statusLabel:connectorStatus[status] || 'Non connecté', syncLabel:connectorSyncStatus[current.sync_status || 'idle'] || 'Pas encore testé',
+        accountLabel:current.account_label || '', lastError:current.last_error || '', lastSyncedAt:current.last_synced_at || '', connectedAt:current.connected_at || '', scopes,
+        supportsOAuth, notSupported:!supportsOAuth, isNew:index >= 4, availabilityLabel:supportsOAuth ? 'OAuth sécurisé' : 'Disponible après configuration',
+        isConnected:status === 'connected', isPending:status === 'pending', isError:status === 'error', isAvailable:supportsOAuth,
+        statusClass:status === 'connected' ? 'is-connected' : (status === 'error' ? 'is-error' : (status === 'pending' ? 'is-warning' : 'is-neutral')),
+        dotColor:status === 'connected' ? '#9BE27A' : (status === 'error' ? '#E58C72' : '#D1FE17'),
+        buttonLabel:status === 'connected' ? 'Synchroniser' : (status === 'pending' ? 'Autoriser' : (supportsOAuth ? 'Connecter' : 'Voir le détail')),
+        onOpen:()=>this.openConnectorDetail(item.id),
+        onKeyDown:(event)=>this.onConnectorCardKeyDown(event,item.id),
+        onConnect:()=>this.configureIntegration(item.id),
+        onSync:()=>this.connectorAction(item.id,'sync'),
+        onTest:()=>this.connectorAction(item.id,'test'),
+        onReconnect:()=>this.connectorAction(item.id,'reconnect'),
+        onDisconnect:()=>this.connectorAction(item.id,'disconnect'),
+        busy:st.connectorBusyProvider === item.id
+      };
+    });
+    const connectorSearch = normalizeSearch(st.connectorSearch || '').trim();
+    const connectorList = connectorCatalog.filter(item=>!connectorSearch || normalizeSearch(item.name + ' ' + item.desc).includes(connectorSearch)).sort((a,b)=>{
+      if(st.connectorSort === 'name') return a.name.localeCompare(b.name, 'fr');
+      if(st.connectorSort === 'status') return (a.isConnected ? -1 : 1) - (b.isConnected ? -1 : 1) || a.name.localeCompare(b.name, 'fr');
+      return (a.isNew ? 1 : 0) - (b.isNew ? 1 : 0) || a.index - b.index;
+    });
+    const selectedConnector = connectorCatalog.find(item=>item.id === st.selectedConnectorId) || null;
+    const connectorDetailConnections = selectedConnector && selectedConnector.isConnected ? [selectedConnector] : [];
+    const connectorDetailVisible = !!(st.connectorDetailOpen && selectedConnector);
+    const connectorListVisible = !connectorDetailVisible;
     const paywallPlan = this.paywallPlanDetails();
     const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
       const active = task.status === 'loading';
@@ -5662,9 +6185,15 @@ class Component extends DCLogic {
       const failed = status === 'failed';
       const progress = Math.max(0, Math.min(100, Math.round(Number(workflow.progress || 0))));
       return {
+        id:String(workflow.id || workflow.rootTaskId || ''),
         title:String(workflow.title || 'Workflow AgentFlow'),
         meta:progress + '% - ' + (active ? 'orchestration en cours' : (failed ? 'a verifier' : 'verifie')),
-        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0')
+        dot:active ? '#D1FE17' : (failed ? '#C45840' : '#A8E8C0'),
+        actionLabel:status === 'paused' ? 'Reprendre' : (failed ? 'Réessayer' : (active ? 'Pause' : '')),
+        onAction:()=>this.controlAgentTask(String(workflow.id || workflow.rootTaskId || ''), status === 'paused' ? 'resume' : (failed ? 'retry' : 'pause')),
+        onCancel:()=>this.controlAgentTask(String(workflow.id || workflow.rootTaskId || ''), 'cancel'),
+        showAction:active || failed,
+        showCancel:active
       };
     });
     const memoryCards = (st.memoryItems || []).map(memory=>({
@@ -5674,6 +6203,7 @@ class Component extends DCLogic {
       source:memory.sourceType === 'user' ? 'Ajoute par toi' : 'Ajoute par AgentFlow',
       scope:memory.projectId ? 'Projet actif' : 'Compte',
       confidence:Math.round(Number(memory.confidence || 0) * 100) + '%',
+      reason:String(memory.usedReason || 'Pertinente pour le contexte actif.'),
       pinned:!!memory.isPinned,
       onForget:()=>this.updateAgentMemory(memory, memory.status === 'forgotten' ? 'restore' : 'forget'),
       onPin:()=>this.updateAgentMemory(memory, memory.isPinned ? 'unpin' : 'pin')
@@ -5913,7 +6443,7 @@ class Component extends DCLogic {
       systemTabStyle: st.theme === 'system' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       lightTabStyle: st.theme === 'light' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       darkTabStyle: st.theme === 'dark' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
-      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      showApp: st.page === 'app' || ['pricing', 'gallery', 'explore', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{
@@ -5922,6 +6452,43 @@ class Component extends DCLogic {
         return { theme: t };
       }),
       showPricing: st.page === 'pricing',
+      showExplore: st.page === 'explore',
+      exploreLoading: !!st.exploreLoading,
+      exploreSearch: st.exploreSearch || '',
+      exploreSort: st.exploreSort || 'trending',
+      exploreShowNew: st.exploreNewDismissed !== true,
+      exploreHasActive: !!exploreActive,
+      exploreListVisible: !exploreActive,
+      exploreHasItems: exploreItems.length > 0,
+      exploreEmpty: !st.exploreLoading && exploreItems.length === 0,
+      exploreCards: exploreItems.map(item=>({
+        id:item.id, title:item.title, creator:item.creator, likes:item.likes, remixes:item.remixes, url:item.url,
+        typeLabel:item.type === 'video' ? 'Vidéo' : (item.type === 'audio' ? 'Voix' : 'Image'), isVideo:item.type === 'video', isImage:item.type !== 'video' && item.type !== 'audio', isAudio:item.type === 'audio',
+        onOpen:()=>this.openExploreItem(item), onKeyDown:(e)=>{ if(e && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); this.openExploreItem(item); } }
+      })),
+      exploreActiveUrl: exploreActive ? exploreActive.url : '',
+      exploreActiveTitle: exploreActive ? exploreActive.title : '',
+      exploreActiveDescription: exploreActive ? exploreActive.description : '',
+      exploreActivePrompt: exploreActive ? exploreActive.prompt : '',
+      exploreActiveCreator: exploreActive ? exploreActive.creator : '',
+      exploreActiveInitials: exploreActive ? exploreActive.creatorInitials : 'HF',
+      exploreActiveDate: exploreActive ? exploreActive.date : '',
+      exploreActiveModel: exploreActive ? exploreActive.model : '',
+      exploreActiveRatio: exploreActive ? exploreActive.ratio : '',
+      exploreActiveDuration: exploreActive ? exploreActive.duration : '',
+      exploreActiveLikes: exploreActive ? exploreActive.likes + (st.exploreLikedIds && st.exploreLikedIds[exploreActive.id] ? 1 : 0) : 0,
+      exploreActiveSaves: exploreActive ? exploreActive.saves + (st.exploreSavedIds && st.exploreSavedIds[exploreActive.id] ? 1 : 0) : 0,
+      exploreActiveRemixes: exploreActive ? exploreActive.remixes : 0,
+      exploreActiveHasAudio: !!(exploreActive && exploreActive.hasAudio),
+      exploreActiveIsVideo: !!(exploreActive && exploreActive.type === 'video'),
+      exploreActiveIsImage: !!(exploreActive && exploreActive.type !== 'video' && exploreActive.type !== 'audio'),
+      exploreActiveIsAudio: !!(exploreActive && exploreActive.type === 'audio'),
+      exploreActiveLiked: !!(exploreActive && st.exploreLikedIds && st.exploreLikedIds[exploreActive.id]),
+      exploreActiveSaved: !!(exploreActive && st.exploreSavedIds && st.exploreSavedIds[exploreActive.id]),
+      exploreThumbs: exploreItems.slice(0,8).map(item=>({ id:item.id, title:item.title, url:item.url, isVideo:item.type === 'video', isImage:item.type !== 'audio' && item.type !== 'video', activeClass:exploreActive && exploreActive.id === item.id ? 'is-active' : '', onOpen:()=>this.openExploreItem(item) })),
+      onExploreSearch:(e)=>this.setState({ exploreSearch:e.target.value }),
+      onExploreSort:(e)=>this.setState({ exploreSort:e.target.value },()=>this.loadExploreFeed()),
+      openExplore:()=>this.openExplore(), closeExploreItem:()=>this.closeExploreItem(), explorePrevious:()=>this.exploreStep(-1), exploreNext:()=>this.exploreStep(1), toggleExploreLike:()=>this.toggleExploreReaction('like'), toggleExploreSave:()=>this.toggleExploreReaction('save'), remixExploreItem:()=>this.remixExploreItem(), shareExploreItem:()=>this.shareExploreItem(), reportExploreItem:()=>this.reportExploreItem(), refreshExplore:()=>this.loadExploreFeed(),
       showStudioPanel: !!st.studioPanelOpen,
       studioPanelWidthStyle: st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '100vw' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
       studioContentInset: !st.studioPanelOpen || st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '0px' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
@@ -5949,11 +6516,15 @@ class Component extends DCLogic {
       artifactViewPreview: artifactView === 'preview',
       artifactViewCode: artifactView === 'code',
       artifactViewVersions: artifactView === 'versions',
+      artifactViewCompare: artifactView === 'compare',
       artifactViewActivity: artifactView === 'activity',
       artifactViewComments: artifactView === 'comments',
       artifactPreviewView: ()=>this.selectArtifactView('preview'),
       artifactCodeView: ()=>this.selectArtifactView('code'),
       artifactVersionsView: ()=>this.selectArtifactView('versions'),
+      compareSelectedArtifact: ()=>this.compareSelectedArtifact(),
+      restoreSelectedArtifact: ()=>this.restoreArtifactVersion(st.artifactCompareVersionId),
+      artifactCompareRows: (st.artifactCompare && Array.isArray(st.artifactCompare.files) ? st.artifactCompare.files : []).map(row=>({ path:row.path, changed:!!row.changed, left:String(row.left || ''), right:String(row.right || '') })),
       artifactActivityView: ()=>this.selectArtifactView('activity'),
       artifactCommentsView: ()=>this.selectArtifactView('comments'),
       artifactPreviewTabStyle:artifactTabStyle(artifactView === 'preview'),
@@ -6016,6 +6587,7 @@ class Component extends DCLogic {
       toggleArtifactFullscreen: ()=>this.toggleArtifactFullscreen(),
       startStudioResize: (e)=>this.startStudioResize(e),
       publishActiveArtifact: ()=>this.publishActiveArtifact(),
+      requestArtifactApproval: ()=>this.requestArtifactApproval(),
       copyActiveArtifact: ()=>this.copyActiveArtifact(),
       downloadActiveArtifact: ()=>this.downloadActiveArtifact(),
       refreshArtifactPreview: ()=>this.refreshArtifactPreview(),
@@ -6039,6 +6611,7 @@ class Component extends DCLogic {
       memoryCards,
       memoryLoading: !!st.memoryLoading,
       memoryEmpty: !st.memoryLoading && memoryCards.length === 0,
+      memoryConflictVisible: Array.isArray(st.memoryConflicts) && st.memoryConflicts.length > 0,
       loadAgentMemory: ()=>this.loadAgentMemory(),
       modalShowCapabilities: st.page === 'capabilities',
       modalShowClaudeCode: st.page === 'claudecode',
@@ -6083,22 +6656,49 @@ class Component extends DCLogic {
         { label:'Routage références', detail:'Mémoire projet, cohérence personnages et transformations', status:'Actif' },
         { label:'Mémoire et artifacts', detail:'Projet, versions et contrôle qualité', status:st.authToken ? 'Actif' : 'Connexion requise' }
       ],
-      connectorCards: (st.integrationConnections || []).map(c=>({
-        provider:c.provider,
-        label:({google_drive:'Google Drive',whatsapp_business:'WhatsApp Business',meta_ads:'Meta Ads',tiktok:'TikTok',slack:'Slack',notion:'Notion',webhook:'Webhooks'})[c.provider] || c.provider,
-        status:c.status || 'disconnected',
-        statusLabel: ({connected:'Connecté',pending:'Autorisation requise',error:'Erreur à diagnostiquer',disconnected:'Non connecté'})[c.status || 'disconnected'] || 'Non connecté',
-        syncLabel: ({healthy:'Synchronisé',ready:'Prêt à synchroniser',pending:'En attente',error:'Synchronisation en erreur',idle:'Pas encore testé'})[c.sync_status || 'idle'] || 'Pas encore testé',
-        lastSync: c.last_synced_at ? ('Dernière synchronisation : ' + new Date(c.last_synced_at).toLocaleString('fr-FR',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })) : 'Aucune synchronisation effectuée',
-        lastError: c.last_error || '',
-        buttonLabel: c.status === 'connected' ? 'Synchroniser' : (c.status === 'pending' ? 'Autoriser' : 'Connecter'),
-        onConfigure:()=>c.status === 'connected' ? this.connectorAction(c.provider,'sync') : (c.status === 'pending' ? this.connectorAction(c.provider,'reconnect') : this.configureIntegration(c.provider)),
-        onTest:()=>this.connectorAction(c.provider,'test'),
-        onDisconnect:()=>this.connectorAction(c.provider,'disconnect'),
-        showTest:c.status === 'connected',
-        showDisconnect:c.status === 'connected' || c.status === 'pending'
-      })),
-      connectorsEmpty: !(st.integrationConnections || []).length,
+      connectorCatalog,
+      connectorList,
+      connectorListVisible,
+      connectorDetailVisible,
+      selectedConnector,
+      connectorDetailConnections,
+      connectorSearch:st.connectorSearch || '',
+      connectorSort:st.connectorSort || 'popular',
+      connectorAddMenuOpen:!!st.connectorAddMenuOpen,
+      connectorBusyProvider:st.connectorBusyProvider || '',
+      connectorsEmpty: !connectorList.length,
+      connectorDetailEmpty: !connectorDetailConnections.length,
+      connectorDetailLastSync:selectedConnector && selectedConnector.lastSyncedAt ? ('Dernière synchronisation : ' + new Date(selectedConnector.lastSyncedAt).toLocaleString('fr-FR',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })) : 'Aucune synchronisation effectuée',
+      connectorDetailConnectedAt:selectedConnector && selectedConnector.connectedAt ? ('Connecté le ' + new Date(selectedConnector.connectedAt).toLocaleDateString('fr-FR',{ day:'2-digit', month:'long', year:'numeric' })) : 'Pas encore connecté',
+      connectorDetailPermissionLabel:selectedConnector && selectedConnector.scopes && selectedConnector.scopes.length ? (selectedConnector.scopes.length + ' permission(s) accordée(s)') : 'Permissions à confirmer',
+      connectorDetailFeatureLabel:selectedConnector && selectedConnector.isConnected ? 'Activé' : 'Non activé',
+      connectorDetailBusy:!!(selectedConnector && st.connectorBusyProvider === selectedConnector.id),
+      connectorDetailAddLabel:(selectedConnector && st.connectorBusyProvider === selectedConnector.id) ? 'Connexion en cours…' : 'Ajouter une connexion',
+      connectorAddOptionLabel:selectedConnector && selectedConnector.supportsOAuth ? 'Autoriser dans une nouvelle étape' : 'Bientôt disponible',
+      connectorDetailConnectLabel:selectedConnector && selectedConnector.supportsOAuth ? 'Connecter maintenant' : 'Configuration indisponible',
+      connectorDetailConnectDisabled:!selectedConnector || !selectedConnector.supportsOAuth || !!(selectedConnector && st.connectorBusyProvider === selectedConnector.id),
+      connectorDetailFeatureText:selectedConnector && selectedConnector.isConnected ? 'Les workflows peuvent utiliser ce connecteur selon les permissions confirmées.' : 'Connecte ce service pour activer ses capacités dans les workflows.',
+      connectorDetailConnectionName:selectedConnector ? (selectedConnector.accountLabel || selectedConnector.name) : '',
+      connectorInfoOpen:!!st.connectorInfoPanel,
+      connectorInfoDocs:st.connectorInfoPanel === 'docs',
+      connectorInfoSecurity:st.connectorInfoPanel === 'security',
+      openConnectorDocs:()=>this.openConnectorInfo('docs'),
+      openConnectorSecurity:()=>this.openConnectorInfo('security'),
+      closeConnectorInfo:()=>this.closeConnectorInfo(),
+      connectorLoadingEmpty:!!st.integrationsLoading && !connectorCatalog.length,
+      onConnectorSearch:(e)=>this.onConnectorSearch(e),
+      clearConnectorSearch:()=>this.clearConnectorSearch(),
+      onConnectorSort:(e)=>this.onConnectorSort(e),
+      refreshConnectors:()=>this.refreshConnectors(),
+      openConnectorDetail:(provider)=>this.openConnectorDetail(provider),
+      closeConnectorDetail:()=>this.closeConnectorDetail(),
+      toggleConnectorAddMenu:()=>this.toggleConnectorAddMenu(),
+      connectSelectedConnector:()=>this.connectSelectedConnector(),
+      connectorDetailConnect:()=>selectedConnector && this.configureIntegration(selectedConnector.id),
+      connectorDetailSync:()=>selectedConnector && this.connectorAction(selectedConnector.id,'sync'),
+      connectorDetailTest:()=>selectedConnector && this.connectorAction(selectedConnector.id,'test'),
+      connectorDetailReconnect:()=>selectedConnector && this.connectorAction(selectedConnector.id,'reconnect'),
+      connectorDetailDisconnect:()=>selectedConnector && this.connectorAction(selectedConnector.id,'disconnect'),
       integrationsLoading: !!st.integrationsLoading,
       feedbackMessage: st.feedbackMessage || '',
       onFeedbackMessage: (e)=> this.setState({ feedbackMessage:e.target.value }),
@@ -6154,6 +6754,8 @@ class Component extends DCLogic {
         },
         scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
         expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
+        dailyLimitLabel:(Number(k.dailyLimit || 1000) + ' requêtes/jour'),
+        usageLabel:(Number(k.usageCount || 0) + ' requêtes journalisées'),
         expiryStyle:k.expiresAt && new Date(k.expiresAt).getTime() < Date.now() ? 'color:#C45840' : 'color:' + T.text4,
         onRevoke:()=>this.revokeApiKey(k.id),
         onRotate:()=>this.rotateApiKey(k.id)
@@ -6248,12 +6850,28 @@ class Component extends DCLogic {
       setLightTheme: ()=>{ try{ localStorage.setItem('huggyflow_theme','light'); localStorage.setItem('hf-theme','light'); }catch(e){} this.setState({ theme:'light', settingsSaved:false },()=>this.scheduleSettingsSave()); },
       setDarkTheme: ()=>{ try{ localStorage.setItem('huggyflow_theme','dark'); localStorage.setItem('hf-theme','dark'); }catch(e){} this.setState({ theme:'dark', settingsSaved:false },()=>this.scheduleSettingsSave()); },
       lightTabStyle: this.tabStyle(st.theme !== 'dark'),
+      securityLoading: !!st.securityLoading,
+      securitySessionCards: (st.securitySessions || []).map(session=>({
+        id:session.id,
+        deviceLabel:session.deviceLabel || 'Appareil',
+        userAgent:String(session.userAgent || '').slice(0,90),
+        current:!!session.current,
+        lastSeen:session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : 'inconnue',
+        canRevoke:!session.current && !session.revoked,
+        onRevoke:()=>this.revokeSecuritySession(session.id)
+      })),
+      securitySessionsEmpty: !st.securityLoading && !(st.securitySessions || []).some(session=>!session.current && !session.revoked),
+      loadSecurity: ()=>this.loadSecurity(),
+      revokeAllSecuritySessions: ()=>this.revokeAllSecuritySessions(),
       darkTabStyle: this.tabStyle(st.theme === 'dark'),
       toggle2fa: ()=> this.toggle2fa(),
       mfaSetup: st.mfaSetup,
       mfaCode: st.mfaCode || '',
       onMfaCode: (e)=> this.setState({ mfaCode:String(e.target.value || '').replace(/\D/g,'').slice(0,6) }),
       verifyMfaSetup: ()=>this.verifyMfaSetup(),
+      regenerateRecoveryCodes: ()=>this.regenerateRecoveryCodes(),
+      recoveryCodes: st.recoveryCodes || [],
+      recoveryCodesVisible: Array.isArray(st.recoveryCodes) && st.recoveryCodes.length > 0,
       cancelMfaSetup: ()=>this.setState({ mfaSetup:null, mfaCode:'', mfaLoading:false }),
       tfaTrackStyle: this.switchTrack(!!st.tfa),
       tfaKnobStyle: this.switchKnob(!!st.tfa),
@@ -6261,6 +6879,9 @@ class Component extends DCLogic {
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),
+      exploreNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'explore' ? '650' : '500') + ';color:' + (st.page === 'explore' ? T.ink : T.text2) + ';background:' + (st.page === 'explore' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
+      exploreShowNew: st.exploreNewDismissed !== true,
+      openExplore: ()=> this.openExplore(),
       galleryTabs: [['all','Tout'],['image','Images'],['video','Vidéos'],['voice','Voix']].map(p=>({
         label: p[1],
         style: this.tabStyle((st.galleryFilter || 'all') === p[0]),
@@ -6275,7 +6896,7 @@ class Component extends DCLogic {
       invoices: [],
       isEmpty: st.messages.length === 0,
       hasMessages: st.messages.length > 0,
-      showNewMessageButton: !!st.chatUnread && st.messages.length > 0,
+      showNewMessageButton: st.page === 'app' && !!st.chatUnread && st.messages.length > 0,
       jumpToLatest: ()=> this.jumpToLatest(),
       showSuggestions,
       input: st.input,
@@ -6638,12 +7259,21 @@ class Component extends DCLogic {
         label:b.label, cur:(b.currentPct || 0) + '%', prev:(b.previousPct || 0) + '%', curTitle:(b.credits || 0) + ' credits', prevTitle:'Reference'
       })),
       modelUsage: ((st.statsData && st.statsData.models) || []).map((m,i)=>({ name:m.name, credits:String(m.credits || 0) + ' cr', pct:'', dot:['#C9A8E8','#D1FE17','#E8D79B','#A8E8C0','#C4C7CC'][i % 5] })),
+      usageDailyAverage: String(st.usageData && st.usageData.summary ? st.usageData.summary.dailyAverage || 0 : 0),
+      usageForecast: String(st.usageData && st.usageData.summary ? st.usageData.summary.forecast30Days || 0 : 0),
+      usageRemaining: String(st.usageData && st.usageData.summary ? st.usageData.summary.remainingCredits || 0 : st.credits || 0) + ' cr',
+      usageThreshold: Number(st.usageThreshold || 80),
+      onUsageThreshold: (e)=>this.setState({ usageThreshold:Math.max(1,Math.min(100,Number(e.target.value || 80))) }),
+      saveUsageAlert: ()=>this.saveUsageAlert(),
+      exportUsage: ()=>this.exportUsage(),
       modelUsageEmpty: !((st.statsData && st.statsData.models && st.statsData.models.length) || 0),
       highlights: (st.statsData && st.statsData.highlights) || ['Tes statistiques se rempliront avec tes prochaines creations.'],
       openApi: ()=> this.openSettingsSection('api'),
       apiKeys: (((st.apiData && st.apiData.keys) || [])).map((k,i)=>({
         name:k.name, masked:k.masked, created:k.createdAt ? new Date(k.createdAt).toLocaleDateString('fr-FR') : 'recente',
         copyLabel:st.copiedKey === i ? 'Copiee' : 'Copier',
+        dailyLimitLabel:(Number(k.dailyLimit || 1000) + ' requêtes/jour'),
+        usageLabel:(Number(k.usageCount || 0) + ' requêtes journalisées'),
         onCopy:()=>{ if(st.apiCreatedKey && navigator.clipboard) navigator.clipboard.writeText(st.apiCreatedKey).catch(()=>{}); this.setState({ copiedKey:i }); setTimeout(()=>this.setState({ copiedKey:null }), 1600); },
         scopesLabel:Array.isArray(k.scopes) && k.scopes.length ? k.scopes.join(' · ') : 'chat · generate',
         expiryLabel:k.expiresAt ? ('expire le ' + new Date(k.expiresAt).toLocaleDateString('fr-FR')) : 'sans expiration',
@@ -6655,6 +7285,8 @@ class Component extends DCLogic {
       copyApiCreatedKey: ()=>this.copyApiCreatedKey(),
       apiEmpty: !((st.apiData && st.apiData.keys && st.apiData.keys.length) || 0),
       createKey: ()=> this.createApiKey(),
+      apiKeyDailyLimit: Number(st.apiKeyDailyLimit || 1000),
+      onApiKeyDailyLimit: (e)=>this.setState({ apiKeyDailyLimit:Math.max(1,Math.min(100000,Number(e.target.value || 1000))) }),
       openTeam: ()=> this.openSettingsSection('team'),
       seatsLabel: (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) + ' / ' + ((st.teamData && st.teamData.seatLimit) || 1)),
       seatsPct: Math.min(100, Math.round(100 * (((st.teamData && st.teamData.members && st.teamData.members.length) || 0) / Math.max(1, ((st.teamData && st.teamData.seatLimit) || 1))))) + '%',
@@ -6668,6 +7300,23 @@ class Component extends DCLogic {
       })),
       pendingInvites: (((st.teamData && st.teamData.invites) || [])).map(p=>({ email:p.email, sent:p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : 'recent', onRevoke:()=>this.revokeInvite(p.id) })),
       noPending: !((st.teamData && st.teamData.invites && st.teamData.invites.length) || 0),
+      projectAccessCount: (((st.teamData && st.teamData.projectAccess) || []).length),
+      projectAccessEmpty: !(((st.teamData && st.teamData.projectAccess) || []).length),
+      projectAccessCards: (((st.teamData && st.teamData.projectAccess) || [])).map(grant=>({
+        memberLabel: grant.memberUserId || 'Membre de l’équipe',
+        role: grant.role || 'viewer',
+        permissions: Object.entries(grant.permissions || {}).filter(([,enabled])=>enabled).map(([key])=>key).join(' · ') || 'lecture',
+        onRevoke:()=>this.apiFetch('/api/team',{method:'POST',body:JSON.stringify({action:'revoke_project_access',projectId:grant.projectId,memberUserId:grant.memberUserId})}).then(()=>this.loadTeam()).catch(()=>this.notify('Impossible de révoquer cet accès.'))
+      })),
+      approvalPendingCount: (((st.teamData && st.teamData.approvalRequests) || []).filter(request=>request.status === 'pending').length),
+      approvalEmpty: !(((st.teamData && st.teamData.approvalRequests) || []).filter(request=>request.status === 'pending').length),
+      approvalCards: (((st.teamData && st.teamData.approvalRequests) || []).filter(request=>request.status === 'pending')).map(request=>({
+        label: request.artifact_id ? 'Artifact ' + String(request.artifact_id).slice(0,8) : 'Publication de projet',
+        meta: request.created_at ? new Date(request.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : 'à l’instant',
+        status: request.status || 'pending',
+        onApprove:()=>this.updateApprovalRequest(request,'approved'),
+        onReject:()=>this.updateApprovalRequest(request,'rejected')
+      })),
       openAffiliate: ()=> this.setState({ page:'affiliate', modelMenu:false }, ()=>this.loadAffiliate()),
       copyRefLink: ()=>{ const link = st.affiliateData && st.affiliateData.link; if(link && navigator.clipboard) navigator.clipboard.writeText(link).catch(()=>{}); this.setState({ refCopied:true }); setTimeout(()=>this.setState({ refCopied:false }), 1600); },
       affiliateLink: (st.affiliateData && st.affiliateData.link) || 'Connecte-toi pour generer ton lien',

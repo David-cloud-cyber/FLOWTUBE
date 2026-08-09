@@ -63,7 +63,9 @@ http.createServer(async (req, res) => {
       res.end();
       return;
     }
-    const filePath = url.pathname === "/" ? path.join(root, "index.html") : path.join(root, decodeURIComponent(url.pathname));
+    const requestedPath = decodeURIComponent(url.pathname);
+    const candidate = url.pathname === "/" ? path.join(root, "index.html") : path.join(root, requestedPath);
+    const filePath = path.extname(requestedPath) || fs.existsSync(candidate) ? candidate : path.join(root, "index.html");
     sendFile(res, filePath, contentType(filePath));
   } catch (err) {
     res.writeHead(500, { "Content-Type": "application/json" });

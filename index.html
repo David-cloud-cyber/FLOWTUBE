@@ -334,6 +334,31 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 @media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Explore public gallery */
+.hf-explore-shell{position:absolute;inset:0;left:var(--hf-content-inset,258px);z-index:20;overflow:auto;background:var(--hf-page-bg,#131517);color:var(--hf-ink,#F7F7F8);scroll-behavior:smooth;overscroll-behavior:contain;animation:pageRise .32s cubic-bezier(.22,1,.36,1) both}
+.hf-explore-inner{width:min(1180px,100%);margin:0 auto;padding:28px 32px 72px;box-sizing:border-box}
+.hf-explore-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px}
+.hf-explore-kicker{display:inline-flex;align-items:center;gap:7px;color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.hf-explore-title{margin-top:8px;color:var(--hf-ink,#F7F7F8);font:700 clamp(28px,4vw,42px)/1.05 'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.025em}
+.hf-explore-subtitle{max-width:650px;margin-top:10px;color:var(--hf-muted,#898A8B);font-size:14px;line-height:1.55}
+.hf-explore-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.hf-explore-search{display:flex;align-items:center;gap:9px;min-width:min(380px,100%);height:40px;padding:0 12px;border:1px solid rgba(247,247,248,.11);border-radius:10px;background:rgba(247,247,248,.045);color:#898A8B;transition:border-color .18s,box-shadow .18s,background .18s}
+.hf-explore-search:focus-within{border-color:rgba(209,254,23,.68);box-shadow:0 0 0 3px rgba(209,254,23,.09);background:rgba(247,247,248,.07)}
+.hf-explore-search input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-ink,#F7F7F8);font:500 12.5px ui-sans-serif,system-ui,sans-serif}.hf-explore-search input::placeholder{color:#898A8B}
+.hf-explore-sort{height:40px;padding:0 12px;border:1px solid rgba(247,247,248,.11);border-radius:10px;background:rgba(247,247,248,.045);color:var(--hf-ink,#F7F7F8);font:650 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer}
+.hf-explore-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.hf-explore-card{min-width:0;overflow:hidden;border:1px solid rgba(247,247,248,.10);border-radius:15px;background:rgba(247,247,248,.035);cursor:pointer;animation:fadeUp .3s ease both;transition:transform .22s cubic-bezier(.22,1,.36,1),border-color .22s ease,box-shadow .22s ease,background .22s ease}.hf-explore-card:hover{transform:translateY(-3px);border-color:rgba(209,254,23,.32);background:rgba(247,247,248,.055);box-shadow:0 18px 42px -30px rgba(0,0,0,.88)}.hf-explore-card:focus-visible{outline:2px solid #D1FE17;outline-offset:3px}
+.hf-explore-thumb{position:relative;aspect-ratio:4/3;overflow:hidden;background:linear-gradient(145deg,#24282a,#17191b)}.hf-explore-thumb img,.hf-explore-thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}.hf-explore-thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(0,0,0,.38));pointer-events:none}.hf-explore-type{position:absolute;left:10px;top:10px;z-index:1;padding:4px 8px;border-radius:999px;background:rgba(19,21,23,.75);color:#F7F7F8;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.hf-explore-card-body{padding:13px 14px 14px}.hf-explore-card-title{overflow:hidden;color:var(--hf-ink,#F7F7F8);font-size:13.5px;font-weight:750;text-overflow:ellipsis;white-space:nowrap}.hf-explore-card-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;color:#898A8B;font-size:11px}.hf-explore-card-stats{display:flex;align-items:center;gap:9px;white-space:nowrap}.hf-explore-card-creator{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hf-explore-empty{padding:76px 20px;border:1px dashed rgba(247,247,248,.14);border-radius:15px;color:#898A8B;text-align:center;font-size:13px;line-height:1.5}
+.hf-explore-viewer{display:grid;grid-template-columns:minmax(0,1fr) 365px;min-height:min(730px,calc(100vh - 110px));overflow:hidden;border:1px solid rgba(247,247,248,.10);border-radius:18px;background:rgba(247,247,248,.035);animation:modalScale .26s cubic-bezier(.22,1,.36,1) both}.hf-explore-stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:580px;padding:44px 72px;background:radial-gradient(circle at 50% 45%,rgba(46,56,50,.52),transparent 60%),linear-gradient(145deg,#252927,#131517 70%)}.hf-explore-stage-media{max-width:100%;max-height:calc(100vh - 230px);width:auto;height:auto;object-fit:contain;border-radius:12px;box-shadow:0 24px 55px -30px rgba(0,0,0,.88);animation:mediaReveal .35s cubic-bezier(.22,1,.36,1) both}
+.hf-explore-stage-arrow{position:absolute;top:50%;z-index:2;width:38px;height:38px;border:1px solid rgba(247,247,248,.14);border-radius:11px;background:rgba(19,21,23,.72);color:#F7F7F8;cursor:pointer;transform:translateY(-50%);transition:background .18s,transform .18s,border-color .18s}.hf-explore-stage-arrow:hover{background:rgba(209,254,23,.16);border-color:rgba(209,254,23,.48)}.hf-explore-stage-arrow:active{transform:translateY(-50%) scale(.94)}.hf-explore-stage-arrow.prev{left:20px}.hf-explore-stage-arrow.next{right:20px}.hf-explore-stage-close{position:absolute;right:18px;top:16px;z-index:2;width:34px;height:34px;border:1px solid rgba(247,247,248,.13);border-radius:10px;background:rgba(19,21,23,.68);color:#F7F7F8;cursor:pointer;transition:background .18s,transform .18s}.hf-explore-stage-close:hover{background:rgba(247,247,248,.12)}.hf-explore-stage-close:active{transform:scale(.94)}
+.hf-explore-thumbs{position:absolute;right:0;bottom:0;left:0;display:flex;justify-content:center;gap:8px;padding:12px 20px;background:linear-gradient(transparent,rgba(0,0,0,.72));overflow-x:auto}.hf-explore-thumb-button{width:50px;height:38px;flex:0 0 50px;overflow:hidden;padding:0;border:1px solid rgba(247,247,248,.18);border-radius:7px;background:#232629;cursor:pointer;opacity:.66;transition:opacity .18s,border-color .18s,transform .18s}.hf-explore-thumb-button:hover,.hf-explore-thumb-button.is-active{opacity:1;border-color:#D1FE17;transform:translateY(-2px)}.hf-explore-thumb-button img,.hf-explore-thumb-button video{width:100%;height:100%;object-fit:cover;display:block}
+.hf-explore-details{display:flex;flex-direction:column;min-width:0;overflow:auto;padding:22px 20px 20px;border-left:1px solid rgba(247,247,248,.09);background:rgba(24,27,29,.92);scrollbar-width:thin}.hf-explore-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.hf-explore-creator{display:flex;align-items:center;gap:9px;min-width:0}.hf-explore-avatar{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:10px;background:#D1FE17;color:#131517;font-size:12px;font-weight:800}.hf-explore-creator-name{min-width:0;overflow:hidden;color:#F7F7F8;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.hf-explore-creator-label{margin-top:3px;color:#898A8B;font-size:10.5px}.hf-explore-icon-button{width:32px;height:32px;border:1px solid rgba(247,247,248,.12);border-radius:9px;background:transparent;color:#A8A8A8;cursor:pointer;transition:background .18s,color .18s,transform .18s}.hf-explore-icon-button:hover{background:rgba(247,247,248,.08);color:#F7F7F8}.hf-explore-icon-button:active{transform:scale(.94)}
+.hf-explore-detail-title{margin:25px 0 0;color:#F7F7F8;font:700 24px/1.16 'Space Grotesk',ui-sans-serif,sans-serif;overflow-wrap:anywhere}.hf-explore-detail-description{margin:9px 0 0;color:#B5B7BA;font-size:13px;line-height:1.55;overflow-wrap:anywhere}.hf-explore-prompt{margin-top:18px;padding:14px;border-radius:11px;background:rgba(247,247,248,.065);color:#E7E8E8;font-size:13px;line-height:1.55;overflow-wrap:anywhere}.hf-explore-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}.hf-explore-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:7px 9px;border-radius:999px;background:rgba(247,247,248,.075);color:#C6C8C9;font-size:10.5px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hf-explore-detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;padding:14px 0;border-top:1px solid rgba(247,247,248,.09);border-bottom:1px solid rgba(247,247,248,.09)}.hf-explore-stat{text-align:center;color:#F7F7F8;font-size:13px;font-weight:750}.hf-explore-stat small{display:block;margin-top:4px;color:#898A8B;font-size:10px;font-weight:500}.hf-explore-action-row{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:22px}.hf-explore-primary-action{min-height:42px;flex:1;border:0;border-radius:10px;background:#D1FE17;color:#131517;font:800 12px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:filter .18s,transform .18s,box-shadow .18s}.hf-explore-primary-action:hover{filter:brightness(1.04);box-shadow:0 12px 25px -16px rgba(209,254,23,.9)}.hf-explore-primary-action:active{transform:scale(.97)}.hf-explore-secondary-action{width:42px;height:42px;border:1px solid rgba(247,247,248,.14);border-radius:10px;background:transparent;color:#C8C9CA;cursor:pointer;transition:background .18s,transform .18s}.hf-explore-secondary-action:hover{background:rgba(247,247,248,.08)}.hf-explore-secondary-action:active{transform:scale(.94)}
+@keyframes mediaReveal{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+@media (max-width:980px){.hf-explore-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hf-explore-viewer{grid-template-columns:minmax(0,1fr) 330px}}
+@media (max-width:760px){.hf-explore-shell{left:72px}.hf-explore-inner{padding:22px 16px 48px}.hf-explore-heading{margin-bottom:18px}.hf-explore-card-grid{grid-template-columns:1fr}.hf-explore-viewer{display:flex;flex-direction:column;min-height:0;overflow:visible}.hf-explore-stage{min-height:58vh;padding:36px 48px}.hf-explore-stage-media{max-height:55vh}.hf-explore-details{max-height:none;border-top:1px solid rgba(247,247,248,.09);border-left:0}.hf-explore-action-row{margin-top:18px}.hf-explore-search{min-width:100%;flex:1}}
+@media (prefers-reduced-motion:reduce){.hf-explore-shell,.hf-explore-card,.hf-explore-viewer,.hf-explore-stage-media{animation:none}.hf-explore-shell,.hf-explore-card,.hf-explore-stage-arrow,.hf-explore-icon-button,.hf-explore-primary-action,.hf-explore-secondary-action{transition:none!important;scroll-behavior:auto}}
 </style>
 </helmet>
 <div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
@@ -402,13 +427,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>
         <span data-hf-hide-rail="true" style="flex:1">Galerie</span>
       </div>
-      <sc-for list="{{ collections }}" as="c" hint-placeholder-count="3">
-        <div data-hf-rail-item="true" onClick="{{ c.onOpen }}" title="{{ c.name }}" style="{{ c.style }}" style-hover="background:rgba(255,255,255,.06)">
-          <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8">{{ c.icon }}</span>
-          <span data-hf-hide-rail="true" style="flex:1">{{ c.name }}</span>
-          <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ false }}"><span data-hf-hide-rail="true" style="padding:2px 7px;border-radius:5px;background:#D1FE17;color:#131517;font-size:9px;font-weight:800;letter-spacing:.06em">NEW</span></sc-if>
-        </div>
-      </sc-for>
+      <div data-hf-rail-item="true" onClick="{{ openExplore }}" title="Explorer" style="{{ exploreNavStyle }}" style-hover="background:rgba(255,255,255,.06)">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.4 15.6l2-4.9 4.9-2-2 4.9-4.9 2z"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Explorer</span>
+        <sc-if value="{{ exploreShowNew }}" hint-placeholder-val="{{ true }}"><span data-hf-hide-rail="true" style="position:relative;top:-1px;padding:3px 7px;border-radius:5px;background:#D1FE17;color:#131517;font-size:9px;font-weight:850;letter-spacing:.06em;line-height:1">NEW</span></sc-if>
+      </div>
       </sc-if>
 
       <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
@@ -2504,6 +2527,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                     <button onClick="{{ g.onRecreate }}" title="Recréer" style="width:28px;height:28px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba({{ tLineRGB }},.06)">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                     </button>
+                    <sc-if value="{{ g.canPublish }}" hint-placeholder-val="{{ false }}"><button onClick="{{ g.onPublish }}" title="Publier dans Explorer" style="width:28px;height:28px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(209,254,23,.12);color:#D1FE17">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M5 20h14"></path></svg>
+                      </button></sc-if>
                   </div>
                 </div>
               </div>
@@ -2513,6 +2539,50 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 
         <sc-if value="{{ galleryEmpty }}" hint-placeholder-val="{{ false }}">
           <div style="text-align:center;padding:70px 0;color:{{ tText4 }};font-size:14px"><div>Aucune création dans cette catégorie pour l'instant.</div><button onClick="{{ newProject }}" style="margin-top:14px;padding:9px 14px;border-radius:999px;border:none;background:#D1FE17;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Créer la première</button></div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showExplore }}" hint-placeholder-val="{{ false }}">
+    <div class="hf-explore-shell" data-screen-label="Explorer public" style="--hf-content-inset:{{ contentInset }};--hf-page-bg:{{ tPageBg }};--hf-ink:{{ tInk }};--hf-muted:{{ tText3 }}">
+      <div class="hf-explore-inner">
+        <sc-if value="{{ exploreHasActive }}" hint-placeholder-val="{{ false }}">
+          <div class="hf-explore-viewer">
+            <div class="hf-explore-stage">
+              <button class="hf-explore-stage-close" onClick="{{ closeExploreItem }}" title="Fermer" aria-label="Fermer">×</button>
+              <button class="hf-explore-stage-arrow prev" onClick="{{ explorePrevious }}" title="Projet précédent" aria-label="Projet précédent">‹</button>
+              <sc-if value="{{ exploreActiveIsVideo }}" hint-placeholder-val="{{ false }}"><video class="hf-explore-stage-media" src="{{ exploreActiveUrl }}" controls playsinline preload="metadata"></video></sc-if>
+              <sc-if value="{{ exploreActiveIsImage }}" hint-placeholder-val="{{ true }}"><img class="hf-explore-stage-media" src="{{ exploreActiveUrl }}" alt="{{ exploreActiveTitle }}" loading="eager" decoding="async"/></sc-if>
+              <sc-if value="{{ exploreActiveIsAudio }}" hint-placeholder-val="{{ false }}"><div style="width:min(420px,100%);padding:42px 24px;border-radius:16px;background:linear-gradient(145deg,#272d2c,#131517);text-align:center;color:#F7F7F8"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M6 6v12"></path><path d="M18 6v12"></path><path d="M3 9v6"></path><path d="M21 9v6"></path></svg><div style="margin-top:18px;font-size:16px;font-weight:700">{{ exploreActiveTitle }}</div><audio src="{{ exploreActiveUrl }}" controls style="width:100%;margin-top:20px"></audio></div></sc-if>
+              <button class="hf-explore-stage-arrow next" onClick="{{ exploreNext }}" title="Projet suivant" aria-label="Projet suivant">›</button>
+              <div class="hf-explore-thumbs">
+                <sc-for list="{{ exploreThumbs }}" as="thumb" hint-placeholder-count="6">
+                  <button class="hf-explore-thumb-button {{ thumb.activeClass }}" onClick="{{ thumb.onOpen }}" title="{{ thumb.title }}" aria-label="{{ thumb.title }}"><sc-if value="{{ thumb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ thumb.url }}" muted preload="metadata"></video></sc-if><sc-if value="{{ thumb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ thumb.url }}" alt="" loading="lazy" decoding="async"/></sc-if></button>
+                </sc-for>
+              </div>
+            </div>
+            <aside class="hf-explore-details">
+              <div class="hf-explore-detail-head">
+                <div class="hf-explore-creator"><div class="hf-explore-avatar">{{ exploreActiveInitials }}</div><div style="min-width:0"><div class="hf-explore-creator-name">{{ exploreActiveCreator }}</div><div class="hf-explore-creator-label">Création publique · {{ exploreActiveDate }}</div></div></div>
+                <button class="hf-explore-icon-button" onClick="{{ shareExploreItem }}" title="Partager" aria-label="Partager"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"></line><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"></line></svg></button>
+              </div>
+              <h1 class="hf-explore-detail-title">{{ exploreActiveTitle }}</h1>
+              <div class="hf-explore-detail-description">{{ exploreActiveDescription }}</div>
+              <div class="hf-explore-prompt">{{ exploreActivePrompt }}</div>
+              <div class="hf-explore-chips"><span class="hf-explore-chip">✦ {{ exploreActiveModel }}</span><span class="hf-explore-chip">▣ {{ exploreActiveRatio }}</span><span class="hf-explore-chip">◷ {{ exploreActiveDuration }}</span><sc-if value="{{ exploreActiveHasAudio }}" hint-placeholder-val="{{ false }}"><span class="hf-explore-chip">◖ Audio</span></sc-if></div>
+              <div class="hf-explore-detail-stats"><div class="hf-explore-stat">{{ exploreActiveLikes }}<small>Réactions</small></div><div class="hf-explore-stat">{{ exploreActiveRemixes }}<small>Remixes</small></div><div class="hf-explore-stat">{{ exploreActiveSaves }}<small>Enregistrements</small></div></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:14px"><button class="hf-explore-secondary-action" onClick="{{ toggleExploreLike }}" title="Réagir" aria-label="Réagir">{{ exploreActiveLiked ? '♥' : '♡' }}</button><button class="hf-explore-secondary-action" onClick="{{ toggleExploreSave }}" title="Enregistrer" aria-label="Enregistrer">{{ exploreActiveSaved ? '★' : '☆' }}</button><button class="hf-explore-secondary-action" onClick="{{ shareExploreItem }}" title="Partager" aria-label="Partager"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"></line><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"></line></svg></button></div>
+              <div class="hf-explore-action-row"><button class="hf-explore-primary-action" onClick="{{ remixExploreItem }}">Remixer cette création</button><button class="hf-explore-secondary-action" onClick="{{ reportExploreItem }}" title="Signaler" aria-label="Signaler">⋯</button></div>
+            </aside>
+          </div>
+        </sc-if>
+        <sc-if value="{{ exploreListVisible }}" hint-placeholder-val="{{ true }}">
+          <div class="hf-explore-heading"><div><div class="hf-explore-kicker"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.4 15.6l2-4.9 4.9-2-2 4.9-4.9 2z"></path></svg> Galerie publique</div><div class="hf-explore-title">Explorer</div><div class="hf-explore-subtitle">Découvre des créations publiques, enregistre les idées qui t’inspirent et remixe les workflows qui peuvent accélérer ton prochain projet.</div></div><button class="hf-explore-icon-button" onClick="{{ refreshExplore }}" title="Actualiser" aria-label="Actualiser"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.9-4L3 9"></path><path d="M3 4v5h5"></path><path d="M4 13a8 8 0 0 0 14.9 4L21 15"></path><path d="M21 20v-5h-5"></path></svg></button></div>
+          <div class="hf-explore-toolbar"><label class="hf-explore-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input value="{{ exploreSearch }}" onChange="{{ onExploreSearch }}" placeholder="Rechercher une création, un style ou un modèle" aria-label="Rechercher dans Explorer"/></label><select class="hf-explore-sort" value="{{ exploreSort }}" onChange="{{ onExploreSort }}" aria-label="Trier Explorer"><option value="trending">Tendances</option><option value="new">Nouveautés</option><option value="remixed">Plus remixés</option><option value="saved">Plus enregistrés</option></select></div>
+          <sc-if value="{{ exploreLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-explore-card-grid"><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div><div class="hf-connector-skeleton"></div></div></sc-if>
+          <sc-if value="{{ exploreEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-explore-empty">Aucune création publique ne correspond à ta recherche.<br/><span style="color:#D1FE17">Essaie un autre mot ou reviens plus tard.</span></div></sc-if>
+          <sc-if value="{{ exploreHasItems }}" hint-placeholder-val="{{ true }}"><div class="hf-explore-card-grid"><sc-for list="{{ exploreCards }}" as="item" hint-placeholder-count="6"><article class="hf-explore-card" tabindex="0" onClick="{{ item.onOpen }}" onKeyDown="{{ item.onKeyDown }}"><div class="hf-explore-thumb"><span class="hf-explore-type">{{ item.typeLabel }}</span><sc-if value="{{ item.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ item.url }}" muted loop playsinline preload="metadata"></video></sc-if><sc-if value="{{ item.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ item.url }}" alt="{{ item.title }}" loading="lazy" decoding="async"/></sc-if><sc-if value="{{ item.isAudio }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(140deg,#26312c,#151817);color:#D1FE17"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2v20"></path><path d="M6 6v12"></path><path d="M18 6v12"></path><path d="M3 9v6"></path><path d="M21 9v6"></path></svg></div></sc-if></div><div class="hf-explore-card-body"><div class="hf-explore-card-title">{{ item.title }}</div><div class="hf-explore-card-meta"><span class="hf-explore-card-creator">{{ item.creator }}</span><span class="hf-explore-card-stats">♥ {{ item.likes }} · ↗ {{ item.remixes }}</span></div></div></article></sc-for></div></sc-if>
         </sc-if>
       </div>
     </div>
@@ -2770,6 +2840,7 @@ class Component extends DCLogic {
     if(route === 'pricing') return { page:'pricing', requiresAuth:false };
     if(route === 'auth' || route === 'login' || route === 'signup') return { page:'auth', requiresAuth:false };
     if(route === 'gallery') return { page:'gallery', requiresAuth:true };
+    if(route === 'explore') return { page:'explore', exploreId:parts[1] ? decodeURIComponent(parts.slice(1).join('/')) : '', requiresAuth:false };
     if(route === 'affiliate') return { page:'affiliate', requiresAuth:true };
     if(route === 'onboarding') return { page:'onboarding', requiresAuth:true };
     if(route === 'admin') return { page:'admin', requiresAuth:true };
@@ -2789,6 +2860,7 @@ class Component extends DCLogic {
     if(page === 'pricing') return '/pricing';
     if(page === 'auth') return '/auth';
     if(page === 'gallery') return '/gallery';
+    if(page === 'explore') return '/explore' + (this.state && this.state.exploreActiveId ? '/' + encodeURIComponent(this.state.exploreActiveId) : '');
     if(page === 'affiliate') return '/affiliate';
     if(page === 'onboarding') return '/onboarding';
     if(page === 'admin') return '/admin';
@@ -2808,18 +2880,22 @@ class Component extends DCLogic {
 
   applyDocumentMetadata(){
     if(typeof document === 'undefined') return;
-    const publicPage = ['app','pricing','auth'].includes(this.state.page);
+    const publicPage = ['app','pricing','auth','explore'].includes(this.state.page);
     const title = this.state.page === 'pricing' ? 'Tarifs | HuggyFlow' : this.state.page === 'auth' ? 'Connexion | HuggyFlow' : 'HuggyFlow | Création multimédia par IA';
     const description = this.state.page === 'pricing' ? 'Découvre les offres HuggyFlow pour produire des créations multimédia avec l’IA.' : this.state.page === 'auth' ? 'Connecte-toi à HuggyFlow pour retrouver tes projets et créations.' : 'HuggyFlow transforme une intention en images, vidéos, documents et campagnes créatives vérifiées.';
-    document.title = title;
+    const metadataTitle = this.state.page === 'explore' ? 'Explorer | HuggyFlow' : title;
+    const safeMetadataDescription = this.state.page === 'explore' ? 'Decouvre, partage et remixe les creations publiques de la communaute HuggyFlow.' : description;
+    const metadataDescription = this.state.page === 'explore' ? 'DÃ©couvre, partage et remixe les crÃ©ations publiques de la communautÃ© HuggyFlow.' : description;
+    const metadataPath = this.state.page === 'explore' ? '/explore' : (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/');
+    document.title = metadataTitle;
     const setMeta = (selector, attrs) => { let node = document.head.querySelector(selector); if(!node){ node = document.createElement('meta'); document.head.appendChild(node); } Object.keys(attrs).forEach(key=>node.setAttribute(key, attrs[key])); };
-    setMeta('meta[name="description"]', { name:'description', content:description });
+    setMeta('meta[name="description"]', { name:'description', content:safeMetadataDescription });
     setMeta('meta[name="robots"]', { name:'robots', content:publicPage ? 'index,follow,max-image-preview:large' : 'noindex,nofollow,noarchive' });
     let canonical = document.head.querySelector('link[rel="canonical"]');
     if(!canonical){ canonical = document.createElement('link'); canonical.rel='canonical'; document.head.appendChild(canonical); }
-    canonical.href = 'https://www.huggyflow.fun' + (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/');
+    canonical.href = 'https://www.huggyflow.fun' + metadataPath;
     const structured = document.head.querySelector('#hf-structured-data');
-    if(structured) structured.textContent = JSON.stringify({ '@context':'https://schema.org', '@type':this.state.page === 'pricing' || this.state.page === 'auth' ? 'WebPage' : 'SoftwareApplication', name:title.replace(' | HuggyFlow',''), url:'https://www.huggyflow.fun' + (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/'), description, isPartOf:{ '@type':'WebSite', name:'HuggyFlow', url:'https://www.huggyflow.fun/' } });
+    if(structured) structured.textContent = JSON.stringify({ '@context':'https://schema.org', '@type':this.state.page === 'pricing' || this.state.page === 'auth' || this.state.page === 'explore' ? 'WebPage' : 'SoftwareApplication', name:metadataTitle.replace(' | HuggyFlow',''), url:'https://www.huggyflow.fun' + metadataPath, description:safeMetadataDescription, isPartOf:{ '@type':'WebSite', name:'HuggyFlow', url:'https://www.huggyflow.fun/' } });
   }
 
   initialAuthSession = this.storedAuthSession();
@@ -2850,6 +2926,7 @@ class Component extends DCLogic {
     billing: this.initialUiState.billing || 'annual',
     segment: this.initialUiState.segment || 'solo',
     faqOpen: 0,
+    exploreItems: [], exploreLoading: false, exploreSort: this.initialUiState.exploreSort || 'trending', exploreSearch: '', exploreActiveId: this.initialRoute.exploreId || '', exploreNewDismissed: this.initialUiState.exploreNewDismissed === true, exploreLikedIds: {}, exploreSavedIds: {},
     authMode: 'login',
     authName: '', authEmail: '', authPassword: '',
     authStatus: '',
@@ -3898,7 +3975,7 @@ class Component extends DCLogic {
         return;
       }
       this.restoringRoute = true;
-      this.setState({ page:next.page || 'app', modelMenu:false }, ()=>{
+      this.setState({ page:next.page || 'app', exploreActiveId:next.exploreId || '', modelMenu:false }, ()=>{
         this.restoringRoute = false;
         this.applyDocumentMetadata();
       });
@@ -3958,6 +4035,7 @@ class Component extends DCLogic {
     }, 3000);
     this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
     this.loadPublicArtifactFromUrl();
+    if(this.state.page === 'explore') this.loadExploreFeed();
     this.restoreAuthSession();
     if(this.state.authToken) this.loadMfa();
     this.syncChatInputSize();
@@ -3993,7 +4071,7 @@ class Component extends DCLogic {
     if(typeof document !== 'undefined' && prevState.theme !== this.state.theme){
       document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
     }
-    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
+    const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','exploreSort','exploreNewDismissed','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
     const changed = watched.some(key=>prevState[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
     const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>prevState[key] !== this.state[key]);
@@ -4012,6 +4090,7 @@ class Component extends DCLogic {
       if(this.state.page === 'stats') this.loadUsage();
       if(this.state.page === 'skills') this.loadTemplates();
       if(this.state.page === 'connectors') this.loadIntegrations();
+      if(this.state.page === 'explore') this.loadExploreFeed();
     }
     if(prevState.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
@@ -4045,6 +4124,8 @@ class Component extends DCLogic {
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         creationsExpanded:this.state.creationsExpanded !== false,
         projectsExpanded:this.state.projectsExpanded !== false,
+        exploreSort:this.state.exploreSort || 'trending',
+        exploreNewDismissed:this.state.exploreNewDismissed === true,
         studioContextByProject:this.state.studioContextByProject || {},
         studioPanelOpen:!!this.state.studioPanelOpen,
         studioTab:this.state.studioTab || 'media',
@@ -5836,12 +5917,119 @@ class Component extends DCLogic {
           isVoice:type === 'voice',
           onDownload:()=>this.downloadMedia(media.resultUrl),
           onPlay:()=>this.playMedia(media.resultUrl),
-          onRecreate:()=>this.remixCreation(media.prompt || msg.text || 'cette creation', type)
+            onRecreate:()=>this.remixCreation(media.prompt || msg.text || 'cette creation', type),
+            canPublish:!!media.generationId,
+          onPublish:()=>this.publishExploreItem({ generationId:media.generationId, title:(media.prompt || msg.text || project.title || 'Création HuggyFlow').slice(0,120), type })
         });
       });
     });
     if(items.length) return items.reverse();
     return [];
+  }
+
+  exploreFallbackItems(){
+    return this.galleryItems().slice(0, 24).map((item, index)=>({
+      id:'local-explore-' + String(item.slotId || index),
+      title:item.title || 'Création HuggyFlow',
+      description:'Une création partagée depuis la Galerie HuggyFlow.',
+      prompt:item.title || 'Création multimédia HuggyFlow',
+      creator:'Ma création',
+      creatorInitials:'MC',
+      date:'à l’instant',
+      url:item.resultUrl || '',
+      type:item.isVideo ? 'video' : (item.isVoice ? 'audio' : 'image'),
+      model:item.model || 'HuggyFlow',
+      ratio:item.ratio || '1:1',
+      duration:item.duration || '—',
+      hasAudio:item.isVideo,
+      likes:Math.max(0, 18 - index),
+      saves:Math.max(0, 6 - Math.floor(index / 2)),
+      remixes:Math.max(0, 3 - Math.floor(index / 4)),
+      views:Math.max(0, 90 - index * 3),
+      isLocalPreview:true
+    }));
+  }
+  normalizeExploreItem(item, index=0){
+    if(!item || typeof item !== 'object') return null;
+    const type = String(item.type || item.mediaType || 'image').toLowerCase() === 'voice' ? 'audio' : String(item.type || item.mediaType || 'image').toLowerCase();
+    return {
+      id:String(item.id || 'explore-' + index), title:String(item.title || 'Création HuggyFlow').slice(0,120), description:String(item.description || 'Création publique HuggyFlow.').slice(0,360), prompt:String(item.prompt || item.sourcePrompt || item.description || 'Création multimédia HuggyFlow').slice(0,600), creator:String(item.creator || item.creatorName || 'Créateur HuggyFlow').slice(0,80), creatorInitials:String(item.creatorInitials || item.creator || 'HF').slice(0,2).toUpperCase(), date:String(item.date || item.createdAt || 'Récemment').slice(0,40), url:String(item.url || item.mediaUrl || item.resultUrl || ''), type, model:String(item.model || item.modelLabel || 'HuggyFlow').slice(0,80), ratio:String(item.ratio || item.aspectRatio || '1:1'), duration:String(item.duration || item.durationSeconds || '—'), hasAudio:Boolean(item.hasAudio || item.audio), likes:Number(item.likes || item.reactions || 0), saves:Number(item.saves || item.bookmarks || 0), remixes:Number(item.remixes || item.remixCount || 0), views:Number(item.views || 0), isLocalPreview:Boolean(item.isLocalPreview)
+    };
+  }
+  exploreItemsForView(){
+    const source = Array.isArray(this.state.exploreItems) && this.state.exploreItems.length ? this.state.exploreItems : this.exploreFallbackItems();
+    const q = String(this.state.exploreSearch || '').trim().toLowerCase();
+    let list = source.map((item,index)=>this.normalizeExploreItem(item,index)).filter(Boolean).filter(item=>!q || [item.title,item.description,item.prompt,item.creator,item.model].join(' ').toLowerCase().includes(q));
+    const sort = this.state.exploreSort || 'trending';
+    if(sort === 'new') list = list.slice().reverse();
+    if(sort === 'remixed') list = list.slice().sort((a,b)=>b.remixes-a.remixes);
+    if(sort === 'saved') list = list.slice().sort((a,b)=>b.saves-a.saves);
+    if(sort === 'trending') list = list.slice().sort((a,b)=>(b.likes + b.saves * 2 + b.remixes * 3 + b.views * .05) - (a.likes + a.saves * 2 + a.remixes * 3 + a.views * .05));
+    return list;
+  }
+  async loadExploreFeed(){
+    this.setState({ exploreLoading:true });
+    try{
+      const res = await this.apiFetch('/api/explore?sort=' + encodeURIComponent(this.state.exploreSort || 'trending'));
+      if(res.ok){ const data = await res.json(); this.setState({ exploreItems:Array.isArray(data.items) ? data.items : [], exploreLoading:false }); return; }
+    }catch(err){}
+    this.setState({ exploreItems:[], exploreLoading:false });
+  }
+  openExplore(){
+    const wasSeen = this.state.exploreNewDismissed === true;
+    this.setState({ page:'explore', exploreActiveId:'', exploreSearch:'', modelMenu:false, exploreNewDismissed:true }, ()=>{
+      try{ localStorage.setItem('huggyflow_explore_seen','1'); }catch(e){}
+      if(!wasSeen) this.notify('Explorer est ouvert. Découvre les créations publiques.');
+      this.loadExploreFeed();
+    });
+  }
+  openExploreItem(item){
+    if(!item || !item.id) return;
+    this.setState({ page:'explore', exploreActiveId:String(item.id), exploreNewDismissed:true }, ()=>this.syncPageRoute('push'));
+  }
+  closeExploreItem(){ this.setState({ exploreActiveId:'' }, ()=>this.syncPageRoute('push')); }
+  exploreStep(direction){
+    const items = this.exploreItemsForView(); if(!items.length) return;
+    const current = Math.max(0, items.findIndex(item=>item.id === this.state.exploreActiveId));
+    const next = (current + direction + items.length) % items.length;
+    this.openExploreItem(items[next]);
+  }
+  toggleExploreReaction(kind){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId); if(!item) return;
+    const field = kind === 'save' ? 'exploreSavedIds' : 'exploreLikedIds';
+    const current = Boolean((this.state[field] || {})[item.id]);
+    this.setState(s=>({ [field]:Object.assign({}, s[field] || {}, { [item.id]:!current }) }));
+    this.notify(kind === 'save' ? (current ? 'Création retirée des sauvegardes.' : 'Création enregistrée.') : (current ? 'Réaction retirée.' : 'Réaction ajoutée.'));
+    if(this.state.authToken && /^[0-9a-f-]{36}$/i.test(item.id)){
+      this.apiFetch('/api/explore', { method:'POST', body:JSON.stringify({ action:kind === 'save' ? 'save' : 'reaction', publicationId:item.id }) }).then(async res=>{
+        if(!res.ok) throw new Error('interaction');
+        const data = await res.json();
+        if(data.item) this.setState(s=>({ exploreItems:(s.exploreItems || []).map(entry=>String(entry.id) === item.id ? Object.assign({}, entry, { likes:data.item.likes, saves:data.item.saves }) : entry) }));
+      }).catch(()=>this.notify('La réaction est restée locale, synchronisation indisponible.'));
+    }
+  }
+  remixExploreItem(){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId); if(!item) return;
+    this.setState({ page:'app', mode:item.type === 'video' ? 'video' : (item.type === 'audio' ? 'audio' : 'image'), input:'Remixe cette création en gardant son intention et son style : ' + item.prompt, exploreActiveId:'', modelMenu:false }, ()=>this.notify('Copie remixable créée. Ajuste la consigne puis lance la génération.'));
+  }
+  shareExploreItem(){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId); if(!item) return;
+    const url = (typeof window !== 'undefined' ? window.location.origin : 'https://www.huggyflow.fun') + '/explore/' + encodeURIComponent(item.id);
+    if(typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(url).catch(()=>{});
+    this.notify('Lien Explorer copié.');
+  }
+  publishExploreItem(source){
+    if(!this.state.authToken || !source || !source.generationId) return this.notify('Connecte-toi pour publier une création dans Explorer.');
+    this.apiFetch('/api/explore',{method:'POST',body:JSON.stringify({action:'publish',generationId:source.generationId,title:source.title,description:'Création publiée depuis la Galerie HuggyFlow.'})}).then(async res=>{
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.item) throw new Error(data && data.error && data.error.message || 'publication');
+      this.notify('Création publiée dans Explorer.');
+    }).catch(err=>this.notify(String(err && err.message || 'Publication impossible pour le moment.')));
+  }
+  reportExploreItem(){
+    const item = this.exploreItemsForView().find(entry=>entry.id === this.state.exploreActiveId);
+    if(this.state.authToken && item && /^[0-9a-f-]{36}$/i.test(item.id)) this.apiFetch('/api/explore',{method:'POST',body:JSON.stringify({action:'report',publicationId:item.id,reason:'other'})}).catch(()=>{});
+    this.notify('Merci. Le contenu a été signalé pour vérification.');
   }
 
   TEAM = [];
@@ -5889,6 +6077,8 @@ class Component extends DCLogic {
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
     const galleryItems = this.galleryItems();
+    const exploreItems = this.exploreItemsForView();
+    const exploreActive = exploreItems.find(item=>item.id === st.exploreActiveId) || null;
     const studioMediaItems = this.studioMediaItems();
     const artifactItems = (st.artifactItems || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
     const renderedPlans = this.buildPlans();
@@ -6253,7 +6443,7 @@ class Component extends DCLogic {
       systemTabStyle: st.theme === 'system' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       lightTabStyle: st.theme === 'light' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       darkTabStyle: st.theme === 'dark' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
-      showApp: st.page === 'app' || ['pricing', 'gallery', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      showApp: st.page === 'app' || ['pricing', 'gallery', 'explore', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{
@@ -6262,6 +6452,43 @@ class Component extends DCLogic {
         return { theme: t };
       }),
       showPricing: st.page === 'pricing',
+      showExplore: st.page === 'explore',
+      exploreLoading: !!st.exploreLoading,
+      exploreSearch: st.exploreSearch || '',
+      exploreSort: st.exploreSort || 'trending',
+      exploreShowNew: st.exploreNewDismissed !== true,
+      exploreHasActive: !!exploreActive,
+      exploreListVisible: !exploreActive,
+      exploreHasItems: exploreItems.length > 0,
+      exploreEmpty: !st.exploreLoading && exploreItems.length === 0,
+      exploreCards: exploreItems.map(item=>({
+        id:item.id, title:item.title, creator:item.creator, likes:item.likes, remixes:item.remixes, url:item.url,
+        typeLabel:item.type === 'video' ? 'Vidéo' : (item.type === 'audio' ? 'Voix' : 'Image'), isVideo:item.type === 'video', isImage:item.type !== 'video' && item.type !== 'audio', isAudio:item.type === 'audio',
+        onOpen:()=>this.openExploreItem(item), onKeyDown:(e)=>{ if(e && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); this.openExploreItem(item); } }
+      })),
+      exploreActiveUrl: exploreActive ? exploreActive.url : '',
+      exploreActiveTitle: exploreActive ? exploreActive.title : '',
+      exploreActiveDescription: exploreActive ? exploreActive.description : '',
+      exploreActivePrompt: exploreActive ? exploreActive.prompt : '',
+      exploreActiveCreator: exploreActive ? exploreActive.creator : '',
+      exploreActiveInitials: exploreActive ? exploreActive.creatorInitials : 'HF',
+      exploreActiveDate: exploreActive ? exploreActive.date : '',
+      exploreActiveModel: exploreActive ? exploreActive.model : '',
+      exploreActiveRatio: exploreActive ? exploreActive.ratio : '',
+      exploreActiveDuration: exploreActive ? exploreActive.duration : '',
+      exploreActiveLikes: exploreActive ? exploreActive.likes + (st.exploreLikedIds && st.exploreLikedIds[exploreActive.id] ? 1 : 0) : 0,
+      exploreActiveSaves: exploreActive ? exploreActive.saves + (st.exploreSavedIds && st.exploreSavedIds[exploreActive.id] ? 1 : 0) : 0,
+      exploreActiveRemixes: exploreActive ? exploreActive.remixes : 0,
+      exploreActiveHasAudio: !!(exploreActive && exploreActive.hasAudio),
+      exploreActiveIsVideo: !!(exploreActive && exploreActive.type === 'video'),
+      exploreActiveIsImage: !!(exploreActive && exploreActive.type !== 'video' && exploreActive.type !== 'audio'),
+      exploreActiveIsAudio: !!(exploreActive && exploreActive.type === 'audio'),
+      exploreActiveLiked: !!(exploreActive && st.exploreLikedIds && st.exploreLikedIds[exploreActive.id]),
+      exploreActiveSaved: !!(exploreActive && st.exploreSavedIds && st.exploreSavedIds[exploreActive.id]),
+      exploreThumbs: exploreItems.slice(0,8).map(item=>({ id:item.id, title:item.title, url:item.url, isVideo:item.type === 'video', isImage:item.type !== 'audio' && item.type !== 'video', activeClass:exploreActive && exploreActive.id === item.id ? 'is-active' : '', onOpen:()=>this.openExploreItem(item) })),
+      onExploreSearch:(e)=>this.setState({ exploreSearch:e.target.value }),
+      onExploreSort:(e)=>this.setState({ exploreSort:e.target.value },()=>this.loadExploreFeed()),
+      openExplore:()=>this.openExplore(), closeExploreItem:()=>this.closeExploreItem(), explorePrevious:()=>this.exploreStep(-1), exploreNext:()=>this.exploreStep(1), toggleExploreLike:()=>this.toggleExploreReaction('like'), toggleExploreSave:()=>this.toggleExploreReaction('save'), remixExploreItem:()=>this.remixExploreItem(), shareExploreItem:()=>this.shareExploreItem(), reportExploreItem:()=>this.reportExploreItem(), refreshExplore:()=>this.loadExploreFeed(),
       showStudioPanel: !!st.studioPanelOpen,
       studioPanelWidthStyle: st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '100vw' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
       studioContentInset: !st.studioPanelOpen || st.artifactFullscreen || (typeof window !== 'undefined' && window.innerWidth < 760) ? '0px' : Math.max(360, Number(st.studioPanelWidth || 560)) + 'px',
@@ -6652,6 +6879,9 @@ class Component extends DCLogic {
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),
+      exploreNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'explore' ? '650' : '500') + ';color:' + (st.page === 'explore' ? T.ink : T.text2) + ';background:' + (st.page === 'explore' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
+      exploreShowNew: st.exploreNewDismissed !== true,
+      openExplore: ()=> this.openExplore(),
       galleryTabs: [['all','Tout'],['image','Images'],['video','Vidéos'],['voice','Voix']].map(p=>({
         label: p[1],
         style: this.tabStyle((st.galleryFilter || 'all') === p[0]),
