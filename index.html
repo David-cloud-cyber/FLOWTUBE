@@ -26,6 +26,20 @@
 <script src="/support.js"></script>
 <link rel="stylesheet" href="/dist-components/hf-components.css">
 <script src="/dist-components/hf-components.iife.js"></script>
+<script>
+(() => {
+  let requested = false;
+  const ensureComponents = () => {
+    if (requested || window.HFComponents) return;
+    requested = true;
+    const script = document.createElement('script');
+    script.src = '/dist-components/hf-components.iife.js?boot=' + Date.now();
+    document.head.appendChild(script);
+  };
+  window.addEventListener('hf-react-ready', ensureComponents, { once: true });
+  window.setTimeout(ensureComponents, 1600);
+})();
+</script>
 </head>
 <body>
 <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
@@ -74,6 +88,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pageFade{from{opacity:0}to{opacity:1}}
 @keyframes pageRise{from{opacity:0;transform:translateY(16px) scale(.994)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes hfRouteEnter{from{opacity:0;transform:translate3d(0,7px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 @keyframes pageSettle{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes sideIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
 @keyframes tabFade{from{opacity:.45}to{opacity:1}}
@@ -335,7 +350,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* Explore public gallery */
-.hf-explore-shell{position:absolute;inset:0;left:var(--hf-content-inset,258px);z-index:20;overflow:auto;background:var(--hf-page-bg,#131517);color:var(--hf-ink,#F7F7F8);scroll-behavior:smooth;overscroll-behavior:contain;animation:pageRise .32s cubic-bezier(.22,1,.36,1) both}
+.hf-explore-shell{position:absolute;inset:0;left:var(--hf-content-inset,258px);z-index:20;overflow:auto;background:var(--hf-page-bg,#131517);color:var(--hf-ink,#F7F7F8);scroll-behavior:auto;overscroll-behavior:contain;scrollbar-gutter:stable;animation:pageRise .32s cubic-bezier(.22,1,.36,1) both}
 .hf-explore-inner{width:min(1180px,100%);margin:0 auto;padding:28px 32px 72px;box-sizing:border-box}
 .hf-explore-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px}
 .hf-explore-kicker{display:inline-flex;align-items:center;gap:7px;color:#D1FE17;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
@@ -359,9 +374,12 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 @media (max-width:980px){.hf-explore-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hf-explore-viewer{grid-template-columns:minmax(0,1fr) 330px}}
 @media (max-width:760px){.hf-explore-shell{left:72px}.hf-explore-inner{padding:22px 16px 48px}.hf-explore-heading{margin-bottom:18px}.hf-explore-card-grid{grid-template-columns:1fr}.hf-explore-viewer{display:flex;flex-direction:column;min-height:0;overflow:visible}.hf-explore-stage{min-height:58vh;padding:36px 48px}.hf-explore-stage-media{max-height:55vh}.hf-explore-details{max-height:none;border-top:1px solid rgba(247,247,248,.09);border-left:0}.hf-explore-action-row{margin-top:18px}.hf-explore-search{min-width:100%;flex:1}}
 @media (prefers-reduced-motion:reduce){.hf-explore-shell,.hf-explore-card,.hf-explore-viewer,.hf-explore-stage-media{animation:none}.hf-explore-shell,.hf-explore-card,.hf-explore-stage-arrow,.hf-explore-icon-button,.hf-explore-primary-action,.hf-explore-secondary-action{transition:none!important;scroll-behavior:auto}}
+[data-hf-app-shell="true"]{--hf-motion-ease:cubic-bezier(.22,1,.36,1)}
+[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:hfRouteEnter .26s var(--hf-motion-ease) both!important;will-change:opacity,transform}
+@media (prefers-reduced-motion:reduce){[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:none!important;will-change:auto}}
 </style>
 </helmet>
-<div style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;animation:pageFade .3s ease both">
+<div data-hf-app-shell="true" style="height:100vh;display:flex;position:relative;background:{{ tPageBg }};color:{{ tInk }};font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased">
   <input id="hf-file-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.doc,.docx" onChange="{{ onFileInput }}" style="display:none"/>
   <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}"><div data-hf-toast="true">{{ toastMessage }}</div></sc-if>
 
@@ -496,7 +514,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </aside>
 
-  <main style="flex:1;display:flex;flex-direction:column;position:relative;min-width:0;box-sizing:border-box;padding-right:{{ studioContentInset }};animation:pageSettle .45s cubic-bezier(.22,1,.36,1) both">
+  <main data-hf-route-view="true" style="flex:1;display:flex;flex-direction:column;position:relative;min-width:0;box-sizing:border-box;padding-right:{{ studioContentInset }}">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 26px;z-index:3">
       <div style="display:flex;align-items:center;gap:9px;min-width:0;font-size:13.5px">
         <span style="color:{{ tText4 }}">Projet</span>
@@ -690,7 +708,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                   <div data-hf-message-row="true" style="display:flex;gap:12px;align-items:flex-start;width:100%">
                     <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;padding-top:4px">
-                       <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
+                      <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
+                      <sc-if value="{{ m.agentUi }}" hint-placeholder-val="{{ false }}">{{ m.agentUi }}</sc-if>
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
                           <div data-hf-stream-status="true">
@@ -2878,6 +2897,65 @@ class Component extends DCLogic {
     this.applyDocumentMetadata();
   }
 
+  routeScrollKey(page, exploreId){
+    const suffix = page === 'explore' ? ':' + String(exploreId || 'list') : '';
+    return 'huggyflow_route_scroll:' + String(page || 'app') + suffix;
+  }
+  routeScrollElement(page){
+    if(typeof document === 'undefined') return null;
+    const selectors = {
+      explore:'[data-screen-label="Explorer public"]',
+      gallery:'[data-screen-label="Galerie de créations"]',
+      pricing:'[data-screen-label="Pricing"]',
+      affiliate:'[data-screen-label="Affiliation"]',
+      admin:'[data-screen-label="Panel admin"]'
+    };
+    const selector = selectors[page] || (this.isSettingsPage(page) ? '[data-hf-settings-scroll="true"]' : '');
+    return selector ? document.querySelector(selector) : null;
+  }
+  persistRouteScroll(page, exploreId){
+    if(!page || page === 'app' || this.isSettingsPage(page)) return;
+    const element = this.routeScrollElement(page);
+    if(!element) return;
+    const top = Math.max(0, Math.round(element.scrollTop || 0));
+    if(!this.routeScrollPositions) this.routeScrollPositions = {};
+    const key = this.routeScrollKey(page, exploreId);
+    this.routeScrollPositions[key] = top;
+    try{ localStorage.setItem(key, String(top)); }catch(e){}
+  }
+  restoreRouteScroll(page, exploreId){
+    if(!page || page === 'app' || this.isSettingsPage(page)) return;
+    const key = this.routeScrollKey(page, exploreId);
+    let requestedTop = this.routeScrollPositions && this.routeScrollPositions[key];
+    if(requestedTop === undefined){
+      try{ requestedTop = Number(localStorage.getItem(key) || 0); }catch(e){ requestedTop = 0; }
+    }
+    const target = Math.max(0, Number(requestedTop) || 0);
+    clearTimeout(this.routeScrollRestoreTimer);
+    this.routeScrollRestoreTimer = setTimeout(()=>{
+      const element = this.routeScrollElement(page);
+      if(!element) return;
+      const maxTop = Math.max(0, element.scrollHeight - element.clientHeight);
+      element.scrollTop = Math.min(target, maxTop);
+    }, 0);
+  }
+  startRouteTransition(){
+    if(typeof document === 'undefined') return;
+    const shell = document.querySelector('[data-hf-app-shell="true"]');
+    if(!shell) return;
+    clearTimeout(this.routeTransitionTimer);
+    shell.classList.remove('hf-route-transition');
+    if(typeof requestAnimationFrame !== 'function'){
+      shell.classList.add('hf-route-transition');
+      this.routeTransitionTimer = setTimeout(()=>shell.classList.remove('hf-route-transition'), 320);
+      return;
+    }
+    requestAnimationFrame(()=>{
+      shell.classList.add('hf-route-transition');
+      this.routeTransitionTimer = setTimeout(()=>shell.classList.remove('hf-route-transition'), 320);
+    });
+  }
+
   applyDocumentMetadata(){
     if(typeof document === 'undefined') return;
     const publicPage = ['app','pricing','auth','explore'].includes(this.state.page);
@@ -3856,6 +3934,10 @@ class Component extends DCLogic {
       attachments: Array.isArray(m && m.attachments) ? m.attachments : [],
       kind: media ? (media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image') : undefined,
       media: media || undefined,
+      agentActivity: Array.isArray(m && m.agentActivity) ? m.agentActivity : [],
+      citations: this.normalizeAgentCitations(m || {}),
+      streamPhase: m && m.streamPhase || (media && media.status === 'loading' ? 'rendering' : 'complete'),
+      streamProgress: Number(m && m.streamProgress || 0),
       batch: m && m.batch
     };
   }
@@ -4028,6 +4110,10 @@ class Component extends DCLogic {
     if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
     this.trackAffiliateReferral();
     this.consumeOAuthReturnNotice();
+    this.restoreRouteScroll(this.state.page, this.state.exploreActiveId);
+    this._lastComponentPage = this.state.page;
+    this._lastExploreActiveId = this.state.exploreActiveId || '';
+    this._lastUpdateState = { page:this.state.page, messages:this.state.messages, theme:this.state.theme, input:this.state.input, activeProjectId:this.state.activeProjectId, activeTitle:this.state.activeTitle, projectsData:this.state.projectsData, modelId:this.state.modelId, mode:this.state.mode, billing:this.state.billing, segment:this.state.segment, pricingCostFilter:this.state.pricingCostFilter, attachments:this.state.attachments, sidebarCollapsed:this.state.sidebarCollapsed, sidebarSearchQuery:this.state.sidebarSearchQuery, creationsExpanded:this.state.creationsExpanded, projectsExpanded:this.state.projectsExpanded, exploreSort:this.state.exploreSort, exploreNewDismissed:this.state.exploreNewDismissed, studioPanelOpen:this.state.studioPanelOpen, studioTab:this.state.studioTab, studioPanelWidth:this.state.studioPanelWidth, artifactView:this.state.artifactView, artifactPreviewDevice:this.state.artifactPreviewDevice, artifactFullscreen:this.state.artifactFullscreen, studioContextByProject:this.state.studioContextByProject, exploreActiveId:this.state.exploreActiveId };
     this._ph = setInterval(()=>this.setState(s=>({ placeholderIdx:(s.placeholderIdx+1) % this.PLACEHOLDERS.length })), 3600);
     this._streamPhrase = setInterval(()=>{
       const active = this.state.sendLocked && (this.state.messages || []).some(message=>message && message.streamLive);
@@ -4059,6 +4145,8 @@ class Component extends DCLogic {
     clearTimeout(this.bootstrapTimer);
     clearTimeout(this.toastTimer);
     clearTimeout(this.settingsHopTimer);
+    clearTimeout(this.routeTransitionTimer);
+    clearTimeout(this.routeScrollRestoreTimer);
     this.persistUiState();
     if(this.chatAbort) this.chatAbort.abort();
     if(this.activeAudio) this.activeAudio.pause();
@@ -4068,20 +4156,34 @@ class Component extends DCLogic {
     // The Streamable wrapper only supplies previous props. Treat missing state
     // as an empty snapshot so a normal render update can never crash the app.
     prevState = prevState || {};
-    if(typeof document !== 'undefined' && prevState.theme !== this.state.theme){
+    const hasPreviousState = Object.prototype.hasOwnProperty.call(prevState, 'page');
+    const stateBefore = hasPreviousState ? prevState : (this._lastUpdateState || {});
+    this._lastUpdateState = { page:this.state.page, messages:this.state.messages, theme:this.state.theme, input:this.state.input, activeProjectId:this.state.activeProjectId, activeTitle:this.state.activeTitle, projectsData:this.state.projectsData, modelId:this.state.modelId, mode:this.state.mode, billing:this.state.billing, segment:this.state.segment, pricingCostFilter:this.state.pricingCostFilter, attachments:this.state.attachments, sidebarCollapsed:this.state.sidebarCollapsed, sidebarSearchQuery:this.state.sidebarSearchQuery, creationsExpanded:this.state.creationsExpanded, projectsExpanded:this.state.projectsExpanded, exploreSort:this.state.exploreSort, exploreNewDismissed:this.state.exploreNewDismissed, studioPanelOpen:this.state.studioPanelOpen, studioTab:this.state.studioTab, studioPanelWidth:this.state.studioPanelWidth, artifactView:this.state.artifactView, artifactPreviewDevice:this.state.artifactPreviewDevice, artifactFullscreen:this.state.artifactFullscreen, studioContextByProject:this.state.studioContextByProject, exploreActiveId:this.state.exploreActiveId };
+    if(typeof document !== 'undefined' && stateBefore.theme !== this.state.theme){
       document.documentElement.setAttribute('data-theme', this.state.theme === 'light' ? 'light' : 'dark');
     }
     const watched = ['page','input','messages','activeProjectId','activeTitle','projectsData','modelId','mode','theme','billing','segment','pricingCostFilter','attachments','sidebarCollapsed','sidebarSearchQuery','creationsExpanded','projectsExpanded','exploreSort','exploreNewDismissed','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen','studioContextByProject'];
-    const changed = watched.some(key=>prevState[key] !== this.state[key]);
+    const changed = watched.some(key=>stateBefore[key] !== this.state[key]);
     if(changed) this.schedulePersistUiState();
-    const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>prevState[key] !== this.state[key]);
+    const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>stateBefore[key] !== this.state[key]);
     if(studioChanged) this.rememberStudioContext();
-    if(prevState.messages !== this.state.messages){
+    if(stateBefore.messages !== this.state.messages){
       if(this.chatShouldStick !== false) this.scrollChatToBottom();
       else if(!this.state.chatUnread) this.setState({ chatUnread:true });
     }
-    if(prevState.page !== this.state.page){
-      if(this.isSettingsPage(prevState.page)) this.persistSettingsScroll(prevState.page);
+    const previousPage = stateBefore.page === undefined ? this._lastComponentPage : stateBefore.page;
+    const previousExploreActiveId = stateBefore.exploreActiveId === undefined ? this._lastExploreActiveId : stateBefore.exploreActiveId;
+    const pageChanged = previousPage !== this.state.page;
+    const routeChanged = pageChanged || (this.state.page === 'explore' && previousExploreActiveId !== this.state.exploreActiveId);
+    this._lastComponentPage = this.state.page;
+    this._lastExploreActiveId = this.state.exploreActiveId || '';
+    if(routeChanged){
+      this.persistRouteScroll(previousPage, previousExploreActiveId);
+      this.startRouteTransition();
+      this.restoreRouteScroll(this.state.page, this.state.exploreActiveId);
+    }
+    if(pageChanged){
+      if(this.isSettingsPage(previousPage)) this.persistSettingsScroll(previousPage);
       if(this.isSettingsPage(this.state.page)) this.restoreSettingsScroll(this.state.page);
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
@@ -4092,7 +4194,7 @@ class Component extends DCLogic {
       if(this.state.page === 'connectors') this.loadIntegrations();
       if(this.state.page === 'explore') this.loadExploreFeed();
     }
-    if(prevState.input !== this.state.input) this.syncChatInputSize();
+    if(stateBefore.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
     if(this.isSettingsPage(this.state.page) && !this.state.authToken){
       this.clearSettingsHash();
@@ -4572,6 +4674,69 @@ class Component extends DCLogic {
   updateAgentMessage(id, patch){
     this.setState(s=>({ messages:s.messages.map(m=>m.id === id ? Object.assign({}, m, patch) : m) }));
   }
+  normalizeAgentCitations(source){
+    const raw = source && (source.citations || source.sources || source.references);
+    if(!Array.isArray(raw)) return [];
+    return raw.map((item, index)=>{
+      if(typeof item === 'string') return { id:'source-'+index, title:item, url:item };
+      return { id:String(item.id || item.url || 'source-'+index), title:String(item.title || item.name || item.label || item.url || 'Source'), domain:String(item.domain || item.site || ''), url:String(item.url || item.href || '') };
+    }).filter(item=>item.title || item.url).slice(0, 8);
+  }
+  recordAgentActivity(id, payload, fallbackPhase, kind){
+    const source = payload || {};
+    const phase = String(source.phase || fallbackPhase || 'analyzing').toLowerCase();
+    const label = String(source.label || source.message || source.activity || this.streamPhaseLabel(phase));
+    const detail = String(source.detail || source.tool || source.provider || source.model || '');
+    const itemId = String(source.activityId || source.stepId || source.toolCallId || (phase + '-' + label)).slice(0, 120);
+    this.setState(s=>({ messages:s.messages.map(m=>{
+      if(m.id !== id) return m;
+      const current = Array.isArray(m.agentActivity) ? m.agentActivity : [];
+      const nextItem = { id:itemId, label, detail, kind:kind || (source.tool ? 'tool' : (source.sources || source.citations ? 'search' : 'step')), status:'working' };
+      const found = current.findIndex(item=>item.id === itemId);
+      const next = found >= 0 ? current.map((item, index)=>index === found ? Object.assign({}, item, nextItem) : item) : current.concat([nextItem]);
+      const citations = this.normalizeAgentCitations(source);
+      return Object.assign({}, m, { agentActivity:next.slice(-8) }, citations.length ? { citations } : {});
+    })}));
+  }
+  retryAgentMessage(id){
+    const messages = this.state.messages || [];
+    const index = messages.findIndex(message=>message.id === id);
+    const previous = index > 0 ? messages.slice(0, index).reverse().find(message=>message.role === 'user') : null;
+    if(previous && previous.text) this.sendPrompt(previous.text);
+    else this.notify('Impossible de relancer cette reponse.');
+  }
+  copyAgentMessage(text){
+    const value = String(text || '').trim();
+    if(!value) return;
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>this.notify('Reponse copiee.')).catch(()=>this.notify('Copie indisponible.'));
+    else this.notify('Copie indisponible dans ce navigateur.');
+  }
+  agentMessageUi(message, media, mediaStatus, streamProgress, streamPhase){
+    if(!message || !message.role || message.role !== 'agent' || !window.HFComponents || !window.React || !window.HFComponents.AgentMessagePanel) return null;
+    const R = window.React;
+    const status = message.streamLive ? (message.streamPhase === 'cancelled' ? 'cancelled' : 'working') : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete'));
+    const activity = Array.isArray(message.agentActivity) ? message.agentActivity : (message.streamLive ? [{ id:'current', label:message.activity || this.streamPhaseLabel(streamPhase), kind:message.streamTool ? 'tool' : 'step', status:'working', detail:message.streamTool || '' }] : []);
+    const phase = String(streamPhase || message.streamPhase || 'analyzing');
+    const tasks = message.streamLive ? [
+      { id:'understand', title:'Comprendre la demande', status:phase === 'analyzing' ? 'in-progress' : 'completed', progress:phase === 'analyzing' ? streamProgress : 100 },
+      { id:'route', title:'Choisir la strategie', status:phase === 'analyzing' || phase === 'routing' ? 'in-progress' : 'completed', progress:phase === 'routing' ? streamProgress : (phase === 'analyzing' ? 0 : 100) },
+      { id:'produce', title:'Produire et verifier le resultat', status:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? 'in-progress' : (phase === 'complete' ? 'completed' : 'pending'), progress:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? streamProgress : (phase === 'complete' ? 100 : 0) }
+    ] : [];
+    return R.createElement(window.HFComponents.AgentMessagePanel, {
+      status, phase, progress:streamProgress, activity, tasks,
+      citations:Array.isArray(message.citations) ? message.citations : [],
+      mediaStatus, mediaLabel:media ? ((media.model || 'AgentFlow') + ' · ' + (media.type === 'video' ? 'video' : media.type === 'voice' ? 'audio' : 'image')) : '',
+      responseText:message.text || '',
+      onRetry:()=>this.retryAgentMessage(message.id),
+      onCopy:()=>this.copyAgentMessage(message.text || ''),
+      onFeedback:(value)=>this.notify(value === 'up' ? 'Merci pour ton retour.' : value === 'down' ? 'Retour enregistre pour ameliorer AgentFlow.' : 'Retour retire.'),
+      onCancel:message.streamLive ? ()=>this.stopGeneration() : undefined,
+      approval:message.approval || undefined,
+      onApprove:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
+      onReject:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'rejected') : undefined,
+      onRequestChanges:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'changes_requested') : undefined,
+    });
+  }
   streamPhaseLabel(phase){
     return ({
       analyzing:'AgentFlow cadre ta demande',
@@ -4830,7 +4995,7 @@ class Component extends DCLogic {
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
     this.trackEvent(this.state.messages.length ? 'agent_request_started' : 'first_generation_started', { mode, hasAttachments:currentAttachments.length > 0 });
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
-    const agentMsg = { id:agentId, role:'agent', typing:true, kind, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande' };
+    const agentMsg = { id:agentId, role:'agent', typing:true, kind, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande', agentActivity:[{ id:'understand', label:'Comprendre la demande', kind:'step', status:'working' }] };
     this.chatShouldStick = true;
     this.chatScrollRequested = true;
     this.setState(s=>({
@@ -4930,28 +5095,30 @@ class Component extends DCLogic {
       if(!data) return;
       let payload; try{ payload = JSON.parse(data); }catch(e){ return; }
       if(type === 'text'){
-        if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); textStarted = true; }
+        if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); this.recordAgentActivity(agentId, payload, 'writing', 'text'); textStarted = true; }
         this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true;
       }
       if(type === 'message'){
-        if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); textStarted = true; }
+        if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); this.recordAgentActivity(agentId, payload, 'writing', 'text'); textStarted = true; }
         this.appendAgentText(agentId, payload.text || ''); delivered = true;
       }
-      if(type === 'status'){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'analyzing', 18)); delivered = true; }
+      if(type === 'status'){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'analyzing', 18)); this.recordAgentActivity(agentId, payload, 'analyzing', payload && (payload.tool || payload.provider) ? 'tool' : 'step'); delivered = true; }
       if(type === 'skill'){
         const skillPatch = this.streamStatusPatch(payload, payload.phase === 'ready' ? 'finalizing' : 'assembling', payload.phase === 'ready' ? 78 : 28);
         this.setState({ skillActivity:payload.label || 'AgentFlow construit une compétence réutilisable', studioPanelOpen:true, studioTab:'skill' });
-        this.updateAgentMessage(agentId, skillPatch); delivered = true;
+        this.updateAgentMessage(agentId, skillPatch); this.recordAgentActivity(agentId, payload, skillPatch.streamPhase, 'tool'); delivered = true;
       }
       if(type === 'artifact_status'){
         const artifactPatch = this.streamStatusPatch(payload, payload.phase === 'ready' ? 'finalizing' : 'assembling', payload.phase === 'ready' ? 84 : 62);
         this.setState({ studioPanelOpen:true, studioTab:'artifact', skillActivity:payload.label || 'AgentFlow prépare un artifact' });
-        this.updateAgentMessage(agentId, artifactPatch); delivered = true;
+        this.updateAgentMessage(agentId, artifactPatch); this.recordAgentActivity(agentId, payload, artifactPatch.streamPhase, 'generation'); delivered = true;
       }
       if(type === 'artifact' && payload.artifact){ const artifact = this.normalizeArtifact(payload.artifact); this.setState(s=>({ artifactItems:[artifact].concat((s.artifactItems || []).filter(a=>a.id !== artifact.id)), studioPanelOpen:true, studioTab:'artifact' }), ()=>this.setActiveArtifact(artifact)); delivered = true; }
-      if(type === 'generation'){ this.updateAgentMessage(agentId, { streamLive:false, streamPhase:'complete', streamProgress:100 }); this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
+      if(type === 'generation'){ this.updateAgentMessage(agentId, { streamLive:false, streamPhase:'complete', streamProgress:100, citations:this.normalizeAgentCitations(payload) }); this.recordAgentActivity(agentId, payload, 'finalizing', 'generation'); this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
       if(type === 'done'){ this.bindProjectFromApi(payload); this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 }); delivered = true; }
       if(type === 'credits') this.applyCreditPayload(payload);
+      if(type === 'error') this.updateAgentMessage(agentId, { streamError:true });
+      if(type === 'sources' || type === 'citations'){ this.updateAgentMessage(agentId, { citations:this.normalizeAgentCitations(payload) }); this.recordAgentActivity(agentId, payload, 'researching', 'search'); delivered = true; }
       if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', text:this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.') }); delivered = true; }
     };
     while(true){
@@ -7382,6 +7549,7 @@ class Component extends DCLogic {
           shimmerPhrase: this.streamPhraseFor(streamPhase, st.streamPhraseIndex),
           streamTool: String(m.streamTool || ''),
           showText: !!m.text,
+          agentUi: this.agentMessageUi(m, media, status === 'failed' ? 'error' : (status === 'loading' ? 'generating' : (status === 'done' ? 'complete' : undefined)), streamProgress, streamPhase),
           hasMedia: !!m.media,
           imgLoading: status==='loading' && !isVideo && !isVoice,
           vidLoading: status==='loading' && isVideo,

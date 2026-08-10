@@ -1675,6 +1675,7 @@
       StreamableLogic: runtime.StreamableLogic
     };
     Object.assign(window, api);
+    window.dispatchEvent(new Event("hf-react-ready"));
     window.__dcContentKeyed = true;
     if (document.readyState !== "loading") api.__dcBoot();
     else document.addEventListener("DOMContentLoaded", () => api.__dcBoot());
