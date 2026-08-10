@@ -20,8 +20,8 @@ export default defineConfig({
       formats: ['iife'],
     },
     outDir: 'dist-components',
-    // Keep React islands self-contained. The legacy shell can retain its own
-    // runtime, but the new controls remain reliable without any CDN.
+    // Agent UI components mount into their own React roots, isolated from the
+    // legacy dc-runtime shell.
     rollupOptions: { output: { inlineDynamicImports: true } },
     minify: 'esbuild',
     sourcemap: false,

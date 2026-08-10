@@ -16,7 +16,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Attachment, AttachmentList, type AttachmentMeta } from '@/components/nexus-ui/attachments';
 import { AgentMessagePanel } from '@/components/nexus-ui/agent-ui';
-import { startAgentFlowIslands } from './agentflow-islands';
 
 // Re-export for use as React elements within dc-runtime computed props
 export { Attachment, AttachmentList };
@@ -25,6 +24,7 @@ export type { AttachmentMeta };
 
 // WeakMap cache: each container gets its root created only once
 const rootCache = new WeakMap<HTMLElement, ReturnType<typeof ReactDOM.createRoot>>();
+const agentRootCache = new WeakMap<HTMLElement, ReturnType<typeof ReactDOM.createRoot>>();
 
 /**
  * Imperatively mount / update the attachment list into a DOM element.
@@ -56,11 +56,20 @@ export function mountAttachments(
   );
 }
 
+export function mountAgentMessage(container: HTMLElement, props: Record<string, unknown>) {
+  let root = agentRootCache.get(container);
+  if (!root) {
+    root = ReactDOM.createRoot(container);
+    agentRootCache.set(container, root);
+  }
+  root.render(<AgentMessagePanel {...(props as React.ComponentProps<typeof AgentMessagePanel>)} />);
+}
+
 // Expose on window so support.js / dc-runtime can call it without imports
 declare global {
   interface Window {
     HFComponents: typeof import('./components-entry');
   }
 }
-(window as any).HFComponents = { Attachment, AttachmentList, AgentMessagePanel, mountAttachments, startAgentFlowIslands };
-startAgentFlowIslands();
+(window as any).HFComponents = { Attachment, AttachmentList, AgentMessagePanel, mountAttachments, mountAgentMessage };
+window.dispatchEvent(new Event('hf-components-ready'));

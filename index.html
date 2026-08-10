@@ -25,7 +25,6 @@
 <script type="application/ld+json" id="hf-structured-data">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HuggyFlow","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://www.huggyflow.fun/","description":"Workspace de production créative multimédia assisté par IA.","offers":{"@type":"AggregateOffer","url":"https://www.huggyflow.fun/pricing","priceCurrency":"XOF","availability":"https://schema.org/OnlineOnly"},"publisher":{"@type":"Organization","name":"HuggyFlow","url":"https://www.huggyflow.fun/"}}</script>
 <script src="/support.js"></script>
 <link rel="stylesheet" href="/dist-components/hf-components.css">
-<script src="/dist-components/hf-components.iife.js"></script>
 <script>
 (() => {
   let requested = false;
@@ -709,7 +708,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                     <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;padding-top:4px">
                       <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
-                      <sc-if value="{{ m.agentUi }}" hint-placeholder-val="{{ false }}">{{ m.agentUi }}</sc-if>
+                      <div data-hf-agent-ui-slot="{{ m.id }}" style="width:100%"></div>
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
                           <div data-hf-stream-status="true">
@@ -2891,7 +2890,7 @@ class Component extends DCLogic {
     if(typeof window === 'undefined' || !window.history) return;
     const nextPath = this.pagePath(this.state.page);
     if(window.location.pathname !== nextPath){
-      const nextUrl = nextPath + (this.state.page === 'affiliate' ? window.location.search : '');
+      const nextUrl = nextPath + (this.demoMode ? '?demo=1' : (this.state.page === 'affiliate' ? window.location.search : ''));
       window.history[mode === 'replace' ? 'replaceState' : 'pushState']({ huggyflow:true, page:this.state.page }, '', nextUrl);
     }
     this.applyDocumentMetadata();
@@ -2979,10 +2978,16 @@ class Component extends DCLogic {
   initialAuthSession = this.storedAuthSession();
   initialUiState = this.storedUiState();
   initialRoute = this.routeStateFromLocation();
+  demoMode = (()=>{
+    try{
+      const params = new URLSearchParams(window.location.search);
+      return params.get('demo') === '1' || params.get('preview') === '1';
+    }catch(e){ return false; }
+  })();
   initialPage = (()=>{
     const page = this.initialRoute.page || this.initialUiState.page || 'app';
     const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
-    if(settingsPages.includes(page) && !this.initialAuthSession.access_token) return 'app';
+    if(settingsPages.includes(page) && !this.initialAuthSession.access_token && !this.demoMode) return 'app';
     if(['claudecode','plugins'].includes(page)) return 'settings';
     return page;
   })();
@@ -3693,6 +3698,7 @@ class Component extends DCLogic {
     return items.reverse().slice(0, 24);
   }
   async loadStudioData(projectId){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ studioLoading:true });
     try{
@@ -3727,6 +3733,7 @@ class Component extends DCLogic {
     return 'padding:7px 8px;border:0;border-radius:8px;background:' + (active ? '#D1FE17' : 'rgba(255,255,255,.06)') + ';color:' + (active ? '#131517' : '#A8A8A8') + ';font-size:10.5px;font-weight:' + (active ? '800' : '700') + ';cursor:pointer;font-family:inherit';
   }
   async loadSkillEvaluations(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     try{
       const res = await this.apiFetch('/api/skill-evals?limit=20');
@@ -3776,6 +3783,7 @@ class Component extends DCLogic {
     this.setState({ artifactEditorFile:currentPath, artifactEditorContent:current ? String(current.content || '') : '' });
   }
   async loadArtifactDetail(artifactId){
+    if(this.demoMode) return;
     if(!artifactId || !this.state.authToken) return;
     this.setState({ artifactCommentsLoading:true });
     try{
@@ -3914,6 +3922,7 @@ class Component extends DCLogic {
     if(navigator.clipboard) navigator.clipboard.writeText(String(file.content || '')).then(()=>this.notify('Contenu de l artifact copie.')).catch(()=>{});
   }
   async loadPublicArtifactFromUrl(){
+    if(this.demoMode) return;
     if(typeof window === 'undefined') return;
     const token = new URLSearchParams(window.location.search).get('artifact');
     if(!token) return;
@@ -3949,7 +3958,79 @@ class Component extends DCLogic {
       messages: (p.messages || []).map(m=>this.normalizeMessage(m))
     }));
   }
+  loadPreviewData(){
+    if(!this.demoMode || this.previewDataLoaded) return;
+    this.previewDataLoaded = true;
+    const imageUrl = 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=85';
+    const imageUrl2 = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=85';
+    const videoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+    const citations = [
+      { id:'demo-source-1', title:'Creative trends report', domain:'huggyflow.fun', url:'https://www.huggyflow.fun/' },
+      { id:'demo-source-2', title:'Brand launch checklist', domain:'marketing.example', url:'https://www.huggyflow.fun/pricing' }
+    ];
+    const messages = [
+      { id:'demo-user-1', role:'user', text:'Cree une campagne visuelle premium pour le lancement de ma marque.' },
+      { id:'demo-agent-1', role:'agent', text:'J ai prepare une direction creative complete avec une image hero et un plan de campagne.', streamPhase:'complete', streamProgress:100, activity:'Resultat pret', citations, agentActivity:[
+        { id:'demo-step-1', label:'Brief analyse', detail:'Intention et audience identifiees', kind:'step', status:'complete' },
+        { id:'demo-step-2', label:'Direction creative choisie', detail:'Premium studio commercial', kind:'step', status:'complete' },
+        { id:'demo-step-3', label:'Image hero generee', detail:'GPT Image 2', kind:'tool', status:'complete' },
+        { id:'demo-step-4', label:'Controle qualite termine', detail:'Composition et lisibilite valides', kind:'step', status:'complete' }
+      ], media:{ type:'image', status:'done', progress:100, model:'GPT Image 2', ratio:'1:1', resultUrl:imageUrl, generationId:'demo-image-1', prompt:'Hero visuel premium pour le lancement de marque' } },
+      { id:'demo-user-2', role:'user', text:'Ajoute aussi une video courte avec un rythme social et une voix off.' },
+      { id:'demo-agent-2', role:'agent', text:'La video est en cours de rendu. Tu peux continuer a travailler pendant que je termine les plans.', streamLive:true, streamPhase:'rendering', streamProgress:64, activity:'AgentFlow genere le rendu video', streamTool:'Seedance 2.0', agentActivity:[
+        { id:'demo-live-1', label:'Brief video structure', detail:'8 secondes · 16:9', kind:'step', status:'complete' },
+        { id:'demo-live-2', label:'Plans en cours de rendu', detail:'Seedance 2.0', kind:'tool', status:'working' },
+        { id:'demo-live-3', label:'Voix off et mixage', detail:'ElevenLabs', kind:'tool', status:'pending' }
+      ], media:{ type:'video', status:'loading', progress:64, model:'Seedance 2.0', ratio:'16:9', duration:'8s', generationId:'demo-video-1', prompt:'Video sociale premium avec rythme dynamique et voix off' } },
+      { id:'demo-agent-3', role:'agent', text:'La campagne est prete a etre publiee. Verifie le resultat puis valide la publication.', streamPhase:'complete', streamProgress:100, activity:'Validation requise', agentActivity:[
+        { id:'demo-final-1', label:'Rendu final verifie', detail:'Aucun artefact detecte', kind:'step', status:'complete' },
+        { id:'demo-final-2', label:'Publication en attente', detail:'Ton approbation est requise', kind:'step', status:'complete' }
+      ], approval:{ title:'Publication de la campagne', description:'Publier cette version dans ton espace equipe et dans Explorer ?', status:'pending' }, approvalRequest:{ id:'demo-approval-1' }, citations }
+    ];
+    const projects = [
+      { id:'demo-brand', title:'Campagne lancement ete', messages },
+      { id:'demo-social', title:'Social media kit', messages:[
+        { id:'demo-social-user', role:'user', text:'Prepare cinq idees de posts pour cette semaine.' },
+        { id:'demo-social-agent', role:'agent', text:'Voici cinq angles de contenu prets a adapter pour tes reseaux.', streamPhase:'complete', streamProgress:100, agentActivity:[{ id:'demo-social-step', label:'5 idees preparees', detail:'Angles, hooks et CTA', kind:'step', status:'complete' }], media:{ type:'image', status:'done', progress:100, model:'Recraft', ratio:'1:1', resultUrl:imageUrl2, generationId:'demo-image-2', prompt:'Social media kit editorial' } }
+      ] }
+    ];
+    const artifact = { id:'demo-artifact-1', title:'Landing page campagne', type:'html', status:'ready', currentVersion:3, version:{ id:'demo-version-3', number:3, compileStatus:'passed', sourcePrompt:'Landing page premium campagne lancement', createdAt:new Date().toISOString(), files:[{ path:'index.html', content:'<main><h1>Campagne lancement ete</h1><p>Une experience de marque claire et premium.</p></main>' },{ path:'styles.css', content:'body { font-family: system-ui; color: #131517; }' }] } };
+    const explore = [
+      { id:'demo-explore-1', title:'Studio product launch', description:'Une direction premium pour presenter un nouveau produit.', prompt:'Product launch premium, studio lumineux, composition editoriale', creator:'Maya Studio', creatorInitials:'MS', date:'Il y a 2 h', url:imageUrl, type:'image', model:'GPT Image 2', ratio:'1:1', likes:248, saves:74, remixes:31, views:1820 },
+      { id:'demo-explore-2', title:'Campaign moodboard', description:'Un moodboard colore pour une campagne sociale.', prompt:'Moodboard campagne sociale, couleurs vives, mise en page moderne', creator:'Leo Creative', creatorInitials:'LC', date:'Il y a 5 h', url:imageUrl2, type:'image', model:'Recraft', ratio:'4:5', likes:186, saves:62, remixes:24, views:1304 },
+      { id:'demo-explore-3', title:'Social launch film', description:'Un apercu video court pour les reseaux.', prompt:'Film social rapide avec mouvement et lumiere naturelle', creator:'Studio North', creatorInitials:'SN', date:'Hier', url:videoUrl, type:'video', model:'Seedance 2.0', ratio:'16:9', duration:'8s', hasAudio:true, likes:312, saves:89, remixes:46, views:2410 },
+      { id:'demo-explore-4', title:'Editorial portrait', description:'Un portrait editorial construit pour une marque personnelle.', prompt:'Portrait editorial naturel, lumiere douce, rendu magazine', creator:'Amina Labs', creatorInitials:'AL', date:'Il y a 2 j', url:imageUrl, type:'image', model:'FLUX.2 Pro', ratio:'3:4', likes:164, saves:51, remixes:18, views:980 },
+      { id:'demo-explore-5', title:'Product voice identity', description:'Une identite audio claire pour presenter une offre.', prompt:'Voix de marque chaleureuse et confiante pour une annonce', creator:'Echo House', creatorInitials:'EH', date:'Il y a 3 j', url:'', type:'audio', model:'ElevenLabs', ratio:'audio', duration:'23s', likes:92, saves:38, remixes:11, views:642 }
+    ];
+    this.setState({
+      authToken:'demo-token', authRefreshToken:'demo-refresh', authExpiresAt:Date.now()+86400000,
+      user:{ id:'demo-user', name:'Sarah Demo', email:'demo@huggyflow.local', plan:'Pro' },
+      authName:'Sarah Demo', authEmail:'demo@huggyflow.local', settingsName:'Sarah Demo', settingsEmail:'demo@huggyflow.local',
+      credits:742, creditsMax:1000, activeTitle:'Campagne lancement ete', activeProjectId:'demo-brand', messages, projectsData:projects,
+      exploreItems:explore, exploreLoading:false, exploreNewDismissed:false,
+      backgroundTasks:[{ id:'demo-task-1', generationId:'demo-video-1', type:'video', status:'loading', progress:64, model:'Seedance 2.0', title:'Social launch film' }],
+      workflowTasks:[{ id:'demo-workflow-1', title:'Campagne multicanale', status:'running', progress:68 }], backgroundTaskPanelOpen:true, backgroundTaskUnread:true,
+      memoryItems:[{ id:'demo-memory-1', label:'Ton style de marque', content:'Premium, clair, editorial et chaleureux.', sourceType:'user', confidence:.94, projectId:'demo-brand', usedReason:'Utilise pour maintenir la coherence de la campagne.', isPinned:true }],
+      securitySessions:[{ id:'demo-session-current', deviceLabel:'Chrome sur Windows', userAgent:'HuggyFlow Preview', current:true, lastSeenAt:new Date().toISOString() },{ id:'demo-session-mobile', deviceLabel:'Safari sur iPhone', userAgent:'iOS 18', current:false, lastSeenAt:new Date(Date.now()-7200000).toISOString() }],
+      securityEvents:[{ id:'demo-event-1', action:'Connexion reussie', createdAt:new Date().toISOString(), deviceLabel:'Chrome sur Windows' },{ id:'demo-event-2', action:'MFA verifie', createdAt:new Date(Date.now()-86400000).toISOString(), deviceLabel:'Chrome sur Windows' }], securityLoading:false, tfa:true, recoveryCodes:['DEMO-1234','DEMO-5678','DEMO-9012'],
+      usageData:{ summary:{ dailyAverage:86, forecast30Days:2580, remainingCredits:742 }, alert:{ threshold_percent:80 } }, usageThreshold:80,
+      statsData:{ summary:{ credits:258, images:14, videos:4, voices:3 }, chart:[{ label:'Lun', currentPct:68, previousPct:42, credits:31 },{ label:'Mar', currentPct:82, previousPct:50, credits:46 },{ label:'Mer', currentPct:54, previousPct:38, credits:29 },{ label:'Jeu', currentPct:91, previousPct:62, credits:57 }], models:[{ name:'GPT Image 2', credits:96 },{ name:'Seedance 2.0', credits:82 },{ name:'Recraft', credits:44 }] }, statsPeriod:'30',
+      apiData:{ keys:[{ id:'demo-api-key', name:'Preview automation', masked:'hf_demo_••••••42', createdAt:new Date().toISOString(), scopes:['chat','generate','artifacts'], expiresAt:new Date(Date.now()+7776000000).toISOString(), dailyLimit:1000, usageCount:284 } ] },
+      teamData:{ seatLimit:5, members:[{ name:'Sarah Demo', email:'demo@huggyflow.local', initials:'SD', role:'owner', status:'active', isYou:true },{ name:'Alex Martin', email:'alex@huggyflow.local', initials:'AM', role:'editor', status:'active' },{ name:'Nina Cole', email:'nina@huggyflow.local', initials:'NC', role:'viewer', status:'active' }], invites:[{ id:'demo-invite-1', email:'studio@huggyflow.local', createdAt:new Date(Date.now()-86400000).toISOString() }], projectAccess:[{ projectId:'demo-brand', memberUserId:'Alex Martin', role:'editor', permissions:{ view:true, edit:true, publish:false } }], approvalRequests:[{ id:'demo-approval-team', artifact_id:'demo-artifact-1', status:'pending', created_at:new Date().toISOString() }] },
+      affiliateData:{ link:'https://huggyflow.fun/r/sarah-demo', stats:{ clicks:1248, activeSubscribers:18, earningsUsd:186.4, availableUsd:74.2, paidUsd:112.2 }, referrals:[{ name:'Studio M', amountUsd:28.4, status:'active' },{ name:'Nova Brand', amountUsd:16.8, status:'paid' }], payouts:[{ requested_at:new Date(Date.now()-2592000000).toISOString(), amount_usd:82, status:'paid' }] },
+      billingStatus:{ user:{ plan:'Pro', currentPeriodEnd:new Date(Date.now()+1728000000).toISOString() }, subscription:{ status:'active' }, moneyFusionConfigured:true, invoices:[{ id:'demo-invoice-1', createdAt:new Date(Date.now()-2592000000).toISOString(), description:'Abonnement Pro', amount_paid:2900, currency:'USD', status:'paid' },{ id:'demo-invoice-2', createdAt:new Date(Date.now()-5184000000).toISOString(), description:'Pack de credits', amount_paid:1200, currency:'USD', status:'paid' }] },
+      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:29, annualPriceUsd:290, includedCredits:1000, metadata:{ segment:'solo', popular:true, tagline:'Pour creer et publier plus vite' }, allowedMediaTypes:['image','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
+      artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
+      integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
+      backendReady:true, backendError:false, sendLocked:false, mode:'image', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
+    }, ()=>{ this.applyDocumentMetadata(); this.syncChatInputSize(); });
+  }
+  updatePreviewApproval(id, status){
+    if(!this.demoMode) return;
+    this.setState(s=>({ messages:(s.messages || []).map(message=>message.approvalRequest && message.approvalRequest.id === id ? Object.assign({}, message, { approval:Object.assign({}, message.approval || {}, { status:status === 'changes_requested' ? 'changes-requested' : status }) }) : message), teamData:Object.assign({}, s.teamData || {}, { approvalRequests:((s.teamData && s.teamData.approvalRequests) || []).map(request=>request.id === id ? Object.assign({}, request, { status }) : request) }) }), ()=>this.notify(status === 'approved' ? 'Publication approuvee dans le mode preview.' : 'Demande mise a jour dans le mode preview.'));
+  }
   async bootstrap(){
+    if(this.demoMode){ this.loadPreviewData(); return; }
     try{
       const res = await this.apiFetch('/api/bootstrap');
       if(!res.ok) throw new Error('bootstrap '+res.status);
@@ -4050,6 +4131,8 @@ class Component extends DCLogic {
   }
   componentDidMount(){
     this.chatShouldStick = true;
+    this.agentComponentsReady = ()=>this.syncAgentUiSlots();
+    if(typeof window !== 'undefined') window.addEventListener('hf-components-ready', this.agentComponentsReady);
     this.routePopstate = ()=>{
       const next = this.routeStateFromLocation();
       if(next.requiresAuth && !this.state.authToken){
@@ -4108,8 +4191,10 @@ class Component extends DCLogic {
       this.requireAuth('Connecte-toi pour acceder a cette page.', { type:'route', page:this.initialRoute.page });
     }
     if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
-    this.trackAffiliateReferral();
-    this.consumeOAuthReturnNotice();
+    if(!this.demoMode){
+      this.trackAffiliateReferral();
+      this.consumeOAuthReturnNotice();
+    }
     this.restoreRouteScroll(this.state.page, this.state.exploreActiveId);
     this._lastComponentPage = this.state.page;
     this._lastExploreActiveId = this.state.exploreActiveId || '';
@@ -4120,14 +4205,20 @@ class Component extends DCLogic {
       if(active && (typeof document === 'undefined' || document.visibilityState !== 'hidden')) this.setState(s=>({ streamPhraseIndex:(s.streamPhraseIndex + 1) % 3 }));
     }, 3000);
     this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
-    this.loadPublicArtifactFromUrl();
-    if(this.state.page === 'explore') this.loadExploreFeed();
-    this.restoreAuthSession();
-    if(this.state.authToken) this.loadMfa();
+    if(this.demoMode){
+      this.loadPreviewData();
+    }else{
+      this.loadPublicArtifactFromUrl();
+      if(this.state.page === 'explore') this.loadExploreFeed();
+      this.restoreAuthSession();
+      if(this.state.authToken) this.loadMfa();
+    }
     this.syncChatInputSize();
+    this.syncAgentUiSlots();
   }
   componentWillUnmount(){
     if(typeof window !== 'undefined' && this.routePopstate) window.removeEventListener('popstate', this.routePopstate);
+    if(typeof window !== 'undefined' && this.agentComponentsReady) window.removeEventListener('hf-components-ready', this.agentComponentsReady);
     if(typeof window !== 'undefined' && this.settingsOnlineListener) window.removeEventListener('online', this.settingsOnlineListener);
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     if(this.themeMedia && this.themeMediaListener){
@@ -4187,15 +4278,18 @@ class Component extends DCLogic {
       if(this.isSettingsPage(this.state.page)) this.restoreSettingsScroll(this.state.page);
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
-      if(this.state.page === 'capabilities') this.loadBrands();
-      if(this.state.page === 'account'){ this.loadMfa(); this.loadSecurity(); }
-      if(this.state.page === 'stats') this.loadUsage();
-      if(this.state.page === 'skills') this.loadTemplates();
-      if(this.state.page === 'connectors') this.loadIntegrations();
-      if(this.state.page === 'explore') this.loadExploreFeed();
+      if(!this.demoMode){
+        if(this.state.page === 'capabilities') this.loadBrands();
+        if(this.state.page === 'account'){ this.loadMfa(); this.loadSecurity(); }
+        if(this.state.page === 'stats') this.loadUsage();
+        if(this.state.page === 'skills') this.loadTemplates();
+        if(this.state.page === 'connectors') this.loadIntegrations();
+        if(this.state.page === 'explore') this.loadExploreFeed();
+      }
     }
     if(stateBefore.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
+    this.syncAgentUiSlots();
     if(this.isSettingsPage(this.state.page) && !this.state.authToken){
       this.clearSettingsHash();
       this.setState({ page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
@@ -4699,6 +4793,7 @@ class Component extends DCLogic {
     })}));
   }
   retryAgentMessage(id){
+    if(this.demoMode){ this.notify('Mode preview : la relance est simulee sans appel API.'); return; }
     const messages = this.state.messages || [];
     const index = messages.findIndex(message=>message.id === id);
     const previous = index > 0 ? messages.slice(0, index).reverse().find(message=>message.role === 'user') : null;
@@ -4711,9 +4806,22 @@ class Component extends DCLogic {
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>this.notify('Reponse copiee.')).catch(()=>this.notify('Copie indisponible.'));
     else this.notify('Copie indisponible dans ce navigateur.');
   }
+  syncAgentUiSlots(){
+    if(typeof document === 'undefined' || !window.HFComponents || !window.HFComponents.mountAgentMessage) return;
+    const messages = this.state.messages || [];
+    document.querySelectorAll('[data-hf-agent-ui-slot]').forEach(slot=>{
+      const id = slot.getAttribute('data-hf-agent-ui-slot');
+      const message = messages.find(entry=>String(entry.id) === String(id));
+      if(!message || message.role !== 'agent') return;
+      const media = message.media && typeof message.media === 'object' ? message.media : null;
+      const mediaStatus = media && (media.status === 'loading' ? 'generating' : (media.status === 'done' ? 'complete' : (media.status === 'failed' ? 'error' : undefined)));
+      const progress = Math.max(0, Math.min(100, Math.round(Number(message.streamProgress || (message.streamLive ? 8 : 100)))));
+      const phase = String(message.streamPhase || (message.streamLive ? 'analyzing' : 'complete'));
+      window.HFComponents.mountAgentMessage(slot, this.agentMessageUi(message, media, mediaStatus, progress, phase));
+    });
+  }
   agentMessageUi(message, media, mediaStatus, streamProgress, streamPhase){
-    if(!message || !message.role || message.role !== 'agent' || !window.HFComponents || !window.React || !window.HFComponents.AgentMessagePanel) return null;
-    const R = window.React;
+    if(!message || !message.role || message.role !== 'agent') return {};
     const status = message.streamLive ? (message.streamPhase === 'cancelled' ? 'cancelled' : 'working') : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete'));
     const activity = Array.isArray(message.agentActivity) ? message.agentActivity : (message.streamLive ? [{ id:'current', label:message.activity || this.streamPhaseLabel(streamPhase), kind:message.streamTool ? 'tool' : 'step', status:'working', detail:message.streamTool || '' }] : []);
     const phase = String(streamPhase || message.streamPhase || 'analyzing');
@@ -4722,7 +4830,7 @@ class Component extends DCLogic {
       { id:'route', title:'Choisir la strategie', status:phase === 'analyzing' || phase === 'routing' ? 'in-progress' : 'completed', progress:phase === 'routing' ? streamProgress : (phase === 'analyzing' ? 0 : 100) },
       { id:'produce', title:'Produire et verifier le resultat', status:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? 'in-progress' : (phase === 'complete' ? 'completed' : 'pending'), progress:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? streamProgress : (phase === 'complete' ? 100 : 0) }
     ] : [];
-    return R.createElement(window.HFComponents.AgentMessagePanel, {
+    return {
       status, phase, progress:streamProgress, activity, tasks,
       citations:Array.isArray(message.citations) ? message.citations : [],
       mediaStatus, mediaLabel:media ? ((media.model || 'AgentFlow') + ' · ' + (media.type === 'video' ? 'video' : media.type === 'voice' ? 'audio' : 'image')) : '',
@@ -4732,10 +4840,10 @@ class Component extends DCLogic {
       onFeedback:(value)=>this.notify(value === 'up' ? 'Merci pour ton retour.' : value === 'down' ? 'Retour enregistre pour ameliorer AgentFlow.' : 'Retour retire.'),
       onCancel:message.streamLive ? ()=>this.stopGeneration() : undefined,
       approval:message.approval || undefined,
-      onApprove:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
-      onReject:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'rejected') : undefined,
-      onRequestChanges:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'changes_requested') : undefined,
-    });
+      onApprove:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'approved') : this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
+      onReject:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'rejected') : this.updateApprovalRequest(message.approvalRequest, 'rejected') : undefined,
+      onRequestChanges:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'changes_requested') : this.updateApprovalRequest(message.approvalRequest, 'changes_requested') : undefined,
+    };
   }
   streamPhaseLabel(phase){
     return ({
@@ -4812,6 +4920,7 @@ class Component extends DCLogic {
     }));
   }
   async loadAgentMemory(){
+    if(this.demoMode) return;
     if(!this.state.authToken || this.memoryLoading) return;
     this.memoryLoading = true;
     this.setState({ memoryLoading:true });
@@ -4872,7 +4981,7 @@ class Component extends DCLogic {
     this.setState({ backgroundTaskPanelOpen:false });
   }
   async loadBackgroundTasks(){
-    if(!this.state.authToken || this.backgroundTasksLoading) return;
+    if(this.demoMode || !this.state.authToken || this.backgroundTasksLoading) return;
     this.backgroundTasksLoading = true;
     try{
       const res = await this.apiFetch('/api/background-tasks');
@@ -5192,6 +5301,7 @@ class Component extends DCLogic {
     }
   }
   async loadBillingStatus(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ billingLoading:true });
     try{
@@ -5207,6 +5317,7 @@ class Component extends DCLogic {
     }
   }
   async loadTeam(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ teamLoading:true });
     try{
@@ -5251,6 +5362,7 @@ class Component extends DCLogic {
     return ({ owner:'Proprietaire', admin:'Admin', editor:'Editeur', viewer:'Lecteur' })[role] || 'Editeur';
   }
   async loadApiKeys(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ apiLoading:true });
     try{
@@ -5301,6 +5413,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Rotation de cle impossible.')); }
   }
   async loadStats(period){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     const p = period || this.state.statsPeriod || '30';
     this.setState({ statsLoading:true });
@@ -5314,6 +5427,7 @@ class Component extends DCLogic {
     }
   }
   async loadAffiliate(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ affiliateLoading:true });
     try{
@@ -5416,6 +5530,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Impossible de modifier ce rôle.')); }
   }
   async loadAdminDashboard(){
+    if(this.demoMode) return;
     if(!this.isAdminUser() || !this.state.authToken) return;
     this.setState({ adminLoading:true, adminError:'' });
     try{
@@ -5472,6 +5587,7 @@ class Component extends DCLogic {
     }
   }
   async loadBrands(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     try{
       const res = await this.apiFetch('/api/brands');
@@ -5492,6 +5608,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify('Impossible de mettre à jour cette approbation.'); }
   }
   async loadSecurity(){
+    if(this.demoMode) return;
     if(!this.state.authToken || this.securityLoading) return;
     this.securityLoading = true;
     this.setState({ securityLoading:true });
@@ -5517,6 +5634,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify('Impossible de déconnecter les autres sessions.'); }
   }
   async loadUsage(period){
+    if(this.demoMode) return;
     if(!this.state.authToken || this.usageLoading) return;
     this.usageLoading = true;
     this.setState({ usageLoading:true });
@@ -5615,6 +5733,7 @@ class Component extends DCLogic {
     }catch(err){ this.setState({ brandSaving:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer la marque.') }); }
   }
   async loadTemplates(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ templatesLoading:true });
     try{
@@ -5651,6 +5770,7 @@ class Component extends DCLogic {
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de remixer ce template.') }); }
   }
   async loadIntegrations(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ integrationsLoading:true });
     try{
@@ -5710,6 +5830,7 @@ class Component extends DCLogic {
     this.configureIntegration(provider);
   }
   async loadMfa(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     try{
       const res = await this.apiFetch('/api/auth/mfa');
@@ -6135,6 +6256,7 @@ class Component extends DCLogic {
     return list;
   }
   async loadExploreFeed(){
+    if(this.demoMode){ this.setState({ exploreLoading:false }); return; }
     this.setState({ exploreLoading:true });
     try{
       const res = await this.apiFetch('/api/explore?sort=' + encodeURIComponent(this.state.exploreSort || 'trending'));
@@ -7532,6 +7654,7 @@ class Component extends DCLogic {
         const streamPhase = String(m.streamPhase || (m.streamLive ? 'analyzing' : 'complete'));
         const frameOn = n => (pct >= n * 20 ? '.22' : '.06');
         return {
+          id: m.id,
           isUser: m.role==='user',
           isAgent: m.role==='agent',
           isDocument: m.role==='agent' && (st.mode === 'document' || String(m.text || '').match(/^(#|##|###)\s|\|.+\|/)),
