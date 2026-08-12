@@ -71,6 +71,7 @@ http.createServer(async (req, res) => {
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: err.message }));
   }
-}).listen(3000, () => {
-  console.log("Huggyflow dev server: http://localhost:3000");
+}).listen(Number(process.env.PORT || 3000), () => {
+  const port = Number(process.env.PORT || 3000);
+  console.log(`Huggyflow dev server: http://localhost:${port}`);
 });

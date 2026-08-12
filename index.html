@@ -80,6 +80,8 @@ button:focus-visible,[role="button"]:focus-visible{outline:2px solid #D1FE17;out
 button:disabled{cursor:not-allowed;opacity:.55}
 textarea{resize:none}
 input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset:0}
+[data-hf-chat-input="true"]:focus,[data-hf-chat-input="true"]:focus-visible{outline:none;outline-offset:0;box-shadow:none}
+[data-hf-chat-input="true"]{caret-color:#D1FE17}
 ::placeholder{color:#9A9DA4}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(120,116,104,.35);border-radius:9px}
@@ -133,7 +135,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-stream-dot]{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5);animation:streamPulse 1.25s ease-in-out infinite}
 [data-hf-text-shimmer]{background:linear-gradient(105deg,#898A8B 18%,#F7F7F8 38%,#D1FE17 50%,#898A8B 68%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:textShimmer 1.8s linear infinite}
 [data-hf-stream-cursor]{display:inline-block;width:6px;height:14px;margin-left:3px;vertical-align:-2px;border-radius:2px;background:#D1FE17;animation:streamCursor 1s steps(1,end) infinite}
-[data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable}
+[data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable;overflow-x:clip}
 [data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 [data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
 [data-hf-attachment-thumb]{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:rgba(209,254,23,.10);color:#D1FE17;font-size:12px;font-weight:800}
@@ -183,6 +185,22 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-model-logo] svg{width:13px;height:13px;stroke:currentColor}
 [data-hf-model-row].is-active [data-hf-model-logo]{background:rgba(var(--hf-model-line),.08);transform:scale(1.02)}
 [data-hf-model-name]{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+[data-hf-model-copy]{display:flex;min-width:0;flex:1;flex-direction:column;gap:2px;overflow:hidden}
+[data-hf-model-copy] [data-hf-model-name]{display:block;flex:none}
+[data-hf-model-desc]{min-width:0;overflow:hidden;color:var(--hf-model-muted);font-size:10px;font-weight:450;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+[data-hf-model-menu="true"]{top:36px;width:350px;max-width:min(350px,calc(100vw - 24px));max-height:min(490px,calc(100vh - 32px));padding:7px;border-radius:13px;background:rgba(27,29,31,.97);box-shadow:0 20px 48px -26px rgba(0,0,0,.92)}
+[data-hf-model-menu="true"] [data-hf-model-search="true"]{height:38px;margin-bottom:7px;padding:0 10px;border-radius:10px;background:rgba(247,247,248,.06)}
+[data-hf-model-menu="true"] [data-hf-model-search="true"] input{font-size:13px}
+[data-hf-model-menu="true"] [data-hf-model-list]{max-height:420px;padding:0 1px 3px}
+[data-hf-model-menu="true"] [data-hf-model-group]{padding:9px 8px 5px;font-size:11px;letter-spacing:0;text-transform:none;color:#F7F7F8}
+[data-hf-model-menu="true"] [data-hf-model-row]{min-height:48px;gap:9px;padding:6px 8px;border-radius:10px;font-size:13.5px}
+[data-hf-model-menu="true"] [data-hf-model-logo]{width:30px;height:30px;flex-basis:30px;border-radius:9px;background:rgba(247,247,248,.07)}
+[data-hf-model-menu="true"] [data-hf-model-logo] svg{width:16px;height:16px}
+[data-hf-model-menu="true"] [data-hf-model-name]{font-size:13.5px;font-weight:700;color:#F7F7F8}
+[data-hf-model-menu="true"] [data-hf-model-desc]{font-size:10.5px;line-height:1.2}
+[data-hf-model-menu="true"] [data-hf-model-cost]{min-width:auto;padding:3px 5px;border-radius:5px;font-size:9px}
+[data-hf-model-menu="true"] [data-hf-model-check]{display:grid;place-items:center;width:20px;height:20px;color:#D1FE17;font-size:20px;line-height:1}
+[data-hf-model-menu="true"] [data-hf-model-lock]{display:grid;place-items:center;width:20px;height:20px;color:#8C8E92}
 [data-hf-model-cost]{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:2px 5px;border-radius:5px;background:rgba(var(--hf-model-line),.05);color:var(--hf-model-muted);font:700 9px 'JetBrains Mono',monospace;letter-spacing:0.02em;min-width:29px;white-space:nowrap;transition:all .15s ease}
 [data-hf-model-row].is-active [data-hf-model-cost]{background:rgba(var(--hf-model-line),.08);color:var(--hf-model-ink)}
 [data-hf-model-cost-mark]{display:inline-flex;width:10px;height:10px;color:var(--hf-model-muted);font-size:0}
@@ -191,6 +209,49 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-model-capabilities]{display:inline-flex;align-items:center;justify-content:flex-end;width:14px;color:var(--hf-model-muted);white-space:nowrap}
 [data-hf-model-capabilities] svg{width:13px;height:13px;stroke:currentColor}
 [data-hf-model-empty]{padding:14px 11px 7px;color:var(--hf-model-muted);font-size:11px}
+[data-hf-agent-menu]{position:absolute;z-index:45;left:0;bottom:36px;width:360px;max-width:min(360px,calc(100vw - 24px));padding:4px;border:1px solid rgba(247,247,248,.10);border-radius:12px;background:rgba(27,29,31,.97);box-shadow:0 18px 36px -22px rgba(0,0,0,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);animation:fadeUp .16s cubic-bezier(.22,1,.36,1) both}
+[data-hf-agent-menu] [data-hf-agent-option]{width:100%;display:flex;align-items:center;gap:9px;min-height:48px;padding:6px 8px;border:1px solid transparent;border-radius:9px;background:transparent;color:#A8A8A8;text-align:left;cursor:pointer;font:500 12px/1.2 ui-sans-serif,system-ui,sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease}
+[data-hf-agent-menu] [data-hf-agent-option]:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-option].is-active{background:rgba(209,254,23,.08);border-color:rgba(209,254,23,.18);color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-icon]{width:31px;height:31px;display:grid;place-items:center;flex:0 0 31px;border-radius:8px;background:rgba(247,247,248,.07);color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-copy]{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+[data-hf-agent-menu] [data-hf-agent-copy] strong{font-size:13.5px;font-weight:700;color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-copy] span{font-size:11.5px;color:#898A8B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-hf-agent-menu] [data-hf-agent-chevron]{margin-left:auto;color:#A8A8A8}
+[data-hf-agent-menu] [data-hf-agent-check]{color:#D1FE17;font-size:20px;line-height:1}
+[data-hf-model-selector="true"]{position:relative;min-width:0}
+[data-hf-model-trigger="true"]{display:inline-flex;align-items:center;gap:5px;min-height:29px;padding:0 8px;border:0;border-radius:999px;background:rgba(247,247,248,.06);color:#F7F7F8;cursor:pointer;font:650 11.5px ui-sans-serif,system-ui,sans-serif;transition:background .16s ease,color .16s ease,transform .12s ease}
+[data-hf-model-trigger="true"]:hover{background:rgba(247,247,248,.10)}
+[data-hf-model-trigger="true"]:active{transform:scale(.98)}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-icon]{display:grid;place-items:center;width:15px;height:15px;color:#F7F7F8}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-name]{font-weight:750}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-mode]{color:#A8A8A8;font-weight:600}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-chevron]{color:#898A8B;transition:transform .18s ease}
+[data-hf-model-selector="true"][data-open="true"] [data-hf-model-trigger-chevron]{transform:rotate(180deg)}
+[data-hf-composer-tools]{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+[data-hf-composer-tool]{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898A8B;font:600 10.5px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease}
+[data-hf-composer-send-hint="true"]{display:none!important}
+[data-hf-composer-tools]{position:absolute;left:20px;right:20px;bottom:-50px;box-sizing:border-box;min-height:50px;display:flex;align-items:center;gap:2px;padding:0 12px;border-radius:0 0 18px 18px;background:rgba(20,21,23,.96);box-shadow:0 9px 20px -18px rgba(0,0,0,.7);overflow:hidden}
+[data-hf-composer-tool]{min-height:28px;padding:0 7px;border-radius:7px;color:#F1F1F2;font-size:11.5px;font-weight:650}
+[data-hf-composer-tool] svg{width:14px;height:14px;color:#F7F7F8}
+[data-hf-composer-tool]:first-child svg{color:#F7F7F8}
+[data-hf-connector-stack]{display:inline-flex;align-items:center;width:27px;height:18px;position:relative;flex:0 0 27px}
+[data-hf-connector-stack] i{position:absolute;display:grid;place-items:center;width:15px;height:15px;border:1px solid rgba(255,255,255,.42);border-radius:4px;color:#fff;font:800 8px/1 ui-sans-serif,system-ui,sans-serif;font-style:normal;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+[data-hf-connector-stack] i:nth-child(1){left:0;z-index:1;background:#E66BB2}
+[data-hf-connector-stack] i:nth-child(2){left:7px;z-index:2;background:#24A7D8}
+[data-hf-connector-stack] i:nth-child(3){left:14px;z-index:3;background:#D74B4B}
+[data-hf-composer-tool]:last-child{margin-left:auto}
+[data-hf-composer-tool]:last-child svg{color:#A8A8A8}
+[data-hf-composer-tool]:hover{background:rgba(247,247,248,.06);border-color:rgba(247,247,248,.08);color:#F7F7F8}
+[data-hf-composer-tool] svg{width:12px;height:12px;color:#D1FE17}
+[data-hf-super-section]{padding:14px 8px 6px;color:#65686B;font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}
+[data-hf-super-item]{display:flex;align-items:center;gap:11px;min-height:34px;padding:5px 8px;border-radius:10px;color:#A8A8A8;font-size:13px;font-weight:550;cursor:pointer;transition:background .16s ease,color .16s ease}
+[data-hf-super-item]:hover{background:rgba(247,247,248,.055);color:#F7F7F8}
+[data-hf-super-item].is-active{background:rgba(247,247,248,.07);color:#F7F7F8}
+[data-hf-super-item] [data-hf-super-icon]{width:25px;height:25px;display:grid;place-items:center;flex:0 0 25px;border-radius:8px;color:#A8A8A8}
+[data-hf-super-item].is-active [data-hf-super-icon],[data-hf-super-item]:hover [data-hf-super-icon]{color:#D1FE17}
+[data-hf-super-hero-title]{font:800 clamp(30px,4.2vw,46px)/1.02 'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.025em;text-transform:uppercase}
+@media (max-width:680px){[data-hf-agent-menu]{position:fixed;left:12px;right:12px;bottom:78px;width:auto;max-width:none}[data-hf-agent-menu] [data-hf-agent-copy] strong{font-size:14px}[data-hf-agent-menu] [data-hf-agent-copy] span{font-size:11px}[data-hf-composer-tools]{left:14px;right:14px}[data-hf-composer-tool]{padding-inline:6px}[data-hf-composer-tool] span{display:none}[data-hf-connector-stack]{display:none}}
 [data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 @media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
 .hf-pricing-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
@@ -451,8 +512,22 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
       </div>
       </sc-if>
 
+      <div data-hf-hide-rail="true" data-hf-super-section="true">Personnaliser</div>
+      <div data-hf-rail-item="true" onClick="{{ clickSkills }}" title="Skills" class="{{ skillsNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"></path><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Skills</span>
+      </div>
+      <div data-hf-rail-item="true" onClick="{{ clickConnectors }}" title="Connecteurs" class="{{ connectorsNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="m8.7 10.5 6.6-3"></path><path d="m8.7 13.5 6.6 3"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Connecteurs</span>
+      </div>
+      <div data-hf-rail-item="true" onClick="{{ openMemory }}" title="Memoire" class="{{ memoryNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M8 7h8"></path><rect x="5" y="4" width="14" height="17" rx="3"></rect><path d="M8 12h8M8 16h5"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Memoire</span>
+      </div>
+
       <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
-        <span data-hf-hide-rail="true" style="font-size:12px;color:#898A8B;font-weight:500">Projets</span>
+        <span data-hf-hide-rail="true" style="font-size:12px;color:#898A8B;font-weight:500">Conversations</span>
         <svg data-hf-hide-rail="true" width="11" height="11" style="{{ projectsChevronStyle }}" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
       <sc-if value="{{ showProjectsList }}" hint-placeholder-val="{{ true }}">
@@ -614,29 +689,33 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
           <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0 64px;animation:fadeUp .4s ease both">
             <div style="text-align:center;margin-bottom:34px">
-              <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;line-height:1.12;letter-spacing:-.01em;color:{{ tInk }}">On crée quoi <em style="font-style:italic">aujourd'hui</em> ?</div>
+              <div data-hf-super-hero-title="true" style="color:{{ tInk }}">On cree quoi aujourd'hui ?</div>
               <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos, documents et voix — décris ton idée, AgentFlow s'occupe du reste.</div>
             </div>
 
-            <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
-              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:48px;min-height:48px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
+            <div style="position:relative;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:12px 12px 8px;box-shadow:0 14px 34px -28px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
+              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:44px;min-height:44px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
                 {{ attachmentsReactElement }}
               </sc-if>
-              <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+              <div style="display:flex;align-items:center;gap:7px;margin-top:6px">
                 <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyle }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
-                <div style="position:relative">
-                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:transparent;border:none;color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .16s ease" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
-                    <span style="width:5.5px;height:5.5px;border-radius:50%;background:{{ curModelDot }};box-shadow:0 0 6px {{ curModelDot }};transition:box-shadow .2s ease"></span>{{ curModelName }}
-                    <svg width="11" height="11" style="opacity:.55;margin-left:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ agentSettingsMenu }}">
+                  <button type="button" data-hf-model-trigger="true" onClick="{{ toggleAgentSettings }}" aria-haspopup="menu" aria-expanded="{{ agentSettingsMenu }}" aria-label="Choisir le mode et le modele">
+                    <span data-hf-model-trigger-icon="true" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg>
+                    </span>
+                    <span data-hf-model-trigger-name="true">{{ curModelName }}</span>
+                    <span data-hf-model-trigger-mode="true">{{ agentModeLabel }}</span>
+                    <span data-hf-model-trigger-chevron="true" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
                       <div data-hf-model-search="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Modèles de recherche..." aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
+                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
                       </div>
                       <div data-hf-model-list="true">
                       <sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3">
@@ -644,9 +723,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                         <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
                           <button type="button" data-hf-model-row="true" class="{{ it.activeClass }}" onClick="{{ it.onClick }}" title="{{ it.desc }}">
                             <span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.4 5.6L5 10l5.6 1.4L12 17l1.4-5.6L19 10l-5.6-1.4L12 3Z"></path><path d="m19 15-.7 2.3-2.3.7 2.3.7L19 21l.7-2.3 2.3-.7-2.3-.7L19 15Z"></path></svg></span>
-                            <span data-hf-model-name="true">{{ it.name }}</span>
+                            <span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span>
                             <span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span>
-                            <span data-hf-model-capabilities="true" title="Capacités du modèle" aria-label="Capacités du modèle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="m4.2 6.2 2.1 2.1"></path><path d="m17.7 17.7 2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="m4.2 17.8 2.1-2.1"></path><path d="m17.7 6.3 2.1-2.1"></path><circle cx="12" cy="12" r="4"></circle></svg></span>
+                            <span data-hf-model-capabilities="true" title="Capacités du modèle" aria-label="Capacités du modèle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="m4.2 6.2 2.1 2.1"></path><path d="m17.7 17.7 2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="m4.2 17.8 2.1-2.1"></path><path d="m17.7 6.3 2.1-2.1"></path><circle cx="12" cy="12" r="4"></circle></svg></span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modele verrouille"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modele selectionne">✓</span></sc-if>
                           </button>
                         </sc-for>
                       </sc-for>
@@ -654,9 +733,48 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                       </div>
                     </div>
                   </sc-if>
+                  <sc-if value="{{ agentSettingsMenu }}" hint-placeholder-val="{{ false }}">
+                    <div data-hf-agent-menu="true" role="menu" aria-label="Mode de generation">
+                      <button type="button" role="menuitem" data-hf-agent-option="true" class="{{ agentModeAutoClass }}" onClick="{{ setAutoMode }}">
+                        <span data-hf-agent-icon="true" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 6 5-6 5"></path><path d="m12 7 6 5-6 5"></path></svg></span>
+                        <span data-hf-agent-copy="true"><strong>Générer sans demander</strong><span>L'agent fonctionne sans confirmation.</span></span>
+                        <span data-hf-agent-check="true">{{ autoModeCheck }}</span>
+                      </button>
+                      <button type="button" role="menuitem" data-hf-agent-option="true" class="{{ agentModeConfirmClass }}" onClick="{{ setConfirmMode }}">
+                        <span data-hf-agent-icon="true" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V6.8a2 2 0 0 1 4 0V11"></path><path d="M12 11V5.8a2 2 0 0 1 4 0V11"></path><path d="M16 11V7.4a2 2 0 0 1 4 0v5.8c0 4.2-2.7 6.8-6.8 6.8h-1.3c-2.1 0-3.7-.8-4.9-2.4L4.4 14a2 2 0 0 1 3.3-2.2L9 13.2"></path></svg></span>
+                        <span data-hf-agent-copy="true"><strong>Demandez avant de générer</strong><span>L'agent pose la question avant chaque génération</span></span>
+                        <span data-hf-agent-check="true">{{ confirmModeCheck }}</span>
+                      </button>
+                      <button type="button" role="menuitem" data-hf-agent-option="true" onClick="{{ openModelCatalog }}">
+                        <span data-hf-agent-icon="true" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg></span>
+                        <span data-hf-agent-copy="true"><strong>Flash DeepSeek V4</strong><span>Le plus rapide et le moins cher pour les volumes...</span></span>
+                        <span data-hf-agent-chevron="true" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+                      </button>
+                    </div>
+                  </sc-if>
+                </div>
+                <!-- Legacy standalone Agent control removed; modes now live in the model selector.
+                <div data-hf-optional-composer-control="true" style="position:relative">
+                  <button onClick="{{ toggleAgentSettings }}" title="Reglages de l agent" style="display:flex;align-items:center;gap:5px;padding:7px 8px;border-radius:999px;background:transparent;border:none;color:{{ tText3 }};font-size:11px;font-weight:650;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .16s ease" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21h-3v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5v-3h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h3v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3h-.2a1.7 1.7 0 0 0-1.5 1Z"></path></svg>
+                    <span class="hf-composer-agent-label">Agent</span>
+                  </button>
+                  <sc-if value="{{ agentSettingsMenu }}" hint-placeholder-val="{{ false }}">
+                    <div data-hf-agent-menu="true" role="menu" aria-label="Reglages de l agent">
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeManualClass }}" onClick="{{ setManualMode }}"><span data-hf-agent-icon="true">—</span><span data-hf-agent-copy="true"><strong>Mode manuel</strong><span>Tu controles chaque generation</span></span><span data-hf-agent-check="true">{{ manualModeCheck }}</span></button>
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeAutoClass }}" onClick="{{ setAutoMode }}"><span data-hf-agent-icon="true">↯</span><span data-hf-agent-copy="true"><strong>Mode automatique</strong><span>AgentFlow choisit le bon modele</span></span><span data-hf-agent-check="true">{{ autoModeCheck }}</span></button>
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeConfirmClass }}" onClick="{{ setConfirmMode }}"><span data-hf-agent-icon="true">✓</span><span data-hf-agent-copy="true"><strong>Demander confirmation</strong><span>Valide avant une action sensible</span></span><span data-hf-agent-check="true">{{ confirmModeCheck }}</span></button>
+                    </div>
+                  </sc-if>
+                </div>
+                -->
+                <div data-hf-optional-composer-control="true" data-hf-composer-tools="true">
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ clickSkills }}" title="Ouvrir les competences" aria-label="Compétences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z"></path></svg><span data-hf-composer-label="true">Compétences</span></button>
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ clickConnectors }}" title="Ouvrir les connecteurs" aria-label="Connecteurs"><span data-hf-connector-stack="true" aria-hidden="true"><i>S</i><i>C</i><i>▶</i></span><span data-hf-composer-label="true">Connecteurs</span></button>
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ openMcp }}" title="Essayer MCP" aria-label="Essayez MCP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12.5 12.5 4.8-4.8a3.1 3.1 0 0 0-4.4-4.4L8.1 8.1a4.7 4.7 0 0 0 6.6 6.6l4.4-4.4"></path><path d="m11.5 11.5-4.8 4.8a3.1 3.1 0 0 0 4.4 4.4l4.8-4.8a4.7 4.7 0 0 0-6.6-6.6L5 13.7"></path></svg><span data-hf-composer-label="true">Essayez MCP</span></button>
                 </div>
                 <div style="flex:1"></div>
-                <span style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">{{ sendHint }}</span>
+                <span data-hf-composer-send-hint="true" style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">{{ sendHint }}</span>
                 <button onClick="{{ sendAction }}" title="{{ sendButtonTitle }}" style="{{ sendButtonStyleLarge }}" style-hover="filter:brightness(.95)">
                   <sc-if value="{{ isSending }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"></rect></svg></sc-if>
                   <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg></sc-if>
@@ -665,7 +783,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </div>
 
             <sc-if value="{{ showSuggestions }}" hint-placeholder-val="{{ true }}">
-              <div style="margin-top:44px">
+              <div style="margin-top:50px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                   <span style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:{{ tText4 }};font-weight:600">Suggestions</span>
                   <button onClick="{{ shuffleSuggestions }}" title="Autres idées" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:none;background:transparent;color:{{ tText3 }};font-size:12px;cursor:pointer;font-family:inherit" style-hover="color:{{ tInk }}">
@@ -2984,6 +3102,10 @@ class Component extends DCLogic {
       return params.get('demo') === '1' || params.get('preview') === '1';
     }catch(e){ return false; }
   })();
+  previewEmpty = (()=>{
+    try{ return new URLSearchParams(window.location.search).get('empty') === '1'; }
+    catch(e){ return false; }
+  })();
   initialPage = (()=>{
     const page = this.initialRoute.page || this.initialUiState.page || 'app';
     const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
@@ -2999,9 +3121,11 @@ class Component extends DCLogic {
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
     modelMenuSearch: '',
+    agentSettingsMenu: false,
+    agentMode: ['manual','auto','confirm'].includes(this.initialUiState.agentMode) ? this.initialUiState.agentMode : 'confirm',
     commandPaletteOpen: false,
     commandQuery: '',
-    modelId: this.initialUiState.modelId || 'tencent/hy3:free',
+    modelId: this.initialUiState.modelId && this.initialUiState.modelId !== 'auto' ? this.initialUiState.modelId : 'flash-v4',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
     streamPhraseIndex: 0,
@@ -3387,7 +3511,10 @@ class Component extends DCLogic {
     return fetch(this.apiBase()+path, init);
   }
 
-  agentModelApiId(id){ return id || 'auto'; }
+  agentModelApiId(id){
+    if(id === 'flash-v4' || id === 'deepseek-v4-flash') return 'tencent/hy3:free';
+    return id || 'auto';
+  }
   typeForModel(model){
     if(!model) return 'image';
     if(model.group === 'Videos' || model.group === 'Vidéos' || model.group === 'VidÃ©os') return 'video';
@@ -4002,14 +4129,18 @@ class Component extends DCLogic {
       { id:'demo-explore-4', title:'Editorial portrait', description:'Un portrait editorial construit pour une marque personnelle.', prompt:'Portrait editorial naturel, lumiere douce, rendu magazine', creator:'Amina Labs', creatorInitials:'AL', date:'Il y a 2 j', url:imageUrl, type:'image', model:'FLUX.2 Pro', ratio:'3:4', likes:164, saves:51, remixes:18, views:980 },
       { id:'demo-explore-5', title:'Product voice identity', description:'Une identite audio claire pour presenter une offre.', prompt:'Voix de marque chaleureuse et confiante pour une annonce', creator:'Echo House', creatorInitials:'EH', date:'Il y a 3 j', url:'', type:'audio', model:'ElevenLabs', ratio:'audio', duration:'23s', likes:92, saves:38, remixes:11, views:642 }
     ];
+    const previewProjects = this.previewEmpty
+      ? [{ id:'preview-empty', title:'Nouveau projet', messages:[] }].concat(projects)
+      : projects;
+    const previewMessages = this.previewEmpty ? [] : messages;
     this.setState({
       authToken:'demo-token', authRefreshToken:'demo-refresh', authExpiresAt:Date.now()+86400000,
       user:{ id:'demo-user', name:'Sarah Demo', email:'demo@huggyflow.local', plan:'Pro' },
       authName:'Sarah Demo', authEmail:'demo@huggyflow.local', settingsName:'Sarah Demo', settingsEmail:'demo@huggyflow.local',
-      credits:742, creditsMax:1000, activeTitle:'Campagne lancement ete', activeProjectId:'demo-brand', messages, projectsData:projects,
+      credits:742, creditsMax:1000, activeTitle:this.previewEmpty ? 'Nouveau projet' : 'Campagne lancement ete', activeProjectId:this.previewEmpty ? 'preview-empty' : 'demo-brand', messages:previewMessages, projectsData:previewProjects,
       exploreItems:explore, exploreLoading:false, exploreNewDismissed:false,
-      backgroundTasks:[{ id:'demo-task-1', generationId:'demo-video-1', type:'video', status:'loading', progress:64, model:'Seedance 2.0', title:'Social launch film' }],
-      workflowTasks:[{ id:'demo-workflow-1', title:'Campagne multicanale', status:'running', progress:68 }], backgroundTaskPanelOpen:true, backgroundTaskUnread:true,
+      backgroundTasks:this.previewEmpty ? [] : [{ id:'demo-task-1', generationId:'demo-video-1', type:'video', status:'loading', progress:64, model:'Seedance 2.0', title:'Social launch film' }],
+      workflowTasks:this.previewEmpty ? [] : [{ id:'demo-workflow-1', title:'Campagne multicanale', status:'running', progress:68 }], backgroundTaskPanelOpen:!this.previewEmpty, backgroundTaskUnread:!this.previewEmpty,
       memoryItems:[{ id:'demo-memory-1', label:'Ton style de marque', content:'Premium, clair, editorial et chaleureux.', sourceType:'user', confidence:.94, projectId:'demo-brand', usedReason:'Utilise pour maintenir la coherence de la campagne.', isPinned:true }],
       securitySessions:[{ id:'demo-session-current', deviceLabel:'Chrome sur Windows', userAgent:'HuggyFlow Preview', current:true, lastSeenAt:new Date().toISOString() },{ id:'demo-session-mobile', deviceLabel:'Safari sur iPhone', userAgent:'iOS 18', current:false, lastSeenAt:new Date(Date.now()-7200000).toISOString() }],
       securityEvents:[{ id:'demo-event-1', action:'Connexion reussie', createdAt:new Date().toISOString(), deviceLabel:'Chrome sur Windows' },{ id:'demo-event-2', action:'MFA verifie', createdAt:new Date(Date.now()-86400000).toISOString(), deviceLabel:'Chrome sur Windows' }], securityLoading:false, tfa:true, recoveryCodes:['DEMO-1234','DEMO-5678','DEMO-9012'],
@@ -4022,7 +4153,7 @@ class Component extends DCLogic {
       pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:29, annualPriceUsd:290, includedCredits:1000, metadata:{ segment:'solo', popular:true, tagline:'Pour creer et publier plus vite' }, allowedMediaTypes:['image','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
       artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
       integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
-      backendReady:true, backendError:false, sendLocked:false, mode:'image', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
+      backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'flash-v4', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
     }, ()=>{ this.applyDocumentMetadata(); this.syncChatInputSize(); });
   }
   updatePreviewApproval(id, status){
@@ -4040,7 +4171,7 @@ class Component extends DCLogic {
         const dots = ['#D1FE17','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
         this.MODELS = [...new Map(agentModels.map((m,i)=>[m.id || 'auto', ({
           id:m.id || 'auto',
-          name:m.name || 'Auto AgentFlow',
+          name:m.name || 'AgentFlow',
           group:m.id === 'auto' ? 'AgentFlow' : (({anthropic:'Anthropic',openai:'OpenAI',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI',nvidia:'NVIDIA',google:'Google'}[m.provider]) || m.provider || 'AgentFlow'),
           provider:m.provider || 'auto',
           desc:m.description || 'Cerveau AgentFlow',
@@ -4159,12 +4290,25 @@ class Component extends DCLogic {
         this.closeCommandPalette();
         return;
       }
+      if(event.key === 'Escape' && (this.state.agentSettingsMenu || this.state.modelMenu)){
+        event.preventDefault();
+        this.setState({ agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' });
+        return;
+      }
       if(event.key === 'Escape' && this.isSettingsPage(this.state.page)){
         event.preventDefault();
         this.closeSettingsModal();
       }
     };
     if(typeof document !== 'undefined') document.addEventListener('keydown', this.settingsKeydown);
+    this.composerPointerDown = (event)=>{
+      const target = event && event.target;
+      if(target && target.closest && target.closest('[data-hf-model-selector=\"true\"],[data-hf-model-menu=\"true\"]')) return;
+      if(this.state.agentSettingsMenu || this.state.modelMenu){
+        this.setState({ agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' });
+      }
+    };
+    if(typeof document !== 'undefined') document.addEventListener('pointerdown', this.composerPointerDown);
     this.settingsOnlineListener = ()=>{
       if(this.state.settingsOffline && this.state.authToken){
         this.setState({ settingsOffline:false }, ()=>this.saveSettings());
@@ -4221,6 +4365,7 @@ class Component extends DCLogic {
     if(typeof window !== 'undefined' && this.agentComponentsReady) window.removeEventListener('hf-components-ready', this.agentComponentsReady);
     if(typeof window !== 'undefined' && this.settingsOnlineListener) window.removeEventListener('online', this.settingsOnlineListener);
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
+    if(typeof document !== 'undefined' && this.composerPointerDown) document.removeEventListener('pointerdown', this.composerPointerDown);
     if(this.themeMedia && this.themeMediaListener){
       if(this.themeMedia.removeEventListener) this.themeMedia.removeEventListener('change', this.themeMediaListener);
       else if(this.themeMedia.removeListener) this.themeMedia.removeListener(this.themeMediaListener);
@@ -4290,6 +4435,7 @@ class Component extends DCLogic {
     if(stateBefore.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
     this.syncAgentUiSlots();
+    if(this.state.modelMenu && typeof window !== 'undefined') requestAnimationFrame(()=>this.positionModelMenu());
     if(this.isSettingsPage(this.state.page) && !this.state.authToken){
       this.clearSettingsHash();
       this.setState({ page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
@@ -4310,7 +4456,8 @@ class Component extends DCLogic {
         activeProjectId:this.state.activeProjectId || 'welcome',
         activeTitle:this.state.activeTitle || 'Nouveau projet',
         projectsData:[],
-        modelId:this.state.modelId || 'tencent/hy3:free',
+        modelId:this.state.modelId && this.state.modelId !== 'auto' ? this.state.modelId : 'flash-v4',
+        agentMode:this.state.agentMode || 'confirm',
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
@@ -4494,7 +4641,8 @@ class Component extends DCLogic {
     if(!element) return;
     const maxHeight = 180;
     element.style.height = 'auto';
-    const contentHeight = Math.max(48, element.scrollHeight || 48);
+    const hasContent = String(element.value || '').trim().length > 0;
+    const contentHeight = hasContent ? Math.max(44, element.scrollHeight || 44) : 44;
     element.style.height = Math.min(contentHeight, maxHeight) + 'px';
     element.style.overflowY = contentHeight > maxHeight ? 'auto' : 'hidden';
   }
@@ -6012,6 +6160,21 @@ class Component extends DCLogic {
     this.notify('Historique de facturation exporté.');
   }
   async newProject(){
+    if(this.demoMode){
+      const next = { id:'preview-'+Date.now(), title:'Nouveau projet', messages:[] };
+      this.setState(s=>({
+        projectsData:s.projectsData.concat([next]),
+        activeProjectId:next.id,
+        activeTitle:next.title,
+        messages:[],
+        input:'',
+        page:'app',
+        modelMenu:false,
+        agentSettingsMenu:false,
+        backgroundTaskPanelOpen:false
+      }), ()=>this.notify('Nouveau projet pret. Decris ce que tu veux creer.'));
+      return;
+    }
     if(!this.requireAuth('Connecte-toi pour creer un projet sauvegarde.', { type:'newProject' })) return;
     try{
       const res = await this.apiFetch('/api/projects', { method:'POST', body:JSON.stringify({ title:'Nouveau projet' }) });
@@ -6358,7 +6521,44 @@ class Component extends DCLogic {
     return 'Encodage final…';
   }
 
-  curModel(){ return this.MODELS.find(m=>m.id===this.state.modelId) || this.MODELS[0]; }
+  agentUiModels(){
+    return [
+      { id:'flash-v4', name:'Flash V4', group:'AgentFlow', provider:'agentflow', desc:'Modele rapide pour tes generations', creditsLabel:'Manuel', free:true, current:true, dot:'#F7F7F8', capabilities:['tools','reasoning'] },
+      { id:'deepseek-v4-flash', name:'Flash DeepSeek V4', group:'AgentFlow', provider:'deepseek', desc:'Le plus rapide et le moins cher pour les volumes', creditsLabel:'Rapide', free:true, dot:'#F7F7F8', capabilities:['tools','reasoning'] }
+    ];
+  }
+  curModel(){
+    return this.agentUiModels().concat(this.MODELS).find(m=>m.id===this.state.modelId) || this.agentUiModels()[0] || this.MODELS[0];
+  }
+  modelPickerModels(){
+    const ids = ['flash-v4','deepseek-v4-flash','claude-fable-5','claude-opus-4-8','claude-sonnet-5','openai/gpt-5.6-sol','openai/gpt-5.6-terra','x-ai/grok-4.5','tencent/hy3:free','openai/o3-deep-research'];
+    const all = this.agentUiModels().concat(this.MODELS);
+    return [...new Map(all.map(model=>[model.id, model])).values()].filter(model => ids.includes(model.id));
+  }
+  positionModelMenu(){
+    if(typeof window === 'undefined' || typeof document === 'undefined') return;
+    const selector = document.querySelector('[data-hf-model-selector="true"]');
+    const menu = document.querySelector('[data-hf-model-menu="true"]');
+    if(!selector || !menu) return;
+    const rect = selector.getBoundingClientRect();
+    const gap = 8;
+    const below = Math.max(180, window.innerHeight - rect.bottom - 24);
+    const above = Math.max(180, rect.top - 24);
+    const placeAbove = below < 360 && above > below;
+    const available = Math.min(490, placeAbove ? above : below);
+    menu.style.maxHeight = available + 'px';
+    menu.style.top = placeAbove ? 'auto' : (rect.height + gap) + 'px';
+    menu.style.bottom = placeAbove ? (rect.height + gap) + 'px' : 'auto';
+    const list = menu.querySelector('[data-hf-model-list="true"]');
+    if(list) list.style.maxHeight = Math.max(150, available - 58) + 'px';
+  }
+  toggleAgentSettings(){ this.setState(s=>({ agentSettingsMenu:!s.agentSettingsMenu, modelMenu:false })); }
+  setAgentMode(mode){ this.setState({ agentMode:mode, agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' }); }
+  openModelCatalog(){
+    this.setState({ modelId:'deepseek-v4-flash', modelMenu:true, modelMenuSearch:'', agentSettingsMenu:false });
+  }
+  openMemory(){ this.openSettingsSection('settings'); this.notify('Memoire disponible dans les parametres.'); }
+  openMcp(){ this.openSettingsSection('claudecode'); this.notify('Les outils MCP sont prets a etre configures.'); }
 
   renderVals(){
     const st = this.state;
@@ -7168,6 +7368,11 @@ class Component extends DCLogic {
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),
+      skillsNavClass: st.page === 'skills' ? 'is-active' : '',
+      connectorsNavClass: st.page === 'connectors' ? 'is-active' : '',
+      memoryNavClass: st.page === 'settings' ? 'is-active' : '',
+      openMemory: ()=> this.openMemory(),
+      openMcp: ()=> this.openMcp(),
       exploreNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'explore' ? '650' : '500') + ';color:' + (st.page === 'explore' ? T.ink : T.text2) + ';background:' + (st.page === 'explore' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       exploreShowNew: st.exploreNewDismissed !== true,
       openExplore: ()=> this.openExplore(),
@@ -7335,9 +7540,23 @@ class Component extends DCLogic {
       sendHint: st.uploadingAttachment ? (st.attachmentNotice || 'ajout...') : (st.sendLocked ? 'stop' : '↵ envoyer'),
       isSending: !!st.sendLocked,
       isIdle: !st.sendLocked,
-      sendButtonStyleLarge: 'width:42px;height:42px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 9px 22px -15px rgba(209,254,23,.72)',
+      sendButtonStyleLarge: 'width:40px;height:40px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 9px 22px -15px rgba(209,254,23,.72)',
       sendButtonStyleSmall: 'width:34px;height:34px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -15px rgba(209,254,23,.68)',
-      toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '' })),
+      toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '', agentSettingsMenu:false })),
+      toggleAgentSettings: ()=> this.toggleAgentSettings(),
+      setManualMode: ()=> this.setAgentMode('manual'),
+      setAutoMode: ()=> this.setAgentMode('auto'),
+      setConfirmMode: ()=> this.setAgentMode('confirm'),
+      openModelCatalog: ()=> this.openModelCatalog(),
+      agentSettingsMenu: !!st.agentSettingsMenu,
+      agentModeLabel: st.agentMode === 'auto' ? 'Auto' : 'Manuel',
+      agentModeManualClass: st.agentMode === 'manual' ? 'is-active' : '',
+      agentModeAutoClass: st.agentMode === 'auto' ? 'is-active' : '',
+      agentModeConfirmClass: st.agentMode === 'confirm' ? 'is-active' : '',
+      manualModeCheck: st.agentMode === 'manual' ? '✓' : '',
+      autoModeCheck: st.agentMode === 'auto' ? '✓' : '',
+      confirmModeCheck: st.agentMode === 'confirm' ? '✓' : '',
+      deepSeekActiveClass: st.modelId === 'deepseek-v4-flash' ? 'is-active' : '',
       onModelMenuSearch: (e)=> this.setState({ modelMenuSearch: e.target.value || '' }),
       modelMenu: st.modelMenu,
       modelMenuSearch: st.modelMenuSearch || '',
@@ -7347,13 +7566,13 @@ class Component extends DCLogic {
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const grouped = {};
         const curated = [];
-        this.MODELS.filter(m=>!query || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
-          if(m.id === 'auto' || m.free || m.current){ curated.push(m); return; }
+        this.modelPickerModels().filter(m=>!query || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
+          if(m.free || m.current){ curated.push(m); return; }
           const key = m.group || m.provider || 'AgentFlow';
           (grouped[key] || (grouped[key] = [])).push(m);
         });
         const sections = curated.length ? [{
-          label:'Disponible',
+          label:'Modèles vedettes',
           headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
@@ -7381,8 +7600,8 @@ class Component extends DCLogic {
           }))
         })));
       })(),
-      hasModelMenuResults: this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
-      modelMenuEmpty: !this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      hasModelMenuResults: this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      modelMenuEmpty: !this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
       suggestions: this.SUGGESTION_SETS[st.suggestionSet].map(s=>({
         tag: s.tag, tagBg: s.tagBg, text: s.text,
         onClick: ()=> this.setState({ input: s.text })
