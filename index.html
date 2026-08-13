@@ -3125,7 +3125,7 @@ class Component extends DCLogic {
     agentMode: ['manual','auto','confirm'].includes(this.initialUiState.agentMode) ? this.initialUiState.agentMode : 'confirm',
     commandPaletteOpen: false,
     commandQuery: '',
-    modelId: this.initialUiState.modelId && this.initialUiState.modelId !== 'auto' ? this.initialUiState.modelId : 'flash-v4',
+    modelId: this.initialUiState.modelId || 'auto',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
     streamPhraseIndex: 0,
@@ -3222,6 +3222,7 @@ class Component extends DCLogic {
     adminData: null, adminLoading: false, adminError: ''
   };
 
+  /*
   MODELS = [
     { id:'nvidia/nemotron-3-ultra-550b-a55b:free', name:'Nemotron 3 Ultra gratuit', group:'NVIDIA', provider:'nvidia', desc:'Raisonnement frontier et orchestration agentique', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
     { id:'nvidia/nemotron-3-super-120b-a12b:free', name:'Nemotron 3 Super gratuit', group:'NVIDIA', provider:'nvidia', desc:'Planification multi-agents et raisonnement long contexte', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
@@ -3259,6 +3260,21 @@ class Component extends DCLogic {
     { id:'claude-sonnet-5', name:'Sonnet 5', group:'AgentFlow', desc:'Équilibre fort entre vitesse et qualité', creditsLabel:'Rapide', dot:'#E8D79B' },
     { id:'claude-sonnet-4-6', name:'Sonnet 4.6', group:'AgentFlow', desc:'Agent fiable pour les demandes quotidiennes', creditsLabel:'Stable', dot:'#A8E8C0' },
     { id:'claude-haiku-4-5-20251001', name:'Haiku 4.5', group:'AgentFlow', desc:'Réponses rapides et tâches simples', creditsLabel:'Éco', dot:'#C4C7CC' }
+  ];
+
+  */
+  // Network bootstrap replaces this fallback with the live OpenRouter catalog.
+  // Keep the offline shell small and aligned with the server allowlist.
+  MODELS = [
+    { id:'auto', name:'Auto', group:'OpenRouter', provider:'openrouter', desc:'Choisit automatiquement le meilleur modele pour ta demande', creditsLabel:'Selon la tache', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
+    { id:'openai/gpt-chat-latest', name:'GPT Chat Latest', group:'OpenRouter', provider:'openai', desc:'Modele rapide et polyvalent pour les workflows quotidiens', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
+    { id:'google/gemini-3.7-flash', name:'Gemini 3.7 Flash', group:'OpenRouter', provider:'google', desc:'Rapide, multimodal et adapte aux longues consignes', creditsLabel:'Selon les tokens', dot:'#4285F4', capabilities:['tools','vision','reasoning'] },
+    { id:'anthropic/claude-sonnet-5', name:'Claude Sonnet 5', group:'OpenRouter', provider:'anthropic', desc:'Equilibre entre precision, contexte et vitesse', creditsLabel:'Selon les tokens', dot:'#E8D79B', capabilities:['tools','vision','reasoning'] },
+    { id:'deepseek/deepseek-v4-flash-0731', name:'DeepSeek V4 Flash', group:'OpenRouter', provider:'deepseek', desc:'Rapide et economique pour les volumes', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
+    { id:'anthropic/claude-opus-5', name:'Claude Opus 5', group:'OpenRouter', provider:'anthropic', desc:'Raisonnement premium pour les briefs complexes', creditsLabel:'Selon les tokens', dot:'#C9A8E8', capabilities:['tools','vision','reasoning'] },
+    { id:'deepseek/deepseek-v4-pro-0813', name:'DeepSeek V4 Pro', group:'OpenRouter', provider:'deepseek', desc:'Raisonnement approfondi et execution robuste', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
+    { id:'x-ai/grok-4.6', name:'Grok 4.6', group:'OpenRouter', provider:'x-ai', desc:'Connaissance, code et ideation avec outils', creditsLabel:'Selon les tokens', dot:'#D6D6D6', capabilities:['tools','vision','reasoning'] },
+    { id:'qwen/qwen3.7-flash', name:'Qwen 3.7 Flash', group:'OpenRouter', provider:'qwen', desc:'Rapide et efficace pour les demandes volumineuses', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','reasoning'] }
   ];
 
   PLACEHOLDERS = [
@@ -3512,7 +3528,6 @@ class Component extends DCLogic {
   }
 
   agentModelApiId(id){
-    if(id === 'flash-v4' || id === 'deepseek-v4-flash') return 'tencent/hy3:free';
     return id || 'auto';
   }
   typeForModel(model){
@@ -4153,7 +4168,7 @@ class Component extends DCLogic {
       pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:29, annualPriceUsd:290, includedCredits:1000, metadata:{ segment:'solo', popular:true, tagline:'Pour creer et publier plus vite' }, allowedMediaTypes:['image','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
       artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
       integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
-      backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'flash-v4', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
+      backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
     }, ()=>{ this.applyDocumentMetadata(); this.syncChatInputSize(); });
   }
   updatePreviewApproval(id, status){
@@ -4172,7 +4187,7 @@ class Component extends DCLogic {
         this.MODELS = [...new Map(agentModels.map((m,i)=>[m.id || 'auto', ({
           id:m.id || 'auto',
           name:m.name || 'AgentFlow',
-          group:m.id === 'auto' ? 'AgentFlow' : (({anthropic:'Anthropic',openai:'OpenAI',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI',nvidia:'NVIDIA',google:'Google'}[m.provider]) || m.provider || 'AgentFlow'),
+          group:m.id === 'auto' ? 'Auto' : (({anthropic:'Anthropic',openai:'OpenAI',deepseek:'DeepSeek',qwen:'Qwen',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI',nvidia:'NVIDIA',google:'Google'}[m.provider]) || m.provider || 'OpenRouter'),
           provider:m.provider || 'auto',
           desc:m.description || 'Cerveau AgentFlow',
           creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
@@ -4184,6 +4199,7 @@ class Component extends DCLogic {
           current:!!m.current,
           dot:dots[i % dots.length]
         })])).values()];
+        if(!this.MODELS.some(model=>model.id === this.state.modelId)) this.state.modelId = 'auto';
       }
       if(this.state.authToken && !data.user){
         this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
@@ -4456,7 +4472,7 @@ class Component extends DCLogic {
         activeProjectId:this.state.activeProjectId || 'welcome',
         activeTitle:this.state.activeTitle || 'Nouveau projet',
         projectsData:[],
-        modelId:this.state.modelId && this.state.modelId !== 'auto' ? this.state.modelId : 'flash-v4',
+        modelId:this.state.modelId || 'auto',
         agentMode:this.state.agentMode || 'confirm',
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
@@ -6523,15 +6539,18 @@ class Component extends DCLogic {
 
   agentUiModels(){
     return [
-      { id:'flash-v4', name:'Flash V4', group:'AgentFlow', provider:'agentflow', desc:'Modele rapide pour tes generations', creditsLabel:'Manuel', free:true, current:true, dot:'#F7F7F8', capabilities:['tools','reasoning'] },
-      { id:'deepseek-v4-flash', name:'Flash DeepSeek V4', group:'AgentFlow', provider:'deepseek', desc:'Le plus rapide et le moins cher pour les volumes', creditsLabel:'Rapide', free:true, dot:'#F7F7F8', capabilities:['tools','reasoning'] }
+      { id:'auto', name:'Auto', group:'OpenRouter', provider:'openrouter', desc:'Choisit automatiquement le meilleur modele pour ta tache', creditsLabel:'Selon la tache', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
+      { id:'openai/gpt-chat-latest', name:'GPT Chat Latest', group:'OpenRouter', provider:'openai', desc:'Modele rapide et polyvalent pour les workflows quotidiens', creditsLabel:'Selon les tokens', current:true, dot:'#F7F7F8', capabilities:['tools','vision','reasoning'] },
+      { id:'google/gemini-3.7-flash', name:'Gemini 3.7 Flash', group:'OpenRouter', provider:'google', desc:'Rapide, multimodal et adapte aux longues consignes', creditsLabel:'Selon les tokens', dot:'#F7F7F8', capabilities:['tools','vision','reasoning'] },
+      { id:'anthropic/claude-sonnet-5', name:'Claude Sonnet 5', group:'OpenRouter', provider:'anthropic', desc:'Equilibre entre precision, contexte et vitesse', creditsLabel:'Selon les tokens', dot:'#F7F7F8', capabilities:['tools','vision','reasoning'] },
+      { id:'deepseek/deepseek-v4-flash-0731', name:'DeepSeek V4 Flash', group:'OpenRouter', provider:'deepseek', desc:'Rapide et economique pour les volumes', creditsLabel:'Selon les tokens', dot:'#F7F7F8', capabilities:['tools','reasoning'] }
     ];
   }
   curModel(){
     return this.agentUiModels().concat(this.MODELS).find(m=>m.id===this.state.modelId) || this.agentUiModels()[0] || this.MODELS[0];
   }
   modelPickerModels(){
-    const ids = ['flash-v4','deepseek-v4-flash','claude-fable-5','claude-opus-4-8','claude-sonnet-5','openai/gpt-5.6-sol','openai/gpt-5.6-terra','x-ai/grok-4.5','tencent/hy3:free','openai/o3-deep-research'];
+    const ids = ['auto','openai/gpt-chat-latest','google/gemini-3.7-flash','anthropic/claude-sonnet-5','deepseek/deepseek-v4-flash-0731','anthropic/claude-opus-5','deepseek/deepseek-v4-pro-0813','x-ai/grok-4.6','qwen/qwen3.7-flash'];
     const all = this.agentUiModels().concat(this.MODELS);
     return [...new Map(all.map(model=>[model.id, model])).values()].filter(model => ids.includes(model.id));
   }
@@ -6555,7 +6574,7 @@ class Component extends DCLogic {
   toggleAgentSettings(){ this.setState(s=>({ agentSettingsMenu:!s.agentSettingsMenu, modelMenu:false })); }
   setAgentMode(mode){ this.setState({ agentMode:mode, agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' }); }
   openModelCatalog(){
-    this.setState({ modelId:'deepseek-v4-flash', modelMenu:true, modelMenuSearch:'', agentSettingsMenu:false });
+    this.setState({ modelId:'auto', modelMenu:true, modelMenuSearch:'', agentSettingsMenu:false });
   }
   openMemory(){ this.openSettingsSection('settings'); this.notify('Memoire disponible dans les parametres.'); }
   openMcp(){ this.openSettingsSection('claudecode'); this.notify('Les outils MCP sont prets a etre configures.'); }

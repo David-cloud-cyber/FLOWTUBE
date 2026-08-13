@@ -4,7 +4,17 @@ import { fal } from "npm:@fal-ai/client@1.10.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fuvrxobxjcqyevsjsdfd.supabase.co";
 const APP_NAME = "HuggyFlow";
-const DEFAULT_MODEL = Deno.env.get("AGENTFLOW_DEFAULT_MODEL") || "tencent/hy3:free";
+const configuredDefaultModel = Deno.env.get("AGENTFLOW_DEFAULT_MODEL") || "";
+const DEFAULT_MODEL = [
+  "openai/gpt-chat-latest",
+  "google/gemini-3.7-flash",
+  "anthropic/claude-sonnet-5",
+  "anthropic/claude-opus-5",
+  "deepseek/deepseek-v4-flash-0731",
+  "deepseek/deepseek-v4-pro-0813",
+  "x-ai/grok-4.6",
+  "qwen/qwen3.7-flash",
+].includes(configuredDefaultModel) ? configuredDefaultModel : "openai/gpt-chat-latest";
 const ANTHROPIC_VERSION = "2023-06-01";
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
@@ -27,162 +37,160 @@ const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || "";
 const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true" || Boolean(OPENROUTER_API_KEY);
 const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_MEDIA_ENABLED") || "").toLowerCase() === "true";
 const OPENROUTER_AGENT_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_AGENT_ENABLED") || "true").toLowerCase() !== "false";
-const OPENROUTER_AGENT_FREE_UNTIL = Deno.env.get("OPENROUTER_AGENT_FREE_UNTIL") || "2026-07-21T23:59:59.999Z";
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+const OPENROUTER_CATALOG_TTL_MS = 10 * 60 * 1000;
+const OPENROUTER_CURATED_AGENT_IDS = [
+  "openai/gpt-chat-latest",
+  "google/gemini-3.7-flash",
+  "anthropic/claude-sonnet-5",
+  "anthropic/claude-opus-5",
+  "deepseek/deepseek-v4-flash-0731",
+  "deepseek/deepseek-v4-pro-0813",
+  "x-ai/grok-4.6",
+  "qwen/qwen3.7-flash",
+] as const;
+const OPENROUTER_CURATED_IMAGE_IDS = [
+  "openai/gpt-image-2",
+  "google/gemini-3-pro-image",
+  "google/gemini-3.1-flash-image",
+  "recraft/recraft-v4.1-pro",
+  "bytedance-seed/seedream-5-0-pro",
+  "qwen/qwen-image-3-pro",
+] as const;
+const OPENROUTER_CURATED_VIDEO_IDS = [
+  "bytedance/seedance-2.0",
+  "bytedance/seedance-2.5",
+  "kwaivgi/kling-v3.0-pro",
+  "google/veo-3.1",
+  "x-ai/grok-imagine-video-1.5",
+  "openai/sora-2-pro",
+] as const;
 const RATE_LIMIT_WINDOW_SECONDS = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_WINDOW_SECONDS") || 60);
 const DEFAULT_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_DEFAULT") || 80);
 const GENERATION_RATE_LIMIT = Number(Deno.env.get("FLOWTUBE_RATE_LIMIT_GENERATION") || 20);
 
-const AGENT_MODELS = [
-  { id: "auto", name: "Auto AgentFlow", description: "Choisit automatiquement le meilleur modele agent disponible.", tier: "recommended", provider: "auto", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", name: "Nemotron 3 Ultra (gratuit)", description: "Raisonnement frontier et orchestration agentique.", tier: "free", provider: "nvidia", capabilities: ["tools", "reasoning"] },
-  { id: "nvidia/nemotron-3-super-120b-a12b:free", name: "Nemotron 3 Super (gratuit)", description: "Planification multi-agents et raisonnement long contexte.", tier: "free", provider: "nvidia", capabilities: ["tools", "reasoning"] },
-  { id: "openai/gpt-oss-120b:free", name: "GPT OSS 120B (gratuit)", description: "Modele ouvert pour raisonnement et execution agentique.", tier: "free", provider: "openai", capabilities: ["tools", "reasoning"] },
-  { id: "google/gemma-4-31b-it:free", name: "Gemma 4 31B IT (gratuit)", description: "Modele compact pour reponses rapides et outils.", tier: "free", provider: "google", capabilities: ["tools", "reasoning"] },
-  { id: "tencent/hy3:free", name: "Tencent Hy3 (gratuit)", description: "Modele gratuit temporaire pour les conversations rapides.", tier: "free", provider: "tencent", capabilities: ["tools", "reasoning"], freeUntil: OPENROUTER_AGENT_FREE_UNTIL },
-  { id: "tencent/hy3", name: "Tencent Hy3", description: "Raisonnement et execution agentique polyvalente.", tier: "standard", provider: "tencent", capabilities: ["tools", "reasoning"] },
-  { id: "poolside/laguna-xs-2.1:free", name: "Laguna XS 2.1 (gratuit)", description: "Agent code compact avec outils et raisonnement.", tier: "free", provider: "poolside", capabilities: ["tools", "reasoning"], freeUntil: "" },
-  { id: "poolside/laguna-xs-2.1", name: "Laguna XS 2.1", description: "Agent logiciel rapide et economique.", tier: "economy", provider: "poolside", capabilities: ["tools", "reasoning"] },
-  { id: "aion-labs/aion-3.0", name: "Aion-3.0", description: "Direction narrative et ideation creative.", tier: "standard", provider: "aion-labs", capabilities: ["reasoning"] },
-  { id: "aion-labs/aion-3.0-mini", name: "Aion-3.0-Mini", description: "Version legere pour idees et variantes rapides.", tier: "economy", provider: "aion-labs", capabilities: ["reasoning"] },
-  { id: "black-forest-labs/flux.2-klein-4b", name: "FLUX.2 Klein", description: "Generation visuelle rapide et economique dans AgentFlow.", tier: "economy", provider: "black-forest-labs", capabilities: ["vision"] },
-  { id: "black-forest-labs/flux.2-pro", name: "FLUX.2 Pro", description: "Generation visuelle premium et edition de references.", tier: "premium", provider: "black-forest-labs", capabilities: ["vision"] },
-  { id: "openai/gpt-image-1-mini", name: "GPT Image Mini", description: "Creation et edition d'images a cout maitrise.", tier: "economy", provider: "openai", capabilities: ["vision"] },
-  { id: "openai/gpt-5-image-mini", name: "GPT-5 Image Mini", description: "Modele multimodal compact pour creation visuelle et instructions precises.", tier: "standard", provider: "openai", capabilities: ["vision", "reasoning"] },
-  { id: "openai/gpt-5.5", name: "GPT-5.5", description: "Raisonnement avance, planification et taches agentiques.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.5-pro", name: "GPT-5.5 Pro", description: "Raisonnement profond pour les workflows critiques.", tier: "max", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.6-luna-pro", name: "GPT-5.6 Luna Pro", description: "Raisonnement pro rapide et precis.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.6-luna", name: "GPT-5.6 Luna", description: "GPT rapide pour le volume et les iterations.", tier: "economy", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.6-terra-pro", name: "GPT-5.6 Terra Pro", description: "Equilibre premium entre profondeur et vitesse.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.6-terra", name: "GPT-5.6 Terra", description: "Modele polyvalent pour les workflows quotidiens.", tier: "standard", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.6-sol-pro", name: "GPT-5.6 Sol Pro", description: "Qualite maximale pour les briefs complexes.", tier: "max", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/gpt-5.6-sol", name: "GPT-5.6 Sol", description: "Raisonnement frontier pour les plans longs.", tier: "premium", provider: "openai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "openai/o3", name: "o3-pro", description: "Raisonnement methodique et resolution de problemes.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning"] },
-  { id: "openai/o4-mini", name: "o4-mini", description: "Raisonnement rapide et economique.", tier: "standard", provider: "openai", capabilities: ["tools", "reasoning"] },
-  { id: "openai/o3-deep-research", name: "o3 Deep Research", description: "Recherche approfondie multi-etapes.", tier: "max", provider: "openai", capabilities: ["tools", "reasoning", "research"] },
-  { id: "openai/o4-mini-deep-research", name: "o4-mini Deep Research", description: "Recherche approfondie a cout maitrise.", tier: "premium", provider: "openai", capabilities: ["tools", "reasoning", "research"] },
-  { id: "x-ai/grok-4.5", name: "Grok 4.5", description: "Connaissance, code et ideation avec outils.", tier: "premium", provider: "x-ai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "x-ai/grok-latest", name: "Grok Latest", description: "Alias dynamique du dernier modele Grok.", tier: "premium", provider: "x-ai", capabilities: ["tools", "vision", "reasoning"] },
-  { id: "claude-fable-5", name: "Fable 5", description: "Creation ambitieuse, strategie et production complexe.", tier: "max" },
-  { id: "claude-mythos-5", name: "Mythos 5", description: "Raisonnement profond avec repli automatique si indisponible.", tier: "max" },
-  { id: "claude-opus-4-8", name: "Opus 4.8", description: "Agent premium pour les briefs longs et exigeants.", tier: "pro" },
-  { id: "claude-opus-4-7", name: "Opus 4.7", description: "Agent premium avec repli automatique si indisponible.", tier: "pro" },
-  { id: "claude-opus-4-6", name: "Opus 4.6", description: "Direction creative premium avec repli automatique.", tier: "pro" },
-  { id: "claude-sonnet-5", name: "Sonnet 5", description: "Equilibre fort entre vitesse, qualite et cout.", tier: "balanced" },
-  { id: "claude-sonnet-4-6", name: "Sonnet 4.6", description: "Agent fiable pour les demandes quotidiennes.", tier: "balanced" },
-  { id: "claude-haiku-4-5-20251001", name: "Haiku 4.5", description: "Reponses rapides et taches simples.", tier: "fast" },
-] as const;
-
 const AGENT_MODEL_FALLBACKS = [
   DEFAULT_MODEL,
-  "claude-sonnet-4-6",
-  "claude-sonnet-5",
-  "claude-haiku-4-5-20251001",
-  "claude-opus-4-8",
-  "claude-fable-5",
+  "google/gemini-3.7-flash",
+  "deepseek/deepseek-v4-flash-0731",
+  "anthropic/claude-sonnet-5",
 ];
 
 const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margin: "eco" | "standard" | "premium" | "max" }> = {
-  "nvidia/nemotron-3-ultra-550b-a55b:free": { credits: 0, label: "Gratuit", margin: "eco" },
-  "nvidia/nemotron-3-super-120b-a12b:free": { credits: 0, label: "Gratuit", margin: "eco" },
-  "openai/gpt-oss-120b:free": { credits: 0, label: "Gratuit", margin: "eco" },
-  "google/gemma-4-31b-it:free": { credits: 0, label: "Gratuit", margin: "eco" },
-  "tencent/hy3:free": { credits: 1, label: "Gratuit", margin: "eco" },
-  "tencent/hy3": { credits: 5, label: "5 cr", margin: "standard" },
-  "poolside/laguna-xs-2.1:free": { credits: 1, label: "Gratuit", margin: "eco" },
-  "poolside/laguna-xs-2.1": { credits: 2, label: "2 cr", margin: "eco" },
-  "aion-labs/aion-3.0": { credits: 8, label: "8 cr", margin: "premium" },
-  "aion-labs/aion-3.0-mini": { credits: 3, label: "3 cr", margin: "standard" },
-  "black-forest-labs/flux.2-klein-4b": { credits: 25, label: "25 cr", margin: "eco" },
-  "black-forest-labs/flux.2-pro": { credits: 70, label: "70 cr", margin: "premium" },
-  "openai/gpt-image-1-mini": { credits: 120, label: "120 cr", margin: "premium" },
-  "openai/gpt-5-image-mini": { credits: 90, label: "90 cr", margin: "premium" },
-  "openai/gpt-5.5": { credits: 35, label: "35 cr", margin: "premium" },
-  "openai/gpt-5.5-pro": { credits: 180, label: "180 cr", margin: "max" },
-  "openai/gpt-5.6-luna-pro": { credits: 8, label: "8 cr", margin: "premium" },
-  "openai/gpt-5.6-luna": { credits: 4, label: "4 cr", margin: "standard" },
-  "openai/gpt-5.6-terra-pro": { credits: 20, label: "20 cr", margin: "premium" },
-  "openai/gpt-5.6-terra": { credits: 10, label: "10 cr", margin: "standard" },
-  "openai/gpt-5.6-sol-pro": { credits: 40, label: "40 cr", margin: "max" },
-  "openai/gpt-5.6-sol": { credits: 35, label: "35 cr", margin: "premium" },
-  "openai/o3": { credits: 30, label: "30 cr", margin: "premium" },
-  "openai/o4-mini": { credits: 12, label: "12 cr", margin: "standard" },
-  "openai/o3-deep-research": { credits: 100, label: "100 cr", margin: "max" },
-  "openai/o4-mini-deep-research": { credits: 60, label: "60 cr", margin: "premium" },
-  "x-ai/grok-4.5": { credits: 20, label: "20 cr", margin: "premium" },
-  "x-ai/grok-latest": { credits: 20, label: "20 cr", margin: "premium" },
-  "claude-haiku-4-5-20251001": { credits: 1, label: "1 cr", margin: "eco" },
-  "claude-sonnet-4-6": { credits: 3, label: "3 cr", margin: "standard" },
-  "claude-sonnet-5": { credits: 4, label: "4 cr", margin: "standard" },
-  "claude-opus-4-6": { credits: 10, label: "10 cr", margin: "premium" },
-  "claude-opus-4-7": { credits: 11, label: "11 cr", margin: "premium" },
-  "claude-opus-4-8": { credits: 12, label: "12 cr", margin: "premium" },
-  "claude-fable-5": { credits: 18, label: "18 cr", margin: "max" },
-  "claude-mythos-5": { credits: 18, label: "18 cr", margin: "max" },
+  "openai/gpt-chat-latest": { credits: 4, label: "Selon les tokens", margin: "standard" },
+  "google/gemini-3.7-flash": { credits: 4, label: "Selon les tokens", margin: "standard" },
+  "anthropic/claude-sonnet-5": { credits: 4, label: "Selon les tokens", margin: "standard" },
+  "anthropic/claude-opus-5": { credits: 12, label: "Selon les tokens", margin: "premium" },
+  "deepseek/deepseek-v4-flash-0731": { credits: 2, label: "Selon les tokens", margin: "eco" },
+  "deepseek/deepseek-v4-pro-0813": { credits: 8, label: "Selon les tokens", margin: "premium" },
+  "x-ai/grok-4.6": { credits: 8, label: "Selon les tokens", margin: "premium" },
+  "qwen/qwen3.7-flash": { credits: 2, label: "Selon les tokens", margin: "eco" },
 };
 
 const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
-  "nvidia/nemotron-3-ultra-550b-a55b:free": { input: 0, output: 0 },
-  "nvidia/nemotron-3-super-120b-a12b:free": { input: 0, output: 0 },
-  "openai/gpt-oss-120b:free": { input: 0, output: 0 },
-  "google/gemma-4-31b-it:free": { input: 0, output: 0 },
-  "tencent/hy3:free": { input: 0, output: 0 },
-  "tencent/hy3": { input: 1, output: 4 },
-  "poolside/laguna-xs-2.1:free": { input: 0, output: 0 },
-  "poolside/laguna-xs-2.1": { input: 0.06, output: 0.12 },
-  "aion-labs/aion-3.0": { input: 3, output: 6 },
-  "aion-labs/aion-3.0-mini": { input: 0.5, output: 1.5 },
-  "black-forest-labs/flux.2-klein-4b": { input: 10, output: 40 },
-  "black-forest-labs/flux.2-pro": { input: 10, output: 40 },
-  "openai/gpt-image-1-mini": { input: 10, output: 40 },
-  "openai/gpt-5-image-mini": { input: 10, output: 40 },
-  "openai/gpt-5.5": { input: 5, output: 30 },
-  "openai/gpt-5.5-pro": { input: 30, output: 180 },
-  "openai/gpt-5.6-luna-pro": { input: 1, output: 6 },
-  "openai/gpt-5.6-luna": { input: 1, output: 6 },
-  "openai/gpt-5.6-terra-pro": { input: 2.5, output: 15 },
-  "openai/gpt-5.6-terra": { input: 2.5, output: 15 },
-  "openai/gpt-5.6-sol-pro": { input: 5, output: 30 },
-  "openai/gpt-5.6-sol": { input: 5, output: 30 },
-  "openai/o3": { input: 10, output: 40 },
-  "openai/o4-mini": { input: 1.1, output: 4.4 },
-  "openai/o3-deep-research": { input: 10, output: 40 },
-  "openai/o4-mini-deep-research": { input: 10, output: 40 },
-  "x-ai/grok-4.5": { input: 2, output: 6 },
-  "x-ai/grok-latest": { input: 2, output: 6 },
-  "claude-haiku-4-5-20251001": { input: 1, output: 5 },
-  "claude-sonnet-4-6": { input: 3, output: 15 },
-  "claude-sonnet-5": { input: 2, output: 10 },
-  "claude-opus-4-6": { input: 5, output: 25 },
-  "claude-opus-4-7": { input: 5, output: 25 },
-  "claude-opus-4-8": { input: 5, output: 25 },
-  "claude-fable-5": { input: 10, output: 50 },
-  "claude-mythos-5": { input: 10, output: 50 },
+  "openai/gpt-chat-latest": { input: 2, output: 8 },
+  "google/gemini-3.7-flash": { input: 0.5, output: 3 },
+  "anthropic/claude-sonnet-5": { input: 3, output: 15 },
+  "anthropic/claude-opus-5": { input: 5, output: 25 },
+  "deepseek/deepseek-v4-flash-0731": { input: 0.2, output: 1 },
+  "deepseek/deepseek-v4-pro-0813": { input: 2, output: 8 },
+  "x-ai/grok-4.6": { input: 2, output: 8 },
+  "qwen/qwen3.7-flash": { input: 0.2, output: 1 },
 };
 
 type AgentUsage = { inputTokens?: number; outputTokens?: number };
 
 const OPENROUTER_LIVE_PRICES: Record<string, { input: number; output: number }> = {};
 const OPENROUTER_PRICE_REFRESHED_AT: Record<string, number> = {};
-const OPENROUTER_AGENT_IDS = new Set(AGENT_MODELS.filter((model) => {
-  const provider = (model as { provider?: string }).provider;
-  return provider === "openrouter" || ["tencent", "poolside", "aion-labs", "openai", "x-ai", "black-forest-labs", "nvidia", "google"].includes(String(provider));
-}).map((model) => model.id));
-const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output: number }> = {
-  "openai/gpt-5.5-pro": { input: 30, output: 180 },
-  "openai/o3-deep-research": { input: 10, output: 40 },
-  "openai/o4-mini-deep-research": { input: 10, output: 40 },
+const OPENROUTER_AGENT_IDS = new Set<string>(OPENROUTER_CURATED_AGENT_IDS);
+const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output: number }> = {};
+
+type OpenRouterRemoteModel = {
+  id?: string;
+  name?: string;
+  description?: string;
+  pricing?: { prompt?: string | number; completion?: string | number; image?: string | number; request?: string | number } | null;
+  architecture?: { input_modalities?: string[]; output_modalities?: string[] } | null;
+  supported_parameters?: Record<string, unknown> | null;
+  pricing_skus?: Record<string, string | number> | null;
+  supported_durations?: number[] | null;
+  supported_resolutions?: string[] | null;
+  supported_aspect_ratios?: string[] | null;
+  supported_frame_images?: string[] | null;
 };
 
-function isOpenRouterAgentModel(modelId: string) {
-  return OPENROUTER_AGENT_IDS.has(modelId) || modelId.startsWith("openai/") || modelId.startsWith("x-ai/") || modelId.startsWith("tencent/") || modelId.startsWith("poolside/") || modelId.startsWith("aion-labs/") || modelId.startsWith("black-forest-labs/") || modelId.startsWith("nvidia/") || modelId.startsWith("google/");
+type OpenRouterCatalog = {
+  agent: OpenRouterRemoteModel[];
+  image: OpenRouterRemoteModel[];
+  video: OpenRouterRemoteModel[];
+  syncedAt: string | null;
+  live: boolean;
+};
+
+let openRouterCatalogCache: OpenRouterCatalog = {
+  agent: [],
+  image: [],
+  video: [],
+  syncedAt: null,
+  live: false,
+};
+
+function openRouterHeaders() {
+  return {
+    Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+    "HTTP-Referer": APP_BASE_URL,
+    "X-Title": APP_NAME,
+    Accept: "application/json",
+  };
 }
 
-function isTemporaryFreeAgentModel(modelId: string) {
-  return modelId === "tencent/hy3:free" && Date.now() <= Date.parse(OPENROUTER_AGENT_FREE_UNTIL);
+async function openRouterList(path: string): Promise<OpenRouterRemoteModel[]> {
+  if (!OPENROUTER_API_KEY) return [];
+  try {
+    const response = await fetch(`${OPENROUTER_BASE_URL}${path}`, { headers: openRouterHeaders() });
+    if (!response.ok) return [];
+    const body = await response.json() as { data?: OpenRouterRemoteModel[] };
+    return Array.isArray(body.data) ? body.data : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+async function refreshOpenRouterCatalog(force = false) {
+  if (!OPENROUTER_ENABLED || !OPENROUTER_API_KEY) return openRouterCatalogCache;
+  const refreshedAt = openRouterCatalogCache.syncedAt ? Date.parse(openRouterCatalogCache.syncedAt) : 0;
+  if (!force && refreshedAt && Date.now() - refreshedAt < OPENROUTER_CATALOG_TTL_MS) return openRouterCatalogCache;
+  const [allModels, imageModels, videoModels] = await Promise.all([
+    openRouterList("/models"),
+    openRouterList("/images/models"),
+    openRouterList("/videos/models"),
+  ]);
+  const byId = (items: OpenRouterRemoteModel[], ids: readonly string[]) => {
+    const allowed = new Set(ids);
+    return items.filter((item) => allowed.has(String(item.id || "")));
+  };
+  const agent = byId(allModels, OPENROUTER_CURATED_AGENT_IDS);
+  const image = byId(imageModels, OPENROUTER_CURATED_IMAGE_IDS);
+  const video = byId(videoModels, OPENROUTER_CURATED_VIDEO_IDS);
+  const live = agent.length + image.length + video.length > 0;
+  openRouterCatalogCache = { agent, image, video, syncedAt: new Date().toISOString(), live };
+  for (const model of agent) {
+    const input = Number(model.pricing?.prompt);
+    const output = Number(model.pricing?.completion);
+    if (Number.isFinite(input) && Number.isFinite(output)) {
+      OPENROUTER_LIVE_PRICES[String(model.id)] = { input: input * 1_000_000, output: output * 1_000_000 };
+      OPENROUTER_PRICE_REFRESHED_AT[String(model.id)] = Date.now();
+    }
+  }
+  return openRouterCatalogCache;
+}
+
+function isOpenRouterAgentModel(modelId: string) {
+  return OPENROUTER_AGENT_IDS.has(modelId);
 }
 
 function isFreeOpenRouterAgentModel(modelId: string) {
-  return modelId.endsWith(":free") && (modelId !== "tencent/hy3:free" || isTemporaryFreeAgentModel(modelId));
+  return modelId.endsWith(":free") && OPENROUTER_AGENT_IDS.has(modelId);
 }
 
 function agentTokenPriceForModel(modelId: string) {
@@ -202,13 +210,7 @@ async function refreshOpenRouterPrice(modelId: string) {
   if (OPENROUTER_LIVE_PRICES[resolved] && Date.now() - refreshedAt < 10 * 60 * 1000) return OPENROUTER_LIVE_PRICES[resolved];
   if (!OPENROUTER_API_KEY) return agentTokenPriceForModel(resolved);
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/models", {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": APP_BASE_URL,
-        "X-Title": APP_NAME,
-      },
-    });
+    const response = await fetch(`${OPENROUTER_BASE_URL}/models`, { headers: openRouterHeaders() });
     if (response.ok) {
       const body = await response.json() as { data?: Array<{ id?: string; pricing?: { prompt?: string | number; completion?: string | number } }> };
       const found = body.data?.find((item) => item.id === resolved);
@@ -248,8 +250,7 @@ function estimatedAgentCreditsForPayload(modelId: string, payload: Record<string
 function agentCreditRateForModel(modelId: string) {
   const resolved = resolveAgentModelId(modelId);
   if (AGENT_CREDIT_RATES[resolved]) return AGENT_CREDIT_RATES[resolved];
-  if (/opus/i.test(resolved)) return { credits: 12, label: "12 cr", margin: "premium" as const };
-  if (/fable|mythos/i.test(resolved)) return { credits: 18, label: "18 cr", margin: "max" as const };
+  if (/opus|pro/i.test(resolved)) return { credits: 12, label: "12 cr", margin: "premium" as const };
   if (/haiku/i.test(resolved)) return { credits: 1, label: "1 cr", margin: "eco" as const };
   return { credits: 4, label: "4 cr", margin: "standard" as const };
 }
@@ -263,19 +264,29 @@ function agentMarginMultiplierForModel(modelId: string) {
 }
 
 function publicAgentModels() {
-  return AGENT_MODELS.map((model) => ({
+  const remote = openRouterCatalogCache.agent;
+  const source = remote;
+  const models = [{ id: "auto", name: "Auto", description: "Choisit automatiquement le modele le plus adapte a ta demande.", tier: "recommended", provider: "auto", capabilities: ["tools", "vision", "reasoning"] }, ...source.map((item) => {
+    const id = String(item.id || "");
+    const description = String(item.description || "Modele OpenRouter confirme pour le chat et les workflows AgentFlow.");
+    const capabilities = ["tools", "reasoning", ...(item.architecture?.input_modalities?.includes("image") ? ["vision"] : [])];
+    const tier = /opus|pro|sora/i.test(id) ? "premium" : /flash|mini/i.test(id) ? "fast" : "balanced";
+    return { id, name: String(item.name || id), description, tier, provider: id.split("/")[0] || "openrouter", capabilities };
+  })];
+  return models.map((model) => ({
     ...model,
-    provider: (model as { provider?: string }).provider || (isOpenRouterAgentModel(model.id) ? model.id.split("/")[0] : "anthropic"),
     inputUsdPerMillionTokens: agentTokenPriceForModel(model.id).input,
     outputUsdPerMillionTokens: agentTokenPriceForModel(model.id).output,
-    creditsPerMessage: agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
-    creditsLabel: model.id === "auto" ? "Selon les tokens" : (isFreeOpenRouterAgentModel(model.id) ? "Gratuit" : `≈${agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits} cr*`),
+    creditsPerMessage: model.id === "auto" ? 0 : agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
+    creditsLabel: model.id === "auto" ? "Selon la tache" : (isFreeOpenRouterAgentModel(model.id) ? "Gratuit" : "≈" + agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits + " cr*"),
     billingMode: "token_based",
-    costClass: agentCreditRateForModel(model.id).margin,
-    free: isFreeOpenRouterAgentModel(model.id),
-    freeUntil: (model as { freeUntil?: string }).freeUntil || null,
+    costClass: model.id === "auto" ? "standard" : agentCreditRateForModel(model.id).margin,
+    free: model.id !== "auto" && isFreeOpenRouterAgentModel(model.id),
+    freeUntil: null,
     capabilities: (model as { capabilities?: string[] }).capabilities || [],
     current: model.id !== "auto" && model.id === DEFAULT_MODEL,
+    available: model.id === "auto" || remote.some((item) => item.id === model.id),
+    catalogSource: "openrouter",
   }));
 }
 
@@ -293,8 +304,8 @@ function uniqueStrings(values: string[]) {
 function resolveAgentModelId(value: unknown) {
   const raw = String(value || "").trim();
   if (!raw || raw === "auto" || raw === "huggy-auto") return DEFAULT_MODEL;
-  if (/^claude-[a-z0-9][a-z0-9._-]*$/i.test(raw)) return raw;
   if (OPENROUTER_AGENT_ENABLED && OPENROUTER_AGENT_IDS.has(raw)) return raw;
+  if (!OPENROUTER_AGENT_ENABLED && /^claude-[a-z0-9][a-z0-9._-]*$/i.test(raw)) return raw;
   return DEFAULT_MODEL;
 }
 
@@ -594,7 +605,7 @@ async function openRouterMessages(payload: Record<string, unknown>, preferredMod
   }
   await refreshOpenRouterPrice(model);
   await ensureAgentCreditsAvailable(billing, model, estimatedAgentCreditsForPayload(model, payload, billing?.multiplier));
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
@@ -605,7 +616,12 @@ async function openRouterMessages(payload: Record<string, unknown>, preferredMod
     body: JSON.stringify(openRouterPayload(payload, model)),
   });
   const raw = await response.text();
-  if (!response.ok) throw new FlowtubeError(response.status === 429 ? 429 : 502, "Le modele selectionne n'est pas disponible pour le moment.", { code: "OPENROUTER_ERROR", modelId: model });
+  if (!response.ok) {
+    const providerStatus = response.status;
+    const status = [401, 402, 429].includes(providerStatus) || providerStatus >= 500 ? providerStatus : 502;
+    const code = providerStatus === 401 ? "OPENROUTER_UNAUTHORIZED" : providerStatus === 402 ? "OPENROUTER_PAYMENT_REQUIRED" : providerStatus === 429 ? "OPENROUTER_RATE_LIMITED" : "OPENROUTER_ERROR";
+    throw new FlowtubeError(status, providerStatus === 402 ? "Le fournisseur IA a refuse la facturation de cette generation." : "Le modele selectionne n'est pas disponible pour le moment.", { code, modelId: model, providerStatus });
+  }
   if (Boolean(payload.stream)) {
     const streamed = openRouterStreamResponse(raw, model);
     await chargeAgentCredits(billing, model, streamed.usage);
@@ -1197,51 +1213,70 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
 
 const modelRegistry: PricingModel[] = FAL_ENDPOINTS.map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
 
-const OPENROUTER_PHASE2_MODELS: PricingModel[] = [
-  {
-    ...falModel("openrouter/xai/grok-imagine-video", {
-      id: "or-grok-imagine-video",
-      label: "Grok Imagine Video",
-      type: "video",
-      capabilities: ["text-to-video", "image-to-video", "reference-to-video"],
-      costPerUnitUsd: 0.12,
-      pricingUnit: "second",
-      qualityTier: "standard",
-      maximumUnits: 15,
-      metadata: { phase: 2, provider: "openrouter", prepared_only: true },
-    }),
+function openRouterMediaModel(id: string, type: "image" | "video", remote?: OpenRouterRemoteModel): PricingModel {
+  const video = type === "video";
+  const premium = /pro|4k|sora|veo|seedance-2\.5/i.test(id);
+  const skuValues = Object.entries(remote?.pricing_skus || {})
+    .map(([key, value]) => ({ key: key.toLowerCase(), value: Number(value) }))
+    .filter((item) => Number.isFinite(item.value) && item.value > 0);
+  const sku = skuValues.find((item) => video ? /duration_seconds(?!.*without_audio)/.test(item.key) : /image|megapixel|token/.test(item.key));
+  const costPerUnitUsd = video
+    ? (sku?.value || (id.includes("veo") ? 0.4 : id.includes("sora") ? 0.5 : 0.12))
+    : (sku?.value || (id.includes("gpt-image") ? 0.22 : 0.12));
+  const name = String(remote?.name || id);
+  const capabilities = video
+    ? ["text-to-video", "image-to-video", "reference-to-video"]
+    : ["text-to-image", "image-to-image", "edit"];
+  return {
+    id,
+    name,
+    type,
+    endpoint: `openrouter/${id}`,
     provider: "openrouter",
-  },
-  {
-    ...falModel("openrouter/openai/gpt-image", {
-      id: "or-gpt-image",
-      label: "GPT Image",
-      type: "image",
-      capabilities: ["text-to-image", "edit"],
-      costPerUnitUsd: 0.22,
-      qualityTier: "premium",
-      metadata: { phase: 2, provider: "openrouter", prepared_only: true },
-    }),
-    provider: "openrouter",
-  },
-  {
-    ...falModel("openrouter/nvidia/nemotron", {
-      id: "or-nemotron-triage",
-      label: "Nemotron Triage",
-      type: "agent",
-      capabilities: ["agent-triage"],
-      costPerUnitUsd: 0.001,
-      qualityTier: "economy",
-      metadata: { phase: 2, provider: "openrouter", prepared_only: true, role: "agent-triage" },
-    }),
-    provider: "openrouter",
-  },
+    pricingUnit: video ? "second" : "unit",
+    costPerUnitUsd,
+    defaultUnits: video ? Number(remote?.supported_durations?.[0] || 5) : 1,
+    minimumUnits: video ? 1 : 1,
+    maximumUnits: video ? 15 : 1,
+    creditFloorUsd: CREDIT_FLOOR_USD,
+    retailCreditUsd: RETAIL_CREDIT_USD,
+    marginMultiplier: premium ? QUALITY_MARGIN_MULTIPLIERS.premium : MEDIA_MARGIN_MULTIPLIER,
+    requiresConfirmation: video || premium || costPerUnitUsd >= 0.08,
+    premium,
+    metadata: {
+      provider: "openrouter",
+      capabilities,
+      input_profile: video ? "reference_video" : "image_edit",
+      quality_tier: premium ? "premium" : "standard",
+      huggyflow_priority: true,
+      huggyflow_family: id.split("/").slice(-1)[0],
+      huggyflow_route_label: name,
+      reference_strategy: "reference_images_and_frames",
+      live_catalog: true,
+      supported_parameters: remote?.supported_parameters || {},
+      pricing_skus: remote?.pricing_skus || {},
+      supported_durations: remote?.supported_durations || [],
+      supported_resolutions: remote?.supported_resolutions || [],
+      supported_aspect_ratios: remote?.supported_aspect_ratios || [],
+      supported_frame_images: remote?.supported_frame_images || [],
+      architecture: remote?.architecture || null,
+      pricing_source: "openrouter",
+    },
+  };
+}
+
+const OPENROUTER_MEDIA_REGISTRY: PricingModel[] = [
+  ...OPENROUTER_CURATED_IMAGE_IDS.map((id) => openRouterMediaModel(id, "image")),
+  ...OPENROUTER_CURATED_VIDEO_IDS.map((id) => openRouterMediaModel(id, "video")),
 ];
 
 function enabledModelRegistry() {
-  // HuggyFlow exposes one curated media stack. Experimental OpenRouter and
-  // legacy FAL routes stay out of the product catalog and auto-router.
-  return modelRegistry;
+  if (!OPENROUTER_MEDIA_ENABLED || !openRouterCatalogCache.live) return modelRegistry;
+  const liveIds = new Set([
+    ...openRouterCatalogCache.image.map((model) => String(model.id || "")),
+    ...openRouterCatalogCache.video.map((model) => String(model.id || "")),
+  ]);
+  return [...modelRegistry, ...OPENROUTER_MEDIA_REGISTRY.filter((model) => liveIds.has(model.id))];
 }
 
 const FEATURED_MODEL_IDS: string[] = [];
@@ -1728,7 +1763,18 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
 }
 
 async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
-  const baseRegistry = enabledModelRegistry();
+  const openRouterCatalog = await refreshOpenRouterCatalog();
+  const liveMediaIds = new Set([
+    ...openRouterCatalog.image.map((model) => String(model.id || "")),
+    ...openRouterCatalog.video.map((model) => String(model.id || "")),
+  ]);
+  const remoteById = new Map([
+    ...openRouterCatalog.image.map((model) => [String(model.id || ""), model] as const),
+    ...openRouterCatalog.video.map((model) => [String(model.id || ""), model] as const),
+  ]);
+  const baseRegistry = enabledModelRegistry()
+    .filter((model) => model.provider !== "openrouter" || liveMediaIds.has(model.id))
+    .map((model) => model.provider === "openrouter" ? openRouterMediaModel(model.id, model.type === "video" ? "video" : "image", remoteById.get(model.id)) : model);
   const { data, error } = await supabase.from("pricing_models").select("*").eq("active", true);
   if (!error && data?.length) {
     const dbModels = data.map(normalizePricingModel);
@@ -1747,16 +1793,18 @@ async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
         metadata: {
           ...registryModel.metadata,
           ...(dbModel.metadata || {}),
-          provider: "fal.ai",
-          fal_only: true,
+          provider: registryModel.provider || "fal.ai",
+          ...(registryModel.provider === "openrouter" ? { openrouter_only: true } : { fal_only: true }),
           pricing_source: "supabase_pricing_models",
         },
       };
     });
     for (const model of dbById.values()) {
-      if (model.endpoint) merged.push({
+      const isOpenRouterModel = model.provider === "openrouter";
+      const isLiveOpenRouterModel = liveMediaIds.has(model.id);
+      if (model.endpoint && (!isOpenRouterModel || isLiveOpenRouterModel)) merged.push({
         ...model,
-        metadata: { ...(model.metadata || {}), provider: "fal.ai", fal_only: true },
+        metadata: { ...(model.metadata || {}), provider: model.provider || "fal.ai", ...(model.provider === "openrouter" ? { openrouter_only: true } : { fal_only: true }) },
       });
     }
     return priorityModelCatalog(merged);
@@ -2650,9 +2698,20 @@ async function bootstrap(req: Request) {
       moneyFusionFees: moneyFusionFeeConfig(),
       providers: {
         mediaPrivatePipeline: Boolean(Deno.env.get("FAL_KEY")),
-        openRouterPrepared: true,
+        openRouterPrepared: OPENROUTER_ENABLED && Boolean(OPENROUTER_API_KEY),
         openRouterEnabled: OPENROUTER_ENABLED,
-        openRouterMediaEnabled: OPENROUTER_MEDIA_ENABLED && Boolean(Deno.env.get("OPENROUTER_API_KEY")),
+        openRouterReady: OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY),
+        openRouterMediaEnabled: OPENROUTER_MEDIA_ENABLED && Boolean(OPENROUTER_API_KEY),
+        openRouterMediaReady: OPENROUTER_MEDIA_ENABLED && Boolean(OPENROUTER_API_KEY) && openRouterCatalogCache.image.length + openRouterCatalogCache.video.length > 0,
+        openRouterCatalogLive: openRouterCatalogCache.live,
+        openRouterCatalogSyncedAt: openRouterCatalogCache.syncedAt,
+        openRouterCapabilities: {
+          text: openRouterCatalogCache.agent.length > 0,
+          vision: openRouterCatalogCache.agent.some((model) => model.architecture?.input_modalities?.includes("image")),
+          image: openRouterCatalogCache.image.length > 0,
+          video: openRouterCatalogCache.video.length > 0,
+          tools: openRouterCatalogCache.agent.length > 0,
+        },
       },
     },
     agentModels: publicAgentModels(),
@@ -2683,7 +2742,7 @@ async function bootstrap(req: Request) {
     },
     production: {
       auth: true,
-      agentFlow: Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
+      agentFlow: OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) || Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
       aiModel: DEFAULT_MODEL,
       aiModels: publicAgentModels(),
       billing: true,
@@ -5202,9 +5261,10 @@ function ensureProviderReady(model: PricingModel) {
   const provider = model.provider || String((model.metadata || {}).provider || "fal.ai");
   if (provider === "openrouter") {
     if (!OPENROUTER_MEDIA_ENABLED || !Deno.env.get("OPENROUTER_API_KEY")) {
-      throw new FlowtubeError(503, "Ce moteur HuggyFlow est prepare pour une prochaine phase, mais il n'est pas encore active.", { code: "PROVIDER_NOT_CONFIGURED", modelId: model.id });
+      throw new FlowtubeError(503, "OpenRouter n'est pas configure pour les medias.", { code: "OPENROUTER_MEDIA_NOT_CONFIGURED", modelId: model.id });
     }
-    throw new FlowtubeError(503, "Ce moteur HuggyFlow est prepare mais le runner media Phase 2 n'est pas encore active.", { code: "PROVIDER_NOT_CONFIGURED", modelId: model.id });
+    if (!model.endpoint) throw new FlowtubeError(503, `Modele OpenRouter manquant pour ${model.name}.`, { code: "PROVIDER_ENDPOINT_MISSING", modelId: model.id });
+    return;
   }
   if (!Deno.env.get("FAL_KEY")) {
     throw new FlowtubeError(503, "fal.ai n'est pas encore configure. Ajoute FAL_KEY dans Supabase avant de lancer des generations.", { code: "PROVIDER_NOT_CONFIGURED" });
@@ -5212,6 +5272,211 @@ function ensureProviderReady(model: PricingModel) {
   if (!model.endpoint) {
     throw new FlowtubeError(503, `Endpoint fal.ai manquant pour ${model.name}.`, { code: "PROVIDER_ENDPOINT_MISSING", modelId: model.id });
   }
+}
+
+function openRouterProviderError(response: Response, modelId: string) {
+  const providerStatus = response.status;
+  const status = [401, 402, 429].includes(providerStatus) || providerStatus >= 500 ? providerStatus : 502;
+  const code = providerStatus === 401 ? "OPENROUTER_UNAUTHORIZED" : providerStatus === 402 ? "OPENROUTER_PAYMENT_REQUIRED" : providerStatus === 429 ? "OPENROUTER_RATE_LIMITED" : "OPENROUTER_MEDIA_ERROR";
+  const message = providerStatus === 401
+    ? "La cle OpenRouter est refusee."
+    : providerStatus === 402
+      ? "Le fournisseur OpenRouter demande un credit ou un solde valide."
+      : providerStatus === 429
+        ? "OpenRouter est momentanement limite. Reessaie dans quelques instants."
+        : "Le moteur media selectionne est indisponible pour le moment.";
+  return new FlowtubeError(status, message, { code, modelId, providerStatus });
+}
+
+function generationReferenceUrls(generation: Record<string, unknown>) {
+  const params = cleanMetadata(generation.params);
+  return stringArray(params.referenceUrls || params.reference_urls || params.referenceImageUrls || params.reference_image_urls)
+    .concat([String(params.imageUrl || "")].filter(Boolean));
+}
+
+async function storeProviderBytes(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  bytes: Uint8Array,
+  contentType: string,
+) {
+  const params = cleanMetadata(generation.params);
+  const retentionDays = Math.max(1, Number(params.media_retention_days || 30));
+  const signedSeconds = Math.max(3600, Math.min(retentionDays * 24 * 60 * 60, 60 * 60 * 24 * 30));
+  const extension = extensionFromContentType(contentType, String(generation.type || "image"));
+  const path = `${generation.user_id}/${generation.id}/result.${extension}`;
+  const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, new Blob([bytes], { type: contentType }), { contentType, upsert: true });
+  if (uploadError) throw uploadError;
+  const { data: signed, error: signedError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, signedSeconds);
+  if (signedError) throw signedError;
+  const signedUrl = signed?.signedUrl || "";
+  const expiresAt = new Date(Date.now() + signedSeconds * 1000).toISOString();
+  const asset = {
+    user_id: generation.user_id,
+    generation_id: generation.id,
+    bucket: MEDIA_BUCKET,
+    object_path: path,
+    content_type: contentType,
+    bytes: bytes.byteLength,
+    source_url: signedUrl,
+    public_url: signedUrl,
+    signed_url_expires_at: expiresAt,
+    expires_at: expiresAt,
+    status: "available",
+    metadata: { persisted: true, provider: "openrouter" },
+  };
+  const { data: existingAsset } = await supabase.from("media_assets").select("id").eq("generation_id", generation.id).limit(1).maybeSingle();
+  if (existingAsset?.id) await supabase.from("media_assets").update(asset).eq("id", existingAsset.id);
+  else await supabase.from("media_assets").insert(asset);
+  return { path, signedUrl, expiresAt };
+}
+
+async function completeProviderGeneration(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  resultUrl: string,
+  providerPayload: unknown,
+  providerCostUsd?: number,
+) {
+  const update: Record<string, unknown> = {
+    status: "completed",
+    progress: 100,
+    result_url: resultUrl,
+    provider_payload: providerPayload,
+    completed_at: new Date().toISOString(),
+  };
+  if (Number.isFinite(providerCostUsd) && Number(providerCostUsd) >= 0) update.cost_usd = Number(providerCostUsd);
+  const { data, error } = await supabase.from("generations").update(update).eq("id", generation.id).select("*").single();
+  if (error || !data) throw error || new Error("generation completion failed");
+  await debitCredits(supabase, data);
+  await trackGenerationJob(supabase, data, "completed", { reconciled_at: new Date().toISOString(), provider: "openrouter" });
+  await advanceBatch(supabase, data);
+  return data;
+}
+
+async function failProviderGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>, error: unknown, code = "provider_failed") {
+  const message = error instanceof FlowtubeError ? error.message : error instanceof Error ? error.message : "Le fournisseur media a echoue.";
+  const { data } = await supabase.from("generations").update({
+    status: "failed",
+    error_message: message.slice(0, 500),
+    provider_payload: { error: message.slice(0, 500), code },
+    completed_at: new Date().toISOString(),
+  }).eq("id", generation.id).select("*").single();
+  const terminal = data || generation;
+  await refundFailedGeneration(supabase, terminal);
+  await trackGenerationJob(supabase, terminal, "failed", { error: code });
+  await advanceBatch(supabase, terminal);
+  return false;
+}
+
+async function startOpenRouterImageGeneration(generation: Record<string, unknown>, model: PricingModel) {
+  const supabase = adminClient();
+  const { data: claimed, error: claimError } = await supabase.from("generations")
+    .update({ status: "running", progress: Math.max(5, Number(generation.progress || 1)) })
+    .eq("id", generation.id).eq("status", "pending").is("provider_job_id", null).select("*").maybeSingle();
+  if (claimError || !claimed) return false;
+  generation = claimed;
+  try {
+    const params = cleanMetadata(generation.params);
+    const requestBody: Record<string, unknown> = {
+      model: model.id,
+      prompt: String(generation.prompt || ""),
+      n: 1,
+      aspect_ratio: String(generation.aspect_ratio || "1:1"),
+      ...(params.resolution ? { resolution: String(params.resolution) } : {}),
+      ...(generationReferenceUrls(generation).length ? {
+        input_references: generationReferenceUrls(generation).map((url) => ({
+          type: "image_url",
+          image_url: { url },
+        })),
+      } : {}),
+    };
+    const response = await fetch(`${OPENROUTER_BASE_URL}/images`, { method: "POST", headers: { ...openRouterHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
+    if (!response.ok) throw openRouterProviderError(response, model.id);
+    const body = await response.json() as Record<string, unknown>;
+    const item = ((body.data as unknown[]) || [])[0] as Record<string, unknown> | undefined;
+    const raw = String(item?.b64_json || item?.data || "");
+    const remoteUrl = String(item?.url || item?.image_url || "");
+    const contentType = String(item?.media_type || body.media_type || "image/png");
+    if (raw) {
+      const bytes = bytesFromDataUrl(raw);
+      const stored = await storeProviderBytes(supabase, generation, bytes, contentType);
+      return Boolean(await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd)));
+    }
+    if (!remoteUrl) throw new Error("OpenRouter n'a retourne aucun fichier image.");
+    const mediaResponse = await fetch(remoteUrl);
+    if (mediaResponse.ok) {
+      const stored = await storeProviderBytes(
+        supabase,
+        generation,
+        new Uint8Array(await mediaResponse.arrayBuffer()),
+        mediaResponse.headers.get("content-type") || contentType,
+      );
+      await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
+    } else {
+      await completeProviderGeneration(supabase, generation, remoteUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
+    }
+    return true;
+  } catch (error) {
+    return failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_image_failed") : "openrouter_image_failed");
+  }
+}
+
+async function startOpenRouterVideoGeneration(generation: Record<string, unknown>, model: PricingModel) {
+  const supabase = adminClient();
+  const { data: claimed, error: claimError } = await supabase.from("generations")
+    .update({ status: "running", progress: Math.max(5, Number(generation.progress || 1)) })
+    .eq("id", generation.id).eq("status", "pending").is("provider_job_id", null).select("*").maybeSingle();
+  if (claimError || !claimed) return false;
+  generation = claimed;
+  try {
+    const params = cleanMetadata(generation.params);
+    const refs = generationReferenceUrls(generation);
+    const requestBody: Record<string, unknown> = {
+      model: model.id,
+      prompt: String(generation.prompt || ""),
+      aspect_ratio: String(generation.aspect_ratio || "16:9"),
+      duration: Number(generation.duration_seconds || model.defaultUnits || 5),
+      resolution: String(params.resolution || "720p"),
+      ...(params.generate_audio !== undefined ? { generate_audio: Boolean(params.generate_audio) } : {}),
+      ...(refs.length ? {
+        input_references: refs.map((url) => ({
+          type: "image_url",
+          image_url: { url },
+        })),
+      } : {}),
+      ...((params.firstFrameUrl || params.lastFrameUrl) ? {
+        frame_images: [
+          ...(params.firstFrameUrl ? [{ frame_type: "first_frame", image_url: { url: String(params.firstFrameUrl) } }] : []),
+          ...(params.lastFrameUrl ? [{ frame_type: "last_frame", image_url: { url: String(params.lastFrameUrl) } }] : []),
+        ],
+      } : {}),
+    };
+    const response = await fetch(`${OPENROUTER_BASE_URL}/videos`, { method: "POST", headers: { ...openRouterHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
+    if (!response.ok) throw openRouterProviderError(response, model.id);
+    const body = await response.json() as Record<string, unknown>;
+    const directUrl = String(body.video_url || body.videoUrl || body.url || extractUrl(body.output || body.data || body.result));
+    const jobId = String(body.id || body.job_id || body.request_id || body.generation_id || "");
+    if (directUrl && !jobId) {
+      await completeProviderGeneration(supabase, generation, directUrl, body);
+      return true;
+    }
+    if (!jobId) throw new Error("OpenRouter n'a retourne aucun identifiant de job video.");
+    await supabase.from("generations").update({
+      status: "running",
+      provider_job_id: jobId,
+      provider_payload: { ...body, polling_url: body.polling_url || `${OPENROUTER_BASE_URL}/videos/${jobId}` },
+    }).eq("id", generation.id);
+    await trackGenerationJob(supabase, { ...generation, provider_job_id: jobId }, "running", { submitted_at: new Date().toISOString(), provider: "openrouter" });
+    return true;
+  } catch (error) {
+    return failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_video_failed") : "openrouter_video_failed");
+  }
+}
+
+async function startGeneration(generation: Record<string, unknown>, model: PricingModel) {
+  if (model.provider === "openrouter") return model.type === "video" ? startOpenRouterVideoGeneration(generation, model) : startOpenRouterImageGeneration(generation, model);
+  return startFalGeneration(generation, model);
 }
 
 async function startFalGeneration(generation: Record<string, unknown>, model: PricingModel) {
@@ -5222,6 +5487,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
     .eq("id", generation.id)
     .eq("status", "pending")
     .is("fal_job_id", null)
+    .is("provider_job_id", null)
     .select("*")
     .maybeSingle();
   if (claimError) {
@@ -5252,9 +5518,10 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
     await supabase.from("generations").update({
       status: "running",
       fal_job_id: request.request_id,
+      provider_job_id: request.request_id,
       provider_payload: { submitted: request },
     }).eq("id", generation.id);
-    await trackGenerationJob(supabase, { ...generation, fal_job_id: request.request_id }, "running", { submitted_at: new Date().toISOString() });
+    await trackGenerationJob(supabase, { ...generation, fal_job_id: request.request_id, provider_job_id: request.request_id }, "running", { submitted_at: new Date().toISOString(), provider: "fal" });
     return true;
   } catch (err) {
     const { data: failed } = await supabase.from("generations").update({
@@ -5498,7 +5765,7 @@ async function trackGenerationJob(
   const metadata = {
     model_id: generation.model_id || null,
     media_type: generation.type || null,
-    provider_job_id: generation.fal_job_id || null,
+    provider_job_id: generation.provider_job_id || generation.fal_job_id || null,
     ...extra,
   };
   const { error } = await supabase.from("generation_jobs").upsert({
@@ -6076,6 +6343,8 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       message_id: assistantMessage.id,
       type,
       status: "pending",
+      provider: model.provider || "fal",
+      provider_job_id: null,
       model_id: model.id,
       model_label: model.name,
       pricing_model_id: model.id,
@@ -6131,8 +6400,8 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   });
 
   const waitUntil = (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime?.waitUntil;
-  if (waitUntil) waitUntil(startFalGeneration(generation, model));
-  else startFalGeneration(generation, model);
+  if (waitUntil) waitUntil(startGeneration(generation, model));
+  else startGeneration(generation, model);
 
   return { generation: mediaFromGeneration(generation), projectId: project.id, conversationId: conversation.id };
 }
@@ -6288,6 +6557,7 @@ async function launchBatchWave(supabase: ReturnType<typeof adminClient>, userId:
     .eq("user_id", userId)
     .eq("status", "pending")
     .is("fal_job_id", null)
+    .is("provider_job_id", null)
     .contains("params", { batch: { id: batchId } })
     .order("created_at", { ascending: true });
   if (!queued || !queued.length) return 0;
@@ -6319,7 +6589,7 @@ async function launchBatchWave(supabase: ReturnType<typeof adminClient>, userId:
       continue;
     }
     const model = resolveModelFromCatalog(catalog, String(generation.model_id), String(generation.type));
-    if (await startFalGeneration(generation, model)) launched += 1;
+    if (await startGeneration(generation, model)) launched += 1;
   }
   return launched;
 }
@@ -6383,6 +6653,8 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     message_id: assistantMessage.id,
     type,
     status: "pending",
+    provider: model.provider || "fal",
+    provider_job_id: null,
     model_id: model.id,
     model_label: model.name,
     pricing_model_id: model.id,
@@ -7234,7 +7506,40 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
 async function syncGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
   if (generation.status === "completed" || generation.status === "failed") return generation;
   // Item de lot en file d'attente : il attend un slot, la vague suivante le lancera.
-  if (generation.status === "pending" && !generation.fal_job_id && batchInfoOf(generation)) return generation;
+  if (generation.status === "pending" && !generation.fal_job_id && !generation.provider_job_id && batchInfoOf(generation)) return generation;
+  if (String(generation.provider || "") === "openrouter" && generation.provider_job_id) {
+    try {
+      const payload = cleanMetadata(generation.provider_payload);
+      const pollingUrl = String(payload.polling_url || `${OPENROUTER_BASE_URL}/videos/${generation.provider_job_id}`);
+      const response = await fetch(pollingUrl.startsWith("http") ? pollingUrl : `${OPENROUTER_BASE_URL}${pollingUrl}`, { headers: openRouterHeaders() });
+      if (!response.ok) throw openRouterProviderError(response, String(generation.model_id || ""));
+      const body = await response.json() as Record<string, unknown>;
+      const statusText = String(body.status || body.state || "").toLowerCase();
+      if (["failed", "error", "cancelled", "canceled"].includes(statusText)) throw new Error(String(body.error || body.message || "La generation video OpenRouter a echoue."));
+      if (["completed", "complete", "succeeded", "success"].includes(statusText)) {
+        const unsignedUrls = Array.isArray(body.unsigned_urls) ? body.unsigned_urls.map(String) : [];
+        const resultUrl = String(body.video_url || body.videoUrl || body.url || unsignedUrls[0] || extractUrl(body.output || body.data || body.result));
+        const contentUrl = `${OPENROUTER_BASE_URL}/videos/${generation.provider_job_id}/content`;
+        const mediaResponse = await fetch(resultUrl || contentUrl, { headers: resultUrl ? undefined : openRouterHeaders() });
+        if (!mediaResponse.ok && !resultUrl) throw openRouterProviderError(mediaResponse, String(generation.model_id || ""));
+        if (mediaResponse.ok) {
+          const contentType = mediaResponse.headers.get("content-type") || "video/mp4";
+          const bytes = new Uint8Array(await mediaResponse.arrayBuffer());
+          const stored = await storeProviderBytes(supabase, generation, bytes, contentType);
+          return await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
+        }
+        if (!resultUrl) throw new Error("OpenRouter a termine sans retourner de video.");
+        return await completeProviderGeneration(supabase, generation, resultUrl, body);
+      }
+      const providerProgress = Number(body.progress || body.percent || 0);
+      const progress = Math.min(95, Math.max(Number(generation.progress || 5) + 4, providerProgress || Number(generation.progress || 5)));
+      const { data } = await supabase.from("generations").update({ status: "running", progress, provider_payload: { ...payload, ...body, polling_url: pollingUrl } }).eq("id", generation.id).select("*").single();
+      await trackGenerationJob(supabase, data || generation, "running", { reconciled_at: new Date().toISOString(), provider: "openrouter" });
+      return data || generation;
+    } catch (error) {
+      return await failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_poll_failed") : "openrouter_poll_failed").then(() => ({ ...generation, status: "failed" }));
+    }
+  }
   const key = Deno.env.get("FAL_KEY");
   if (key && generation.fal_job_id) {
     try {
