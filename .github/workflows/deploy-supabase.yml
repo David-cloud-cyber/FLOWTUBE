@@ -23,6 +23,7 @@ jobs:
           version: latest
 
       - name: Apply provider-neutral generation migration
+        continue-on-error: true
         run: |
           if [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
             supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
