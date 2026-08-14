@@ -80,6 +80,8 @@ button:focus-visible,[role="button"]:focus-visible{outline:2px solid #D1FE17;out
 button:disabled{cursor:not-allowed;opacity:.55}
 textarea{resize:none}
 input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset:0}
+[data-hf-chat-input="true"]:focus,[data-hf-chat-input="true"]:focus-visible{outline:none;outline-offset:0;box-shadow:none}
+[data-hf-chat-input="true"]{caret-color:#D1FE17}
 ::placeholder{color:#9A9DA4}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(120,116,104,.35);border-radius:9px}
@@ -133,7 +135,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-stream-dot]{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5);animation:streamPulse 1.25s ease-in-out infinite}
 [data-hf-text-shimmer]{background:linear-gradient(105deg,#898A8B 18%,#F7F7F8 38%,#D1FE17 50%,#898A8B 68%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:textShimmer 1.8s linear infinite}
 [data-hf-stream-cursor]{display:inline-block;width:6px;height:14px;margin-left:3px;vertical-align:-2px;border-radius:2px;background:#D1FE17;animation:streamCursor 1s steps(1,end) infinite}
-[data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable}
+[data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable;overflow-x:clip}
 [data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 [data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
 [data-hf-attachment-thumb]{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:rgba(209,254,23,.10);color:#D1FE17;font-size:12px;font-weight:800}
@@ -168,6 +170,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-command-item] kbd{margin-left:auto;padding:3px 6px;border:1px solid rgba(247,247,248,.12);border-radius:5px;color:#898A8B;font:10px 'JetBrains Mono',monospace}
 [data-hf-model-menu]{--hf-model-bg:rgba(27,29,31,.78);--hf-model-surface:rgba(36,38,40,.62);--hf-model-ink:#F4F4F5;--hf-model-muted:#8C8E92;--hf-model-line:247,247,248;position:absolute;z-index:40;top:38px;left:0;width:300px;max-width:min(300px,calc(100vw - 24px));max-height:382px;overflow:hidden;padding:7px;background:var(--hf-model-bg);border:1px solid rgba(var(--hf-model-line),.08);border-radius:11px;box-shadow:0 14px 30px -16px rgba(0,0,0,.38);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:fadeUp .15s cubic-bezier(.22,1,.36,1) both}
 [data-hf-model-menu][data-hf-model-theme="light"]{--hf-model-bg:rgba(255,255,255,.8);--hf-model-surface:rgba(241,242,243,.75);--hf-model-ink:#17191C;--hf-model-muted:#70747B;--hf-model-line:46,48,49}
+[data-hf-model-title]{padding:4px 8px 6px;color:var(--hf-model-ink);font-size:11px;font-weight:700}
 [data-hf-model-search]{display:flex;align-items:center;gap:8px;height:34px;padding:0 11px;border:1px solid rgba(var(--hf-model-line),.08);border-radius:999px;background:var(--hf-model-surface);color:var(--hf-model-muted);margin-bottom:5px;transition:all .15s ease}
 [data-hf-model-search]:focus-within{border-color:rgba(var(--hf-model-line),.2)}
 [data-hf-model-search] input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-model-ink);font:500 12px ui-sans-serif,system-ui,sans-serif}
@@ -183,6 +186,22 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-model-logo] svg{width:13px;height:13px;stroke:currentColor}
 [data-hf-model-row].is-active [data-hf-model-logo]{background:rgba(var(--hf-model-line),.08);transform:scale(1.02)}
 [data-hf-model-name]{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+[data-hf-model-copy]{display:flex;min-width:0;flex:1;flex-direction:column;gap:2px;overflow:hidden}
+[data-hf-model-copy] [data-hf-model-name]{display:block;flex:none}
+[data-hf-model-desc]{min-width:0;overflow:hidden;color:var(--hf-model-muted);font-size:10px;font-weight:450;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+[data-hf-model-menu="true"]{top:36px;width:350px;max-width:min(350px,calc(100vw - 24px));max-height:min(490px,calc(100vh - 32px));padding:7px;border-radius:13px;background:rgba(27,29,31,.97);box-shadow:0 20px 48px -26px rgba(0,0,0,.92)}
+[data-hf-model-menu="true"] [data-hf-model-search="true"]{height:38px;margin-bottom:7px;padding:0 10px;border-radius:10px;background:rgba(247,247,248,.06)}
+[data-hf-model-menu="true"] [data-hf-model-search="true"] input{font-size:13px}
+[data-hf-model-menu="true"] [data-hf-model-list]{max-height:420px;padding:0 1px 3px}
+[data-hf-model-menu="true"] [data-hf-model-group]{padding:9px 8px 5px;font-size:11px;letter-spacing:0;text-transform:none;color:#F7F7F8}
+[data-hf-model-menu="true"] [data-hf-model-row]{min-height:48px;gap:9px;padding:6px 8px;border-radius:10px;font-size:13.5px}
+[data-hf-model-menu="true"] [data-hf-model-logo]{width:30px;height:30px;flex-basis:30px;border-radius:9px;background:rgba(247,247,248,.07)}
+[data-hf-model-menu="true"] [data-hf-model-logo] svg{width:16px;height:16px}
+[data-hf-model-menu="true"] [data-hf-model-name]{font-size:13.5px;font-weight:700;color:#F7F7F8}
+[data-hf-model-menu="true"] [data-hf-model-desc]{font-size:10.5px;line-height:1.2}
+[data-hf-model-menu="true"] [data-hf-model-cost]{min-width:auto;padding:3px 5px;border-radius:5px;font-size:9px}
+[data-hf-model-menu="true"] [data-hf-model-check]{display:grid;place-items:center;width:20px;height:20px;color:#D1FE17;font-size:20px;line-height:1}
+[data-hf-model-menu="true"] [data-hf-model-lock]{display:grid;place-items:center;width:20px;height:20px;color:#8C8E92}
 [data-hf-model-cost]{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:2px 5px;border-radius:5px;background:rgba(var(--hf-model-line),.05);color:var(--hf-model-muted);font:700 9px 'JetBrains Mono',monospace;letter-spacing:0.02em;min-width:29px;white-space:nowrap;transition:all .15s ease}
 [data-hf-model-row].is-active [data-hf-model-cost]{background:rgba(var(--hf-model-line),.08);color:var(--hf-model-ink)}
 [data-hf-model-cost-mark]{display:inline-flex;width:10px;height:10px;color:var(--hf-model-muted);font-size:0}
@@ -191,6 +210,49 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-model-capabilities]{display:inline-flex;align-items:center;justify-content:flex-end;width:14px;color:var(--hf-model-muted);white-space:nowrap}
 [data-hf-model-capabilities] svg{width:13px;height:13px;stroke:currentColor}
 [data-hf-model-empty]{padding:14px 11px 7px;color:var(--hf-model-muted);font-size:11px}
+[data-hf-agent-menu]{position:absolute;z-index:45;left:0;bottom:36px;width:360px;max-width:min(360px,calc(100vw - 24px));padding:4px;border:1px solid rgba(247,247,248,.10);border-radius:12px;background:rgba(27,29,31,.97);box-shadow:0 18px 36px -22px rgba(0,0,0,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);animation:fadeUp .16s cubic-bezier(.22,1,.36,1) both}
+[data-hf-agent-menu] [data-hf-agent-option]{width:100%;display:flex;align-items:center;gap:9px;min-height:48px;padding:6px 8px;border:1px solid transparent;border-radius:9px;background:transparent;color:#A8A8A8;text-align:left;cursor:pointer;font:500 12px/1.2 ui-sans-serif,system-ui,sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease}
+[data-hf-agent-menu] [data-hf-agent-option]:hover{background:rgba(247,247,248,.06);color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-option].is-active{background:rgba(209,254,23,.08);border-color:rgba(209,254,23,.18);color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-icon]{width:31px;height:31px;display:grid;place-items:center;flex:0 0 31px;border-radius:8px;background:rgba(247,247,248,.07);color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-copy]{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+[data-hf-agent-menu] [data-hf-agent-copy] strong{font-size:13.5px;font-weight:700;color:#F7F7F8}
+[data-hf-agent-menu] [data-hf-agent-copy] span{font-size:11.5px;color:#898A8B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-hf-agent-menu] [data-hf-agent-chevron]{margin-left:auto;color:#A8A8A8}
+[data-hf-agent-menu] [data-hf-agent-check]{color:#D1FE17;font-size:20px;line-height:1}
+[data-hf-model-selector="true"]{position:relative;min-width:0}
+[data-hf-model-trigger="true"]{display:inline-flex;align-items:center;gap:5px;min-height:29px;padding:0 8px;border:0;border-radius:999px;background:rgba(247,247,248,.06);color:#F7F7F8;cursor:pointer;font:650 11.5px ui-sans-serif,system-ui,sans-serif;transition:background .16s ease,color .16s ease,transform .12s ease}
+[data-hf-model-trigger="true"]:hover{background:rgba(247,247,248,.10)}
+[data-hf-model-trigger="true"]:active{transform:scale(.98)}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-icon]{display:grid;place-items:center;width:15px;height:15px;color:#F7F7F8}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-name]{font-weight:750}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-mode]{color:#A8A8A8;font-weight:600}
+[data-hf-model-trigger="true"] [data-hf-model-trigger-chevron]{color:#898A8B;transition:transform .18s ease}
+[data-hf-model-selector="true"][data-open="true"] [data-hf-model-trigger-chevron]{transform:rotate(180deg)}
+[data-hf-composer-tools]{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+[data-hf-composer-tool]{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898A8B;font:600 10.5px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease}
+[data-hf-composer-send-hint="true"]{display:none!important}
+[data-hf-composer-tools]{position:absolute;left:20px;right:20px;bottom:-50px;box-sizing:border-box;min-height:50px;display:flex;align-items:center;gap:2px;padding:0 12px;border-radius:0 0 18px 18px;background:rgba(20,21,23,.96);box-shadow:0 9px 20px -18px rgba(0,0,0,.7);overflow:hidden}
+[data-hf-composer-tool]{min-height:28px;padding:0 7px;border-radius:7px;color:#F1F1F2;font-size:11.5px;font-weight:650}
+[data-hf-composer-tool] svg{width:14px;height:14px;color:#F7F7F8}
+[data-hf-composer-tool]:first-child svg{color:#F7F7F8}
+[data-hf-connector-stack]{display:inline-flex;align-items:center;width:27px;height:18px;position:relative;flex:0 0 27px}
+[data-hf-connector-stack] i{position:absolute;display:grid;place-items:center;width:15px;height:15px;border:1px solid rgba(255,255,255,.42);border-radius:4px;color:#fff;font:800 8px/1 ui-sans-serif,system-ui,sans-serif;font-style:normal;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+[data-hf-connector-stack] i:nth-child(1){left:0;z-index:1;background:#E66BB2}
+[data-hf-connector-stack] i:nth-child(2){left:7px;z-index:2;background:#24A7D8}
+[data-hf-connector-stack] i:nth-child(3){left:14px;z-index:3;background:#D74B4B}
+[data-hf-composer-tool]:last-child{margin-left:auto}
+[data-hf-composer-tool]:last-child svg{color:#A8A8A8}
+[data-hf-composer-tool]:hover{background:rgba(247,247,248,.06);border-color:rgba(247,247,248,.08);color:#F7F7F8}
+[data-hf-composer-tool] svg{width:12px;height:12px;color:#D1FE17}
+[data-hf-super-section]{padding:14px 8px 6px;color:#65686B;font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}
+[data-hf-super-item]{display:flex;align-items:center;gap:11px;min-height:34px;padding:5px 8px;border-radius:10px;color:#A8A8A8;font-size:13px;font-weight:550;cursor:pointer;transition:background .16s ease,color .16s ease}
+[data-hf-super-item]:hover{background:rgba(247,247,248,.055);color:#F7F7F8}
+[data-hf-super-item].is-active{background:rgba(247,247,248,.07);color:#F7F7F8}
+[data-hf-super-item] [data-hf-super-icon]{width:25px;height:25px;display:grid;place-items:center;flex:0 0 25px;border-radius:8px;color:#A8A8A8}
+[data-hf-super-item].is-active [data-hf-super-icon],[data-hf-super-item]:hover [data-hf-super-icon]{color:#D1FE17}
+[data-hf-super-hero-title]{font:800 clamp(30px,4.2vw,46px)/1.02 'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.025em;text-transform:uppercase}
+@media (max-width:680px){[data-hf-agent-menu]{position:fixed;left:12px;right:12px;bottom:78px;width:auto;max-width:none}[data-hf-agent-menu] [data-hf-agent-copy] strong{font-size:14px}[data-hf-agent-menu] [data-hf-agent-copy] span{font-size:11px}[data-hf-composer-tools]{left:14px;right:14px}[data-hf-composer-tool]{padding-inline:6px}[data-hf-composer-tool] span{display:none}[data-hf-connector-stack]{display:none}}
 [data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 @media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
 .hf-pricing-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
@@ -343,9 +405,59 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-connector-details strong{overflow:hidden;color:var(--hf-settings-ink);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}.hf-connector-footer-action{padding:0;border:0;background:transparent;color:var(--hf-settings-ink);font:700 11.5px ui-sans-serif,system-ui,sans-serif;text-align:left;text-decoration:underline;text-decoration-color:rgba(209,254,23,.65);text-underline-offset:3px;cursor:pointer}.hf-connector-footer-action:hover{color:#D1FE17}.hf-connector-info-panel{position:relative;margin-top:18px;padding:18px;border:1px solid rgba(209,254,23,.22);border-radius:12px;background:rgba(209,254,23,.055);animation:fadeUp .18s cubic-bezier(.22,1,.36,1) both}.hf-connector-info-panel h4{margin:0;color:var(--hf-settings-ink);font:750 15px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}.hf-connector-info-panel p{margin:8px 0 0;color:var(--hf-settings-muted);font-size:12px;line-height:1.55}.hf-connector-info-panel ul{margin:12px 0 0;padding-left:18px;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.6}.hf-connector-info-close{position:absolute;top:12px;right:12px;width:28px;height:28px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:7px;background:transparent;color:var(--hf-settings-muted);cursor:pointer}.hf-connector-info-close:hover{background:rgba(var(--hf-settings-line),.07);color:var(--hf-settings-ink)}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-search,.hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-sort{background:#F0F1F2}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-connector-new{background:rgba(63,102,209,.12);color:#3f66d1}
+.hf-settings-shell{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;isolation:isolate}
+.hf-settings-shell *{box-sizing:border-box}
+.hf-settings-rail{width:248px;flex-basis:248px;padding:12px 10px 10px;background:linear-gradient(180deg,var(--hf-settings-rail),color-mix(in srgb,var(--hf-settings-rail) 88%,#000 12%));}
+.hf-settings-brand{min-height:52px;padding:10px 10px 12px;border-bottom:0}
+.hf-settings-brand-mark{width:32px;height:32px;border-radius:10px;font-size:17px;line-height:1}
+.hf-settings-search{margin:8px 8px 12px}
+.hf-settings-search input{height:40px;border-radius:11px;font-size:12px}
+.hf-settings-nav{padding:0 4px 16px}
+.hf-settings-nav-group{margin:18px 8px 7px;font-size:9px;letter-spacing:.14em}
+.hf-settings-nav-item{min-height:40px;gap:9px;padding:0 9px;border:1px solid transparent;font-size:12.5px}
+.hf-settings-nav-item:hover{border-color:rgba(var(--hf-settings-line),.08);background:rgba(var(--hf-settings-line),.045)}
+.hf-settings-nav-item.is-active{border-color:rgba(209,254,23,.2);background:linear-gradient(90deg,rgba(209,254,23,.14),rgba(209,254,23,.06));box-shadow:inset 2px 0 0 #D1FE17}
+.hf-settings-nav-icon{width:26px;height:26px;border-radius:8px;background:rgba(var(--hf-settings-line),.055)}
+.hf-settings-account{margin:0 4px;padding:12px 8px;border:1px solid rgba(var(--hf-settings-line),.08);border-radius:12px;background:rgba(var(--hf-settings-line),.035)}
+.hf-settings-main{min-width:0;background:radial-gradient(circle at 78% 0%,rgba(209,254,23,.035),transparent 32%),var(--hf-settings-page)}
+.hf-settings-topbar{height:82px;flex-basis:82px;padding:0 clamp(20px,4vw,56px);border-bottom:1px solid rgba(var(--hf-settings-line),.09);background:rgba(var(--hf-settings-page),.86);backdrop-filter:blur(14px)}
+.hf-settings-kicker{font-size:9px;letter-spacing:.16em}
+.hf-settings-title{font-size:24px;letter-spacing:-.02em}
+.hf-settings-topbar-description{margin-top:5px;max-width:620px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45}
+.hf-settings-content{padding:32px clamp(20px,4vw,64px) 56px;scroll-behavior:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.hf-settings-content-inner{width:min(920px,100%);animation:settingsContentIn .24s cubic-bezier(.22,1,.36,1) both}
+@keyframes settingsContentIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.hf-settings-section-head{align-items:flex-end;margin-bottom:16px}
+.hf-settings-section-head h3{font-size:19px;letter-spacing:-.015em}
+.hf-settings-section-head p{max-width:620px;font-size:12.5px}
+.hf-settings-card{border-color:rgba(var(--hf-settings-line),.11);border-radius:14px;background:linear-gradient(180deg,rgba(var(--hf-settings-line),.045),rgba(var(--hf-settings-line),.025)),var(--hf-settings-surface);box-shadow:0 16px 42px -34px rgba(0,0,0,.72)}
+.hf-settings-card + .hf-settings-card{margin-top:16px}
+.hf-settings-row{min-height:68px;padding:15px 18px;gap:28px}
+.hf-settings-row:hover{background:rgba(var(--hf-settings-line),.018)}
+.hf-settings-row-label{font-size:13px;font-weight:700}
+.hf-settings-row-hint{max-width:620px;font-size:11.5px}
+.hf-settings-control{min-width:210px;min-height:40px;padding:0 12px;border-radius:10px;background:rgba(var(--hf-settings-line),.045);font-size:12.5px}
+.hf-settings-control::placeholder,.hf-settings-textarea::placeholder{color:var(--hf-settings-muted);opacity:.78}
+.hf-settings-control:disabled,.hf-settings-textarea:disabled{cursor:not-allowed;opacity:.55}
+.hf-settings-textarea{min-height:132px;border-radius:11px;background:rgba(var(--hf-settings-line),.045);font-size:12.5px}
+.hf-settings-primary,.hf-settings-secondary{min-height:38px;border-radius:10px;font-size:11.5px;letter-spacing:.005em}
+.hf-settings-primary{padding-inline:14px;box-shadow:0 8px 22px -16px rgba(209,254,23,.9)}
+.hf-settings-secondary{padding-inline:13px}
+.hf-settings-primary:focus-visible,.hf-settings-secondary:focus-visible,.hf-settings-close:focus-visible,.hf-settings-nav-item:focus-visible,.hf-connector-card:focus-visible{outline:2px solid #D1FE17;outline-offset:2px}
+.hf-settings-badge,.hf-settings-status{font-size:9px;letter-spacing:.08em}
+.hf-settings-metric-grid{gap:10px;margin-bottom:16px}
+.hf-settings-metric{min-height:104px;padding:16px;border-radius:14px;background:rgba(var(--hf-settings-line),.035)}
+.hf-settings-metric-value{font-size:24px}
+.hf-settings-table-row{min-height:58px;padding:12px 16px;font-size:12px}
+.hf-settings-progress{height:7px;border:1px solid rgba(var(--hf-settings-line),.08);background:rgba(var(--hf-settings-line),.06)}
+.hf-settings-status{white-space:normal}
+.hf-settings-empty{min-height:150px;border-radius:14px;background:rgba(var(--hf-settings-line),.025)}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-main{background:var(--hf-settings-page)}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-topbar{background:rgba(247,247,248,.86)}
+@media(max-width:900px){.hf-settings-rail{width:220px;flex-basis:220px}.hf-settings-topbar{padding-inline:28px}.hf-settings-content{padding-inline:28px}}
 @media(max-width:760px){.hf-connectors-toolbar{align-items:stretch;flex-direction:column;gap:12px}.hf-connectors-toolbar-actions{justify-content:flex-end}.hf-connectors-grid{grid-template-columns:1fr}.hf-connector-hero{align-items:flex-start;flex-wrap:wrap}.hf-connector-hero .hf-settings-status{margin-left:68px;margin-top:-8px}.hf-connector-section-heading{align-items:flex-start;flex-direction:column}.hf-connector-add-wrap{width:100%}.hf-connector-add-wrap .hf-settings-primary{width:100%;justify-content:center}.hf-connector-add-menu{left:0;right:auto;width:100%}.hf-connector-connection-card{align-items:flex-start;flex-direction:column}.hf-connector-action-row{justify-content:flex-start}.hf-connector-details{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary,[data-hf-studio-panel="true"]{transition:none!important}}
-@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
+@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:auto;min-height:74px;flex-basis:auto;padding:16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column;align-items:stretch}.hf-settings-section-head .hf-settings-primary,.hf-settings-section-head .hf-settings-secondary{width:100%}.hf-settings-topbar-description{max-width:none}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* Explore public gallery */
@@ -451,8 +563,22 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
       </div>
       </sc-if>
 
+      <div data-hf-hide-rail="true" data-hf-super-section="true">Personnaliser</div>
+      <div data-hf-rail-item="true" onClick="{{ clickSkills }}" title="Skills" class="{{ skillsNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"></path><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Skills</span>
+      </div>
+      <div data-hf-rail-item="true" onClick="{{ clickConnectors }}" title="Connecteurs" class="{{ connectorsNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="m8.7 10.5 6.6-3"></path><path d="m8.7 13.5 6.6 3"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Connecteurs</span>
+      </div>
+      <div data-hf-rail-item="true" onClick="{{ openMemory }}" title="Memoire" class="{{ memoryNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M8 7h8"></path><rect x="5" y="4" width="14" height="17" rx="3"></rect><path d="M8 12h8M8 16h5"></path></svg></span>
+        <span data-hf-hide-rail="true" style="flex:1">Memoire</span>
+      </div>
+
       <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
-        <span data-hf-hide-rail="true" style="font-size:12px;color:#898A8B;font-weight:500">Projets</span>
+        <span data-hf-hide-rail="true" style="font-size:12px;color:#898A8B;font-weight:500">Conversations</span>
         <svg data-hf-hide-rail="true" width="11" height="11" style="{{ projectsChevronStyle }}" viewBox="0 0 24 24" fill="none" stroke="#898A8B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
       <sc-if value="{{ showProjectsList }}" hint-placeholder-val="{{ true }}">
@@ -614,29 +740,34 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
         <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
           <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0 64px;animation:fadeUp .4s ease both">
             <div style="text-align:center;margin-bottom:34px">
-              <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;line-height:1.12;letter-spacing:-.01em;color:{{ tInk }}">On crée quoi <em style="font-style:italic">aujourd'hui</em> ?</div>
+              <div data-hf-super-hero-title="true" style="color:{{ tInk }}">On cree quoi aujourd'hui ?</div>
               <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos, documents et voix — décris ton idée, AgentFlow s'occupe du reste.</div>
             </div>
 
-            <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:22px;padding:16px 16px 12px;box-shadow:0 18px 44px -30px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
-              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:48px;min-height:48px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
+            <div style="position:relative;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:12px 12px 8px;box-shadow:0 14px 34px -28px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
+              <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:44px;min-height:44px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
                 {{ attachmentsReactElement }}
               </sc-if>
-              <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+              <div style="display:flex;align-items:center;gap:7px;margin-top:6px">
                 <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyle }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
-                <div style="position:relative">
-                  <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:transparent;border:none;color:{{ tText2 }};font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .16s ease" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
-                    <span style="width:5.5px;height:5.5px;border-radius:50%;background:{{ curModelDot }};box-shadow:0 0 6px {{ curModelDot }};transition:box-shadow .2s ease"></span>{{ curModelName }}
-                    <svg width="11" height="11" style="opacity:.55;margin-left:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
+                  <button type="button" data-hf-model-trigger="true" onClick="{{ toggleAgentSettings }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
+                    <span data-hf-model-trigger-icon="true" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg>
+                    </span>
+                    <span data-hf-model-trigger-name="true">{{ curModelName }}</span>
+                    <span data-hf-model-trigger-mode="true">{{ agentModeLabel }}</span>
+                    <span data-hf-model-trigger-chevron="true" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
+                      <div data-hf-model-title="true">Modèles</div>
                       <div data-hf-model-search="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Modèles de recherche..." aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
+                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
                       </div>
                       <div data-hf-model-list="true">
                       <sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3">
@@ -644,9 +775,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                         <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
                           <button type="button" data-hf-model-row="true" class="{{ it.activeClass }}" onClick="{{ it.onClick }}" title="{{ it.desc }}">
                             <span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.4 5.6L5 10l5.6 1.4L12 17l1.4-5.6L19 10l-5.6-1.4L12 3Z"></path><path d="m19 15-.7 2.3-2.3.7 2.3.7L19 21l.7-2.3 2.3-.7-2.3-.7L19 15Z"></path></svg></span>
-                            <span data-hf-model-name="true">{{ it.name }}</span>
+                            <span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span>
                             <span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span>
-                            <span data-hf-model-capabilities="true" title="Capacités du modèle" aria-label="Capacités du modèle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="m4.2 6.2 2.1 2.1"></path><path d="m17.7 17.7 2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="m4.2 17.8 2.1-2.1"></path><path d="m17.7 6.3 2.1-2.1"></path><circle cx="12" cy="12" r="4"></circle></svg></span>
+                            <span data-hf-model-capabilities="true" title="Capacités du modèle" aria-label="Capacités du modèle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="m4.2 6.2 2.1 2.1"></path><path d="m17.7 17.7 2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="m4.2 17.8 2.1-2.1"></path><path d="m17.7 6.3 2.1-2.1"></path><circle cx="12" cy="12" r="4"></circle></svg></span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modele verrouille"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modele selectionne">✓</span></sc-if>
                           </button>
                         </sc-for>
                       </sc-for>
@@ -654,9 +785,48 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                       </div>
                     </div>
                   </sc-if>
+                  <sc-if value="{{ agentSettingsMenu }}" hint-placeholder-val="{{ false }}">
+                    <div data-hf-agent-menu="true" role="menu" aria-label="Mode de generation">
+                      <button type="button" role="menuitem" data-hf-agent-option="true" class="{{ agentModeAutoClass }}" onClick="{{ setAutoMode }}">
+                        <span data-hf-agent-icon="true" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 6 5-6 5"></path><path d="m12 7 6 5-6 5"></path></svg></span>
+                        <span data-hf-agent-copy="true"><strong>Générer sans demander</strong><span>L'agent fonctionne sans confirmation.</span></span>
+                        <span data-hf-agent-check="true">{{ autoModeCheck }}</span>
+                      </button>
+                      <button type="button" role="menuitem" data-hf-agent-option="true" class="{{ agentModeConfirmClass }}" onClick="{{ setConfirmMode }}">
+                        <span data-hf-agent-icon="true" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V6.8a2 2 0 0 1 4 0V11"></path><path d="M12 11V5.8a2 2 0 0 1 4 0V11"></path><path d="M16 11V7.4a2 2 0 0 1 4 0v5.8c0 4.2-2.7 6.8-6.8 6.8h-1.3c-2.1 0-3.7-.8-4.9-2.4L4.4 14a2 2 0 0 1 3.3-2.2L9 13.2"></path></svg></span>
+                        <span data-hf-agent-copy="true"><strong>Demandez avant de générer</strong><span>L'agent pose la question avant chaque génération</span></span>
+                        <span data-hf-agent-check="true">{{ confirmModeCheck }}</span>
+                      </button>
+                      <button type="button" role="menuitem" data-hf-agent-option="true" onClick="{{ openModelCatalog }}">
+                        <span data-hf-agent-icon="true" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg></span>
+                        <span data-hf-agent-copy="true"><strong>Flash DeepSeek V4</strong><span>Le plus rapide et le moins cher pour les volumes...</span></span>
+                        <span data-hf-agent-chevron="true" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+                      </button>
+                    </div>
+                  </sc-if>
+                </div>
+                <!-- Legacy standalone Agent control removed; modes now live in the model selector.
+                <div data-hf-optional-composer-control="true" style="position:relative">
+                  <button onClick="{{ toggleAgentSettings }}" title="Reglages de l agent" style="display:flex;align-items:center;gap:5px;padding:7px 8px;border-radius:999px;background:transparent;border:none;color:{{ tText3 }};font-size:11px;font-weight:650;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .16s ease" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21h-3v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5v-3h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h3v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3h-.2a1.7 1.7 0 0 0-1.5 1Z"></path></svg>
+                    <span class="hf-composer-agent-label">Agent</span>
+                  </button>
+                  <sc-if value="{{ agentSettingsMenu }}" hint-placeholder-val="{{ false }}">
+                    <div data-hf-agent-menu="true" role="menu" aria-label="Reglages de l agent">
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeManualClass }}" onClick="{{ setManualMode }}"><span data-hf-agent-icon="true">—</span><span data-hf-agent-copy="true"><strong>Mode manuel</strong><span>Tu controles chaque generation</span></span><span data-hf-agent-check="true">{{ manualModeCheck }}</span></button>
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeAutoClass }}" onClick="{{ setAutoMode }}"><span data-hf-agent-icon="true">↯</span><span data-hf-agent-copy="true"><strong>Mode automatique</strong><span>AgentFlow choisit le bon modele</span></span><span data-hf-agent-check="true">{{ autoModeCheck }}</span></button>
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeConfirmClass }}" onClick="{{ setConfirmMode }}"><span data-hf-agent-icon="true">✓</span><span data-hf-agent-copy="true"><strong>Demander confirmation</strong><span>Valide avant une action sensible</span></span><span data-hf-agent-check="true">{{ confirmModeCheck }}</span></button>
+                    </div>
+                  </sc-if>
+                </div>
+                -->
+                <div data-hf-optional-composer-control="true" data-hf-composer-tools="true">
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ clickSkills }}" title="Ouvrir les competences" aria-label="Compétences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z"></path></svg><span data-hf-composer-label="true">Compétences</span></button>
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ clickConnectors }}" title="Ouvrir les connecteurs" aria-label="Connecteurs"><span data-hf-connector-stack="true" aria-hidden="true"><i>S</i><i>C</i><i>▶</i></span><span data-hf-composer-label="true">Connecteurs</span></button>
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ openMcp }}" title="Essayer MCP" aria-label="Essayez MCP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12.5 12.5 4.8-4.8a3.1 3.1 0 0 0-4.4-4.4L8.1 8.1a4.7 4.7 0 0 0 6.6 6.6l4.4-4.4"></path><path d="m11.5 11.5-4.8 4.8a3.1 3.1 0 0 0 4.4 4.4l4.8-4.8a4.7 4.7 0 0 0-6.6-6.6L5 13.7"></path></svg><span data-hf-composer-label="true">Essayez MCP</span></button>
                 </div>
                 <div style="flex:1"></div>
-                <span style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">{{ sendHint }}</span>
+                <span data-hf-composer-send-hint="true" style="font-size:11.5px;color:{{ tText4 }};white-space:nowrap">{{ sendHint }}</span>
                 <button onClick="{{ sendAction }}" title="{{ sendButtonTitle }}" style="{{ sendButtonStyleLarge }}" style-hover="filter:brightness(.95)">
                   <sc-if value="{{ isSending }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"></rect></svg></sc-if>
                   <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg></sc-if>
@@ -665,7 +835,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             </div>
 
             <sc-if value="{{ showSuggestions }}" hint-placeholder-val="{{ true }}">
-              <div style="margin-top:44px">
+              <div style="margin-top:50px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                   <span style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:{{ tText4 }};font-weight:600">Suggestions</span>
                   <button onClick="{{ shuffleSuggestions }}" title="Autres idées" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:none;background:transparent;color:{{ tText3 }};font-size:12px;cursor:pointer;font-family:inherit" style-hover="color:{{ tInk }}">
@@ -708,7 +878,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                     <div style="width:28px;height:28px;flex:0 0 auto;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D1FE17" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;padding-top:4px">
                       <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
-                      <sc-if value="{{ m.agentUi }}" hint-placeholder-val="{{ false }}">{{ m.agentUi }}</sc-if>
+                      <div data-hf-agent-ui-slot="{{ m.id }}" style="width:100%"></div>
                       <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
                           <div data-hf-stream-status="true">
@@ -1544,7 +1714,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   </sc-if>
 
   <!-- ========== SETTINGS MODAL (Claude-style centered popup with sidebar) ========== -->
-  <sc-if value="{{ showLegacySettingsModal }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
       <div onClick="{{ backToApp }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)"></div>
       <div style="position:relative;width:820px;max-width:92vw;height:580px;max-height:85vh;background:#1E1F23;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;overflow:hidden;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
@@ -1925,14 +2095,14 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <input data-hf-settings-search="true" value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher un réglage" aria-label="Rechercher un réglage" autocomplete="off"/>
         </div>
         <nav class="hf-settings-nav" aria-label="Navigation des paramètres">
-          <div class="hf-settings-nav-group">Paramètres</div>
+          <div class="hf-settings-nav-group">Essentiel</div>
           <sc-for list="{{ settingsPrimaryItems }}" as="item" hint-placeholder-count="9">
             <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}" aria-current="{{ item.ariaCurrent }}" title="{{ item.label }}">
               <span class="hf-settings-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#hf-settings-{{ item.id }}"></use></svg></span><span>{{ item.label }}</span>
             </button>
           </sc-for>
-          <div class="hf-settings-nav-group">Personnaliser</div>
-          <sc-for list="{{ settingsCustomItems }}" as="item" hint-placeholder-count="3">
+          <div class="hf-settings-nav-group">Espace et outils</div>
+          <sc-for list="{{ settingsAdvancedItems }}" as="item" hint-placeholder-count="6">
             <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}" aria-current="{{ item.ariaCurrent }}" title="{{ item.label }}">
               <span class="hf-settings-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#hf-settings-{{ item.id }}"></use></svg></span><span>{{ item.label }}</span>
             </button>
@@ -1953,6 +2123,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <div>
             <div class="hf-settings-kicker">{{ settingsKicker }}</div>
             <div class="hf-settings-title">{{ settingsPageTitle }}</div>
+            <div class="hf-settings-topbar-description">{{ settingsPageDescription }}</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
             <sc-if value="{{ settingsOffline }}" hint-placeholder-val="{{ false }}"><span class="hf-settings-status is-warning">Hors ligne · brouillon local</span></sc-if>
@@ -1960,7 +2131,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <span class="hf-settings-badge">{{ settingsPlanBadge }}</span>
           </div>
         </header>
-        <div class="hf-settings-content" data-hf-settings-scroll="true" onScroll="{{ onSettingsScroll }}">
+        <div class="hf-settings-content" data-hf-settings-scroll="true">
           <div class="hf-settings-content-inner" style="animation:{{ settingsAnim }}">
 
             <sc-if value="{{ modalShowSettings }}" hint-placeholder-val="{{ false }}">
@@ -2085,7 +2256,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   </sc-if>
   <!-- ========== END SETTINGS WORKSPACE ========== -->
 
-  <sc-if value="{{ showStats }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Statistiques d'usage" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2179,7 +2350,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </sc-if>
 
-  <sc-if value="{{ showApi }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="API et intégrations" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2265,7 +2436,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </sc-if>
 
-  <sc-if value="{{ showTeam }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Équipe et collaboration" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2359,7 +2530,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </sc-if>
 
-  <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Paramètres du compte" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:680px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2890,7 +3061,7 @@ class Component extends DCLogic {
     if(typeof window === 'undefined' || !window.history) return;
     const nextPath = this.pagePath(this.state.page);
     if(window.location.pathname !== nextPath){
-      const nextUrl = nextPath + (this.state.page === 'affiliate' ? window.location.search : '');
+      const nextUrl = nextPath + (this.demoMode ? '?demo=1' : (this.state.page === 'affiliate' ? window.location.search : ''));
       window.history[mode === 'replace' ? 'replaceState' : 'pushState']({ huggyflow:true, page:this.state.page }, '', nextUrl);
     }
     this.applyDocumentMetadata();
@@ -2978,10 +3149,20 @@ class Component extends DCLogic {
   initialAuthSession = this.storedAuthSession();
   initialUiState = this.storedUiState();
   initialRoute = this.routeStateFromLocation();
+  demoMode = (()=>{
+    try{
+      const params = new URLSearchParams(window.location.search);
+      return params.get('demo') === '1' || params.get('preview') === '1';
+    }catch(e){ return false; }
+  })();
+  previewEmpty = (()=>{
+    try{ return new URLSearchParams(window.location.search).get('empty') === '1'; }
+    catch(e){ return false; }
+  })();
   initialPage = (()=>{
     const page = this.initialRoute.page || this.initialUiState.page || 'app';
     const settingsPages = ['settings','billing','team','api','stats','account','privacy','capabilities','claudecode','skills','connectors','plugins'];
-    if(settingsPages.includes(page) && !this.initialAuthSession.access_token) return 'app';
+    if(settingsPages.includes(page) && !this.initialAuthSession.access_token && !this.demoMode) return 'app';
     if(['claudecode','plugins'].includes(page)) return 'settings';
     return page;
   })();
@@ -2993,9 +3174,11 @@ class Component extends DCLogic {
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
     modelMenuSearch: '',
+    agentSettingsMenu: false,
+    agentMode: ['manual','auto','confirm'].includes(this.initialUiState.agentMode) ? this.initialUiState.agentMode : 'confirm',
     commandPaletteOpen: false,
     commandQuery: '',
-    modelId: this.initialUiState.modelId || 'tencent/hy3:free',
+    modelId: this.initialUiState.modelId || 'auto',
     mode: this.initialUiState.mode || 'image',
     placeholderIdx: 0,
     streamPhraseIndex: 0,
@@ -3020,6 +3203,7 @@ class Component extends DCLogic {
     pricingPlans: [],
     pricingModels: [],
     pricingMeta: {},
+    modelSync: { available:false, capabilities:{} },
     pricingCostFilter: this.initialUiState.pricingCostFilter || 'all',
     creditPacks: [],
     billingCurrency: 'XOF',
@@ -3092,6 +3276,7 @@ class Component extends DCLogic {
     adminData: null, adminLoading: false, adminError: ''
   };
 
+  /*
   MODELS = [
     { id:'nvidia/nemotron-3-ultra-550b-a55b:free', name:'Nemotron 3 Ultra gratuit', group:'NVIDIA', provider:'nvidia', desc:'Raisonnement frontier et orchestration agentique', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
     { id:'nvidia/nemotron-3-super-120b-a12b:free', name:'Nemotron 3 Super gratuit', group:'NVIDIA', provider:'nvidia', desc:'Planification multi-agents et raisonnement long contexte', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
@@ -3129,6 +3314,13 @@ class Component extends DCLogic {
     { id:'claude-sonnet-5', name:'Sonnet 5', group:'AgentFlow', desc:'Équilibre fort entre vitesse et qualité', creditsLabel:'Rapide', dot:'#E8D79B' },
     { id:'claude-sonnet-4-6', name:'Sonnet 4.6', group:'AgentFlow', desc:'Agent fiable pour les demandes quotidiennes', creditsLabel:'Stable', dot:'#A8E8C0' },
     { id:'claude-haiku-4-5-20251001', name:'Haiku 4.5', group:'AgentFlow', desc:'Réponses rapides et tâches simples', creditsLabel:'Éco', dot:'#C4C7CC' }
+  ];
+
+  */
+  // Network bootstrap replaces this fallback with the live OpenRouter catalog.
+  // Keep the offline shell small and aligned with the server allowlist.
+  MODELS = [
+    { id:'auto', modelKey:'auto', name:'Auto', group:'Rapide', desc:'Choisit automatiquement le meilleur modele pour ta demande', creditsLabel:'Selon la tache', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
   ];
 
   PLACEHOLDERS = [
@@ -3381,7 +3573,9 @@ class Component extends DCLogic {
     return fetch(this.apiBase()+path, init);
   }
 
-  agentModelApiId(id){ return id || 'auto'; }
+  agentModelApiId(id){
+    return id || 'auto';
+  }
   typeForModel(model){
     if(!model) return 'image';
     if(model.group === 'Videos' || model.group === 'Vidéos' || model.group === 'VidÃ©os') return 'video';
@@ -3692,6 +3886,7 @@ class Component extends DCLogic {
     return items.reverse().slice(0, 24);
   }
   async loadStudioData(projectId){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ studioLoading:true });
     try{
@@ -3726,6 +3921,7 @@ class Component extends DCLogic {
     return 'padding:7px 8px;border:0;border-radius:8px;background:' + (active ? '#D1FE17' : 'rgba(255,255,255,.06)') + ';color:' + (active ? '#131517' : '#A8A8A8') + ';font-size:10.5px;font-weight:' + (active ? '800' : '700') + ';cursor:pointer;font-family:inherit';
   }
   async loadSkillEvaluations(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     try{
       const res = await this.apiFetch('/api/skill-evals?limit=20');
@@ -3775,6 +3971,7 @@ class Component extends DCLogic {
     this.setState({ artifactEditorFile:currentPath, artifactEditorContent:current ? String(current.content || '') : '' });
   }
   async loadArtifactDetail(artifactId){
+    if(this.demoMode) return;
     if(!artifactId || !this.state.authToken) return;
     this.setState({ artifactCommentsLoading:true });
     try{
@@ -3913,6 +4110,7 @@ class Component extends DCLogic {
     if(navigator.clipboard) navigator.clipboard.writeText(String(file.content || '')).then(()=>this.notify('Contenu de l artifact copie.')).catch(()=>{});
   }
   async loadPublicArtifactFromUrl(){
+    if(this.demoMode) return;
     if(typeof window === 'undefined') return;
     const token = new URLSearchParams(window.location.search).get('artifact');
     if(!token) return;
@@ -3948,7 +4146,83 @@ class Component extends DCLogic {
       messages: (p.messages || []).map(m=>this.normalizeMessage(m))
     }));
   }
+  loadPreviewData(){
+    if(!this.demoMode || this.previewDataLoaded) return;
+    this.previewDataLoaded = true;
+    const imageUrl = 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=85';
+    const imageUrl2 = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=85';
+    const videoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+    const citations = [
+      { id:'demo-source-1', title:'Creative trends report', domain:'huggyflow.fun', url:'https://www.huggyflow.fun/' },
+      { id:'demo-source-2', title:'Brand launch checklist', domain:'marketing.example', url:'https://www.huggyflow.fun/pricing' }
+    ];
+    const messages = [
+      { id:'demo-user-1', role:'user', text:'Cree une campagne visuelle premium pour le lancement de ma marque.' },
+      { id:'demo-agent-1', role:'agent', text:'J ai prepare une direction creative complete avec une image hero et un plan de campagne.', streamPhase:'complete', streamProgress:100, activity:'Resultat pret', citations, agentActivity:[
+        { id:'demo-step-1', label:'Brief analyse', detail:'Intention et audience identifiees', kind:'step', status:'complete' },
+        { id:'demo-step-2', label:'Direction creative choisie', detail:'Premium studio commercial', kind:'step', status:'complete' },
+        { id:'demo-step-3', label:'Image hero generee', detail:'GPT Image 2', kind:'tool', status:'complete' },
+        { id:'demo-step-4', label:'Controle qualite termine', detail:'Composition et lisibilite valides', kind:'step', status:'complete' }
+      ], media:{ type:'image', status:'done', progress:100, model:'GPT Image 2', ratio:'1:1', resultUrl:imageUrl, generationId:'demo-image-1', prompt:'Hero visuel premium pour le lancement de marque' } },
+      { id:'demo-user-2', role:'user', text:'Ajoute aussi une video courte avec un rythme social et une voix off.' },
+      { id:'demo-agent-2', role:'agent', text:'La video est en cours de rendu. Tu peux continuer a travailler pendant que je termine les plans.', streamLive:true, streamPhase:'rendering', streamProgress:64, activity:'AgentFlow genere le rendu video', streamTool:'Seedance 2.0', agentActivity:[
+        { id:'demo-live-1', label:'Brief video structure', detail:'8 secondes · 16:9', kind:'step', status:'complete' },
+        { id:'demo-live-2', label:'Plans en cours de rendu', detail:'Seedance 2.0', kind:'tool', status:'working' },
+        { id:'demo-live-3', label:'Voix off et mixage', detail:'ElevenLabs', kind:'tool', status:'pending' }
+      ], media:{ type:'video', status:'loading', progress:64, model:'Seedance 2.0', ratio:'16:9', duration:'8s', generationId:'demo-video-1', prompt:'Video sociale premium avec rythme dynamique et voix off' } },
+      { id:'demo-agent-3', role:'agent', text:'La campagne est prete a etre publiee. Verifie le resultat puis valide la publication.', streamPhase:'complete', streamProgress:100, activity:'Validation requise', agentActivity:[
+        { id:'demo-final-1', label:'Rendu final verifie', detail:'Aucun artefact detecte', kind:'step', status:'complete' },
+        { id:'demo-final-2', label:'Publication en attente', detail:'Ton approbation est requise', kind:'step', status:'complete' }
+      ], approval:{ title:'Publication de la campagne', description:'Publier cette version dans ton espace equipe et dans Explorer ?', status:'pending' }, approvalRequest:{ id:'demo-approval-1' }, citations }
+    ];
+    const projects = [
+      { id:'demo-brand', title:'Campagne lancement ete', messages },
+      { id:'demo-social', title:'Social media kit', messages:[
+        { id:'demo-social-user', role:'user', text:'Prepare cinq idees de posts pour cette semaine.' },
+        { id:'demo-social-agent', role:'agent', text:'Voici cinq angles de contenu prets a adapter pour tes reseaux.', streamPhase:'complete', streamProgress:100, agentActivity:[{ id:'demo-social-step', label:'5 idees preparees', detail:'Angles, hooks et CTA', kind:'step', status:'complete' }], media:{ type:'image', status:'done', progress:100, model:'Recraft', ratio:'1:1', resultUrl:imageUrl2, generationId:'demo-image-2', prompt:'Social media kit editorial' } }
+      ] }
+    ];
+    const artifact = { id:'demo-artifact-1', title:'Landing page campagne', type:'html', status:'ready', currentVersion:3, version:{ id:'demo-version-3', number:3, compileStatus:'passed', sourcePrompt:'Landing page premium campagne lancement', createdAt:new Date().toISOString(), files:[{ path:'index.html', content:'<main><h1>Campagne lancement ete</h1><p>Une experience de marque claire et premium.</p></main>' },{ path:'styles.css', content:'body { font-family: system-ui; color: #131517; }' }] } };
+    const explore = [
+      { id:'demo-explore-1', title:'Studio product launch', description:'Une direction premium pour presenter un nouveau produit.', prompt:'Product launch premium, studio lumineux, composition editoriale', creator:'Maya Studio', creatorInitials:'MS', date:'Il y a 2 h', url:imageUrl, type:'image', model:'GPT Image 2', ratio:'1:1', likes:248, saves:74, remixes:31, views:1820 },
+      { id:'demo-explore-2', title:'Campaign moodboard', description:'Un moodboard colore pour une campagne sociale.', prompt:'Moodboard campagne sociale, couleurs vives, mise en page moderne', creator:'Leo Creative', creatorInitials:'LC', date:'Il y a 5 h', url:imageUrl2, type:'image', model:'Recraft', ratio:'4:5', likes:186, saves:62, remixes:24, views:1304 },
+      { id:'demo-explore-3', title:'Social launch film', description:'Un apercu video court pour les reseaux.', prompt:'Film social rapide avec mouvement et lumiere naturelle', creator:'Studio North', creatorInitials:'SN', date:'Hier', url:videoUrl, type:'video', model:'Seedance 2.0', ratio:'16:9', duration:'8s', hasAudio:true, likes:312, saves:89, remixes:46, views:2410 },
+      { id:'demo-explore-4', title:'Editorial portrait', description:'Un portrait editorial construit pour une marque personnelle.', prompt:'Portrait editorial naturel, lumiere douce, rendu magazine', creator:'Amina Labs', creatorInitials:'AL', date:'Il y a 2 j', url:imageUrl, type:'image', model:'FLUX.2 Pro', ratio:'3:4', likes:164, saves:51, remixes:18, views:980 },
+      { id:'demo-explore-5', title:'Product voice identity', description:'Une identite audio claire pour presenter une offre.', prompt:'Voix de marque chaleureuse et confiante pour une annonce', creator:'Echo House', creatorInitials:'EH', date:'Il y a 3 j', url:'', type:'audio', model:'ElevenLabs', ratio:'audio', duration:'23s', likes:92, saves:38, remixes:11, views:642 }
+    ];
+    const previewProjects = this.previewEmpty
+      ? [{ id:'preview-empty', title:'Nouveau projet', messages:[] }].concat(projects)
+      : projects;
+    const previewMessages = this.previewEmpty ? [] : messages;
+    this.setState({
+      authToken:'demo-token', authRefreshToken:'demo-refresh', authExpiresAt:Date.now()+86400000,
+      user:{ id:'demo-user', name:'Sarah Demo', email:'demo@huggyflow.local', plan:'Pro' },
+      authName:'Sarah Demo', authEmail:'demo@huggyflow.local', settingsName:'Sarah Demo', settingsEmail:'demo@huggyflow.local',
+      credits:742, creditsMax:1000, activeTitle:this.previewEmpty ? 'Nouveau projet' : 'Campagne lancement ete', activeProjectId:this.previewEmpty ? 'preview-empty' : 'demo-brand', messages:previewMessages, projectsData:previewProjects,
+      exploreItems:explore, exploreLoading:false, exploreNewDismissed:false,
+      backgroundTasks:this.previewEmpty ? [] : [{ id:'demo-task-1', generationId:'demo-video-1', type:'video', status:'loading', progress:64, model:'Seedance 2.0', title:'Social launch film' }],
+      workflowTasks:this.previewEmpty ? [] : [{ id:'demo-workflow-1', title:'Campagne multicanale', status:'running', progress:68 }], backgroundTaskPanelOpen:!this.previewEmpty, backgroundTaskUnread:!this.previewEmpty,
+      memoryItems:[{ id:'demo-memory-1', label:'Ton style de marque', content:'Premium, clair, editorial et chaleureux.', sourceType:'user', confidence:.94, projectId:'demo-brand', usedReason:'Utilise pour maintenir la coherence de la campagne.', isPinned:true }],
+      securitySessions:[{ id:'demo-session-current', deviceLabel:'Chrome sur Windows', userAgent:'HuggyFlow Preview', current:true, lastSeenAt:new Date().toISOString() },{ id:'demo-session-mobile', deviceLabel:'Safari sur iPhone', userAgent:'iOS 18', current:false, lastSeenAt:new Date(Date.now()-7200000).toISOString() }],
+      securityEvents:[{ id:'demo-event-1', action:'Connexion reussie', createdAt:new Date().toISOString(), deviceLabel:'Chrome sur Windows' },{ id:'demo-event-2', action:'MFA verifie', createdAt:new Date(Date.now()-86400000).toISOString(), deviceLabel:'Chrome sur Windows' }], securityLoading:false, tfa:true, recoveryCodes:['DEMO-1234','DEMO-5678','DEMO-9012'],
+      usageData:{ summary:{ dailyAverage:86, forecast30Days:2580, remainingCredits:742 }, alert:{ threshold_percent:80 } }, usageThreshold:80,
+      statsData:{ summary:{ credits:258, images:14, videos:4, voices:3 }, chart:[{ label:'Lun', currentPct:68, previousPct:42, credits:31 },{ label:'Mar', currentPct:82, previousPct:50, credits:46 },{ label:'Mer', currentPct:54, previousPct:38, credits:29 },{ label:'Jeu', currentPct:91, previousPct:62, credits:57 }], models:[{ name:'GPT Image 2', credits:96 },{ name:'Seedance 2.0', credits:82 },{ name:'Recraft', credits:44 }] }, statsPeriod:'30',
+      apiData:{ keys:[{ id:'demo-api-key', name:'Preview automation', masked:'hf_demo_••••••42', createdAt:new Date().toISOString(), scopes:['chat','generate','artifacts'], expiresAt:new Date(Date.now()+7776000000).toISOString(), dailyLimit:1000, usageCount:284 } ] },
+      teamData:{ seatLimit:5, members:[{ name:'Sarah Demo', email:'demo@huggyflow.local', initials:'SD', role:'owner', status:'active', isYou:true },{ name:'Alex Martin', email:'alex@huggyflow.local', initials:'AM', role:'editor', status:'active' },{ name:'Nina Cole', email:'nina@huggyflow.local', initials:'NC', role:'viewer', status:'active' }], invites:[{ id:'demo-invite-1', email:'studio@huggyflow.local', createdAt:new Date(Date.now()-86400000).toISOString() }], projectAccess:[{ projectId:'demo-brand', memberUserId:'Alex Martin', role:'editor', permissions:{ view:true, edit:true, publish:false } }], approvalRequests:[{ id:'demo-approval-team', artifact_id:'demo-artifact-1', status:'pending', created_at:new Date().toISOString() }] },
+      affiliateData:{ link:'https://huggyflow.fun/r/sarah-demo', stats:{ clicks:1248, activeSubscribers:18, earningsUsd:186.4, availableUsd:74.2, paidUsd:112.2 }, referrals:[{ name:'Studio M', amountUsd:28.4, status:'active' },{ name:'Nova Brand', amountUsd:16.8, status:'paid' }], payouts:[{ requested_at:new Date(Date.now()-2592000000).toISOString(), amount_usd:82, status:'paid' }] },
+      billingStatus:{ user:{ plan:'Pro', currentPeriodEnd:new Date(Date.now()+1728000000).toISOString() }, subscription:{ status:'active' }, moneyFusionConfigured:true, invoices:[{ id:'demo-invoice-1', createdAt:new Date(Date.now()-2592000000).toISOString(), description:'Abonnement Pro', amount_paid:2900, currency:'USD', status:'paid' },{ id:'demo-invoice-2', createdAt:new Date(Date.now()-5184000000).toISOString(), description:'Pack de credits', amount_paid:1200, currency:'USD', status:'paid' }] },
+      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:29, annualPriceUsd:290, includedCredits:1000, metadata:{ segment:'solo', popular:true, tagline:'Pour creer et publier plus vite' }, allowedMediaTypes:['image','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
+      artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
+      integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
+      backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
+    }, ()=>{ this.applyDocumentMetadata(); this.syncChatInputSize(); });
+  }
+  updatePreviewApproval(id, status){
+    if(!this.demoMode) return;
+    this.setState(s=>({ messages:(s.messages || []).map(message=>message.approvalRequest && message.approvalRequest.id === id ? Object.assign({}, message, { approval:Object.assign({}, message.approval || {}, { status:status === 'changes_requested' ? 'changes-requested' : status }) }) : message), teamData:Object.assign({}, s.teamData || {}, { approvalRequests:((s.teamData && s.teamData.approvalRequests) || []).map(request=>request.id === id ? Object.assign({}, request, { status }) : request) }) }), ()=>this.notify(status === 'approved' ? 'Publication approuvee dans le mode preview.' : 'Demande mise a jour dans le mode preview.'));
+  }
   async bootstrap(){
+    if(this.demoMode){ this.loadPreviewData(); return; }
     try{
       const res = await this.apiFetch('/api/bootstrap');
       if(!res.ok) throw new Error('bootstrap '+res.status);
@@ -3957,20 +4231,19 @@ class Component extends DCLogic {
       if(agentModels.length){
         const dots = ['#D1FE17','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
         this.MODELS = [...new Map(agentModels.map((m,i)=>[m.id || 'auto', ({
-          id:m.id || 'auto',
-          name:m.name || 'Auto AgentFlow',
-          group:m.id === 'auto' ? 'AgentFlow' : (({anthropic:'Anthropic',openai:'OpenAI',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI',nvidia:'NVIDIA',google:'Google'}[m.provider]) || m.provider || 'AgentFlow'),
-          provider:m.provider || 'auto',
+          id:m.modelKey || m.id || 'auto',
+          modelKey:m.modelKey || m.id || 'auto',
+          name:m.name || 'AgentFlow',
+          group:m.id === 'auto' ? 'Rapide' : (Array.isArray(m.capabilities) && m.capabilities.includes('vision') ? 'Vision' : (m.tier === 'premium' || (Array.isArray(m.capabilities) && m.capabilities.includes('reasoning')) ? 'Raisonnement' : 'Rapide')),
           desc:m.description || 'Cerveau AgentFlow',
-          creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
+          creditsLabel:m.creditsLabel || ((m.creditsPerMessage || 0) ? ('Environ ' + m.creditsPerMessage + ' cr') : 'Selon la tache'),
           free:!!m.free,
           freeUntil:m.freeUntil || '',
           capabilities:Array.isArray(m.capabilities) ? m.capabilities : [],
-          inputUsdPerMillionTokens:Number(m.inputUsdPerMillionTokens || 0),
-          outputUsdPerMillionTokens:Number(m.outputUsdPerMillionTokens || 0),
           current:!!m.current,
           dot:dots[i % dots.length]
         })])).values()];
+        if(!this.MODELS.some(model=>model.id === this.state.modelId)) this.state.modelId = 'auto';
       }
       if(this.state.authToken && !data.user){
         this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
@@ -3992,6 +4265,7 @@ class Component extends DCLogic {
          pricingPlans: data.plans || [],
          pricingModels: data.models || [],
          pricingMeta: data.pricing || {},
+         modelSync: data.modelSync || { available:false, capabilities:{} },
         creditPacks: data.creditPacks || [],
         billingStatus: data.billing || this.state.billingStatus,
         billingCurrency: (data.pricing && data.pricing.currency) || (data.billing && data.billing.currency) || this.state.billingCurrency,
@@ -4049,6 +4323,8 @@ class Component extends DCLogic {
   }
   componentDidMount(){
     this.chatShouldStick = true;
+    this.agentComponentsReady = ()=>this.syncAgentUiSlots();
+    if(typeof window !== 'undefined') window.addEventListener('hf-components-ready', this.agentComponentsReady);
     this.routePopstate = ()=>{
       const next = this.routeStateFromLocation();
       if(next.requiresAuth && !this.state.authToken){
@@ -4075,12 +4351,25 @@ class Component extends DCLogic {
         this.closeCommandPalette();
         return;
       }
+      if(event.key === 'Escape' && (this.state.agentSettingsMenu || this.state.modelMenu)){
+        event.preventDefault();
+        this.setState({ agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' });
+        return;
+      }
       if(event.key === 'Escape' && this.isSettingsPage(this.state.page)){
         event.preventDefault();
         this.closeSettingsModal();
       }
     };
     if(typeof document !== 'undefined') document.addEventListener('keydown', this.settingsKeydown);
+    this.composerPointerDown = (event)=>{
+      const target = event && event.target;
+      if(target && target.closest && target.closest('[data-hf-model-selector=\"true\"],[data-hf-model-menu=\"true\"]')) return;
+      if(this.state.agentSettingsMenu || this.state.modelMenu){
+        this.setState({ agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' });
+      }
+    };
+    if(typeof document !== 'undefined') document.addEventListener('pointerdown', this.composerPointerDown);
     this.settingsOnlineListener = ()=>{
       if(this.state.settingsOffline && this.state.authToken){
         this.setState({ settingsOffline:false }, ()=>this.saveSettings());
@@ -4107,8 +4396,10 @@ class Component extends DCLogic {
       this.requireAuth('Connecte-toi pour acceder a cette page.', { type:'route', page:this.initialRoute.page });
     }
     if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
-    this.trackAffiliateReferral();
-    this.consumeOAuthReturnNotice();
+    if(!this.demoMode){
+      this.trackAffiliateReferral();
+      this.consumeOAuthReturnNotice();
+    }
     this.restoreRouteScroll(this.state.page, this.state.exploreActiveId);
     this._lastComponentPage = this.state.page;
     this._lastExploreActiveId = this.state.exploreActiveId || '';
@@ -4119,16 +4410,23 @@ class Component extends DCLogic {
       if(active && (typeof document === 'undefined' || document.visibilityState !== 'hidden')) this.setState(s=>({ streamPhraseIndex:(s.streamPhraseIndex + 1) % 3 }));
     }, 3000);
     this._backgroundTasks = setInterval(()=>this.loadBackgroundTasks(), 8000);
-    this.loadPublicArtifactFromUrl();
-    if(this.state.page === 'explore') this.loadExploreFeed();
-    this.restoreAuthSession();
-    if(this.state.authToken) this.loadMfa();
+    if(this.demoMode){
+      this.loadPreviewData();
+    }else{
+      this.loadPublicArtifactFromUrl();
+      if(this.state.page === 'explore') this.loadExploreFeed();
+      this.restoreAuthSession();
+      if(this.state.authToken) this.loadMfa();
+    }
     this.syncChatInputSize();
+    this.syncAgentUiSlots();
   }
   componentWillUnmount(){
     if(typeof window !== 'undefined' && this.routePopstate) window.removeEventListener('popstate', this.routePopstate);
+    if(typeof window !== 'undefined' && this.agentComponentsReady) window.removeEventListener('hf-components-ready', this.agentComponentsReady);
     if(typeof window !== 'undefined' && this.settingsOnlineListener) window.removeEventListener('online', this.settingsOnlineListener);
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
+    if(typeof document !== 'undefined' && this.composerPointerDown) document.removeEventListener('pointerdown', this.composerPointerDown);
     if(this.themeMedia && this.themeMediaListener){
       if(this.themeMedia.removeEventListener) this.themeMedia.removeEventListener('change', this.themeMediaListener);
       else if(this.themeMedia.removeListener) this.themeMedia.removeListener(this.themeMediaListener);
@@ -4182,19 +4480,21 @@ class Component extends DCLogic {
       this.restoreRouteScroll(this.state.page, this.state.exploreActiveId);
     }
     if(pageChanged){
-      if(this.isSettingsPage(previousPage)) this.persistSettingsScroll(previousPage);
-      if(this.isSettingsPage(this.state.page)) this.restoreSettingsScroll(this.state.page);
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
-      if(this.state.page === 'capabilities') this.loadBrands();
-      if(this.state.page === 'account'){ this.loadMfa(); this.loadSecurity(); }
-      if(this.state.page === 'stats') this.loadUsage();
-      if(this.state.page === 'skills') this.loadTemplates();
-      if(this.state.page === 'connectors') this.loadIntegrations();
-      if(this.state.page === 'explore') this.loadExploreFeed();
+      if(!this.demoMode){
+        if(this.state.page === 'capabilities') this.loadBrands();
+        if(this.state.page === 'account'){ this.loadMfa(); this.loadSecurity(); }
+        if(this.state.page === 'stats') this.loadUsage();
+        if(this.state.page === 'skills') this.loadTemplates();
+        if(this.state.page === 'connectors') this.loadIntegrations();
+        if(this.state.page === 'explore') this.loadExploreFeed();
+      }
     }
     if(stateBefore.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
+    this.syncAgentUiSlots();
+    if(this.state.modelMenu && typeof window !== 'undefined') requestAnimationFrame(()=>this.positionModelMenu());
     if(this.isSettingsPage(this.state.page) && !this.state.authToken){
       this.clearSettingsHash();
       this.setState({ page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
@@ -4215,7 +4515,8 @@ class Component extends DCLogic {
         activeProjectId:this.state.activeProjectId || 'welcome',
         activeTitle:this.state.activeTitle || 'Nouveau projet',
         projectsData:[],
-        modelId:this.state.modelId || 'tencent/hy3:free',
+        modelId:this.state.modelId || 'auto',
+        agentMode:this.state.agentMode || 'confirm',
         mode:this.state.mode || 'image',
         billing:this.state.billing || 'annual',
         segment:this.state.segment || 'solo',
@@ -4264,43 +4565,6 @@ class Component extends DCLogic {
     this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:target });
     return false;
   }
-  focusSettingsSearch(){
-    setTimeout(()=>{
-      if(typeof document === 'undefined') return;
-      const input = document.querySelector('[data-hf-settings-search="true"]');
-      if(input && typeof input.focus === 'function') input.focus();
-    }, 0);
-  }
-  settingsScrollKey(section){
-    return 'huggyflow_settings_scroll_' + String(section || 'settings');
-  }
-  persistSettingsScroll(section){
-    if(typeof window === 'undefined' || !window.localStorage) return;
-    const el = typeof document !== 'undefined' ? document.querySelector('[data-hf-settings-scroll="true"]') : null;
-    if(!el) return;
-    try{ window.localStorage.setItem(this.settingsScrollKey(section || this.state.page), String(Math.max(0, Math.round(el.scrollTop || 0)))); }catch(e){}
-  }
-  restoreSettingsScroll(section){
-    if(typeof window === 'undefined' || !window.localStorage) return;
-    const target = String(section || this.state.page || 'settings');
-    if(this.settingsRestoreScheduled === target) return;
-    let stored = null;
-    try{ stored = window.localStorage.getItem(this.settingsScrollKey(target)); }catch(e){}
-    this.settingsRestoreScheduled = target;
-    setTimeout(()=>{
-      const el = typeof document !== 'undefined' ? document.querySelector('[data-hf-settings-scroll="true"]') : null;
-      if(!el) { this.settingsRestoreScheduled = ''; return; }
-      const requestedTop = stored === null ? 0 : Math.max(0, Number(stored) || 0);
-      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-      const top = Math.min(requestedTop, maxTop);
-      if(Math.abs((el.scrollTop || 0) - top) > 2) el.scrollTop = top;
-      this.settingsRestoreScheduled = '';
-    }, 0);
-  }
-  onSettingsScroll(){
-    clearTimeout(this.settingsScrollTimer);
-    this.settingsScrollTimer = setTimeout(()=>this.persistSettingsScroll(this.state.page), 120);
-  }
   openSettingsModal(section){
     const target = this.isSettingsPage(section) ? section : 'settings';
     if(!this.requireSettingsAccess(target)) return;
@@ -4328,14 +4592,11 @@ class Component extends DCLogic {
       if(target === 'capabilities') this.loadBrands();
       if(target === 'skills') this.loadTemplates();
       if(target === 'connectors') this.loadIntegrations();
-      this.restoreSettingsScroll(target);
-      this.focusSettingsSearch();
     });
   }
   openSettingsSection(section){
     if(!this.requireSettingsAccess(section)) return;
     if(!this.isSettingsPage(this.state.page)) return this.openSettingsModal(section);
-    this.persistSettingsScroll(this.state.page);
     this.setState({ page:section, settingsHop:true }, ()=>{
       if(section === 'billing') this.loadBillingStatus();
       if(section === 'team') this.loadTeam();
@@ -4346,7 +4607,6 @@ class Component extends DCLogic {
       if(section === 'capabilities') this.loadBrands();
       if(section === 'skills') this.loadTemplates();
       if(section === 'connectors') this.loadIntegrations();
-      this.restoreSettingsScroll(section);
       clearTimeout(this.settingsHopTimer);
       this.settingsHopTimer = setTimeout(()=>{
         if(this.state.settingsHop) this.setState({ settingsHop:false });
@@ -4354,7 +4614,6 @@ class Component extends DCLogic {
     });
   }
   closeSettingsModal(){
-    if(this.isSettingsPage(this.state.page)) this.persistSettingsScroll(this.state.page);
     const restore = this.settingsReturnContext || { page:'app' };
     this.settingsReturnContext = null;
     this.clearSettingsHash();
@@ -4399,7 +4658,8 @@ class Component extends DCLogic {
     if(!element) return;
     const maxHeight = 180;
     element.style.height = 'auto';
-    const contentHeight = Math.max(48, element.scrollHeight || 48);
+    const hasContent = String(element.value || '').trim().length > 0;
+    const contentHeight = hasContent ? Math.max(44, element.scrollHeight || 44) : 44;
     element.style.height = Math.min(contentHeight, maxHeight) + 'px';
     element.style.overflowY = contentHeight > maxHeight ? 'auto' : 'hidden';
   }
@@ -4698,6 +4958,7 @@ class Component extends DCLogic {
     })}));
   }
   retryAgentMessage(id){
+    if(this.demoMode){ this.notify('Mode preview : la relance est simulee sans appel API.'); return; }
     const messages = this.state.messages || [];
     const index = messages.findIndex(message=>message.id === id);
     const previous = index > 0 ? messages.slice(0, index).reverse().find(message=>message.role === 'user') : null;
@@ -4710,9 +4971,22 @@ class Component extends DCLogic {
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>this.notify('Reponse copiee.')).catch(()=>this.notify('Copie indisponible.'));
     else this.notify('Copie indisponible dans ce navigateur.');
   }
+  syncAgentUiSlots(){
+    if(typeof document === 'undefined' || !window.HFComponents || !window.HFComponents.mountAgentMessage) return;
+    const messages = this.state.messages || [];
+    document.querySelectorAll('[data-hf-agent-ui-slot]').forEach(slot=>{
+      const id = slot.getAttribute('data-hf-agent-ui-slot');
+      const message = messages.find(entry=>String(entry.id) === String(id));
+      if(!message || message.role !== 'agent') return;
+      const media = message.media && typeof message.media === 'object' ? message.media : null;
+      const mediaStatus = media && (media.status === 'loading' ? 'generating' : (media.status === 'done' ? 'complete' : (media.status === 'failed' ? 'error' : undefined)));
+      const progress = Math.max(0, Math.min(100, Math.round(Number(message.streamProgress || (message.streamLive ? 8 : 100)))));
+      const phase = String(message.streamPhase || (message.streamLive ? 'analyzing' : 'complete'));
+      window.HFComponents.mountAgentMessage(slot, this.agentMessageUi(message, media, mediaStatus, progress, phase));
+    });
+  }
   agentMessageUi(message, media, mediaStatus, streamProgress, streamPhase){
-    if(!message || !message.role || message.role !== 'agent' || !window.HFComponents || !window.React || !window.HFComponents.AgentMessagePanel) return null;
-    const R = window.React;
+    if(!message || !message.role || message.role !== 'agent') return {};
     const status = message.streamLive ? (message.streamPhase === 'cancelled' ? 'cancelled' : 'working') : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete'));
     const activity = Array.isArray(message.agentActivity) ? message.agentActivity : (message.streamLive ? [{ id:'current', label:message.activity || this.streamPhaseLabel(streamPhase), kind:message.streamTool ? 'tool' : 'step', status:'working', detail:message.streamTool || '' }] : []);
     const phase = String(streamPhase || message.streamPhase || 'analyzing');
@@ -4721,7 +4995,7 @@ class Component extends DCLogic {
       { id:'route', title:'Choisir la strategie', status:phase === 'analyzing' || phase === 'routing' ? 'in-progress' : 'completed', progress:phase === 'routing' ? streamProgress : (phase === 'analyzing' ? 0 : 100) },
       { id:'produce', title:'Produire et verifier le resultat', status:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? 'in-progress' : (phase === 'complete' ? 'completed' : 'pending'), progress:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? streamProgress : (phase === 'complete' ? 100 : 0) }
     ] : [];
-    return R.createElement(window.HFComponents.AgentMessagePanel, {
+    return {
       status, phase, progress:streamProgress, activity, tasks,
       citations:Array.isArray(message.citations) ? message.citations : [],
       mediaStatus, mediaLabel:media ? ((media.model || 'AgentFlow') + ' · ' + (media.type === 'video' ? 'video' : media.type === 'voice' ? 'audio' : 'image')) : '',
@@ -4731,10 +5005,10 @@ class Component extends DCLogic {
       onFeedback:(value)=>this.notify(value === 'up' ? 'Merci pour ton retour.' : value === 'down' ? 'Retour enregistre pour ameliorer AgentFlow.' : 'Retour retire.'),
       onCancel:message.streamLive ? ()=>this.stopGeneration() : undefined,
       approval:message.approval || undefined,
-      onApprove:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
-      onReject:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'rejected') : undefined,
-      onRequestChanges:message.approvalRequest ? ()=>this.updateApprovalRequest(message.approvalRequest, 'changes_requested') : undefined,
-    });
+      onApprove:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'approved') : this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
+      onReject:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'rejected') : this.updateApprovalRequest(message.approvalRequest, 'rejected') : undefined,
+      onRequestChanges:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'changes_requested') : this.updateApprovalRequest(message.approvalRequest, 'changes_requested') : undefined,
+    };
   }
   streamPhaseLabel(phase){
     return ({
@@ -4811,6 +5085,7 @@ class Component extends DCLogic {
     }));
   }
   async loadAgentMemory(){
+    if(this.demoMode) return;
     if(!this.state.authToken || this.memoryLoading) return;
     this.memoryLoading = true;
     this.setState({ memoryLoading:true });
@@ -4871,7 +5146,7 @@ class Component extends DCLogic {
     this.setState({ backgroundTaskPanelOpen:false });
   }
   async loadBackgroundTasks(){
-    if(!this.state.authToken || this.backgroundTasksLoading) return;
+    if(this.demoMode || !this.state.authToken || this.backgroundTasksLoading) return;
     this.backgroundTasksLoading = true;
     try{
       const res = await this.apiFetch('/api/background-tasks');
@@ -5191,6 +5466,7 @@ class Component extends DCLogic {
     }
   }
   async loadBillingStatus(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ billingLoading:true });
     try{
@@ -5206,6 +5482,7 @@ class Component extends DCLogic {
     }
   }
   async loadTeam(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ teamLoading:true });
     try{
@@ -5250,6 +5527,7 @@ class Component extends DCLogic {
     return ({ owner:'Proprietaire', admin:'Admin', editor:'Editeur', viewer:'Lecteur' })[role] || 'Editeur';
   }
   async loadApiKeys(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ apiLoading:true });
     try{
@@ -5300,6 +5578,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Rotation de cle impossible.')); }
   }
   async loadStats(period){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     const p = period || this.state.statsPeriod || '30';
     this.setState({ statsLoading:true });
@@ -5313,6 +5592,7 @@ class Component extends DCLogic {
     }
   }
   async loadAffiliate(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ affiliateLoading:true });
     try{
@@ -5415,6 +5695,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify(this.friendlyError(err && err.message, 'Impossible de modifier ce rôle.')); }
   }
   async loadAdminDashboard(){
+    if(this.demoMode) return;
     if(!this.isAdminUser() || !this.state.authToken) return;
     this.setState({ adminLoading:true, adminError:'' });
     try{
@@ -5471,6 +5752,7 @@ class Component extends DCLogic {
     }
   }
   async loadBrands(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     try{
       const res = await this.apiFetch('/api/brands');
@@ -5491,6 +5773,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify('Impossible de mettre à jour cette approbation.'); }
   }
   async loadSecurity(){
+    if(this.demoMode) return;
     if(!this.state.authToken || this.securityLoading) return;
     this.securityLoading = true;
     this.setState({ securityLoading:true });
@@ -5516,6 +5799,7 @@ class Component extends DCLogic {
     }catch(err){ this.notify('Impossible de déconnecter les autres sessions.'); }
   }
   async loadUsage(period){
+    if(this.demoMode) return;
     if(!this.state.authToken || this.usageLoading) return;
     this.usageLoading = true;
     this.setState({ usageLoading:true });
@@ -5614,6 +5898,7 @@ class Component extends DCLogic {
     }catch(err){ this.setState({ brandSaving:false, pricingNotice:this.friendlyError(err && err.message, 'Impossible d enregistrer la marque.') }); }
   }
   async loadTemplates(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ templatesLoading:true });
     try{
@@ -5650,6 +5935,7 @@ class Component extends DCLogic {
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de remixer ce template.') }); }
   }
   async loadIntegrations(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     this.setState({ integrationsLoading:true });
     try{
@@ -5676,14 +5962,10 @@ class Component extends DCLogic {
   connectorProviderSupportsOAuth(provider){ return ['google_drive','slack','notion'].includes(String(provider || '')); }
   openConnectorDetail(provider){
     if(!provider) return;
-    this.persistSettingsScroll('connectors');
-    this.setState({ selectedConnectorId:provider, connectorDetailOpen:true, connectorAddMenuOpen:false, connectorInfoPanel:'', connectorSearch:'' }, ()=>{
-      this.restoreSettingsScroll('connectors-detail-' + provider);
-    });
+    this.setState({ selectedConnectorId:provider, connectorDetailOpen:true, connectorAddMenuOpen:false, connectorInfoPanel:'', connectorSearch:'' });
   }
   closeConnectorDetail(){
-    this.persistSettingsScroll('connectors-detail-' + (this.state.selectedConnectorId || 'selected'));
-    this.setState({ selectedConnectorId:'', connectorDetailOpen:false, connectorAddMenuOpen:false, connectorInfoPanel:'' }, ()=>this.restoreSettingsScroll('connectors'));
+    this.setState({ selectedConnectorId:'', connectorDetailOpen:false, connectorAddMenuOpen:false, connectorInfoPanel:'' });
   }
   openConnectorInfo(kind){
     const value = kind === 'security' ? 'security' : 'docs';
@@ -5709,6 +5991,7 @@ class Component extends DCLogic {
     this.configureIntegration(provider);
   }
   async loadMfa(){
+    if(this.demoMode) return;
     if(!this.state.authToken) return;
     try{
       const res = await this.apiFetch('/api/auth/mfa');
@@ -5890,6 +6173,21 @@ class Component extends DCLogic {
     this.notify('Historique de facturation exporté.');
   }
   async newProject(){
+    if(this.demoMode){
+      const next = { id:'preview-'+Date.now(), title:'Nouveau projet', messages:[] };
+      this.setState(s=>({
+        projectsData:s.projectsData.concat([next]),
+        activeProjectId:next.id,
+        activeTitle:next.title,
+        messages:[],
+        input:'',
+        page:'app',
+        modelMenu:false,
+        agentSettingsMenu:false,
+        backgroundTaskPanelOpen:false
+      }), ()=>this.notify('Nouveau projet pret. Decris ce que tu veux creer.'));
+      return;
+    }
     if(!this.requireAuth('Connecte-toi pour creer un projet sauvegarde.', { type:'newProject' })) return;
     try{
       const res = await this.apiFetch('/api/projects', { method:'POST', body:JSON.stringify({ title:'Nouveau projet' }) });
@@ -6134,6 +6432,7 @@ class Component extends DCLogic {
     return list;
   }
   async loadExploreFeed(){
+    if(this.demoMode){ this.setState({ exploreLoading:false }); return; }
     this.setState({ exploreLoading:true });
     try{
       const res = await this.apiFetch('/api/explore?sort=' + encodeURIComponent(this.state.exploreSort || 'trending'));
@@ -6235,7 +6534,40 @@ class Component extends DCLogic {
     return 'Encodage final…';
   }
 
-  curModel(){ return this.MODELS.find(m=>m.id===this.state.modelId) || this.MODELS[0]; }
+  agentUiModels(){
+    return Array.isArray(this.MODELS) ? this.MODELS : [];
+  }
+  curModel(){
+    return this.agentUiModels().concat(this.MODELS).find(m=>m.id===this.state.modelId) || this.agentUiModels()[0] || this.MODELS[0];
+  }
+  modelPickerModels(){
+    const all = this.agentUiModels().concat(this.MODELS);
+    return [...new Map(all.map(model=>[model.id, model])).values()];
+  }
+  positionModelMenu(){
+    if(typeof window === 'undefined' || typeof document === 'undefined') return;
+    const selector = document.querySelector('[data-hf-model-selector="true"]');
+    const menu = document.querySelector('[data-hf-model-menu="true"]');
+    if(!selector || !menu) return;
+    const rect = selector.getBoundingClientRect();
+    const gap = 8;
+    const below = Math.max(180, window.innerHeight - rect.bottom - 24);
+    const above = Math.max(180, rect.top - 24);
+    const placeAbove = below < 360 && above > below;
+    const available = Math.min(490, placeAbove ? above : below);
+    menu.style.maxHeight = available + 'px';
+    menu.style.top = placeAbove ? 'auto' : (rect.height + gap) + 'px';
+    menu.style.bottom = placeAbove ? (rect.height + gap) + 'px' : 'auto';
+    const list = menu.querySelector('[data-hf-model-list="true"]');
+    if(list) list.style.maxHeight = Math.max(150, available - 58) + 'px';
+  }
+  toggleAgentSettings(){ this.setState(s=>({ agentSettingsMenu:false, modelMenu:!s.modelMenu, modelMenuSearch:'' })); }
+  setAgentMode(mode){ this.setState({ agentMode:mode, agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' }); }
+  openModelCatalog(){
+    this.setState(s=>({ modelId:s.modelId || 'auto', modelMenu:!s.modelMenu, modelMenuSearch:'', agentSettingsMenu:false }));
+  }
+  openMemory(){ this.openSettingsSection('settings'); this.notify('Memoire disponible dans les parametres.'); }
+  openMcp(){ this.openSettingsSection('claudecode'); this.notify('Les outils MCP sont prets a etre configures.'); }
 
   renderVals(){
     const st = this.state;
@@ -6278,21 +6610,23 @@ class Component extends DCLogic {
     const settingItem = (id, label, short, terms) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', ariaCurrent:st.page === id ? 'page' : 'false', onClick:()=>this.openSettingsSection(id), visible:settingsMatch(label, terms) });
     const settingsPrimaryItems = [
       settingItem('settings','Profil','◉',['general','personnalisation','apparence']),
-      settingItem('account','Compte','◎',['email','securite','mot de passe']),
+      settingItem('account','Compte','◎',['email','securite','mot de passe','sessions','mfa']),
+      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion','credits']),
+      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité','alertes']),
+      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils','oauth'])
+    ].filter(item=>item.visible);
+    const settingsAdvancedItems = [
       settingItem('privacy','Confidentialité','◈',['privacy','analytics','données']),
-      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion']),
-      settingItem('team','Équipe','♧',['membres','collaboration','invitation']),
-      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité']),
-      settingItem('capabilities','Capacités','✦',['marque','modèles','limites']),
-      settingItem('api','API','<>',['clés','intégrations','développeur']),
-      settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth'])
-    ].filter(item=>item.visible);
-    const settingsCustomItems = [
+      settingItem('team','Équipe','♧',['membres','collaboration','invitation','roles']),
+      settingItem('api','API','<>',['clés','intégrations','développeur','scopes']),
+      settingItem('capabilities','Capacités','✦',['marque','modèles','limites','openrouter']),
       settingItem('skills','Compétences','✧',['templates','workflows']),
-      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'])
+      settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth']),
+      settingItem('plugins','Plugins','✚',['store','extensions'])
     ].filter(item=>item.visible);
-    const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
+    const settingsNavEmpty = !settingsPrimaryItems.length && !settingsAdvancedItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
+    const settingsDescriptions = { settings:'Personnalise ton espace et les réponses de HuggyFlow.', account:'Protège ton compte, tes sessions et tes facteurs de sécurité.', privacy:'Contrôle tes données, ta mémoire et tes préférences de confidentialité.', billing:'Gère ton abonnement, tes crédits et tes paiements.', stats:'Comprends ta consommation et anticipe tes prochains besoins.', connectors:'Relie tes outils avec des autorisations explicites et vérifiables.', team:'Organise les membres, rôles et approbations de ton espace.', api:'Gère tes clés, scopes, limites et journaux d’utilisation.', capabilities:'Choisis tes capacités IA et configure ton identité de marque.', skills:'Transforme tes workflows récurrents en compétences réutilisables.', claudecode:'Configure les connexions développeur séparément de tes clés HuggyFlow.', plugins:'Découvre les extensions disponibles pour ton espace.' };
     const connectorStatus = { connected:'Connecté', pending:'Autorisation requise', error:'À diagnostiquer', disconnected:'Non connecté' };
     const connectorSyncStatus = { healthy:'Synchronisé', ready:'Prêt à synchroniser', pending:'En attente', error:'Synchronisation en erreur', idle:'Pas encore testé' };
     const connectorCatalog = (this.INTEGRATIONS || []).map((item, index)=>{
@@ -6444,13 +6778,13 @@ class Component extends DCLogic {
       hasPricingNotice: !!st.pricingNotice,
       pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
       pricingEmpty: !!st.backendError && renderedPlans.length === 0,
-      showSettingsWorkspace: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors'].includes(st.page),
-      showLegacySettingsModal: false,
+      showSettingsWorkspace: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       closeSettings: ()=> this.closeSettingsModal(),
       settingsPrimaryItems,
-      settingsCustomItems,
+      settingsAdvancedItems,
       settingsNavEmpty,
       settingsPageTitle: settingsTitles[st.page] || 'Paramètres',
+      settingsPageDescription: settingsDescriptions[st.page] || 'Configure ton espace HuggyFlow.',
       settingsKicker: 'HuggyFlow / Centre de contrôle',
       settingsPlanBadge: st.user ? String(st.user.plan || 'FREE').toUpperCase() : 'INVITÉ',
       settingsAccountLabel: st.user ? (st.user.name || 'Utilisateur HuggyFlow') : 'Visiteur',
@@ -6458,7 +6792,6 @@ class Component extends DCLogic {
       settingsSavingLabel: st.settingsSaving ? 'Enregistrement…' : (st.settingsSaved ? 'Enregistré' : 'Enregistrer'),
       settingsSearchQuery: st.settingsSearchQuery || '',
       onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
-      onSettingsScroll: ()=> this.onSettingsScroll(),
       avatarInitial: (st.settingsName || (st.user && st.user.name) || 'D')[0].toUpperCase(),
       showSettingsSection: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
@@ -6766,7 +7099,6 @@ class Component extends DCLogic {
       showAuth: st.page === 'auth',
       showBilling: false,
       showGallery: st.page === 'gallery',
-      showSettings: false,
       modalShowSettings: st.page === 'settings',
       modalShowBilling: st.page === 'billing',
       modalShowTeam: st.page === 'team',
@@ -6810,7 +7142,7 @@ class Component extends DCLogic {
       refreshCapabilities: ()=>this.refreshCapabilities(),
       capabilitiesRefreshing: !!st.capabilitiesRefreshing,
       capabilityModelCards: ((st.pricingModels && st.pricingModels.length) ? st.pricingModels : this.MODELS).slice(0, 18).map(m=>({
-        name:m.label || m.name || m.id || 'Modèle', provider:m.provider || 'AgentFlow',
+        name:m.label || m.name || 'Modèle',
         capabilities:(Array.isArray(m.capabilities) ? m.capabilities : (Array.isArray(m.metadata && m.metadata.capabilities) ? m.metadata.capabilities : [])).join(' · ') || 'agent',
         cost:m.creditsLabel || ((m.creditsPerDefaultUnit || m.credits || 0) + ' cr'), tier:m.tier || m.qualityTier || 'standard',
         availability:m.active === false || m.available === false ? 'Indisponible' : 'Disponible',
@@ -6818,7 +7150,7 @@ class Component extends DCLogic {
       })),
       capabilityServices: [
         { label:'Agent maître', detail:'Compréhension, planification et routage', status:'Actif' },
-        { label:'Génération média', detail:'Image, vidéo, audio et documents', status:(st.pricingMeta && st.pricingMeta.providers && st.pricingMeta.providers.mediaPrivatePipeline) ? 'Actif' : 'À configurer' },
+        { label:'Génération média', detail:'Image, vidéo, audio et documents', status:(st.modelSync && (st.modelSync.capabilities && (st.modelSync.capabilities.image || st.modelSync.capabilities.video))) ? 'Actif' : 'À configurer' },
         { label:'Routage références', detail:'Mémoire projet, cohérence personnages et transformations', status:'Actif' },
         { label:'Mémoire et artifacts', detail:'Projet, versions et contrôle qualité', status:st.authToken ? 'Actif' : 'Connexion requise' }
       ],
@@ -6884,9 +7216,6 @@ class Component extends DCLogic {
       toggleProjectsSection: ()=> this.setState(s=>({ projectsExpanded: !(s.projectsExpanded !== false), projectMenuId:'' })),
       projectsChevronStyle: 'flex:0 0 auto;transition:transform .18s ease;transform:rotate(' + (st.projectsExpanded !== false ? '0deg' : '-90deg') + ')',
       canSeeAdmin: this.isAdminUser(),
-      showTeam: false,
-      showApi: false,
-      showStats: false,
       openStats: ()=> this.openSettingsSection('stats'),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label: p[1],
@@ -7045,6 +7374,11 @@ class Component extends DCLogic {
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),
+      skillsNavClass: st.page === 'skills' ? 'is-active' : '',
+      connectorsNavClass: st.page === 'connectors' ? 'is-active' : '',
+      memoryNavClass: st.page === 'settings' ? 'is-active' : '',
+      openMemory: ()=> this.openMemory(),
+      openMcp: ()=> this.openMcp(),
       exploreNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'explore' ? '650' : '500') + ';color:' + (st.page === 'explore' ? T.ink : T.text2) + ';background:' + (st.page === 'explore' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       exploreShowNew: st.exploreNewDismissed !== true,
       openExplore: ()=> this.openExplore(),
@@ -7212,9 +7546,23 @@ class Component extends DCLogic {
       sendHint: st.uploadingAttachment ? (st.attachmentNotice || 'ajout...') : (st.sendLocked ? 'stop' : '↵ envoyer'),
       isSending: !!st.sendLocked,
       isIdle: !st.sendLocked,
-      sendButtonStyleLarge: 'width:42px;height:42px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 9px 22px -15px rgba(209,254,23,.72)',
+      sendButtonStyleLarge: 'width:40px;height:40px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 9px 22px -15px rgba(209,254,23,.72)',
       sendButtonStyleSmall: 'width:34px;height:34px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -15px rgba(209,254,23,.68)',
-      toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '' })),
+      toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '', agentSettingsMenu:false })),
+      toggleAgentSettings: ()=> this.toggleAgentSettings(),
+      setManualMode: ()=> this.setAgentMode('manual'),
+      setAutoMode: ()=> this.setAgentMode('auto'),
+      setConfirmMode: ()=> this.setAgentMode('confirm'),
+      openModelCatalog: ()=> this.openModelCatalog(),
+      agentSettingsMenu: !!st.agentSettingsMenu,
+      agentModeLabel: st.agentMode === 'auto' ? 'Auto' : 'Manuel',
+      agentModeManualClass: st.agentMode === 'manual' ? 'is-active' : '',
+      agentModeAutoClass: st.agentMode === 'auto' ? 'is-active' : '',
+      agentModeConfirmClass: st.agentMode === 'confirm' ? 'is-active' : '',
+      manualModeCheck: st.agentMode === 'manual' ? '✓' : '',
+      autoModeCheck: st.agentMode === 'auto' ? '✓' : '',
+      confirmModeCheck: st.agentMode === 'confirm' ? '✓' : '',
+      deepSeekActiveClass: st.modelId === 'deepseek-v4-flash' ? 'is-active' : '',
       onModelMenuSearch: (e)=> this.setState({ modelMenuSearch: e.target.value || '' }),
       modelMenu: st.modelMenu,
       modelMenuSearch: st.modelMenuSearch || '',
@@ -7224,17 +7572,17 @@ class Component extends DCLogic {
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const grouped = {};
         const curated = [];
-        this.MODELS.filter(m=>!query || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
-          if(m.id === 'auto' || m.free || m.current){ curated.push(m); return; }
-          const key = m.group || m.provider || 'AgentFlow';
+        this.modelPickerModels().filter(m=>!query || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
+          if(m.free || m.current){ curated.push(m); return; }
+          const key = m.group || (m.capabilities && m.capabilities.includes('vision') ? 'Vision' : (m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : 'Rapide'));
           (grouped[key] || (grouped[key] = [])).push(m);
         });
         const sections = curated.length ? [{
-          label:'Disponible',
+          label:'Modèles vedettes',
           headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
-            name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc:m.desc,
+            name:m.name, dot:m.dot, logo:m.logo || (m.capabilities && m.capabilities.includes('vision') ? '◉' : (m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '✳')), desc:m.desc,
             creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             costLabel:m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s*cr\b/i,'').trim(),
             capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? '⚒' : '',m.capabilities && m.capabilities.includes('vision') ? '◉' : '',m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '',m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
@@ -7248,7 +7596,7 @@ class Component extends DCLogic {
           headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items: grouped[g].map(m=>({
             activeClass: m.id === st.modelId ? 'is-active' : '',
-            name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc: m.desc,
+            name: m.name, dot: m.dot, logo:m.logo || (m.capabilities && m.capabilities.includes('vision') ? '◉' : (m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '✳')), desc: m.desc,
             creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             costLabel: m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s*cr\b/i,'').trim(),
             capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? '⚒' : '', m.capabilities && m.capabilities.includes('vision') ? '◉' : '', m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '', m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
@@ -7258,8 +7606,8 @@ class Component extends DCLogic {
           }))
         })));
       })(),
-      hasModelMenuResults: this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
-      modelMenuEmpty: !this.MODELS.some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      hasModelMenuResults: this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      modelMenuEmpty: !this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
       suggestions: this.SUGGESTION_SETS[st.suggestionSet].map(s=>({
         tag: s.tag, tagBg: s.tagBg, text: s.text,
         onClick: ()=> this.setState({ input: s.text })
@@ -7531,6 +7879,7 @@ class Component extends DCLogic {
         const streamPhase = String(m.streamPhase || (m.streamLive ? 'analyzing' : 'complete'));
         const frameOn = n => (pct >= n * 20 ? '.22' : '.06');
         return {
+          id: m.id,
           isUser: m.role==='user',
           isAgent: m.role==='agent',
           isDocument: m.role==='agent' && (st.mode === 'document' || String(m.text || '').match(/^(#|##|###)\s|\|.+\|/)),

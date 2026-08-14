@@ -170,6 +170,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-command-item] kbd{margin-left:auto;padding:3px 6px;border:1px solid rgba(247,247,248,.12);border-radius:5px;color:#898A8B;font:10px 'JetBrains Mono',monospace}
 [data-hf-model-menu]{--hf-model-bg:rgba(27,29,31,.78);--hf-model-surface:rgba(36,38,40,.62);--hf-model-ink:#F4F4F5;--hf-model-muted:#8C8E92;--hf-model-line:247,247,248;position:absolute;z-index:40;top:38px;left:0;width:300px;max-width:min(300px,calc(100vw - 24px));max-height:382px;overflow:hidden;padding:7px;background:var(--hf-model-bg);border:1px solid rgba(var(--hf-model-line),.08);border-radius:11px;box-shadow:0 14px 30px -16px rgba(0,0,0,.38);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:fadeUp .15s cubic-bezier(.22,1,.36,1) both}
 [data-hf-model-menu][data-hf-model-theme="light"]{--hf-model-bg:rgba(255,255,255,.8);--hf-model-surface:rgba(241,242,243,.75);--hf-model-ink:#17191C;--hf-model-muted:#70747B;--hf-model-line:46,48,49}
+[data-hf-model-title]{padding:4px 8px 6px;color:var(--hf-model-ink);font-size:11px;font-weight:700}
 [data-hf-model-search]{display:flex;align-items:center;gap:8px;height:34px;padding:0 11px;border:1px solid rgba(var(--hf-model-line),.08);border-radius:999px;background:var(--hf-model-surface);color:var(--hf-model-muted);margin-bottom:5px;transition:all .15s ease}
 [data-hf-model-search]:focus-within{border-color:rgba(var(--hf-model-line),.2)}
 [data-hf-model-search] input{width:100%;border:0;outline:0;background:transparent;color:var(--hf-model-ink);font:500 12px ui-sans-serif,system-ui,sans-serif}
@@ -753,7 +754,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
-                  <button type="button" data-hf-model-trigger="true" onClick="{{ toggleAgentSettings }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Choisir le mode et le modele">
+                  <button type="button" data-hf-model-trigger="true" onClick="{{ toggleAgentSettings }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
                     <span data-hf-model-trigger-icon="true" aria-hidden="true">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg>
                     </span>
@@ -763,6 +764,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
+                      <div data-hf-model-title="true">Modèles</div>
                       <div data-hf-model-search="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
                         <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
@@ -3201,6 +3203,7 @@ class Component extends DCLogic {
     pricingPlans: [],
     pricingModels: [],
     pricingMeta: {},
+    modelSync: { available:false, capabilities:{} },
     pricingCostFilter: this.initialUiState.pricingCostFilter || 'all',
     creditPacks: [],
     billingCurrency: 'XOF',
@@ -3317,15 +3320,7 @@ class Component extends DCLogic {
   // Network bootstrap replaces this fallback with the live OpenRouter catalog.
   // Keep the offline shell small and aligned with the server allowlist.
   MODELS = [
-    { id:'auto', name:'Auto', group:'OpenRouter', provider:'openrouter', desc:'Choisit automatiquement le meilleur modele pour ta demande', creditsLabel:'Selon la tache', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-chat-latest', name:'GPT Chat Latest', group:'OpenRouter', provider:'openai', desc:'Modele rapide et polyvalent pour les workflows quotidiens', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'google/gemini-3.7-flash', name:'Gemini 3.7 Flash', group:'OpenRouter', provider:'google', desc:'Rapide, multimodal et adapte aux longues consignes', creditsLabel:'Selon les tokens', dot:'#4285F4', capabilities:['tools','vision','reasoning'] },
-    { id:'anthropic/claude-sonnet-5', name:'Claude Sonnet 5', group:'OpenRouter', provider:'anthropic', desc:'Equilibre entre precision, contexte et vitesse', creditsLabel:'Selon les tokens', dot:'#E8D79B', capabilities:['tools','vision','reasoning'] },
-    { id:'deepseek/deepseek-v4-flash-0731', name:'DeepSeek V4 Flash', group:'OpenRouter', provider:'deepseek', desc:'Rapide et economique pour les volumes', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'anthropic/claude-opus-5', name:'Claude Opus 5', group:'OpenRouter', provider:'anthropic', desc:'Raisonnement premium pour les briefs complexes', creditsLabel:'Selon les tokens', dot:'#C9A8E8', capabilities:['tools','vision','reasoning'] },
-    { id:'deepseek/deepseek-v4-pro-0813', name:'DeepSeek V4 Pro', group:'OpenRouter', provider:'deepseek', desc:'Raisonnement approfondi et execution robuste', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'x-ai/grok-4.6', name:'Grok 4.6', group:'OpenRouter', provider:'x-ai', desc:'Connaissance, code et ideation avec outils', creditsLabel:'Selon les tokens', dot:'#D6D6D6', capabilities:['tools','vision','reasoning'] },
-    { id:'qwen/qwen3.7-flash', name:'Qwen 3.7 Flash', group:'OpenRouter', provider:'qwen', desc:'Rapide et efficace pour les demandes volumineuses', creditsLabel:'Selon les tokens', dot:'#F4F4F5', capabilities:['tools','reasoning'] }
+    { id:'auto', modelKey:'auto', name:'Auto', group:'Rapide', desc:'Choisit automatiquement le meilleur modele pour ta demande', creditsLabel:'Selon la tache', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
   ];
 
   PLACEHOLDERS = [
@@ -4236,17 +4231,15 @@ class Component extends DCLogic {
       if(agentModels.length){
         const dots = ['#D1FE17','#C9A8E8','#BCA7FF','#9BD1E8','#E8B29B','#E8D79B','#A8E8C0','#C4C7CC'];
         this.MODELS = [...new Map(agentModels.map((m,i)=>[m.id || 'auto', ({
-          id:m.id || 'auto',
+          id:m.modelKey || m.id || 'auto',
+          modelKey:m.modelKey || m.id || 'auto',
           name:m.name || 'AgentFlow',
-          group:m.id === 'auto' ? 'Auto' : (({anthropic:'Anthropic',openai:'OpenAI',deepseek:'DeepSeek',qwen:'Qwen',tencent:'Tencent',poolside:'Poolside','aion-labs':'Aion Labs','black-forest-labs':'Black Forest Labs','x-ai':'xAI',nvidia:'NVIDIA',google:'Google'}[m.provider]) || m.provider || 'OpenRouter'),
-          provider:m.provider || 'auto',
+          group:m.id === 'auto' ? 'Rapide' : (Array.isArray(m.capabilities) && m.capabilities.includes('vision') ? 'Vision' : (m.tier === 'premium' || (Array.isArray(m.capabilities) && m.capabilities.includes('reasoning')) ? 'Raisonnement' : 'Rapide')),
           desc:m.description || 'Cerveau AgentFlow',
-          creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || ((m.creditsPerMessage || 0) ? (m.creditsPerMessage + ' cr') : 'Auto')),
+          creditsLabel:m.creditsLabel || ((m.creditsPerMessage || 0) ? ('Environ ' + m.creditsPerMessage + ' cr') : 'Selon la tache'),
           free:!!m.free,
           freeUntil:m.freeUntil || '',
           capabilities:Array.isArray(m.capabilities) ? m.capabilities : [],
-          inputUsdPerMillionTokens:Number(m.inputUsdPerMillionTokens || 0),
-          outputUsdPerMillionTokens:Number(m.outputUsdPerMillionTokens || 0),
           current:!!m.current,
           dot:dots[i % dots.length]
         })])).values()];
@@ -4272,6 +4265,7 @@ class Component extends DCLogic {
          pricingPlans: data.plans || [],
          pricingModels: data.models || [],
          pricingMeta: data.pricing || {},
+         modelSync: data.modelSync || { available:false, capabilities:{} },
         creditPacks: data.creditPacks || [],
         billingStatus: data.billing || this.state.billingStatus,
         billingCurrency: (data.pricing && data.pricing.currency) || (data.billing && data.billing.currency) || this.state.billingCurrency,
@@ -6541,21 +6535,14 @@ class Component extends DCLogic {
   }
 
   agentUiModels(){
-    return [
-      { id:'auto', name:'Auto', group:'OpenRouter', provider:'openrouter', desc:'Choisit automatiquement le meilleur modele pour ta tache', creditsLabel:'Selon la tache', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
-      { id:'openai/gpt-chat-latest', name:'GPT Chat Latest', group:'OpenRouter', provider:'openai', desc:'Modele rapide et polyvalent pour les workflows quotidiens', creditsLabel:'Selon les tokens', current:true, dot:'#F7F7F8', capabilities:['tools','vision','reasoning'] },
-      { id:'google/gemini-3.7-flash', name:'Gemini 3.7 Flash', group:'OpenRouter', provider:'google', desc:'Rapide, multimodal et adapte aux longues consignes', creditsLabel:'Selon les tokens', dot:'#F7F7F8', capabilities:['tools','vision','reasoning'] },
-      { id:'anthropic/claude-sonnet-5', name:'Claude Sonnet 5', group:'OpenRouter', provider:'anthropic', desc:'Equilibre entre precision, contexte et vitesse', creditsLabel:'Selon les tokens', dot:'#F7F7F8', capabilities:['tools','vision','reasoning'] },
-      { id:'deepseek/deepseek-v4-flash-0731', name:'DeepSeek V4 Flash', group:'OpenRouter', provider:'deepseek', desc:'Rapide et economique pour les volumes', creditsLabel:'Selon les tokens', dot:'#F7F7F8', capabilities:['tools','reasoning'] }
-    ];
+    return Array.isArray(this.MODELS) ? this.MODELS : [];
   }
   curModel(){
     return this.agentUiModels().concat(this.MODELS).find(m=>m.id===this.state.modelId) || this.agentUiModels()[0] || this.MODELS[0];
   }
   modelPickerModels(){
-    const ids = ['auto','openai/gpt-chat-latest','google/gemini-3.7-flash','anthropic/claude-sonnet-5','deepseek/deepseek-v4-flash-0731','anthropic/claude-opus-5','deepseek/deepseek-v4-pro-0813','x-ai/grok-4.6','qwen/qwen3.7-flash'];
     const all = this.agentUiModels().concat(this.MODELS);
-    return [...new Map(all.map(model=>[model.id, model])).values()].filter(model => ids.includes(model.id));
+    return [...new Map(all.map(model=>[model.id, model])).values()];
   }
   positionModelMenu(){
     if(typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -7155,7 +7142,7 @@ class Component extends DCLogic {
       refreshCapabilities: ()=>this.refreshCapabilities(),
       capabilitiesRefreshing: !!st.capabilitiesRefreshing,
       capabilityModelCards: ((st.pricingModels && st.pricingModels.length) ? st.pricingModels : this.MODELS).slice(0, 18).map(m=>({
-        name:m.label || m.name || m.id || 'Modèle', provider:m.provider || 'AgentFlow',
+        name:m.label || m.name || 'Modèle',
         capabilities:(Array.isArray(m.capabilities) ? m.capabilities : (Array.isArray(m.metadata && m.metadata.capabilities) ? m.metadata.capabilities : [])).join(' · ') || 'agent',
         cost:m.creditsLabel || ((m.creditsPerDefaultUnit || m.credits || 0) + ' cr'), tier:m.tier || m.qualityTier || 'standard',
         availability:m.active === false || m.available === false ? 'Indisponible' : 'Disponible',
@@ -7163,7 +7150,7 @@ class Component extends DCLogic {
       })),
       capabilityServices: [
         { label:'Agent maître', detail:'Compréhension, planification et routage', status:'Actif' },
-        { label:'Génération média', detail:'Image, vidéo, audio et documents', status:(st.pricingMeta && st.pricingMeta.providers && st.pricingMeta.providers.mediaPrivatePipeline) ? 'Actif' : 'À configurer' },
+        { label:'Génération média', detail:'Image, vidéo, audio et documents', status:(st.modelSync && (st.modelSync.capabilities && (st.modelSync.capabilities.image || st.modelSync.capabilities.video))) ? 'Actif' : 'À configurer' },
         { label:'Routage références', detail:'Mémoire projet, cohérence personnages et transformations', status:'Actif' },
         { label:'Mémoire et artifacts', detail:'Projet, versions et contrôle qualité', status:st.authToken ? 'Actif' : 'Connexion requise' }
       ],
@@ -7585,9 +7572,9 @@ class Component extends DCLogic {
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const grouped = {};
         const curated = [];
-        this.modelPickerModels().filter(m=>!query || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
+        this.modelPickerModels().filter(m=>!query || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
           if(m.free || m.current){ curated.push(m); return; }
-          const key = m.group || m.provider || 'AgentFlow';
+          const key = m.group || (m.capabilities && m.capabilities.includes('vision') ? 'Vision' : (m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : 'Rapide'));
           (grouped[key] || (grouped[key] = [])).push(m);
         });
         const sections = curated.length ? [{
@@ -7595,7 +7582,7 @@ class Component extends DCLogic {
           headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
-            name:m.name, dot:m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc:m.desc,
+            name:m.name, dot:m.dot, logo:m.logo || (m.capabilities && m.capabilities.includes('vision') ? '◉' : (m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '✳')), desc:m.desc,
             creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             costLabel:m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s*cr\b/i,'').trim(),
             capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? '⚒' : '',m.capabilities && m.capabilities.includes('vision') ? '◉' : '',m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '',m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
@@ -7609,7 +7596,7 @@ class Component extends DCLogic {
           headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items: grouped[g].map(m=>({
             activeClass: m.id === st.modelId ? 'is-active' : '',
-            name: m.name, dot: m.dot, logo:m.logo || (m.provider === 'openai' ? '◎' : (m.provider === 'anthropic' ? '✦' : (m.provider === 'x-ai' ? 'X' : (m.provider === 'nvidia' ? 'N' : (m.provider === 'google' ? 'G' : (m.name || '?').slice(0,1).toUpperCase()))))), desc: m.desc,
+            name: m.name, dot: m.dot, logo:m.logo || (m.capabilities && m.capabilities.includes('vision') ? '◉' : (m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '✳')), desc: m.desc,
             creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             costLabel: m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s*cr\b/i,'').trim(),
             capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? '⚒' : '', m.capabilities && m.capabilities.includes('vision') ? '◉' : '', m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '', m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
@@ -7619,8 +7606,8 @@ class Component extends DCLogic {
           }))
         })));
       })(),
-      hasModelMenuResults: this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
-      modelMenuEmpty: !this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.provider,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      hasModelMenuResults: this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      modelMenuEmpty: !this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
       suggestions: this.SUGGESTION_SETS[st.suggestionSet].map(s=>({
         tag: s.tag, tagBg: s.tagBg, text: s.text,
         onClick: ()=> this.setState({ input: s.text })

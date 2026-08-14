@@ -21,5 +21,8 @@ jobs:
         with:
           version: latest
 
+      - name: Apply database migrations
+        run: supabase db push --project-ref "$PROJECT_REF" --include-all
+
       - name: Deploy flowtube-api
         run: supabase functions deploy flowtube-api --project-ref "$PROJECT_REF" --use-api

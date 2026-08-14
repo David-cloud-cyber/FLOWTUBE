@@ -22,6 +22,14 @@ const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
 const MEDIA_MARGIN_MULTIPLIER = 3.5;
 const MIN_MEDIA_GROSS_MARGIN_RATIO = 0.45;
+const PAYMENT_RESERVE_RATIO = Math.max(0, Number(Deno.env.get("FLOWTUBE_PAYMENT_RESERVE_RATIO") || 0.07));
+const RISK_RESERVE_RATIO = Math.max(0, Number(Deno.env.get("FLOWTUBE_RISK_RESERVE_RATIO") || 0.1));
+const INFRA_TEXT_BASE_USD = Math.max(0, Number(Deno.env.get("FLOWTUBE_INFRA_TEXT_BASE_USD") || 0.0005));
+const INFRA_TEXT_TOKEN_USD = Math.max(0, Number(Deno.env.get("FLOWTUBE_INFRA_TEXT_TOKEN_USD") || 0.00000001));
+const INFRA_IMAGE_BASE_USD = Math.max(0, Number(Deno.env.get("FLOWTUBE_INFRA_IMAGE_BASE_USD") || 0.003));
+const INFRA_VIDEO_BASE_USD = Math.max(0, Number(Deno.env.get("FLOWTUBE_INFRA_VIDEO_BASE_USD") || 0.01));
+const INFRA_VIDEO_PER_SECOND_USD = Math.max(0, Number(Deno.env.get("FLOWTUBE_INFRA_VIDEO_PER_SECOND_USD") || 0.002));
+const UNKNOWN_MODEL_COST_USD = Math.max(0.01, Number(Deno.env.get("FLOWTUBE_UNKNOWN_MODEL_COST_USD") || 0.05));
 const QUALITY_MARGIN_MULTIPLIERS: Record<"economy" | "standard" | "premium" | "heavy", number> = {
   economy: 3,
   standard: 3.2,
@@ -48,7 +56,15 @@ const OPENROUTER_CURATED_AGENT_IDS = [
   "deepseek/deepseek-v4-pro-0813",
   "x-ai/grok-4.6",
   "qwen/qwen3.7-flash",
+  "openai/gpt-5.6-luna",
+  "openai/gpt-5.6-terra",
+  "openai/gpt-5.6-sol",
+  "openai/gpt-5.6-luna-pro",
+  "openai/gpt-5.5",
+  "anthropic/claude-fable-5",
+  "tencent/hy3",
 ] as const;
+const OPENROUTER_CURATED_BATCH_IDS = ["anthropic/claude-fable-5:batch"] as const;
 const OPENROUTER_CURATED_IMAGE_IDS = [
   "openai/gpt-image-2",
   "google/gemini-3-pro-image",
@@ -74,6 +90,8 @@ const AGENT_MODEL_FALLBACKS = [
   "google/gemini-3.7-flash",
   "deepseek/deepseek-v4-flash-0731",
   "anthropic/claude-sonnet-5",
+  "openai/gpt-5.6-luna",
+  "tencent/hy3",
 ];
 
 const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margin: "eco" | "standard" | "premium" | "max" }> = {
@@ -85,6 +103,14 @@ const AGENT_CREDIT_RATES: Record<string, { credits: number; label: string; margi
   "deepseek/deepseek-v4-pro-0813": { credits: 8, label: "Selon les tokens", margin: "premium" },
   "x-ai/grok-4.6": { credits: 8, label: "Selon les tokens", margin: "premium" },
   "qwen/qwen3.7-flash": { credits: 2, label: "Selon les tokens", margin: "eco" },
+  "openai/gpt-5.6-luna": { credits: 2, label: "Selon les tokens", margin: "eco" },
+  "openai/gpt-5.6-terra": { credits: 5, label: "Selon les tokens", margin: "standard" },
+  "openai/gpt-5.6-sol": { credits: 8, label: "Selon les tokens", margin: "premium" },
+  "openai/gpt-5.6-luna-pro": { credits: 5, label: "Selon les tokens", margin: "premium" },
+  "openai/gpt-5.5": { credits: 8, label: "Selon les tokens", margin: "premium" },
+  "anthropic/claude-fable-5": { credits: 8, label: "Selon les tokens", margin: "premium" },
+  "anthropic/claude-fable-5:batch": { credits: 6, label: "Selon les tokens", margin: "premium" },
+  "tencent/hy3": { credits: 2, label: "Selon les tokens", margin: "eco" },
 };
 
 const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
@@ -96,6 +122,14 @@ const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
   "deepseek/deepseek-v4-pro-0813": { input: 2, output: 8 },
   "x-ai/grok-4.6": { input: 2, output: 8 },
   "qwen/qwen3.7-flash": { input: 0.2, output: 1 },
+  "openai/gpt-5.6-luna": { input: 0.1, output: 0.6 },
+  "openai/gpt-5.6-terra": { input: 1, output: 6 },
+  "openai/gpt-5.6-sol": { input: 5, output: 30 },
+  "openai/gpt-5.6-luna-pro": { input: 0.1, output: 0.6 },
+  "openai/gpt-5.5": { input: 5, output: 30 },
+  "anthropic/claude-fable-5": { input: 10, output: 50 },
+  "anthropic/claude-fable-5:batch": { input: 5, output: 25 },
+  "tencent/hy3": { input: 0.132, output: 0.528 },
 };
 
 type AgentUsage = { inputTokens?: number; outputTokens?: number };
@@ -103,7 +137,39 @@ type AgentUsage = { inputTokens?: number; outputTokens?: number };
 const OPENROUTER_LIVE_PRICES: Record<string, { input: number; output: number }> = {};
 const OPENROUTER_PRICE_REFRESHED_AT: Record<string, number> = {};
 const OPENROUTER_AGENT_IDS = new Set<string>(OPENROUTER_CURATED_AGENT_IDS);
+const OPENROUTER_BATCH_IDS = new Set<string>(OPENROUTER_CURATED_BATCH_IDS);
 const OPENROUTER_STATIC_FALLBACK_PRICES: Record<string, { input: number; output: number }> = {};
+const PUBLIC_MODEL_IDS = new Map<string, string>();
+
+function publicModelKey(modelId: string) {
+  const value = String(modelId || "");
+  if (value === "auto") return "auto";
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `model_${(hash >>> 0).toString(36)}`;
+}
+
+function rememberPublicModel(modelId: string) {
+  const key = publicModelKey(modelId);
+  PUBLIC_MODEL_IDS.set(key, modelId);
+  return key;
+}
+
+function internalModelId(value: unknown) {
+  const raw = String(value || "").trim();
+  return PUBLIC_MODEL_IDS.get(raw) || raw;
+}
+
+for (const modelId of [...OPENROUTER_CURATED_AGENT_IDS, ...OPENROUTER_CURATED_BATCH_IDS, ...OPENROUTER_CURATED_IMAGE_IDS, ...OPENROUTER_CURATED_VIDEO_IDS]) {
+  PUBLIC_MODEL_IDS.set(publicModelKey(modelId), modelId);
+}
+
+function isBatchModel(modelId: string) {
+  return OPENROUTER_BATCH_IDS.has(modelId) || modelId.endsWith(":batch");
+}
 
 type OpenRouterRemoteModel = {
   id?: string;
@@ -121,6 +187,7 @@ type OpenRouterRemoteModel = {
 
 type OpenRouterCatalog = {
   agent: OpenRouterRemoteModel[];
+  batch: OpenRouterRemoteModel[];
   image: OpenRouterRemoteModel[];
   video: OpenRouterRemoteModel[];
   syncedAt: string | null;
@@ -129,6 +196,7 @@ type OpenRouterCatalog = {
 
 let openRouterCatalogCache: OpenRouterCatalog = {
   agent: [],
+  batch: [],
   image: [],
   video: [],
   syncedAt: null,
@@ -170,11 +238,20 @@ async function refreshOpenRouterCatalog(force = false) {
     return items.filter((item) => allowed.has(String(item.id || "")));
   };
   const agent = byId(allModels, OPENROUTER_CURATED_AGENT_IDS);
+  const batch = byId(allModels, OPENROUTER_CURATED_BATCH_IDS);
   const image = byId(imageModels, OPENROUTER_CURATED_IMAGE_IDS);
   const video = byId(videoModels, OPENROUTER_CURATED_VIDEO_IDS);
-  const live = agent.length + image.length + video.length > 0;
-  openRouterCatalogCache = { agent, image, video, syncedAt: new Date().toISOString(), live };
+  const live = agent.length + batch.length + image.length + video.length > 0;
+  openRouterCatalogCache = { agent, batch, image, video, syncedAt: new Date().toISOString(), live };
   for (const model of agent) {
+    const input = Number(model.pricing?.prompt);
+    const output = Number(model.pricing?.completion);
+    if (Number.isFinite(input) && Number.isFinite(output)) {
+      OPENROUTER_LIVE_PRICES[String(model.id)] = { input: input * 1_000_000, output: output * 1_000_000 };
+      OPENROUTER_PRICE_REFRESHED_AT[String(model.id)] = Date.now();
+    }
+  }
+  for (const model of batch) {
     const input = Number(model.pricing?.prompt);
     const output = Number(model.pricing?.completion);
     if (Number.isFinite(input) && Number.isFinite(output)) {
@@ -194,7 +271,8 @@ function isFreeOpenRouterAgentModel(modelId: string) {
 }
 
 function agentTokenPriceForModel(modelId: string) {
-  const resolved = resolveAgentModelId(modelId);
+  const raw = internalModelId(modelId);
+  const resolved = isBatchModel(raw) ? raw : resolveAgentModelId(raw);
   if (isFreeOpenRouterAgentModel(resolved)) return { input: 0, output: 0 };
   if (OPENROUTER_LIVE_PRICES[resolved]) return OPENROUTER_LIVE_PRICES[resolved];
   if (OPENROUTER_STATIC_FALLBACK_PRICES[resolved]) return OPENROUTER_STATIC_FALLBACK_PRICES[resolved];
@@ -227,17 +305,27 @@ async function refreshOpenRouterPrice(modelId: string) {
   return agentTokenPriceForModel(resolved);
 }
 
+function agentInfrastructureCostUsd(inputTokens: number, outputTokens: number) {
+  return Number((INFRA_TEXT_BASE_USD + (inputTokens + outputTokens) * INFRA_TEXT_TOKEN_USD).toFixed(6));
+}
+
+function protectedOperatingCostUsd(providerCostUsd: number, infrastructureCostUsd: number) {
+  const base = Math.max(0, providerCostUsd) + Math.max(0, infrastructureCostUsd);
+  return Number((base * (1 + PAYMENT_RESERVE_RATIO + RISK_RESERVE_RATIO)).toFixed(6));
+}
+
 function agentCreditsForUsage(modelId: string, usage: AgentUsage, multiplier = 1) {
   if (isFreeOpenRouterAgentModel(resolveAgentModelId(modelId))) {
-    return { credits: 0, providerCostUsd: 0, inputTokens: Math.max(0, Number(usage.inputTokens || 0)), outputTokens: Math.max(0, Number(usage.outputTokens || 0)) };
+    return { credits: 0, providerCostUsd: 0, infrastructureCostUsd: 0, protectedCostUsd: 0, inputTokens: Math.max(0, Number(usage.inputTokens || 0)), outputTokens: Math.max(0, Number(usage.outputTokens || 0)) };
   }
   const inputTokens = Math.max(0, Number(usage.inputTokens || 0));
   const outputTokens = Math.max(0, Number(usage.outputTokens || 0));
   const price = agentTokenPriceForModel(modelId);
   const providerCostUsd = Number(((inputTokens * price.input + outputTokens * price.output) / 1_000_000).toFixed(6));
-  const protectedCostUsd = Math.max(providerCostUsd, 0.0005);
+  const infrastructureCostUsd = agentInfrastructureCostUsd(inputTokens, outputTokens);
+  const protectedCostUsd = Math.max(protectedOperatingCostUsd(providerCostUsd, infrastructureCostUsd), 0.0005);
   const credits = Math.max(1, Math.ceil((protectedCostUsd * agentMarginMultiplierForModel(modelId) * Math.max(1, multiplier)) / CREDIT_FLOOR_USD));
-  return { credits, providerCostUsd, inputTokens, outputTokens };
+  return { credits, providerCostUsd, infrastructureCostUsd, protectedCostUsd, inputTokens, outputTokens };
 }
 
 function estimatedAgentCreditsForPayload(modelId: string, payload: Record<string, unknown>, multiplier = 1) {
@@ -248,7 +336,8 @@ function estimatedAgentCreditsForPayload(modelId: string, payload: Record<string
 }
 
 function agentCreditRateForModel(modelId: string) {
-  const resolved = resolveAgentModelId(modelId);
+  const raw = internalModelId(modelId);
+  const resolved = isBatchModel(raw) ? raw : resolveAgentModelId(raw);
   if (AGENT_CREDIT_RATES[resolved]) return AGENT_CREDIT_RATES[resolved];
   if (/opus|pro/i.test(resolved)) return { credits: 12, label: "12 cr", margin: "premium" as const };
   if (/haiku/i.test(resolved)) return { credits: 1, label: "1 cr", margin: "eco" as const };
@@ -263,31 +352,63 @@ function agentMarginMultiplierForModel(modelId: string) {
   return QUALITY_MARGIN_MULTIPLIERS.standard;
 }
 
+function safeModelName(modelId: string, remoteName?: string) {
+  const fallback = modelId.split("/").pop()?.replace(/[-_]+/g, " ") || "Modele";
+  return String(remoteName || fallback).replace(/^[^:]{2,24}:\s*/i, "").trim() || fallback;
+}
+
+function publicModelDescription(capabilities: string[], tier: string) {
+  if (capabilities.includes("vision")) return tier === "premium" ? "Analyse les references et les briefs complexes." : "Comprend les images et les consignes detaillees.";
+  if (capabilities.includes("reasoning")) return tier === "premium" ? "Raisonnement approfondi pour les workflows exigeants." : "Reponse rapide pour les workflows du quotidien.";
+  return "Modele polyvalent pour les demandes HuggyFlow.";
+}
+
 function publicAgentModels() {
-  const remote = openRouterCatalogCache.agent;
-  const source = remote;
-  const models = [{ id: "auto", name: "Auto", description: "Choisit automatiquement le modele le plus adapte a ta demande.", tier: "recommended", provider: "auto", capabilities: ["tools", "vision", "reasoning"] }, ...source.map((item) => {
+  const remote = openRouterCatalogCache.agent.filter((item) => !isBatchModel(String(item.id || "")));
+  const models = [{ id: "auto", modelKey: "auto", name: "Auto", description: "Choisit automatiquement le modele le plus adapte a ta demande.", tier: "balanced", capabilities: ["tools", "vision", "reasoning"] }, ...remote.map((item) => {
     const id = String(item.id || "");
-    const description = String(item.description || "Modele OpenRouter confirme pour le chat et les workflows AgentFlow.");
-    const capabilities = ["tools", "reasoning", ...(item.architecture?.input_modalities?.includes("image") ? ["vision"] : [])];
-    const tier = /opus|pro|sora/i.test(id) ? "premium" : /flash|mini/i.test(id) ? "fast" : "balanced";
-    return { id, name: String(item.name || id), description, tier, provider: id.split("/")[0] || "openrouter", capabilities };
+    const key = rememberPublicModel(id);
+    const inputModalities = item.architecture?.input_modalities || [];
+    const outputModalities = item.architecture?.output_modalities || [];
+    const capabilities = [
+      ...(inputModalities.includes("image") ? ["vision"] : []),
+      ...(outputModalities.includes("audio") ? ["audio"] : []),
+      ...(item.supported_parameters && Object.prototype.hasOwnProperty.call(item.supported_parameters, "tools") ? ["tools"] : ["reasoning"]),
+    ];
+    const tier = /opus|pro|sol|sora/i.test(id) ? "premium" : /flash|mini|luna/i.test(id) ? "fast" : "balanced";
+    return { id: key, modelKey: key, name: safeModelName(id, item.name).replace(/openrouter/ig, "").trim() || "Modele", description: publicModelDescription(capabilities, tier), tier, capabilities };
   })];
-  return models.map((model) => ({
-    ...model,
-    inputUsdPerMillionTokens: agentTokenPriceForModel(model.id).input,
-    outputUsdPerMillionTokens: agentTokenPriceForModel(model.id).output,
-    creditsPerMessage: model.id === "auto" ? 0 : agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits,
-    creditsLabel: model.id === "auto" ? "Selon la tache" : (isFreeOpenRouterAgentModel(model.id) ? "Gratuit" : "≈" + agentCreditsForUsage(model.id, { inputTokens: 2000, outputTokens: 800 }).credits + " cr*"),
-    billingMode: "token_based",
-    costClass: model.id === "auto" ? "standard" : agentCreditRateForModel(model.id).margin,
-    free: model.id !== "auto" && isFreeOpenRouterAgentModel(model.id),
-    freeUntil: null,
-    capabilities: (model as { capabilities?: string[] }).capabilities || [],
-    current: model.id !== "auto" && model.id === DEFAULT_MODEL,
-    available: model.id === "auto" || remote.some((item) => item.id === model.id),
-    catalogSource: "openrouter",
-  }));
+  return models.map((model) => {
+    const internalId = model.id === "auto" ? "auto" : internalModelId(model.modelKey);
+    const sampleCredits = model.id === "auto" ? 0 : agentCreditsForUsage(internalId, { inputTokens: 2000, outputTokens: 800 }).credits;
+    return {
+      ...model,
+      creditsPerMessage: sampleCredits,
+      creditsLabel: model.id === "auto" ? "Selon la tache" : (isFreeOpenRouterAgentModel(internalId) ? "Gratuit" : `Environ ${sampleCredits} cr`),
+      free: model.id !== "auto" && isFreeOpenRouterAgentModel(internalId),
+      freeUntil: null,
+      current: model.id !== "auto" && internalId === DEFAULT_MODEL,
+      available: model.id === "auto" || remote.some((item) => item.id === internalId),
+    };
+  });
+}
+
+function publicBatchModels() {
+  return openRouterCatalogCache.batch.map((item) => {
+    const id = String(item.id || "");
+    const modelKey = rememberPublicModel(id);
+    const credits = agentCreditsForUsage(id, { inputTokens: 2000, outputTokens: 800 }).credits;
+    return {
+      modelKey,
+      name: safeModelName(id, item.name).replace(/openrouter/ig, "").trim() || "Modele batch",
+      description: "Traitement en lot pour les taches longues et planifiees.",
+      capabilities: ["batch", "reasoning"],
+      tier: "premium",
+      available: true,
+      creditsLabel: `Environ ${credits} cr par tache`,
+      batchOnly: true,
+    };
+  });
 }
 
 function cleanAgentDisplayText(text: string) {
@@ -301,12 +422,20 @@ function uniqueStrings(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+function activeDefaultAgentModel() {
+  const confirmed = openRouterCatalogCache.agent.map((item) => String(item.id || "")).filter(Boolean);
+  return confirmed.includes(DEFAULT_MODEL) ? DEFAULT_MODEL : confirmed[0] || DEFAULT_MODEL;
+}
+
 function resolveAgentModelId(value: unknown) {
-  const raw = String(value || "").trim();
-  if (!raw || raw === "auto" || raw === "huggy-auto") return DEFAULT_MODEL;
-  if (OPENROUTER_AGENT_ENABLED && OPENROUTER_AGENT_IDS.has(raw)) return raw;
+  const raw = internalModelId(value);
+  if (!raw || raw === "auto" || raw === "huggy-auto") return activeDefaultAgentModel();
+  if (isBatchModel(raw)) return activeDefaultAgentModel();
+  if (OPENROUTER_AGENT_ENABLED && OPENROUTER_AGENT_IDS.has(raw)) {
+    return openRouterCatalogCache.agent.some((item) => item.id === raw) ? raw : activeDefaultAgentModel();
+  }
   if (!OPENROUTER_AGENT_ENABLED && /^claude-[a-z0-9][a-z0-9._-]*$/i.test(raw)) return raw;
-  return DEFAULT_MODEL;
+  return activeDefaultAgentModel();
 }
 
 function agentModelFromBody(body: Record<string, unknown>) {
@@ -337,7 +466,7 @@ type AgentBillingContext = {
 
 function agentCreditsForTurn(modelId: string, multiplier = 1) {
   if (isFreeOpenRouterAgentModel(resolveAgentModelId(modelId))) return 0;
-  return Math.max(1, Math.ceil(agentCreditRateForModel(modelId).credits * Math.max(1, multiplier)));
+  return agentCreditsForUsage(modelId, { inputTokens: 2000, outputTokens: 800 }, multiplier).credits;
 }
 
 async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefined, modelId: string, requiredOverride?: number) {
@@ -360,9 +489,10 @@ async function ensureAgentCreditsAvailable(billing: AgentBillingContext | undefi
 async function chargeAgentCredits(billing: AgentBillingContext | undefined, modelId: string, usage?: AgentUsage) {
   if (!billing) return { charged: 0, balance: undefined as number | undefined };
   const rate = agentCreditRateForModel(modelId);
+  const fallbackUsage = agentCreditsForUsage(modelId, { inputTokens: 2000, outputTokens: 800 }, billing.multiplier);
   const usagePricing = usage
     ? agentCreditsForUsage(modelId, usage, billing.multiplier)
-    : { credits: agentCreditsForTurn(modelId, billing.multiplier), providerCostUsd: 0, inputTokens: 0, outputTokens: 0 };
+    : fallbackUsage;
   const credits = usagePricing.credits;
   if (credits <= 0) return { charged: 0, balance: undefined as number | undefined };
   const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
@@ -407,7 +537,9 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
       multiplier: Math.max(1, billing.multiplier || 1),
       input_tokens: usagePricing.inputTokens,
       output_tokens: usagePricing.outputTokens,
-      billing_mode: usage ? "actual_tokens" : "legacy_fallback",
+      infrastructure_cost_usd: usagePricing.infrastructureCostUsd,
+      protected_cost_usd: usagePricing.protectedCostUsd,
+      billing_mode: usage ? "actual_tokens" : "estimated_tokens",
     },
   });
   await billing.supabase.from("pricing_audit_logs").insert({
@@ -416,6 +548,10 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     credit_floor_usd: CREDIT_FLOOR_USD,
     retail_credit_usd: RETAIL_CREDIT_USD,
     provider_cost_usd: usagePricing.providerCostUsd,
+    infrastructure_cost_usd: usagePricing.infrastructureCostUsd,
+    protected_cost_usd: usagePricing.protectedCostUsd,
+    payment_reserve_ratio: PAYMENT_RESERVE_RATIO,
+    risk_reserve_ratio: RISK_RESERVE_RATIO,
     status: "completed",
     metadata: {
       kind: "agent_message",
@@ -427,7 +563,9 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
       margin_multiplier: agentMarginMultiplier,
       input_tokens: usagePricing.inputTokens,
       output_tokens: usagePricing.outputTokens,
-      billing_mode: usage ? "actual_tokens" : "legacy_fallback",
+      infrastructure_cost_usd: usagePricing.infrastructureCostUsd,
+      protected_cost_usd: usagePricing.protectedCostUsd,
+      billing_mode: usage ? "actual_tokens" : "estimated_tokens",
     },
   });
   if (billing.send) billing.send("credits", { credits: balanceAfter, creditsMax: Number(updated.credits_max || profile?.credits_max || 100) });
@@ -524,7 +662,7 @@ function openRouterAnthropicResponse(body: Record<string, unknown>) {
     id: String(body.id || crypto.randomUUID()),
     type: "message",
     role: "assistant",
-    model: String(body.model || ""),
+    model: "selected",
     content,
     stop_reason: finishReason === "tool_calls" ? "tool_use" : "end_turn",
     stop_sequence: null,
@@ -562,7 +700,7 @@ function openRouterStreamResponse(raw: string, modelId: string) {
   }
   const encoder = new TextEncoder();
   const chunks: string[] = [
-    `event: message_start\ndata: ${JSON.stringify({ type: "message_start", message: { id: crypto.randomUUID(), type: "message", role: "assistant", content: [], model: modelId } })}\n\n`,
+    `event: message_start\ndata: ${JSON.stringify({ type: "message_start", message: { id: crypto.randomUUID(), type: "message", role: "assistant", content: [], model: "selected" } })}\n\n`,
   ];
   let blockIndex = 0;
   if (textParts.length) {
@@ -600,8 +738,11 @@ function anthropicStreamUsage(raw: string): AgentUsage {
 
 async function openRouterMessages(payload: Record<string, unknown>, preferredModel: string, billing?: AgentBillingContext) {
   const model = resolveAgentModelId(preferredModel);
+  if (isBatchModel(internalModelId(preferredModel))) {
+    throw new FlowtubeError(400, "Ce mode est reserve aux traitements en lot.", { code: "BATCH_MODEL_NOT_INTERACTIVE" });
+  }
   if (!OPENROUTER_AGENT_ENABLED || !OPENROUTER_API_KEY) {
-    throw new FlowtubeError(503, "Ce modele AgentFlow est momentanement indisponible.", { code: "OPENROUTER_NOT_CONFIGURED", modelId: model });
+    throw new FlowtubeError(503, "Le modele selectionne est momentanement indisponible.", { code: "MODEL_NOT_CONFIGURED", modelId: model });
   }
   await refreshOpenRouterPrice(model);
   await ensureAgentCreditsAvailable(billing, model, estimatedAgentCreditsForPayload(model, payload, billing?.multiplier));
@@ -620,7 +761,7 @@ async function openRouterMessages(payload: Record<string, unknown>, preferredMod
     const providerStatus = response.status;
     const status = [401, 402, 429].includes(providerStatus) || providerStatus >= 500 ? providerStatus : 502;
     const code = providerStatus === 401 ? "OPENROUTER_UNAUTHORIZED" : providerStatus === 402 ? "OPENROUTER_PAYMENT_REQUIRED" : providerStatus === 429 ? "OPENROUTER_RATE_LIMITED" : "OPENROUTER_ERROR";
-    throw new FlowtubeError(status, providerStatus === 402 ? "Le fournisseur IA a refuse la facturation de cette generation." : "Le modele selectionne n'est pas disponible pour le moment.", { code, modelId: model, providerStatus });
+    throw new FlowtubeError(status, providerStatus === 402 ? "Cette generation ne peut pas etre lancee pour le moment." : "Le modele selectionne n'est pas disponible pour le moment.", { code, modelId: model, providerStatus });
   }
   if (Boolean(payload.stream)) {
     const streamed = openRouterStreamResponse(raw, model);
@@ -718,6 +859,8 @@ type PricingQuote = {
   credits: number;
   units: number;
   providerCostUsd: number;
+  infrastructureCostUsd: number;
+  protectedCostUsd: number;
   revenueFloorUsd: number;
   revenueRetailUsd: number;
   grossMarginFloorUsd: number;
@@ -771,7 +914,7 @@ class FlowtubeError extends Error {
 function publicErrorMessage(message: string, fallback = "Action indisponible pour le moment. Reessaie dans quelques instants.") {
   const raw = String(message || "").trim();
   if (!raw) return fallback;
-  if (/fal\.ai|fal-ai|endpoint|provider|fournisseur|FAL_KEY|anthropic|supabase|service key|api key|secret|server|internal|configuration|variable/i.test(raw)) {
+  if (/fal\.ai|fal-ai|openrouter|endpoint|provider|fournisseur|FAL_KEY|OPENROUTER_API_KEY|anthropic|supabase|service key|api key|secret|server|internal|configuration|variable|stack trace/i.test(raw)) {
     return fallback;
   }
   return raw;
@@ -784,7 +927,16 @@ function publicErrorPayload(err: FlowtubeError) {
       message: publicErrorMessage(err.message),
     },
   };
-  for (const key of ["code", "creditsRequired", "creditsAvailable", "requiresConfirmation", "planId", "packId", "modelId"]) {
+  const publicCodes = new Set([
+    "INSUFFICIENT_AGENT_CREDITS",
+    "INSUFFICIENT_CREDITS",
+    "CONFIRMATION_REQUIRED",
+    "MARGIN_GUARD",
+    "RATE_LIMITED",
+    "BATCH_LIMIT_REACHED",
+  ]);
+  for (const key of ["code", "creditsRequired", "creditsAvailable", "requiresConfirmation", "planId", "packId"]) {
+    if (key === "code" && !publicCodes.has(String(err.payload[key] || ""))) continue;
     if (err.payload[key] !== undefined) payload[key] = err.payload[key];
   }
   return payload;
@@ -1162,6 +1314,14 @@ function priorityRouteForEndpoint(endpoint: string): HuggyflowPriorityRoute | nu
   return null;
 }
 
+function safeLogMessage(value: unknown) {
+  return String(value instanceof Error ? value.message : value || "unknown error")
+    .replace(/Bearer\s+[^\s"']+/gi, "Bearer [redacted]")
+    .replace(/sk-[a-z0-9_-]+/gi, "[redacted]")
+    .replace(/(api[_-]?key|secret|token)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]")
+    .slice(0, 500);
+}
+
 function falModel(endpoint: string, override: ModelOverride = {}): PricingModel {
   const caps = override.capabilities || capabilitiesForEndpoint(endpoint);
   const type = override.type || mediaTypeForCapabilities(caps);
@@ -1220,9 +1380,14 @@ function openRouterMediaModel(id: string, type: "image" | "video", remote?: Open
     .map(([key, value]) => ({ key: key.toLowerCase(), value: Number(value) }))
     .filter((item) => Number.isFinite(item.value) && item.value > 0);
   const sku = skuValues.find((item) => video ? /duration_seconds(?!.*without_audio)/.test(item.key) : /image|megapixel|token/.test(item.key));
-  const costPerUnitUsd = video
-    ? (sku?.value || (id.includes("veo") ? 0.4 : id.includes("sora") ? 0.5 : 0.12))
-    : (sku?.value || (id.includes("gpt-image") ? 0.22 : 0.12));
+  const requestPrice = Number(remote?.pricing?.request);
+  const imagePrice = Number(remote?.pricing?.image || remote?.pricing?.prompt);
+  const liveCost = sku?.value || (Number.isFinite(video ? requestPrice : imagePrice) ? (video ? requestPrice : imagePrice) : 0);
+  const costPerUnitUsd = liveCost > 0
+    ? liveCost
+    : video
+      ? (id.includes("veo") ? 0.4 : id.includes("sora") ? 0.5 : UNKNOWN_MODEL_COST_USD)
+      : (id.includes("gpt-image") ? 0.22 : UNKNOWN_MODEL_COST_USD);
   const name = String(remote?.name || id);
   const capabilities = video
     ? ["text-to-video", "image-to-video", "reference-to-video"]
@@ -1261,6 +1426,7 @@ function openRouterMediaModel(id: string, type: "image" | "video", remote?: Open
       supported_frame_images: remote?.supported_frame_images || [],
       architecture: remote?.architecture || null,
       pricing_source: "openrouter",
+      price_confidence: liveCost > 0 ? "live" : "conservative_estimate",
     },
   };
 }
@@ -1925,14 +2091,15 @@ function resolveBestModelFromCatalog(catalog: PricingModel[], modelId: string | 
 }
 
 function resolveModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string) {
+  const requestedId = internalModelId(modelId);
   const cheapestCompatible = [...catalog.filter((m) => m.type === type)]
     .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
   const registry = enabledModelRegistry();
   const cheapestRegistry = [...registry.filter((m) => m.type === type)]
     .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
-  return catalog.find((m) => m.id === modelId && m.type === type)
+  return catalog.find((m) => m.id === requestedId && m.type === type)
     || cheapestCompatible
-    || registry.find((m) => m.id === modelId && m.type === type)
+    || registry.find((m) => m.id === requestedId && m.type === type)
     || cheapestRegistry
     || registry[0];
 }
@@ -1947,18 +2114,22 @@ function unitsFor(model: PricingModel, requestedUnits?: number) {
 function quoteFor(model: PricingModel, requestedUnits?: number): PricingQuote {
   const units = unitsFor(model, requestedUnits);
   const providerCostUsd = Number((model.costPerUnitUsd * units).toFixed(4));
-  const credits = Math.ceil((providerCostUsd * model.marginMultiplier) / model.creditFloorUsd);
+  const infrastructureCostUsd = mediaInfrastructureCostUsd(model, units);
+  const protectedCostUsd = Math.max(protectedOperatingCostUsd(providerCostUsd, infrastructureCostUsd), 0.0005);
+  const credits = Math.max(1, Math.ceil((protectedCostUsd * model.marginMultiplier) / model.creditFloorUsd));
   const revenueFloorUsd = Number((credits * model.creditFloorUsd).toFixed(4));
   const revenueRetailUsd = Number((credits * model.retailCreditUsd).toFixed(4));
-  const grossMarginFloorUsd = Number((revenueFloorUsd - providerCostUsd).toFixed(4));
-  const grossMarginRetailUsd = Number((revenueRetailUsd - providerCostUsd).toFixed(4));
-  const grossMarginFloorRatio = ratioFromAmounts(revenueFloorUsd, providerCostUsd);
-  const grossMarginRetailRatio = ratioFromAmounts(revenueRetailUsd, providerCostUsd);
+  const grossMarginFloorUsd = Number((revenueFloorUsd - protectedCostUsd).toFixed(4));
+  const grossMarginRetailUsd = Number((revenueRetailUsd - protectedCostUsd).toFixed(4));
+  const grossMarginFloorRatio = ratioFromAmounts(revenueFloorUsd, protectedCostUsd);
+  const grossMarginRetailRatio = ratioFromAmounts(revenueRetailUsd, protectedCostUsd);
   const minimumMarginRatio = minimumMarginRatioForModel(model);
   return {
     credits,
     units,
     providerCostUsd,
+    infrastructureCostUsd,
+    protectedCostUsd,
     revenueFloorUsd,
     revenueRetailUsd,
     grossMarginFloorUsd,
@@ -1979,30 +2150,20 @@ function creditsFor(model: PricingModel, duration?: number) {
 function publicPricingModels(catalog: PricingModel[]) {
   const media = priorityModelCatalog(catalog).map((model) => {
     const quote = quoteFor(model);
-    const costPerUnitXof = usdToXof(model.costPerUnitUsd);
+    const modelKey = rememberPublicModel(model.id);
     return {
-      id: model.id,
-      name: model.name,
+      id: modelKey,
+      modelKey,
+      name: safeModelName(model.id, model.name),
       type: model.type,
-      provider: model.provider || "fal",
       pricingUnit: model.pricingUnit,
       defaultUnits: model.defaultUnits,
       minimumUnits: model.minimumUnits,
       maximumUnits: model.maximumUnits || null,
-      costPerUnitUsd: model.costPerUnitUsd,
-      costPerUnitXof,
       creditsPerDefaultUnit: quote.credits,
-      defaultCostUsd: quote.providerCostUsd,
-      defaultCostXof: usdToXof(quote.providerCostUsd),
-      creditFloorUsd: model.creditFloorUsd,
-      retailCreditUsd: model.retailCreditUsd,
       qualityTier: String(model.metadata?.quality_tier || "standard"),
-      marginClass: String(model.metadata?.margin_class || "standard"),
       capabilities: modelCapabilities(model),
-      family: String(model.metadata?.huggyflow_family || ""),
-      routingAliases: Array.isArray(model.metadata?.routing_aliases) ? model.metadata.routing_aliases : [],
-      referenceStrategy: String(model.metadata?.reference_strategy || "project_memory"),
-      costLabel: `${model.costPerUnitUsd.toFixed(model.costPerUnitUsd < 0.1 ? 3 : 2)} USD / ${model.pricingUnit}`,
+      costLabel: `${quote.credits} credits par ${model.pricingUnit === "second" ? "seconde" : "creation"}`,
     };
   });
   const agent = publicAgentModels().map((model) => {
@@ -2040,6 +2201,14 @@ function publicPricingModels(catalog: PricingModel[]) {
   // Agent LLMs remain available through `agentModels` for chat orchestration,
   // but are intentionally not mixed into the curated media model catalog.
   return media;
+}
+
+function mediaInfrastructureCostUsd(model: PricingModel, units: number) {
+  if (model.pricingUnit === "second") {
+    return Number((INFRA_VIDEO_BASE_USD + units * INFRA_VIDEO_PER_SECOND_USD).toFixed(6));
+  }
+  if (model.type === "image" || model.type === "image_edit") return Number(INFRA_IMAGE_BASE_USD.toFixed(6));
+  return Number((INFRA_TEXT_BASE_USD + units * INFRA_TEXT_TOKEN_USD).toFixed(6));
 }
 
 async function assertSecuritySessionActive(req: Request, supabase: ReturnType<typeof adminClient>, userId: string, token: string) {
@@ -2575,7 +2744,7 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
     progress: generation.progress || 0,
     model: generation.model_label,
     modelLabel: generation.model_label,
-    modelId: generation.model_id,
+    modelId: generation.model_id ? rememberPublicModel(String(generation.model_id)) : null,
     prompt: generation.prompt || "",
     aspectRatio: generation.aspect_ratio,
     ratio: generation.aspect_ratio,
@@ -2685,37 +2854,24 @@ async function bootstrap(req: Request) {
       generations: generationCount || 0,
     },
     pricing: {
-      creditFloorUsd: CREDIT_FLOOR_USD,
-      retailCreditUsd: RETAIL_CREDIT_USD,
-      marginMultiplier: MEDIA_MARGIN_MULTIPLIER,
-      minimumMediaGrossMarginRatio: MIN_MEDIA_GROSS_MARGIN_RATIO,
-      qualityMarginMultipliers: QUALITY_MARGIN_MULTIPLIERS,
-      expensiveCreditThreshold: EXPENSIVE_CREDIT_THRESHOLD,
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
-      agentCreditRates: AGENT_CREDIT_RATES,
-      agentDefaultModel: DEFAULT_MODEL,
-      moneyFusionFees: moneyFusionFeeConfig(),
-      providers: {
-        mediaPrivatePipeline: Boolean(Deno.env.get("FAL_KEY")),
-        openRouterPrepared: OPENROUTER_ENABLED && Boolean(OPENROUTER_API_KEY),
-        openRouterEnabled: OPENROUTER_ENABLED,
-        openRouterReady: OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY),
-        openRouterMediaEnabled: OPENROUTER_MEDIA_ENABLED && Boolean(OPENROUTER_API_KEY),
-        openRouterMediaReady: OPENROUTER_MEDIA_ENABLED && Boolean(OPENROUTER_API_KEY) && openRouterCatalogCache.image.length + openRouterCatalogCache.video.length > 0,
-        openRouterCatalogLive: openRouterCatalogCache.live,
-        openRouterCatalogSyncedAt: openRouterCatalogCache.syncedAt,
-        openRouterCapabilities: {
-          text: openRouterCatalogCache.agent.length > 0,
-          vision: openRouterCatalogCache.agent.some((model) => model.architecture?.input_modalities?.includes("image")),
-          image: openRouterCatalogCache.image.length > 0,
-          video: openRouterCatalogCache.video.length > 0,
-          tools: openRouterCatalogCache.agent.length > 0,
-        },
-      },
+      creditsLabel: "Les credits sont calcules selon la tache.",
     },
     agentModels: publicAgentModels(),
+    batchModels: publicBatchModels(),
     models: publicPricingModels(catalog),
+    modelSync: {
+      available: openRouterCatalogCache.live,
+      syncedAt: openRouterCatalogCache.syncedAt,
+      capabilities: {
+        text: openRouterCatalogCache.agent.length > 0,
+        vision: openRouterCatalogCache.agent.some((model) => model.architecture?.input_modalities?.includes("image")),
+        image: openRouterCatalogCache.image.length > 0,
+        video: openRouterCatalogCache.video.length > 0,
+        tools: openRouterCatalogCache.agent.length > 0,
+      },
+    },
     plans,
     creditPacks: (creditPacks || []).map((pack) => ({
       id: pack.id,
@@ -2743,7 +2899,7 @@ async function bootstrap(req: Request) {
     production: {
       auth: true,
       agentFlow: OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) || Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
-      aiModel: DEFAULT_MODEL,
+      aiModel: "auto",
       aiModels: publicAgentModels(),
       billing: true,
       storage: true,
@@ -5261,9 +5417,9 @@ function ensureProviderReady(model: PricingModel) {
   const provider = model.provider || String((model.metadata || {}).provider || "fal.ai");
   if (provider === "openrouter") {
     if (!OPENROUTER_MEDIA_ENABLED || !Deno.env.get("OPENROUTER_API_KEY")) {
-      throw new FlowtubeError(503, "OpenRouter n'est pas configure pour les medias.", { code: "OPENROUTER_MEDIA_NOT_CONFIGURED", modelId: model.id });
+      throw new FlowtubeError(503, "Le moteur media selectionne est momentanement indisponible.", { code: "MEDIA_NOT_CONFIGURED", modelId: model.id });
     }
-    if (!model.endpoint) throw new FlowtubeError(503, `Modele OpenRouter manquant pour ${model.name}.`, { code: "PROVIDER_ENDPOINT_MISSING", modelId: model.id });
+    if (!model.endpoint) throw new FlowtubeError(503, "Le moteur media selectionne est momentanement indisponible.", { code: "MEDIA_ENDPOINT_MISSING", modelId: model.id });
     return;
   }
   if (!Deno.env.get("FAL_KEY")) {
@@ -5279,11 +5435,11 @@ function openRouterProviderError(response: Response, modelId: string) {
   const status = [401, 402, 429].includes(providerStatus) || providerStatus >= 500 ? providerStatus : 502;
   const code = providerStatus === 401 ? "OPENROUTER_UNAUTHORIZED" : providerStatus === 402 ? "OPENROUTER_PAYMENT_REQUIRED" : providerStatus === 429 ? "OPENROUTER_RATE_LIMITED" : "OPENROUTER_MEDIA_ERROR";
   const message = providerStatus === 401
-    ? "La cle OpenRouter est refusee."
+    ? "Le service de generation est momentanement indisponible."
     : providerStatus === 402
-      ? "Le fournisseur OpenRouter demande un credit ou un solde valide."
+      ? "Cette generation ne peut pas etre lancee pour le moment."
       : providerStatus === 429
-        ? "OpenRouter est momentanement limite. Reessaie dans quelques instants."
+        ? "Le service est momentanement limite. Reessaie dans quelques instants."
         : "Le moteur media selectionne est indisponible pour le moment.";
   return new FlowtubeError(status, message, { code, modelId, providerStatus });
 }
@@ -5403,7 +5559,7 @@ async function startOpenRouterImageGeneration(generation: Record<string, unknown
       const stored = await storeProviderBytes(supabase, generation, bytes, contentType);
       return Boolean(await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd)));
     }
-    if (!remoteUrl) throw new Error("OpenRouter n'a retourne aucun fichier image.");
+    if (!remoteUrl) throw new Error("Aucun fichier image n'a ete retourne.");
     const mediaResponse = await fetch(remoteUrl);
     if (mediaResponse.ok) {
       const stored = await storeProviderBytes(
@@ -5461,7 +5617,7 @@ async function startOpenRouterVideoGeneration(generation: Record<string, unknown
       await completeProviderGeneration(supabase, generation, directUrl, body);
       return true;
     }
-    if (!jobId) throw new Error("OpenRouter n'a retourne aucun identifiant de job video.");
+    if (!jobId) throw new Error("Le suivi de cette generation est indisponible.");
     await supabase.from("generations").update({
       status: "running",
       provider_job_id: jobId,
@@ -5491,7 +5647,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
     .select("*")
     .maybeSingle();
   if (claimError) {
-    console.error("generation claim failed", claimError.message);
+    console.error("generation claim failed", safeLogMessage(claimError.message));
     return false;
   }
   if (!claimed) return false;
@@ -5723,7 +5879,7 @@ function generationResultContract(input: {
   const count = Math.max(1, Number(input.count || 1));
   const format = type === "video" ? "video" : type === "voice" ? "audio" : "image";
   const criteria = [
-    "Le fournisseur retourne un fichier accessible.",
+    "Le moteur retourne un fichier accessible.",
     "Le brief contient suffisamment de contexte pour etre execute.",
     "Le format et le ratio demandes sont conserves.",
     "Le rendu passe la verification de securite et de disponibilite.",
@@ -5735,13 +5891,12 @@ function generationResultContract(input: {
       format,
       count,
       aspect_ratio: input.aspectRatio || null,
-      model_id: input.model.id,
+      model_key: rememberPublicModel(input.model.id),
       model_label: input.model.name,
     },
     budget: {
       max_credits: input.quote.credits * count,
       credits_per_output: input.quote.credits,
-      provider_cost_usd: input.quote.providerCostUsd * count,
     },
     estimate: {
       seconds_per_output: input.model.pricingUnit === "second" ? Math.round(input.quote.units) : null,
@@ -5778,11 +5933,11 @@ async function trackGenerationJob(
     last_error: status === "failed" ? String(extra.error || generation.error_message || "Generation failed") : null,
     metadata,
   }, { onConflict: "generation_id" });
-  if (error) console.error("generation job tracking failed", error.message);
+  if (error) console.error("generation job tracking failed", safeLogMessage(error.message));
   try {
     await syncTaskGraphForGeneration(supabase, generation, status);
   } catch (taskError) {
-    console.error("agent task graph sync failed", taskError instanceof Error ? taskError.message : taskError);
+    console.error("agent task graph sync failed", safeLogMessage(taskError));
   }
 }
 
@@ -5837,7 +5992,7 @@ async function recordAgentTaskEvent(
     to_status: toStatus || null,
     detail,
   });
-  if (error) console.error("agent task event failed", error.message);
+  if (error) console.error("agent task event failed", safeLogMessage(error.message));
 }
 
 async function updateAgentTask(
@@ -6775,7 +6930,7 @@ async function chat(req: Request) {
   const prompt = String(body.message || "");
   const requestAttachments = normalizeRequestAttachments((body as Record<string, unknown>).attachments);
   const attachmentContext = attachmentContextFromBody(body as Record<string, unknown>);
-  const agentModelId = agentModelFromBody(body as Record<string, unknown>);
+  let agentModelId = "auto";
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -6794,6 +6949,8 @@ async function chat(req: Request) {
       try {
         const supabase = adminClient();
         const userId = await userIdFromRequest(req, supabase);
+        await refreshOpenRouterCatalog();
+        agentModelId = agentModelFromBody(body as Record<string, unknown>);
         const profile = await ensureProfile(supabase, userId);
         await enforceRateLimit(req, supabase, "chat", userId, DEFAULT_RATE_LIMIT);
         const plan = await resolvePlan(supabase, String(profile.plan || "free"));
@@ -7437,7 +7594,7 @@ async function uploadRoute(req: Request) {
 async function refundFailedGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
   if (!generation?.debited_at || generation.failure_refunded_at) return;
   const { error } = await supabase.rpc("refund_failed_generation", { p_generation_id: generation.id });
-  if (error) console.error("generation refund failed", error.message);
+  if (error) console.error("generation refund failed", safeLogMessage(error.message));
 }
 
 async function debitCredits(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
@@ -7515,7 +7672,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       if (!response.ok) throw openRouterProviderError(response, String(generation.model_id || ""));
       const body = await response.json() as Record<string, unknown>;
       const statusText = String(body.status || body.state || "").toLowerCase();
-      if (["failed", "error", "cancelled", "canceled"].includes(statusText)) throw new Error(String(body.error || body.message || "La generation video OpenRouter a echoue."));
+      if (["failed", "error", "cancelled", "canceled"].includes(statusText)) throw new Error("La generation video a echoue. Aucun credit supplementaire ne sera debite.");
       if (["completed", "complete", "succeeded", "success"].includes(statusText)) {
         const unsignedUrls = Array.isArray(body.unsigned_urls) ? body.unsigned_urls.map(String) : [];
         const resultUrl = String(body.video_url || body.videoUrl || body.url || unsignedUrls[0] || extractUrl(body.output || body.data || body.result));
@@ -7528,7 +7685,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
           const stored = await storeProviderBytes(supabase, generation, bytes, contentType);
           return await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
         }
-        if (!resultUrl) throw new Error("OpenRouter a termine sans retourner de video.");
+        if (!resultUrl) throw new Error("La generation est terminee mais le fichier est indisponible.");
         return await completeProviderGeneration(supabase, generation, resultUrl, body);
       }
       const providerProgress = Number(body.progress || body.percent || 0);
@@ -7629,7 +7786,7 @@ async function backgroundTasksRoute(req: Request) {
     if (batch) batchIds.add(batch.id);
   }
   for (const batchId of batchIds) {
-    try { await launchBatchWave(supabase, userId, batchId); } catch (error) { console.error("batch recovery failed", error instanceof Error ? error.message : error); }
+    try { await launchBatchWave(supabase, userId, batchId); } catch (error) { console.error("batch recovery failed", safeLogMessage(error)); }
   }
   for (const generation of (activeResult.data || []).slice(0, 8)) {
     try {
@@ -7788,7 +7945,7 @@ async function recordProductEvent(
     event_name: name,
     metadata: safeStructuredContent(metadata, 12_000),
   });
-  if (error) console.error("product event tracking failed", error.message);
+  if (error) console.error("product event tracking failed", safeLogMessage(error.message));
 }
 
 async function brandKitsRoute(req: Request) {
@@ -8223,7 +8380,16 @@ async function deleteAccountRoute(req: Request) {
 }
 
 async function healthRoute() {
-  return json({ ok: true, service: "huggyflow", now: new Date().toISOString() });
+  await refreshOpenRouterCatalog();
+  return json({
+    ok: true,
+    service: "huggyflow",
+    now: new Date().toISOString(),
+    services: {
+      models: openRouterCatalogCache.live ? "ready" : "degraded",
+      media: openRouterCatalogCache.image.length + openRouterCatalogCache.video.length > 0 ? "ready" : "fallback",
+    },
+  });
 }
 
 async function authRoute(req: Request, action: string) {
@@ -9065,11 +9231,9 @@ async function pricingRoute() {
     plans,
     models: publicPricingModels(catalog),
     pricing: {
-      creditFloorUsd: CREDIT_FLOOR_USD,
-      retailCreditUsd: RETAIL_CREDIT_USD,
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
-      moneyFusionFees: moneyFusionFeeConfig(),
+      creditsLabel: "Les credits sont calcules selon la tache.",
     },
     creditPacks: creditPacks || [],
     billing: {
