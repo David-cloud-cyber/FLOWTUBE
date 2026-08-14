@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: fuvrxobxjcqyevsjsdfd
     steps:
       - uses: actions/checkout@v4
@@ -21,8 +22,37 @@ jobs:
         with:
           version: latest
 
-      - name: Apply database migrations
-        run: supabase db push --project-ref "$PROJECT_REF" --include-all
+      - name: Apply provider-neutral generation migration
+        run: |
+          if [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
+            supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+            supabase db push --include-all
+          else
+            python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          project_ref = os.environ["PROJECT_REF"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          with open("supabase/migrations/20260813100000_add_provider_agnostic_generation_jobs.sql", encoding="utf-8") as migration_file:
+              query = migration_file.read()
+          request = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project_ref}/database/query",
+              data=json.dumps({"query": query}).encode("utf-8"),
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=60) as response:
+              if response.status >= 300:
+                  raise RuntimeError(f"migration request failed: {response.status}")
+          print("Provider-neutral generation migration applied.")
+          PY
+          fi
 
       - name: Deploy flowtube-api
         run: supabase functions deploy flowtube-api --project-ref "$PROJECT_REF" --use-api
