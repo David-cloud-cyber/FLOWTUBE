@@ -404,9 +404,59 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-connector-details strong{overflow:hidden;color:var(--hf-settings-ink);font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}.hf-connector-footer-action{padding:0;border:0;background:transparent;color:var(--hf-settings-ink);font:700 11.5px ui-sans-serif,system-ui,sans-serif;text-align:left;text-decoration:underline;text-decoration-color:rgba(209,254,23,.65);text-underline-offset:3px;cursor:pointer}.hf-connector-footer-action:hover{color:#D1FE17}.hf-connector-info-panel{position:relative;margin-top:18px;padding:18px;border:1px solid rgba(209,254,23,.22);border-radius:12px;background:rgba(209,254,23,.055);animation:fadeUp .18s cubic-bezier(.22,1,.36,1) both}.hf-connector-info-panel h4{margin:0;color:var(--hf-settings-ink);font:750 15px/1.3 'Space Grotesk',ui-sans-serif,sans-serif}.hf-connector-info-panel p{margin:8px 0 0;color:var(--hf-settings-muted);font-size:12px;line-height:1.55}.hf-connector-info-panel ul{margin:12px 0 0;padding-left:18px;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.6}.hf-connector-info-close{position:absolute;top:12px;right:12px;width:28px;height:28px;display:grid;place-items:center;border:1px solid rgba(var(--hf-settings-line),.13);border-radius:7px;background:transparent;color:var(--hf-settings-muted);cursor:pointer}.hf-connector-info-close:hover{background:rgba(var(--hf-settings-line),.07);color:var(--hf-settings-ink)}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-search,.hf-settings-shell[data-hf-settings-theme="light"] .hf-connectors-sort{background:#F0F1F2}
 .hf-settings-shell[data-hf-settings-theme="light"] .hf-connector-new{background:rgba(63,102,209,.12);color:#3f66d1}
+.hf-settings-shell{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;isolation:isolate}
+.hf-settings-shell *{box-sizing:border-box}
+.hf-settings-rail{width:248px;flex-basis:248px;padding:12px 10px 10px;background:linear-gradient(180deg,var(--hf-settings-rail),color-mix(in srgb,var(--hf-settings-rail) 88%,#000 12%));}
+.hf-settings-brand{min-height:52px;padding:10px 10px 12px;border-bottom:0}
+.hf-settings-brand-mark{width:32px;height:32px;border-radius:10px;font-size:17px;line-height:1}
+.hf-settings-search{margin:8px 8px 12px}
+.hf-settings-search input{height:40px;border-radius:11px;font-size:12px}
+.hf-settings-nav{padding:0 4px 16px}
+.hf-settings-nav-group{margin:18px 8px 7px;font-size:9px;letter-spacing:.14em}
+.hf-settings-nav-item{min-height:40px;gap:9px;padding:0 9px;border:1px solid transparent;font-size:12.5px}
+.hf-settings-nav-item:hover{border-color:rgba(var(--hf-settings-line),.08);background:rgba(var(--hf-settings-line),.045)}
+.hf-settings-nav-item.is-active{border-color:rgba(209,254,23,.2);background:linear-gradient(90deg,rgba(209,254,23,.14),rgba(209,254,23,.06));box-shadow:inset 2px 0 0 #D1FE17}
+.hf-settings-nav-icon{width:26px;height:26px;border-radius:8px;background:rgba(var(--hf-settings-line),.055)}
+.hf-settings-account{margin:0 4px;padding:12px 8px;border:1px solid rgba(var(--hf-settings-line),.08);border-radius:12px;background:rgba(var(--hf-settings-line),.035)}
+.hf-settings-main{min-width:0;background:radial-gradient(circle at 78% 0%,rgba(209,254,23,.035),transparent 32%),var(--hf-settings-page)}
+.hf-settings-topbar{height:82px;flex-basis:82px;padding:0 clamp(20px,4vw,56px);border-bottom:1px solid rgba(var(--hf-settings-line),.09);background:rgba(var(--hf-settings-page),.86);backdrop-filter:blur(14px)}
+.hf-settings-kicker{font-size:9px;letter-spacing:.16em}
+.hf-settings-title{font-size:24px;letter-spacing:-.02em}
+.hf-settings-topbar-description{margin-top:5px;max-width:620px;color:var(--hf-settings-muted);font-size:12px;line-height:1.45}
+.hf-settings-content{padding:32px clamp(20px,4vw,64px) 56px;scroll-behavior:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.hf-settings-content-inner{width:min(920px,100%);animation:settingsContentIn .24s cubic-bezier(.22,1,.36,1) both}
+@keyframes settingsContentIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.hf-settings-section-head{align-items:flex-end;margin-bottom:16px}
+.hf-settings-section-head h3{font-size:19px;letter-spacing:-.015em}
+.hf-settings-section-head p{max-width:620px;font-size:12.5px}
+.hf-settings-card{border-color:rgba(var(--hf-settings-line),.11);border-radius:14px;background:linear-gradient(180deg,rgba(var(--hf-settings-line),.045),rgba(var(--hf-settings-line),.025)),var(--hf-settings-surface);box-shadow:0 16px 42px -34px rgba(0,0,0,.72)}
+.hf-settings-card + .hf-settings-card{margin-top:16px}
+.hf-settings-row{min-height:68px;padding:15px 18px;gap:28px}
+.hf-settings-row:hover{background:rgba(var(--hf-settings-line),.018)}
+.hf-settings-row-label{font-size:13px;font-weight:700}
+.hf-settings-row-hint{max-width:620px;font-size:11.5px}
+.hf-settings-control{min-width:210px;min-height:40px;padding:0 12px;border-radius:10px;background:rgba(var(--hf-settings-line),.045);font-size:12.5px}
+.hf-settings-control::placeholder,.hf-settings-textarea::placeholder{color:var(--hf-settings-muted);opacity:.78}
+.hf-settings-control:disabled,.hf-settings-textarea:disabled{cursor:not-allowed;opacity:.55}
+.hf-settings-textarea{min-height:132px;border-radius:11px;background:rgba(var(--hf-settings-line),.045);font-size:12.5px}
+.hf-settings-primary,.hf-settings-secondary{min-height:38px;border-radius:10px;font-size:11.5px;letter-spacing:.005em}
+.hf-settings-primary{padding-inline:14px;box-shadow:0 8px 22px -16px rgba(209,254,23,.9)}
+.hf-settings-secondary{padding-inline:13px}
+.hf-settings-primary:focus-visible,.hf-settings-secondary:focus-visible,.hf-settings-close:focus-visible,.hf-settings-nav-item:focus-visible,.hf-connector-card:focus-visible{outline:2px solid #D1FE17;outline-offset:2px}
+.hf-settings-badge,.hf-settings-status{font-size:9px;letter-spacing:.08em}
+.hf-settings-metric-grid{gap:10px;margin-bottom:16px}
+.hf-settings-metric{min-height:104px;padding:16px;border-radius:14px;background:rgba(var(--hf-settings-line),.035)}
+.hf-settings-metric-value{font-size:24px}
+.hf-settings-table-row{min-height:58px;padding:12px 16px;font-size:12px}
+.hf-settings-progress{height:7px;border:1px solid rgba(var(--hf-settings-line),.08);background:rgba(var(--hf-settings-line),.06)}
+.hf-settings-status{white-space:normal}
+.hf-settings-empty{min-height:150px;border-radius:14px;background:rgba(var(--hf-settings-line),.025)}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-main{background:var(--hf-settings-page)}
+.hf-settings-shell[data-hf-settings-theme="light"] .hf-settings-topbar{background:rgba(247,247,248,.86)}
+@media(max-width:900px){.hf-settings-rail{width:220px;flex-basis:220px}.hf-settings-topbar{padding-inline:28px}.hf-settings-content{padding-inline:28px}}
 @media(max-width:760px){.hf-connectors-toolbar{align-items:stretch;flex-direction:column;gap:12px}.hf-connectors-toolbar-actions{justify-content:flex-end}.hf-connectors-grid{grid-template-columns:1fr}.hf-connector-hero{align-items:flex-start;flex-wrap:wrap}.hf-connector-hero .hf-settings-status{margin-left:68px;margin-top:-8px}.hf-connector-section-heading{align-items:flex-start;flex-direction:column}.hf-connector-add-wrap{width:100%}.hf-connector-add-wrap .hf-settings-primary{width:100%;justify-content:center}.hf-connector-add-menu{left:0;right:auto;width:100%}.hf-connector-connection-card{align-items:flex-start;flex-direction:column}.hf-connector-action-row{justify-content:flex-start}.hf-connector-details{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.hf-settings-shell,.hf-settings-content-inner,.hf-settings-backdrop{animation:none!important}.hf-settings-content{scroll-behavior:auto}.hf-settings-nav-item,.hf-settings-close,.hf-settings-primary,.hf-settings-secondary,[data-hf-studio-panel="true"]{transition:none!important}}
-@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:66px;flex-basis:66px;padding:0 16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column}}
+@media(max-width:760px){.hf-settings-backdrop{background:#131517;backdrop-filter:none}.hf-settings-backdrop[data-hf-settings-theme="light"]{background:#F7F7F8}.hf-settings-shell{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0;display:flex;flex-direction:column}.hf-settings-rail{width:100%;flex:0 0 auto;border-right:0;border-bottom:1px solid rgba(247,247,248,.08)}.hf-settings-brand{padding:14px 16px 12px}.hf-settings-search{margin:12px 16px 10px}.hf-settings-nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 12px 12px}.hf-settings-nav-group{display:none}.hf-settings-nav-item{width:auto;min-width:max-content;min-height:35px;padding:0 10px;font-size:11px}.hf-settings-nav-icon{width:21px;height:21px;border-radius:6px;font-size:9px}.hf-settings-account{display:none}.hf-settings-topbar{height:auto;min-height:74px;flex-basis:auto;padding:16px}.hf-settings-title{font-size:21px}.hf-settings-content{padding:22px 16px 34px}.hf-settings-row{align-items:flex-start;flex-direction:column;gap:10px;padding:15px}.hf-settings-control{width:100%;max-width:none}.hf-settings-metric-grid{grid-template-columns:1fr 1fr}.hf-settings-section-head{flex-direction:column;align-items:stretch}.hf-settings-section-head .hf-settings-primary,.hf-settings-section-head .hf-settings-secondary{width:100%}.hf-settings-topbar-description{max-width:none}}
 @media(max-width:760px){[data-hf-studio-panel="true"]{left:0;width:100%;min-width:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* Explore public gallery */
@@ -1662,7 +1712,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   </sc-if>
 
   <!-- ========== SETTINGS MODAL (Claude-style centered popup with sidebar) ========== -->
-  <sc-if value="{{ showLegacySettingsModal }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;animation:modalFadeIn .2s ease both">
       <div onClick="{{ backToApp }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)"></div>
       <div style="position:relative;width:820px;max-width:92vw;height:580px;max-height:85vh;background:#1E1F23;border:1px solid rgba(255,255,255,.08);border-radius:16px;display:flex;overflow:hidden;box-shadow:0 24px 80px -16px rgba(0,0,0,.7);animation:modalScale .25s cubic-bezier(.22,1,.36,1) both">
@@ -2043,14 +2093,14 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <input data-hf-settings-search="true" value="{{ settingsSearchQuery }}" onChange="{{ onSettingsSearch }}" placeholder="Rechercher un réglage" aria-label="Rechercher un réglage" autocomplete="off"/>
         </div>
         <nav class="hf-settings-nav" aria-label="Navigation des paramètres">
-          <div class="hf-settings-nav-group">Paramètres</div>
+          <div class="hf-settings-nav-group">Essentiel</div>
           <sc-for list="{{ settingsPrimaryItems }}" as="item" hint-placeholder-count="9">
             <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}" aria-current="{{ item.ariaCurrent }}" title="{{ item.label }}">
               <span class="hf-settings-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#hf-settings-{{ item.id }}"></use></svg></span><span>{{ item.label }}</span>
             </button>
           </sc-for>
-          <div class="hf-settings-nav-group">Personnaliser</div>
-          <sc-for list="{{ settingsCustomItems }}" as="item" hint-placeholder-count="3">
+          <div class="hf-settings-nav-group">Espace et outils</div>
+          <sc-for list="{{ settingsAdvancedItems }}" as="item" hint-placeholder-count="6">
             <button class="hf-settings-nav-item {{ item.activeClass }}" onClick="{{ item.onClick }}" aria-current="{{ item.ariaCurrent }}" title="{{ item.label }}">
               <span class="hf-settings-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#hf-settings-{{ item.id }}"></use></svg></span><span>{{ item.label }}</span>
             </button>
@@ -2071,6 +2121,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
           <div>
             <div class="hf-settings-kicker">{{ settingsKicker }}</div>
             <div class="hf-settings-title">{{ settingsPageTitle }}</div>
+            <div class="hf-settings-topbar-description">{{ settingsPageDescription }}</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
             <sc-if value="{{ settingsOffline }}" hint-placeholder-val="{{ false }}"><span class="hf-settings-status is-warning">Hors ligne · brouillon local</span></sc-if>
@@ -2078,7 +2129,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <span class="hf-settings-badge">{{ settingsPlanBadge }}</span>
           </div>
         </header>
-        <div class="hf-settings-content" data-hf-settings-scroll="true" onScroll="{{ onSettingsScroll }}">
+        <div class="hf-settings-content" data-hf-settings-scroll="true">
           <div class="hf-settings-content-inner" style="animation:{{ settingsAnim }}">
 
             <sc-if value="{{ modalShowSettings }}" hint-placeholder-val="{{ false }}">
@@ -2203,7 +2254,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
   </sc-if>
   <!-- ========== END SETTINGS WORKSPACE ========== -->
 
-  <sc-if value="{{ showStats }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Statistiques d'usage" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2297,7 +2348,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </sc-if>
 
-  <sc-if value="{{ showApi }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="API et intégrations" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2383,7 +2434,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </sc-if>
 
-  <sc-if value="{{ showTeam }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Équipe et collaboration" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:860px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -2477,7 +2528,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
     </div>
   </sc-if>
 
-  <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Paramètres du compte" style="position:absolute;inset:0;z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:{{ settingsAnim }}">
       <div style="max-width:680px;margin:0 auto;padding:22px 32px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:44px">
@@ -4435,8 +4486,6 @@ class Component extends DCLogic {
       this.restoreRouteScroll(this.state.page, this.state.exploreActiveId);
     }
     if(pageChanged){
-      if(this.isSettingsPage(previousPage)) this.persistSettingsScroll(previousPage);
-      if(this.isSettingsPage(this.state.page)) this.restoreSettingsScroll(this.state.page);
       if(!this.restoringRoute) this.syncPageRoute('push');
       else this.applyDocumentMetadata();
       if(!this.demoMode){
@@ -4522,43 +4571,6 @@ class Component extends DCLogic {
     this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:target });
     return false;
   }
-  focusSettingsSearch(){
-    setTimeout(()=>{
-      if(typeof document === 'undefined') return;
-      const input = document.querySelector('[data-hf-settings-search="true"]');
-      if(input && typeof input.focus === 'function') input.focus();
-    }, 0);
-  }
-  settingsScrollKey(section){
-    return 'huggyflow_settings_scroll_' + String(section || 'settings');
-  }
-  persistSettingsScroll(section){
-    if(typeof window === 'undefined' || !window.localStorage) return;
-    const el = typeof document !== 'undefined' ? document.querySelector('[data-hf-settings-scroll="true"]') : null;
-    if(!el) return;
-    try{ window.localStorage.setItem(this.settingsScrollKey(section || this.state.page), String(Math.max(0, Math.round(el.scrollTop || 0)))); }catch(e){}
-  }
-  restoreSettingsScroll(section){
-    if(typeof window === 'undefined' || !window.localStorage) return;
-    const target = String(section || this.state.page || 'settings');
-    if(this.settingsRestoreScheduled === target) return;
-    let stored = null;
-    try{ stored = window.localStorage.getItem(this.settingsScrollKey(target)); }catch(e){}
-    this.settingsRestoreScheduled = target;
-    setTimeout(()=>{
-      const el = typeof document !== 'undefined' ? document.querySelector('[data-hf-settings-scroll="true"]') : null;
-      if(!el) { this.settingsRestoreScheduled = ''; return; }
-      const requestedTop = stored === null ? 0 : Math.max(0, Number(stored) || 0);
-      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-      const top = Math.min(requestedTop, maxTop);
-      if(Math.abs((el.scrollTop || 0) - top) > 2) el.scrollTop = top;
-      this.settingsRestoreScheduled = '';
-    }, 0);
-  }
-  onSettingsScroll(){
-    clearTimeout(this.settingsScrollTimer);
-    this.settingsScrollTimer = setTimeout(()=>this.persistSettingsScroll(this.state.page), 120);
-  }
   openSettingsModal(section){
     const target = this.isSettingsPage(section) ? section : 'settings';
     if(!this.requireSettingsAccess(target)) return;
@@ -4586,14 +4598,11 @@ class Component extends DCLogic {
       if(target === 'capabilities') this.loadBrands();
       if(target === 'skills') this.loadTemplates();
       if(target === 'connectors') this.loadIntegrations();
-      this.restoreSettingsScroll(target);
-      this.focusSettingsSearch();
     });
   }
   openSettingsSection(section){
     if(!this.requireSettingsAccess(section)) return;
     if(!this.isSettingsPage(this.state.page)) return this.openSettingsModal(section);
-    this.persistSettingsScroll(this.state.page);
     this.setState({ page:section, settingsHop:true }, ()=>{
       if(section === 'billing') this.loadBillingStatus();
       if(section === 'team') this.loadTeam();
@@ -4604,7 +4613,6 @@ class Component extends DCLogic {
       if(section === 'capabilities') this.loadBrands();
       if(section === 'skills') this.loadTemplates();
       if(section === 'connectors') this.loadIntegrations();
-      this.restoreSettingsScroll(section);
       clearTimeout(this.settingsHopTimer);
       this.settingsHopTimer = setTimeout(()=>{
         if(this.state.settingsHop) this.setState({ settingsHop:false });
@@ -4612,7 +4620,6 @@ class Component extends DCLogic {
     });
   }
   closeSettingsModal(){
-    if(this.isSettingsPage(this.state.page)) this.persistSettingsScroll(this.state.page);
     const restore = this.settingsReturnContext || { page:'app' };
     this.settingsReturnContext = null;
     this.clearSettingsHash();
@@ -5961,14 +5968,10 @@ class Component extends DCLogic {
   connectorProviderSupportsOAuth(provider){ return ['google_drive','slack','notion'].includes(String(provider || '')); }
   openConnectorDetail(provider){
     if(!provider) return;
-    this.persistSettingsScroll('connectors');
-    this.setState({ selectedConnectorId:provider, connectorDetailOpen:true, connectorAddMenuOpen:false, connectorInfoPanel:'', connectorSearch:'' }, ()=>{
-      this.restoreSettingsScroll('connectors-detail-' + provider);
-    });
+    this.setState({ selectedConnectorId:provider, connectorDetailOpen:true, connectorAddMenuOpen:false, connectorInfoPanel:'', connectorSearch:'' });
   }
   closeConnectorDetail(){
-    this.persistSettingsScroll('connectors-detail-' + (this.state.selectedConnectorId || 'selected'));
-    this.setState({ selectedConnectorId:'', connectorDetailOpen:false, connectorAddMenuOpen:false, connectorInfoPanel:'' }, ()=>this.restoreSettingsScroll('connectors'));
+    this.setState({ selectedConnectorId:'', connectorDetailOpen:false, connectorAddMenuOpen:false, connectorInfoPanel:'' });
   }
   openConnectorInfo(kind){
     const value = kind === 'security' ? 'security' : 'docs';
@@ -6620,21 +6623,23 @@ class Component extends DCLogic {
     const settingItem = (id, label, short, terms) => ({ id, label, short, activeClass:st.page === id ? 'is-active' : '', ariaCurrent:st.page === id ? 'page' : 'false', onClick:()=>this.openSettingsSection(id), visible:settingsMatch(label, terms) });
     const settingsPrimaryItems = [
       settingItem('settings','Profil','◉',['general','personnalisation','apparence']),
-      settingItem('account','Compte','◎',['email','securite','mot de passe']),
+      settingItem('account','Compte','◎',['email','securite','mot de passe','sessions','mfa']),
+      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion','credits']),
+      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité','alertes']),
+      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils','oauth'])
+    ].filter(item=>item.visible);
+    const settingsAdvancedItems = [
       settingItem('privacy','Confidentialité','◈',['privacy','analytics','données']),
-      settingItem('billing','Facturation','▣',['paiement','prix','abonnement','moneyfusion']),
-      settingItem('team','Équipe','♧',['membres','collaboration','invitation']),
-      settingItem('stats','Utilisation','▥',['statistiques','crédits','activité']),
-      settingItem('capabilities','Capacités','✦',['marque','modèles','limites']),
-      settingItem('api','API','<>',['clés','intégrations','développeur']),
-      settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth'])
-    ].filter(item=>item.visible);
-    const settingsCustomItems = [
+      settingItem('team','Équipe','♧',['membres','collaboration','invitation','roles']),
+      settingItem('api','API','<>',['clés','intégrations','développeur','scopes']),
+      settingItem('capabilities','Capacités','✦',['marque','modèles','limites','openrouter']),
       settingItem('skills','Compétences','✧',['templates','workflows']),
-      settingItem('connectors','Connecteurs','↗',['drive','slack','notion','outils'])
+      settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth']),
+      settingItem('plugins','Plugins','✚',['store','extensions'])
     ].filter(item=>item.visible);
-    const settingsNavEmpty = !settingsPrimaryItems.length && !settingsCustomItems.length;
+    const settingsNavEmpty = !settingsPrimaryItems.length && !settingsAdvancedItems.length;
     const settingsTitles = { settings:'Profil', account:'Compte et sécurité', privacy:'Confidentialité', billing:'Facturation', team:'Équipe', stats:'Utilisation', capabilities:'Capacités', api:'API', claudecode:'Claude Code', skills:'Compétences', connectors:'Connecteurs', plugins:'Plugins' };
+    const settingsDescriptions = { settings:'Personnalise ton espace et les réponses de HuggyFlow.', account:'Protège ton compte, tes sessions et tes facteurs de sécurité.', privacy:'Contrôle tes données, ta mémoire et tes préférences de confidentialité.', billing:'Gère ton abonnement, tes crédits et tes paiements.', stats:'Comprends ta consommation et anticipe tes prochains besoins.', connectors:'Relie tes outils avec des autorisations explicites et vérifiables.', team:'Organise les membres, rôles et approbations de ton espace.', api:'Gère tes clés, scopes, limites et journaux d’utilisation.', capabilities:'Choisis tes capacités IA et configure ton identité de marque.', skills:'Transforme tes workflows récurrents en compétences réutilisables.', claudecode:'Configure les connexions développeur séparément de tes clés HuggyFlow.', plugins:'Découvre les extensions disponibles pour ton espace.' };
     const connectorStatus = { connected:'Connecté', pending:'Autorisation requise', error:'À diagnostiquer', disconnected:'Non connecté' };
     const connectorSyncStatus = { healthy:'Synchronisé', ready:'Prêt à synchroniser', pending:'En attente', error:'Synchronisation en erreur', idle:'Pas encore testé' };
     const connectorCatalog = (this.INTEGRATIONS || []).map((item, index)=>{
@@ -6786,13 +6791,13 @@ class Component extends DCLogic {
       hasPricingNotice: !!st.pricingNotice,
       pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
       pricingEmpty: !!st.backendError && renderedPlans.length === 0,
-      showSettingsWorkspace: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors'].includes(st.page),
-      showLegacySettingsModal: false,
+      showSettingsWorkspace: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       closeSettings: ()=> this.closeSettingsModal(),
       settingsPrimaryItems,
-      settingsCustomItems,
+      settingsAdvancedItems,
       settingsNavEmpty,
       settingsPageTitle: settingsTitles[st.page] || 'Paramètres',
+      settingsPageDescription: settingsDescriptions[st.page] || 'Configure ton espace HuggyFlow.',
       settingsKicker: 'HuggyFlow / Centre de contrôle',
       settingsPlanBadge: st.user ? String(st.user.plan || 'FREE').toUpperCase() : 'INVITÉ',
       settingsAccountLabel: st.user ? (st.user.name || 'Utilisateur HuggyFlow') : 'Visiteur',
@@ -6800,7 +6805,6 @@ class Component extends DCLogic {
       settingsSavingLabel: st.settingsSaving ? 'Enregistrement…' : (st.settingsSaved ? 'Enregistré' : 'Enregistrer'),
       settingsSearchQuery: st.settingsSearchQuery || '',
       onSettingsSearch: (e)=> this.setState({ settingsSearchQuery: e.target.value }),
-      onSettingsScroll: ()=> this.onSettingsScroll(),
       avatarInitial: (st.settingsName || (st.user && st.user.name) || 'D')[0].toUpperCase(),
       showSettingsSection: (() => {
         const query = (st.settingsSearchQuery || '').toLowerCase().trim();
@@ -7108,7 +7112,6 @@ class Component extends DCLogic {
       showAuth: st.page === 'auth',
       showBilling: false,
       showGallery: st.page === 'gallery',
-      showSettings: false,
       modalShowSettings: st.page === 'settings',
       modalShowBilling: st.page === 'billing',
       modalShowTeam: st.page === 'team',
@@ -7226,9 +7229,6 @@ class Component extends DCLogic {
       toggleProjectsSection: ()=> this.setState(s=>({ projectsExpanded: !(s.projectsExpanded !== false), projectMenuId:'' })),
       projectsChevronStyle: 'flex:0 0 auto;transition:transform .18s ease;transform:rotate(' + (st.projectsExpanded !== false ? '0deg' : '-90deg') + ')',
       canSeeAdmin: this.isAdminUser(),
-      showTeam: false,
-      showApi: false,
-      showStats: false,
       openStats: ()=> this.openSettingsSection('stats'),
       statsTabs: [['7','7 jours'],['30','30 jours'],['90','90 jours']].map(p=>({
         label: p[1],
