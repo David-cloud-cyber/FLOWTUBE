@@ -56,4 +56,4 @@ jobs:
           fi
 
       - name: Deploy flowtube-api
-        run: supabase functions deploy flowtube-api --project-ref "$PROJECT_REF" --use-api
+        run: supabase functions deploy flowtube-api --project-ref "$PROJECT_REF"
