@@ -7571,10 +7571,12 @@ class Component extends DCLogic {
        modelGroups: (()=>{
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const grouped = {};
+        const groupOrder = [];
         const curated = [];
         this.modelPickerModels().filter(m=>!query || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
-          if(m.free || m.current){ curated.push(m); return; }
+          if(m.id === 'auto' || m.free || m.current){ curated.push(m); return; }
           const key = m.group || (m.capabilities && m.capabilities.includes('vision') ? 'Vision' : (m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : 'Rapide'));
+          if(!grouped[key]) groupOrder.push(key);
           (grouped[key] || (grouped[key] = [])).push(m);
         });
         const sections = curated.length ? [{
@@ -7591,7 +7593,7 @@ class Component extends DCLogic {
             onClick:()=>this.setState({ modelId:m.id, modelMenu:false, modelMenuSearch:'' })
           }))
         }] : [];
-        return sections.concat(Object.keys(grouped).sort((a,b)=>a.localeCompare(b)).map((g,gi)=>({
+        return sections.concat(groupOrder.map((g,gi)=>({
           label: g,
           headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items: grouped[g].map(m=>({

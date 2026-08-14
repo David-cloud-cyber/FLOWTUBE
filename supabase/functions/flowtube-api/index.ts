@@ -47,6 +47,8 @@ const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER
 const OPENROUTER_AGENT_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_AGENT_ENABLED") || "true").toLowerCase() !== "false";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const OPENROUTER_CATALOG_TTL_MS = 10 * 60 * 1000;
+const MODEL_POPULARITY_TTL_MS = 10 * 60 * 1000;
+const MODEL_POPULARITY_WINDOW_DAYS = 30;
 const OPENROUTER_CURATED_AGENT_IDS = [
   "openai/gpt-chat-latest",
   "google/gemini-3.7-flash",
@@ -194,6 +196,12 @@ type OpenRouterCatalog = {
   live: boolean;
 };
 
+type ModelPopularityCache = {
+  counts: Map<string, number>;
+  syncedAt: string | null;
+  windowDays: number;
+};
+
 let openRouterCatalogCache: OpenRouterCatalog = {
   agent: [],
   batch: [],
@@ -201,6 +209,12 @@ let openRouterCatalogCache: OpenRouterCatalog = {
   video: [],
   syncedAt: null,
   live: false,
+};
+
+let modelPopularityCache: ModelPopularityCache = {
+  counts: new Map(),
+  syncedAt: null,
+  windowDays: MODEL_POPULARITY_WINDOW_DAYS,
 };
 
 function openRouterHeaders() {
@@ -260,6 +274,49 @@ async function refreshOpenRouterCatalog(force = false) {
     }
   }
   return openRouterCatalogCache;
+}
+
+async function refreshModelPopularity(supabase: ReturnType<typeof adminClient>, force = false) {
+  const refreshedAt = modelPopularityCache.syncedAt ? Date.parse(modelPopularityCache.syncedAt) : 0;
+  if (!force && refreshedAt && Date.now() - refreshedAt < MODEL_POPULARITY_TTL_MS) return modelPopularityCache;
+
+  const since = new Date(Date.now() - MODEL_POPULARITY_WINDOW_DAYS * 86400000).toISOString();
+  const [generationsResult, agentUsageResult] = await Promise.all([
+    supabase.from("generations")
+      .select("model_id,status,created_at")
+      .gte("created_at", since)
+      .in("status", ["pending", "running", "completed"])
+      .order("created_at", { ascending: false })
+      .limit(10000),
+    supabase.from("pricing_audit_logs")
+      .select("metadata,status,created_at")
+      .eq("status", "completed")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(10000),
+  ]);
+
+  const counts = new Map<string, number>();
+  const addUsage = (value: unknown) => {
+    const modelId = internalModelId(value);
+    if (!modelId || isBatchModel(modelId)) return;
+    counts.set(modelId, (counts.get(modelId) || 0) + 1);
+  };
+
+  for (const row of generationsResult.data || []) addUsage(row.model_id);
+  for (const row of agentUsageResult.data || []) {
+    const metadata = row.metadata && typeof row.metadata === "object"
+      ? row.metadata as Record<string, unknown>
+      : {};
+    addUsage(metadata.model_id);
+  }
+
+  modelPopularityCache = {
+    counts,
+    syncedAt: new Date().toISOString(),
+    windowDays: MODEL_POPULARITY_WINDOW_DAYS,
+  };
+  return modelPopularityCache;
 }
 
 function isOpenRouterAgentModel(modelId: string) {
@@ -364,7 +421,16 @@ function publicModelDescription(capabilities: string[], tier: string) {
 }
 
 function publicAgentModels() {
-  const remote = openRouterCatalogCache.agent.filter((item) => !isBatchModel(String(item.id || "")));
+  const popularity = modelPopularityCache.counts;
+  const remote = openRouterCatalogCache.agent
+    .filter((item) => !isBatchModel(String(item.id || "")))
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const countA = popularity.get(String(a.item.id || "")) || 0;
+      const countB = popularity.get(String(b.item.id || "")) || 0;
+      return countB - countA || a.index - b.index;
+    })
+    .map(({ item }) => item);
   const models = [{ id: "auto", modelKey: "auto", name: "Auto", description: "Choisit automatiquement le modele le plus adapte a ta demande.", tier: "balanced", capabilities: ["tools", "vision", "reasoning"] }, ...remote.map((item) => {
     const id = String(item.id || "");
     const key = rememberPublicModel(id);
@@ -1930,6 +1996,7 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
 
 async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
   const openRouterCatalog = await refreshOpenRouterCatalog();
+  await refreshModelPopularity(supabase);
   const liveMediaIds = new Set([
     ...openRouterCatalog.image.map((model) => String(model.id || "")),
     ...openRouterCatalog.video.map((model) => String(model.id || "")),
@@ -2148,7 +2215,14 @@ function creditsFor(model: PricingModel, duration?: number) {
 }
 
 function publicPricingModels(catalog: PricingModel[]) {
-  const media = priorityModelCatalog(catalog).map((model) => {
+  const media = priorityModelCatalog(catalog)
+    .map((model, index) => ({ model, index }))
+    .sort((a, b) => {
+      const countA = modelPopularityCache.counts.get(a.model.id) || 0;
+      const countB = modelPopularityCache.counts.get(b.model.id) || 0;
+      return countB - countA || a.index - b.index;
+    })
+    .map(({ model }) => {
     const quote = quoteFor(model);
     const modelKey = rememberPublicModel(model.id);
     return {
@@ -8389,7 +8463,7 @@ async function healthRoute() {
       models: openRouterCatalogCache.live ? "ready" : "degraded",
       media: openRouterCatalogCache.image.length + openRouterCatalogCache.video.length > 0 ? "ready" : "fallback",
     },
-  });
+    });
 }
 
 async function authRoute(req: Request, action: string) {
