@@ -2,7 +2,7 @@
 create unique index if not exists credit_transactions_agent_idempotency_unique
   on public.credit_transactions (user_id, (metadata->>'idempotency_key'))
   where reason = 'agent_message'
-    and metadata ? 'idempotency_key';
+    and metadata->>'idempotency_key' is not null;
 
 create or replace function public.charge_agent_credits(
   p_user_id uuid,
