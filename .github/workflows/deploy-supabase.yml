@@ -31,10 +31,19 @@ jobs:
             python3 - <<'PY'
           import json
           import os
+          import re
+          import sys
           import urllib.request
+          import urllib.error
 
           project_ref = os.environ["PROJECT_REF"]
-          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          token = os.environ.get("SUPABASE_ACCESS_TOKEN", "")
+          if not token:
+              message = "SUPABASE_ACCESS_TOKEN is missing and SUPABASE_DB_PASSWORD is not configured."
+              print(f"::error::{message}", file=sys.stderr)
+              with open(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"), "a", encoding="utf-8") as summary:
+                  summary.write("### Supabase deployment diagnostic\n\n" + message + "\n")
+              raise SystemExit(1)
           migration_names = [
               "20260813100000_add_provider_agnostic_generation_jobs.sql",
               "20260816100000_atomic_agent_and_generation_credits.sql",
@@ -58,7 +67,12 @@ jobs:
                           raise RuntimeError(f"migration request failed: {response.status}")
               except urllib.error.HTTPError as error:
                   detail = error.read().decode("utf-8", errors="replace")[:1200]
-                  raise RuntimeError(f"migration {name} failed with HTTP {error.code}: {detail}") from error
+                  detail = re.sub(r"(?i)(bearer\s+)[^\s]+", r"\1[redacted]", detail)
+                  message = f"migration {name} failed with HTTP {error.code}: {detail}"
+                  print(f"::error::{message}", file=sys.stderr)
+                  with open(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"), "a", encoding="utf-8") as summary:
+                      summary.write("### Supabase migration diagnostic\n\n```text\n" + message + "\n```\n")
+                  raise SystemExit(1) from error
               print(f"Applied {name}.")
           PY
           fi
