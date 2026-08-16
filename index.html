@@ -4177,6 +4177,17 @@ class Component extends DCLogic {
   loadPreviewData(){
     if(!this.demoMode || this.previewDataLoaded) return;
     this.previewDataLoaded = true;
+    // Keep the local preview useful without weakening the production allowlist.
+    this.MODELS = [
+      { id:'auto', modelKey:'auto', name:'Auto', group:'Rapide', desc:'Choisit automatiquement le meilleur modèle pour ta demande', creditsLabel:'Selon la tâche', free:true, current:true, dot:'#D1FE17', capabilities:['tools','vision','reasoning'] },
+      { id:'flash-v4', modelKey:'flash-v4', name:'Flash V4', group:'Rapide', desc:'Réponse rapide pour les idées, briefs et itérations', creditsLabel:'Dès 1 crédit', dot:'#C4C7CC', capabilities:['tools','vision'] },
+      { id:'deepseek-v4-flash', modelKey:'deepseek-v4-flash', name:'DeepSeek V4 Flash', group:'Rapide', desc:'Rapide et efficace pour les volumes importants', creditsLabel:'Dès 1 crédit', dot:'#BCA7FF', capabilities:['tools','reasoning'] },
+      { id:'gpt-5.5', modelKey:'gpt-5.5', name:'GPT 5.5', group:'Raisonnement', desc:'Analyse avancée et orchestration de workflows complexes', creditsLabel:'Dès 4 crédits', dot:'#9BD1E8', capabilities:['tools','vision','reasoning'] },
+      { id:'claude-fable-5', modelKey:'claude-fable-5', name:'Claude Fable 5', group:'Raisonnement', desc:'Contexte long et réponses structurées pour les projets créatifs', creditsLabel:'Dès 5 crédits', dot:'#E8B29B', capabilities:['tools','reasoning'] },
+      { id:'gpt-image-2', modelKey:'gpt-image-2', name:'GPT Image 2', group:'Image', desc:'Images propres, cohérentes et prêtes à intégrer', creditsLabel:'Dès 4 crédits', dot:'#E8D79B', capabilities:['vision','image'] },
+      { id:'recraft', modelKey:'recraft', name:'Recraft', group:'Image', desc:'Direction artistique, marque et compositions éditoriales', creditsLabel:'Dès 4 crédits', dot:'#C9A8E8', capabilities:['vision','image'] },
+      { id:'seedance-2', modelKey:'seedance-2', name:'Seedance 2.0', group:'Vidéo', desc:'Clips sociaux avec mouvement et rythme maîtrisés', creditsLabel:'Dès 16 crédits', dot:'#A8E8C0', capabilities:['vision','video','audio'] }
+    ];
     const imageUrl = 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=85';
     const imageUrl2 = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=85';
     const videoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
