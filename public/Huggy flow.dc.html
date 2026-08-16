@@ -1942,7 +1942,7 @@ class Component extends DCLogic {
   agentModelApiId(id){ return id || 'auto'; }
   typeForModel(model){
     if(!model) return 'image';
-    if(model.group === 'Videos' || model.group === 'Vidéos' || model.group === 'VidÃ©os') return 'video';
+    if(model.group === 'Videos' || model.group === 'Vidéos') return 'video';
     if(model.group === 'Voix') return 'audio';
     return 'image';
   }

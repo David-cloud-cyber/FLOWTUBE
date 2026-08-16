@@ -351,7 +351,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 .hf-connector-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;border-radius:9px;font:800 15px 'Space Grotesk',ui-sans-serif,sans-serif;box-shadow:inset 0 0 0 1px rgba(19,21,23,.10)}
 .hf-connector-logo-large{width:54px;height:54px;flex-basis:54px;border-radius:11px;font-size:20px}
 .hf-connector-availability{display:inline-flex;align-items:flex-start;justify-content:flex-end;gap:6px;flex:0 0 auto;width:min(145px,42%);min-width:0;max-width:145px;color:var(--hf-settings-muted);font-size:10px;line-height:1.25;text-align:right;white-space:normal;word-break:normal;overflow-wrap:normal}
-.hf-connector-availability span{width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 3px rgba(209,254,23,.06)}
+.hf-connector-availability > span:first-child{width:6px;height:6px;flex:0 0 6px;margin-top:3px;border-radius:50%;box-shadow:0 0 0 3px rgba(209,254,23,.06)}
 .hf-connector-card-body{min-width:0;flex:1}
 .hf-connector-card-title{display:flex;align-items:flex-start;gap:7px;min-width:0;max-width:100%;color:var(--hf-settings-ink);font-size:14px;font-weight:750;line-height:1.3;overflow-wrap:anywhere}
 .hf-connector-card-desc{margin-top:6px;overflow:hidden;color:var(--hf-settings-muted);font-size:11.5px;line-height:1.45;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
@@ -485,9 +485,9 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
  [data-hf-app-shell="true"]{--hf-motion-ease:cubic-bezier(.16,1,.3,1)}
 [data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:beui-route-enter var(--hf-motion-page,320ms) var(--hf-motion-ease) both!important;will-change:opacity,transform}
 @media (prefers-reduced-motion:reduce){[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:none!important;will-change:auto}}
-/* beUI Dark adaptation: keep HuggyFlow lime as the product action while
-   moving the shell toward BeUI's quieter charcoal, pill and border language. */
- :root{--beui-primary:#fff;--beui-secondary:#e6edf3;--beui-neutral:#151515;--beui-surface:#1c1c1c;--beui-on-surface:#e6edf3;--beui-muted:#8a8f98;--beui-border:rgba(255,255,255,.07);--beui-accent:#D1FE17;--beui-radius-lg:24px;--beui-radius-full:9999px;--beui-ease:cubic-bezier(.16,1,.3,1)}
+/* beUI Dark adaptation: use BeUI's white primary on HuggyFlow's charcoal shell,
+   with lime kept out of the core interaction language. */
+ :root{--beui-primary:#fff;--beui-secondary:#e6edf3;--beui-neutral:#151515;--beui-surface:#1c1c1c;--beui-on-surface:#e6edf3;--beui-muted:#8a8f98;--beui-border:rgba(255,255,255,.07);--beui-accent:#fff;--beui-accent-ink:#151515;--beui-radius-lg:24px;--beui-radius-full:9999px;--beui-ease:cubic-bezier(.16,1,.3,1)}
 [data-hf-app-shell="true"]{font-family:Geist,Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif!important;letter-spacing:0!important;color:var(--beui-on-surface)}
 [data-hf-app-shell="true"] h1,[data-hf-app-shell="true"] h2,[data-hf-app-shell="true"] h3,[data-hf-app-shell="true"] h4{letter-spacing:0!important}
 [data-hf-app-shell="true"] button,[data-hf-app-shell="true"] input,[data-hf-app-shell="true"] textarea,[data-hf-app-shell="true"] select{font-family:inherit;letter-spacing:0}
@@ -526,7 +526,28 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-app-shell="true"] [data-hf-rail-item]:hover{border-color:rgba(255,255,255,.07)!important;background:rgba(255,255,255,.05)!important}
 [data-hf-app-shell="true"] [data-hf-rail-item]:active{transform:scale(.985)}
 [data-hf-app-shell="true"] [data-hf-rail-item] [data-hf-rail-icon]{transition:color .16s var(--beui-ease),background .16s var(--beui-ease)!important}
-[data-hf-app-shell="true"] ::selection{color:#131517;background:#D1FE17}
+[data-hf-app-shell="true"] [style*="background:#D1FE17"],[data-hf-app-shell="true"] [style*="background:#d1fe17"]{background:#fff!important;color:#151515!important}
+[data-hf-app-shell="true"] [style*="color:#D1FE17"],[data-hf-app-shell="true"] [style*="color:#d1fe17"]{color:#fff!important}
+[data-hf-app-shell="true"] [style*="background: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="background:rgba(209,254,23"],[data-hf-app-shell="true"] [style*="background: rgba(209, 254, 23"]{background:#fff!important;background-color:#fff!important;color:#151515!important}
+[data-hf-app-shell="true"] [style*="color: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="color:rgba(209,254,23"],[data-hf-app-shell="true"] [style*="color: rgba(209, 254, 23"]{color:#fff!important}
+[data-hf-app-shell="true"] [style*="box-shadow: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="box-shadow: rgba(209,254,23"],[data-hf-app-shell="true"] [style*="box-shadow: rgba(209, 254, 23"]{box-shadow:0 0 14px -8px rgba(255,255,255,.22)!important}
+[data-hf-app-shell="true"] [style*="rgba(209,254,23"],[data-hf-app-shell="true"] [style*="rgba(209, 254, 23"]{background-color:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:0 0 14px -8px rgba(255,255,255,.22)!important}
+[data-hf-app-shell="true"] [style*="stroke:#D1FE17"],[data-hf-app-shell="true"] [style*="stroke:#d1fe17"]{stroke:#fff!important}
+[data-hf-model-menu="true"] [data-hf-model-row].is-active{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.22)!important}
+[data-hf-model-menu="true"] [data-hf-model-check]{color:#fff!important}
+.hf-settings-brand-mark,.hf-settings-avatar{background:#fff!important;color:#151515!important;box-shadow:0 0 18px -8px rgba(255,255,255,.28)!important}
+.hf-settings-nav-item.is-active{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.20)!important;color:#fff!important;box-shadow:inset 2px 0 0 #fff!important}
+.hf-settings-nav-item.is-active .hf-settings-nav-icon{background:#fff!important;color:#151515!important}
+.hf-settings-kicker{color:#fff!important}
+.hf-settings-badge,.hf-settings-status{background:rgba(255,255,255,.10)!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
+.hf-settings-progress span{background:#fff!important}
+.hf-settings-control:focus,.hf-settings-textarea:focus,.hf-settings-search input:focus{border-color:rgba(255,255,255,.66)!important;box-shadow:0 0 0 3px rgba(255,255,255,.10)!important}
+.hf-explore-kicker{color:#fff!important}
+.hf-explore-primary-action{background:#fff!important;color:#151515!important}
+.hf-explore-card:hover,.hf-explore-card:focus-visible{border-color:rgba(255,255,255,.24)!important}
+.hf-settings-primary{border-color:#fff!important;background:#fff!important;color:#151515!important}
+.hf-explore-type{background:rgba(21,21,21,.82)!important}
+[data-hf-app-shell="true"] ::selection{color:#151515;background:#fff}
 @media (prefers-reduced-motion:reduce){[data-hf-app-shell="true"] *,[data-hf-app-shell="true"] *::before,[data-hf-app-shell="true"] *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </helmet>
@@ -3629,7 +3650,7 @@ class Component extends DCLogic {
     return this.friendlyError(raw, 'Connexion impossible pour le moment. Reessaie dans quelques instants.');
   }
   requireAuth(intent, pendingAction){
-    if(this.state.authToken) return true;
+    if(this.state.authToken || this.demoMode) return true;
     this.setState({
       page:'auth',
       authMode:'signup',
@@ -4370,7 +4391,7 @@ class Component extends DCLogic {
     if(typeof window !== 'undefined') window.addEventListener('hf-components-ready', this.agentComponentsReady);
     this.routePopstate = ()=>{
       const next = this.routeStateFromLocation();
-      if(next.requiresAuth && !this.state.authToken){
+      if(!this.demoMode && next.requiresAuth && !this.state.authToken){
         this.requireAuth('Connecte-toi pour acceder a cette page.', { type:'route', page:next.page });
         return;
       }
@@ -4491,10 +4512,10 @@ class Component extends DCLogic {
       this.clearSettingsHash();
       this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:hashSection });
     }
-    if(this.initialRoute.requiresAuth && !this.state.authToken && !hashSection){
+    if(!this.demoMode && this.initialRoute.requiresAuth && !this.state.authToken && !hashSection){
       this.requireAuth('Connecte-toi pour acceder a cette page.', { type:'route', page:this.initialRoute.page });
     }
-    if(!(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
+    if(this.demoMode || !(this.initialRoute.requiresAuth && !this.state.authToken)) this.syncPageRoute('replace');
     if(!this.demoMode){
       this.trackAffiliateReferral();
       this.consumeOAuthReturnNotice();
@@ -4600,7 +4621,7 @@ class Component extends DCLogic {
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
     this.syncAgentUiSlots();
     if(this.state.modelMenu && typeof window !== 'undefined') requestAnimationFrame(()=>this.positionModelMenu());
-    if(this.isSettingsPage(this.state.page) && !this.state.authToken){
+    if(this.isSettingsPage(this.state.page) && !this.state.authToken && !this.demoMode){
       this.clearSettingsHash();
       this.setState({ page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
       return;
@@ -4665,7 +4686,7 @@ class Component extends DCLogic {
     return this.isSettingsPage(section) ? section : '';
   }
   requireSettingsAccess(section){
-    if(this.state.authToken) return true;
+    if(this.state.authToken || this.demoMode) return true;
     const target = this.isSettingsPage(section) ? section : 'settings';
     this.requireAuth('Connecte-toi pour acceder aux parametres.', { type:'settings', section:target });
     return false;
@@ -6747,6 +6768,16 @@ class Component extends DCLogic {
     if(!selector || !menu) return;
     const rect = selector.getBoundingClientRect();
     const gap = 8;
+    const panel = Array.from(document.querySelectorAll('[data-hf-studio-panel="true"]'))
+      .map(node=>node.getBoundingClientRect())
+      .find(panelRect=>panelRect.width > 80 && panelRect.left > rect.left && panelRect.top < window.innerHeight && panelRect.bottom > 0);
+    const menuWidth = Math.min(350, Math.max(220, window.innerWidth - 24));
+    const rightBoundary = panel ? panel.left - gap : window.innerWidth - gap;
+    let left = Math.min(0, rightBoundary - rect.left - menuWidth);
+    if(rect.left + left < 12) left = 12 - rect.left;
+    menu.style.width = menuWidth + 'px';
+    menu.style.left = left + 'px';
+    menu.style.right = 'auto';
     const below = Math.max(180, window.innerHeight - rect.bottom - 24);
     const above = Math.max(180, rect.top - 24);
     const placeAbove = below < 360 && above > below;

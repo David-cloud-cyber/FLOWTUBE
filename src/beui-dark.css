@@ -11,8 +11,8 @@
   --beui-muted: #8a8f98;
   --beui-border: rgba(255, 255, 255, 0.07);
   --beui-error: #ff5a5f;
-  --beui-accent: #d1fe17;
-  --beui-accent-ink: #131517;
+  --beui-accent: #ffffff;
+  --beui-accent-ink: #151515;
   --beui-radius-sm: 6px;
   --beui-radius-md: 12px;
   --beui-radius-lg: 24px;
@@ -25,7 +25,7 @@
   --beui-duration-page: 320ms;
   --beui-transition-panel: 360ms var(--beui-ease-drawer);
   --beui-transition-reduced: 160ms var(--beui-ease);
-  --beui-focus: 0 0 0 3px rgba(209, 254, 23, 0.16);
+  --beui-focus: 0 0 0 3px rgba(255, 255, 255, 0.16);
 }
 
 html,
@@ -175,7 +175,7 @@ select {
 
 .hf-beui-input:focus {
   outline: none;
-  border-color: rgba(209, 254, 23, 0.66);
+  border-color: rgba(255, 255, 255, 0.66);
   box-shadow: var(--beui-focus);
 }
 
@@ -478,7 +478,7 @@ select {
   min-height: 30px;
   padding: 0 12px;
   border-radius: var(--beui-radius-full);
-  border-color: rgba(209, 254, 23, 0.36);
+  border-color: rgba(255, 255, 255, 0.18);
   font-weight: 600;
 }
 

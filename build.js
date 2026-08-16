@@ -67,6 +67,12 @@ for (const folder of foldersToCopy) {
   const dest = path.join(distDir, folder);
   if (fs.existsSync(src)) {
     copyDir(src, dest);
+    // The canonical runtime is the root index.html. Do not ship the stale
+    // legacy public copy, which can reintroduce duplicate UI and old scroll logic.
+    if (folder === 'public') {
+      const legacyIndex = path.join(dest, 'index.html');
+      if (fs.existsSync(legacyIndex)) fs.rmSync(legacyIndex);
+    }
     console.log(`Copied directory: ${folder}`);
   } else {
     console.warn(`Skipped directory (not found): ${folder}`);
