@@ -545,38 +545,38 @@ select {
   --hf-accent-ink: #0d171a;
 }
 
-[data-hf-app-shell="true"] [style*="#D1FE17"],
-[data-hf-app-shell="true"] [style*="#d1fe17"],
-.hf-settings-shell [style*="#D1FE17"],
-.hf-settings-shell [style*="#d1fe17"] {
+[data-hf-app-shell="true"] [style*="#6EE7FF"],
+[data-hf-app-shell="true"] [style*="#6EE7FF"],
+.hf-settings-shell [style*="#6EE7FF"],
+.hf-settings-shell [style*="#6EE7FF"] {
   color: var(--hf-accent) !important;
   stroke: var(--hf-accent) !important;
 }
 
-[data-hf-app-shell="true"] [style*="background:#D1FE17"],
-[data-hf-app-shell="true"] [style*="background:#d1fe17"],
-.hf-settings-shell [style*="background:#D1FE17"],
-.hf-settings-shell [style*="background:#d1fe17"] {
+[data-hf-app-shell="true"] [style*="background:#6EE7FF"],
+[data-hf-app-shell="true"] [style*="background:#6EE7FF"],
+.hf-settings-shell [style*="background:#6EE7FF"],
+.hf-settings-shell [style*="background:#6EE7FF"] {
   background: var(--hf-accent) !important;
 }
 
-[data-hf-app-shell="true"] [style*="background:#D1FE17"][style*="color:#131517"],
-[data-hf-app-shell="true"] [style*="background:#d1fe17"][style*="color:#131517"],
-.hf-settings-shell [style*="background:#D1FE17"][style*="color:#131517"],
-.hf-settings-shell [style*="background:#d1fe17"][style*="color:#131517"] {
+[data-hf-app-shell="true"] [style*="background:#6EE7FF"][style*="color:#131517"],
+[data-hf-app-shell="true"] [style*="background:#6EE7FF"][style*="color:#131517"],
+.hf-settings-shell [style*="background:#6EE7FF"][style*="color:#131517"],
+.hf-settings-shell [style*="background:#6EE7FF"][style*="color:#131517"] {
   color: var(--hf-accent-ink) !important;
 }
 
-[data-hf-app-shell="true"] [style*="rgba(209,254,23"],
-.hf-settings-shell [style*="rgba(209,254,23"] {
+[data-hf-app-shell="true"] [style*="rgba(110,231,255"],
+.hf-settings-shell [style*="rgba(110,231,255"] {
   background-color: rgba(110, 231, 255, 0.12) !important;
   border-color: rgba(110, 231, 255, 0.28) !important;
 }
 
-[data-hf-app-shell="true"] [style*="stroke=\"#D1FE17\""],
-[data-hf-app-shell="true"] [style*="stroke=\"#d1fe17\""],
-.hf-settings-shell [style*="stroke=\"#D1FE17\""],
-.hf-settings-shell [style*="stroke=\"#d1fe17\""] {
+[data-hf-app-shell="true"] [style*="stroke=\"#6EE7FF\""],
+[data-hf-app-shell="true"] [style*="stroke=\"#6EE7FF\""],
+.hf-settings-shell [style*="stroke=\"#6EE7FF\""],
+.hf-settings-shell [style*="stroke=\"#6EE7FF\""] {
   stroke: var(--hf-accent) !important;
 }
 
