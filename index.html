@@ -4353,6 +4353,8 @@ class Component extends DCLogic {
     // Preserve the user's current reading position on mount. A new prompt
     // explicitly opts into following the conversation in sendPrompt().
     this.chatShouldStick = false;
+    // Initial bootstrap/demo hydration is not an unread-message event.
+    this.chatIgnoreNextMessageUpdate = true;
     this.agentComponentsReady = ()=>this.syncAgentUiSlots();
     if(typeof window !== 'undefined') window.addEventListener('hf-components-ready', this.agentComponentsReady);
     this.routePopstate = ()=>{
@@ -4552,8 +4554,13 @@ class Component extends DCLogic {
     const studioChanged = ['studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'].some(key=>stateBefore[key] !== this.state[key]);
     if(studioChanged) this.rememberStudioContext();
     if(stateBefore.messages !== this.state.messages){
-      if(this.chatShouldStick !== false) this.scrollChatToBottom();
-      else if(!this.state.chatUnread) this.setState({ chatUnread:true });
+      if(this.chatIgnoreNextMessageUpdate){
+        this.chatIgnoreNextMessageUpdate = false;
+      }else if(this.chatShouldStick !== false){
+        this.scrollChatToBottom();
+      }else if(!this.state.chatUnread){
+        this.setState({ chatUnread:true });
+      }
     }
     const previousPage = stateBefore.page === undefined ? this._lastComponentPage : stateBefore.page;
     const previousExploreActiveId = stateBefore.exploreActiveId === undefined ? this._lastExploreActiveId : stateBefore.exploreActiveId;
