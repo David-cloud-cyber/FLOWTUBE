@@ -2993,15 +2993,9 @@ async function bootstrap(req: Request) {
       credits: pack.credits,
       priceUsd: pack.price_usd,
       checkoutEnabled: Boolean(pack.metadata?.checkout !== false),
-      stripeConfigured: Boolean(pack.stripe_price_id || stripePriceForPack(pack)),
     })),
     billing: {
-      stripeConfigured: Boolean(stripeSecret()),
-      moneyFusionConfigured: moneyFusionConfigured(),
-      moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
       currency: DEFAULT_BILLING_CURRENCY,
-      usdXofRate: DEFAULT_USD_XOF_RATE,
-      siteUrl: APP_BASE_URL,
       subscription: subscription ? {
         planId: subscription.plan_id,
         status: subscription.status,
@@ -3009,17 +3003,6 @@ async function bootstrap(req: Request) {
         currentPeriodEnd: subscription.current_period_end,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
       } : null,
-    },
-    production: {
-      auth: true,
-      agentFlow: OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) || Boolean(Deno.env.get("ANTHROPIC_API_KEY")),
-      aiModel: "auto",
-      aiModels: publicAgentModels(),
-      billing: true,
-      storage: true,
-      providerWebhooks: true,
-      moderation: true,
-      transactionalEmail: Boolean(Deno.env.get("RESEND_API_KEY")),
     },
     projects,
   });
