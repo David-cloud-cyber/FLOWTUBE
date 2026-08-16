@@ -130,11 +130,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-md] th{background:rgba(209,254,23,.08);color:#F7F7F8;font-weight:700}[data-hf-md] td:last-child,[data-hf-md] th:last-child{border-right:0}[data-hf-md] tr:last-child td{border-bottom:0}
 [data-hf-md] .hf-math-inline{display:inline-block;padding:1px 6px;border-radius:5px;background:rgba(24,220,255,.08);color:#BDEFFF;font:500 .95em/1.4 'JetBrains Mono',monospace;white-space:pre-wrap}
 [data-hf-md] .hf-math-block{display:block;margin:12px 0;padding:13px 16px;overflow:auto;border:1px solid rgba(24,220,255,.18);border-radius:10px;background:rgba(24,220,255,.055);color:#D9F7FF;text-align:center;font:500 14px/1.65 'JetBrains Mono',monospace;white-space:pre-wrap}
-[data-hf-stream-status]{display:flex;align-items:center;gap:8px;min-height:24px;color:#A8A8A8;font-size:11px;line-height:1.4}
-[data-hf-stream-status] strong{color:#F7F7F8;font-weight:650}
 [data-hf-stream-dot]{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#D1FE17;box-shadow:0 0 12px rgba(209,254,23,.5);animation:streamPulse 1.25s ease-in-out infinite}
 [data-hf-text-shimmer]{background:linear-gradient(105deg,#898A8B 18%,#F7F7F8 38%,#D1FE17 50%,#898A8B 68%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:textShimmer 1.8s linear infinite}
-[data-hf-stream-cursor]{display:inline-block;width:6px;height:14px;margin-left:3px;vertical-align:-2px;border-radius:2px;background:#D1FE17;animation:streamCursor 1s steps(1,end) infinite}
 [data-hf-chat-scroll]{overscroll-behavior:contain;scrollbar-gutter:stable;overflow-x:clip}
 [data-hf-attachment-list]{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 [data-hf-attachment-card]{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:min(100%,300px);padding:6px 8px;border:1px solid rgba(247,247,248,.12);border-radius:11px;background:rgba(247,247,248,.045);color:#A8A8A8;animation:fadeUp .18s ease both}
@@ -232,7 +229,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-composer-tools]{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
 [data-hf-composer-tool]{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898A8B;font:600 10.5px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease}
 [data-hf-composer-send-hint="true"]{display:none!important}
-[data-hf-composer-tools]{position:absolute;left:20px;right:20px;bottom:-50px;box-sizing:border-box;min-height:50px;display:flex;align-items:center;gap:2px;padding:0 12px;border-radius:0 0 18px 18px;background:rgba(20,21,23,.96);box-shadow:0 9px 20px -18px rgba(0,0,0,.7);overflow:hidden}
+[data-hf-composer-tools]{position:absolute;z-index:2;left:0;right:0;bottom:-40px;box-sizing:border-box;min-height:40px;margin:0;display:flex;align-items:center;gap:2px;padding:0 8px;border:1px solid rgba(247,247,248,.06);border-top:0;border-radius:0 0 18px 18px;background:rgba(20,21,23,.92);box-shadow:0 10px 18px -16px rgba(0,0,0,.7);overflow:hidden}
 [data-hf-composer-tool]{min-height:28px;padding:0 7px;border-radius:7px;color:#F1F1F2;font-size:11.5px;font-weight:650}
 [data-hf-composer-tool] svg{width:14px;height:14px;color:#F7F7F8}
 [data-hf-composer-tool]:first-child svg{color:#F7F7F8}
@@ -252,7 +249,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-super-item] [data-hf-super-icon]{width:25px;height:25px;display:grid;place-items:center;flex:0 0 25px;border-radius:8px;color:#A8A8A8}
 [data-hf-super-item].is-active [data-hf-super-icon],[data-hf-super-item]:hover [data-hf-super-icon]{color:#D1FE17}
 [data-hf-super-hero-title]{font:800 clamp(30px,4.2vw,46px)/1.02 'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.025em;text-transform:uppercase}
-@media (max-width:680px){[data-hf-agent-menu]{position:fixed;left:12px;right:12px;bottom:78px;width:auto;max-width:none}[data-hf-agent-menu] [data-hf-agent-copy] strong{font-size:14px}[data-hf-agent-menu] [data-hf-agent-copy] span{font-size:11px}[data-hf-composer-tools]{left:14px;right:14px}[data-hf-composer-tool]{padding-inline:6px}[data-hf-composer-tool] span{display:none}[data-hf-connector-stack]{display:none}}
+@media (max-width:680px){[data-hf-agent-menu]{position:fixed;left:12px;right:12px;bottom:78px;width:auto;max-width:none}[data-hf-agent-menu] [data-hf-agent-copy] strong{font-size:14px}[data-hf-agent-menu] [data-hf-agent-copy] span{font-size:11px}[data-hf-composer-tools]{bottom:-38px;min-height:38px;padding-inline:5px}[data-hf-composer-tool]{padding-inline:6px}[data-hf-composer-tool] span{display:none}[data-hf-connector-stack]{display:none}}
 [data-hf-card]{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 @media (hover:hover) and (pointer:fine){[data-hf-card]:hover{transform:translateY(-2px);border-color:rgba(247,247,248,.24)!important;box-shadow:0 18px 36px -28px rgba(0,0,0,.72)}}
 .hf-pricing-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
@@ -821,7 +818,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 </div>
                 -->
                 <div data-hf-optional-composer-control="true" data-hf-composer-tools="true">
-                  <button type="button" data-hf-composer-tool="true" onClick="{{ clickSkills }}" title="Ouvrir les competences" aria-label="Compétences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z"></path></svg><span data-hf-composer-label="true">Compétences</span></button>
+                  <button type="button" data-hf-composer-tool="true" onClick="{{ clickSkills }}" title="Ouvrir les compétences" aria-label="Compétences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z"></path></svg><span data-hf-composer-label="true">Compétences</span></button>
                   <button type="button" data-hf-composer-tool="true" onClick="{{ clickConnectors }}" title="Ouvrir les connecteurs" aria-label="Connecteurs"><span data-hf-connector-stack="true" aria-hidden="true"><i>S</i><i>C</i><i>▶</i></span><span data-hf-composer-label="true">Connecteurs</span></button>
                   <button type="button" data-hf-composer-tool="true" onClick="{{ openMcp }}" title="Essayer MCP" aria-label="Essayez MCP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12.5 12.5 4.8-4.8a3.1 3.1 0 0 0-4.4-4.4L8.1 8.1a4.7 4.7 0 0 0 6.6 6.6l4.4-4.4"></path><path d="m11.5 11.5-4.8 4.8a3.1 3.1 0 0 0 4.4 4.4l4.8-4.8a4.7 4.7 0 0 0-6.6-6.6L5 13.7"></path></svg><span data-hf-composer-label="true">Essayez MCP</span></button>
                 </div>
@@ -879,28 +876,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;padding-top:4px">
                       <div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{{ tText4 }}">AgentFlow</div>
                       <div data-hf-agent-ui-slot="{{ m.id }}" style="width:100%"></div>
-                      <sc-if value="{{ m.isTyping }}" hint-placeholder-val="{{ false }}">
-                        <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;width:100%">
-                          <div data-hf-stream-status="true">
-                            <span data-hf-stream-dot="true"></span>
-                            <strong data-hf-text-shimmer="true" aria-live="polite">{{ m.shimmerPhrase }}</strong>
-                          </div>
-                          <div data-hf-skeleton="true" style="height:10px;width:100%;margin-top:2px"></div>
-                          <div data-hf-skeleton="true" style="height:10px;width:72%"></div>
-                        </div>
-                      </sc-if>
-                       <sc-if value="{{ m.showText }}" hint-placeholder-val="{{ true }}">
-                         <sc-if value="{{ m.showLiveStatus }}" hint-placeholder-val="{{ false }}">
-                           <div data-hf-stream-status="true" style="margin:0 0 8px 1px">
-                             <span data-hf-stream-dot="true"></span>
-                             <strong data-hf-text-shimmer="true" aria-live="polite">{{ m.shimmerPhrase }}</strong>
-                             <sc-if value="{{ m.streamTool }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 7px;border:1px solid rgba({{ tLineRGB }},.12);border-radius:999px;color:{{ tText3 }};font-size:10px">{{ m.streamTool }}</span></sc-if>
-                           </div>
-                         </sc-if>
-                         <div style="font-size:15px;line-height:1.68;color:{{ tInkSoft }};width:100%;max-width:100%">{{ m.richText }}</div>
-                         <sc-if value="{{ m.showLiveStatus }}" hint-placeholder-val="{{ false }}"><span data-hf-stream-cursor="true" aria-hidden="true"></span></sc-if>
-                         <sc-if value="{{ m.isDocument }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.onDownloadDocument }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:650;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">Télécharger le document .md</button></sc-if>
-                       </sc-if>
+                       <sc-if value="{{ m.isDocument }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.onDownloadDocument }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tText2 }};font-size:11.5px;font-weight:650;cursor:pointer;font-family:inherit" style-hover="background:rgba({{ tLineRGB }},.06);color:{{ tInk }}">Télécharger le document .md</button></sc-if>
                       <sc-if value="{{ m.hasMedia }}" hint-placeholder-val="{{ false }}">
                         <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;width:100%">
                           <div style="{{ m.mediaBoxStyle }}">
@@ -3133,7 +3109,7 @@ class Component extends DCLogic {
     const description = this.state.page === 'pricing' ? 'Découvre les offres HuggyFlow pour produire des créations multimédia avec l’IA.' : this.state.page === 'auth' ? 'Connecte-toi à HuggyFlow pour retrouver tes projets et créations.' : 'HuggyFlow transforme une intention en images, vidéos, documents et campagnes créatives vérifiées.';
     const metadataTitle = this.state.page === 'explore' ? 'Explorer | HuggyFlow' : title;
     const safeMetadataDescription = this.state.page === 'explore' ? 'Decouvre, partage et remixe les creations publiques de la communaute HuggyFlow.' : description;
-    const metadataDescription = this.state.page === 'explore' ? 'DÃ©couvre, partage et remixe les crÃ©ations publiques de la communautÃ© HuggyFlow.' : description;
+    const metadataDescription = this.state.page === 'explore' ? 'Découvre, partage et remixe les créations publiques de la communauté HuggyFlow.' : description;
     const metadataPath = this.state.page === 'explore' ? '/explore' : (this.state.page === 'pricing' ? '/pricing' : this.state.page === 'auth' ? '/auth' : '/');
     document.title = metadataTitle;
     const setMeta = (selector, attrs) => { let node = document.head.querySelector(selector); if(!node){ node = document.createElement('meta'); document.head.appendChild(node); } Object.keys(attrs).forEach(key=>node.setAttribute(key, attrs[key])); };
@@ -3578,7 +3554,7 @@ class Component extends DCLogic {
   }
   typeForModel(model){
     if(!model) return 'image';
-    if(model.group === 'Videos' || model.group === 'Vidéos' || model.group === 'VidÃ©os') return 'video';
+    if(model.group === 'Videos' || model.group === 'Vidéos') return 'video';
     if(model.group === 'Voix') return 'audio';
     return 'image';
   }
@@ -4957,6 +4933,22 @@ class Component extends DCLogic {
       return Object.assign({}, m, { agentActivity:next.slice(-8) }, citations.length ? { citations } : {});
     })}));
   }
+  recordAgentPlan(id, payload){
+    const source = payload || {};
+    const raw = Array.isArray(source.steps) ? source.steps : (Array.isArray(source.tasks) ? source.tasks : []);
+    if(!raw.length) return;
+    const tasks = raw.map((item, index)=>{
+      const status = String(item.status || 'pending').toLowerCase();
+      return {
+        id:String(item.id || item.stepId || item.taskId || 'step-' + index),
+        title:String(item.title || item.label || item.name || 'Étape ' + (index + 1)),
+        status:status === 'running' ? 'in-progress' : status === 'failed' ? 'failed' : status === 'cancelled' ? 'cancelled' : status === 'completed' || status === 'complete' ? 'completed' : 'pending',
+        progress:Number.isFinite(Number(item.progress)) ? Math.max(0, Math.min(100, Math.round(Number(item.progress)))) : 0,
+        detail:String(item.detail || item.description || '')
+      };
+    });
+    this.updateAgentMessage(id, { agentTasks:tasks, backgroundTaskId:String(source.taskId || source.agentTaskId || source.rootTaskId || '') || undefined });
+  }
   retryAgentMessage(id){
     if(this.demoMode){ this.notify('Mode preview : la relance est simulee sans appel API.'); return; }
     const messages = this.state.messages || [];
@@ -4968,8 +4960,13 @@ class Component extends DCLogic {
   copyAgentMessage(text){
     const value = String(text || '').trim();
     if(!value) return;
-    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>this.notify('Reponse copiee.')).catch(()=>this.notify('Copie indisponible.'));
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>this.notify('Réponse copiée.')).catch(()=>this.notify('Copie indisponible.'));
     else this.notify('Copie indisponible dans ce navigateur.');
+  }
+  submitAgentFeedback(messageId, value){
+    if(!value){ this.notify('Retour retiré.'); return; }
+    if(this.demoMode){ this.notify('Merci pour ton retour.'); return; }
+    this.apiFetch('/api/feedback', { method:'POST', body:JSON.stringify({ kind:'feedback', message:value === 'up' ? 'Réponse utile' : 'Réponse peu utile', metadata:{ messageId:String(messageId || '') } }) }).then(()=>this.notify('Merci pour ton retour.')).catch(()=>this.notify('Retour indisponible pour le moment.'));
   }
   syncAgentUiSlots(){
     if(typeof document === 'undefined' || !window.HFComponents || !window.HFComponents.mountAgentMessage) return;
@@ -4987,22 +4984,22 @@ class Component extends DCLogic {
   }
   agentMessageUi(message, media, mediaStatus, streamProgress, streamPhase){
     if(!message || !message.role || message.role !== 'agent') return {};
-    const status = message.streamLive ? (message.streamPhase === 'cancelled' ? 'cancelled' : 'working') : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete'));
-    const activity = Array.isArray(message.agentActivity) ? message.agentActivity : (message.streamLive ? [{ id:'current', label:message.activity || this.streamPhaseLabel(streamPhase), kind:message.streamTool ? 'tool' : 'step', status:'working', detail:message.streamTool || '' }] : []);
+    const status = message.streamLive ? (message.streamPhase === 'cancelled' ? 'cancelled' : (message.streamPhase === 'paused' ? 'paused' : 'working')) : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete'));
+    const interactionMode = message.interactionMode || (message.approvalRequest || media || (message.kind && ['image','video','voice','document'].includes(String(message.kind))) ? 'creation' : 'conversation');
+    const compactConversation = interactionMode === 'conversation';
+    const activity = compactConversation ? [] : (Array.isArray(message.agentActivity) ? message.agentActivity : []);
     const phase = String(streamPhase || message.streamPhase || 'analyzing');
-    const tasks = message.streamLive ? [
-      { id:'understand', title:'Comprendre la demande', status:phase === 'analyzing' ? 'in-progress' : 'completed', progress:phase === 'analyzing' ? streamProgress : 100 },
-      { id:'route', title:'Choisir la strategie', status:phase === 'analyzing' || phase === 'routing' ? 'in-progress' : 'completed', progress:phase === 'routing' ? streamProgress : (phase === 'analyzing' ? 0 : 100) },
-      { id:'produce', title:'Produire et verifier le resultat', status:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? 'in-progress' : (phase === 'complete' ? 'completed' : 'pending'), progress:['writing','researching','rendering','assembling','finalizing'].includes(phase) ? streamProgress : (phase === 'complete' ? 100 : 0) }
-    ] : [];
+    const tasks = compactConversation ? [] : (Array.isArray(message.agentTasks) ? message.agentTasks : (message.plan && Array.isArray(message.plan.steps) ? message.plan.steps : []));
     return {
-      status, phase, progress:streamProgress, activity, tasks,
+      interactionMode, status, phase, progress:streamProgress, activity, tasks,
       citations:Array.isArray(message.citations) ? message.citations : [],
       mediaStatus, mediaLabel:media ? ((media.model || 'AgentFlow') + ' · ' + (media.type === 'video' ? 'video' : media.type === 'voice' ? 'audio' : 'image')) : '',
       responseText:message.text || '',
       onRetry:()=>this.retryAgentMessage(message.id),
       onCopy:()=>this.copyAgentMessage(message.text || ''),
-      onFeedback:(value)=>this.notify(value === 'up' ? 'Merci pour ton retour.' : value === 'down' ? 'Retour enregistre pour ameliorer AgentFlow.' : 'Retour retire.'),
+      onFeedback:(value)=>this.submitAgentFeedback(message.id, value),
+      onPause:message.streamLive && message.backgroundTaskId ? ()=>this.controlAgentTask(message.backgroundTaskId, 'pause') : undefined,
+      onResume:message.streamLive && message.backgroundTaskId ? ()=>this.controlAgentTask(message.backgroundTaskId, 'resume') : undefined,
       onCancel:message.streamLive ? ()=>this.stopGeneration() : undefined,
       approval:message.approval || undefined,
       onApprove:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'approved') : this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
@@ -5028,6 +5025,13 @@ class Component extends DCLogic {
     const normalized = ({ creating:'assembling', building:'assembling', ready:'finalizing' })[raw] || raw;
     const phrases = this.STREAM_PHRASES[normalized] || this.STREAM_PHRASES.analyzing;
     return phrases[Math.abs(Number(index || 0)) % phrases.length];
+  }
+  interactionModeForPrompt(text, hasAttachments, mode){
+    const value = String(text || '').trim().toLowerCase();
+    if(hasAttachments) return 'creation';
+    if(/\b(image|vidéo|video|audio|voix|document|storyboard|animation|publicité|pub|génère|genere|crée|cree|produis|produire|remix|variante|rendu|montage|exporte)\b/.test(value)) return 'creation';
+    if(['video','audio','document'].includes(String(mode || '').toLowerCase())) return 'creation';
+    return 'conversation';
   }
   streamStatusPatch(payload, fallbackPhase, fallbackProgress){
     const source = payload || {};
@@ -5269,9 +5273,8 @@ class Component extends DCLogic {
     const agentId = 'a'+Date.now()+Math.floor(Math.random()*999);
     this.trackEvent(this.state.messages.length ? 'agent_request_started' : 'first_generation_started', { mode, hasAttachments:currentAttachments.length > 0 });
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
-    const agentMsg = { id:agentId, role:'agent', typing:true, kind, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande', agentActivity:[{ id:'understand', label:'Comprendre la demande', kind:'step', status:'working' }] };
-    this.chatShouldStick = true;
-    this.chatScrollRequested = true;
+    const interactionMode = this.interactionModeForPrompt(t, currentAttachments.length > 0, mode);
+    const agentMsg = { id:agentId, role:'agent', typing:true, kind, interactionMode, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande', agentActivity:interactionMode === 'conversation' ? [] : [{ id:'understand', label:'Comprendre la demande', kind:'step', status:'working' }] };
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
       input:'',
@@ -5281,6 +5284,8 @@ class Component extends DCLogic {
     }), ()=>this.sendPromptToApi(prompt, agentId, attachmentPayload));
   }
   stopGeneration(){
+    const activeMessage = (this.state.messages || []).slice().reverse().find(message=>message && message.role === 'agent' && message.streamLive);
+    if(activeMessage && activeMessage.backgroundTaskId) this.controlAgentTask(activeMessage.backgroundTaskId, 'cancel');
     if(this.chatAbort) this.chatAbort.abort();
     this.chatAbort = null;
     this.flushAllAgentText();
@@ -5320,7 +5325,8 @@ class Component extends DCLogic {
       mode,
       modelId:'auto',
       agentModelId:this.agentModelApiId(model.id),
-      aspectRatio:this.aspectRatioForMode(mode)
+      aspectRatio:this.aspectRatioForMode(mode),
+      interactionMode:(this.state.messages.find(message=>message.id === agentId) || {}).interactionMode || 'conversation'
     }, attachmentPayload || {});
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     this.chatAbort = controller;
@@ -5344,12 +5350,12 @@ class Component extends DCLogic {
       if(!aborted && /solde insuffisant|credits requis|crédits requis/i.test(String(err && err.message || ''))){
         this.openCreditPaywall(String(err.message || 'Ton solde de crédits est insuffisant.'), this.state.modelId);
       }
-      this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:aborted ? 'cancelled' : 'complete', streamProgress:aborted ? 0 : 100, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.') });
+      this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:aborted ? 'cancelled' : 'error', streamError:!aborted, streamProgress:0, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.') });
     }finally{
       this.chatAbort = null;
       this.flushAgentText(agentId);
       const finishedMessage = this.state.messages.find(message=>message.id === agentId);
-      if(finishedMessage && finishedMessage.streamPhase !== 'cancelled') this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 });
+      if(finishedMessage && finishedMessage.streamLive && !['cancelled','error'].includes(String(finishedMessage.streamPhase || ''))) this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 });
       this.setState({ sendLocked:false });
       this.trackEvent('agent_request_completed', { mode });
       this.scheduleBootstrap(1400);
@@ -5358,7 +5364,7 @@ class Component extends DCLogic {
   async consumeChatStream(res, agentId){
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = '', delivered = false, textStarted = false;
+    let buffer = '', delivered = false, textStarted = false, lastSequence = 0;
     const handle = (block)=>{
       const lines = block.split(/\r?\n/);
       let type = 'message', data = '';
@@ -5368,6 +5374,21 @@ class Component extends DCLogic {
       });
       if(!data) return;
       let payload; try{ payload = JSON.parse(data); }catch(e){ return; }
+      const sequence = Number(payload && (payload.sequence || payload.seq || 0));
+      if(Number.isFinite(sequence) && sequence > 0){
+        if(sequence <= lastSequence) return;
+        lastSequence = sequence;
+      }
+      type = String((payload && payload.type) || type || 'message').toLowerCase();
+      if(type === 'assistant.delta') type = 'text';
+      if(type === 'run.failed') type = 'error';
+      if(type === 'run.cancelled') type = 'cancelled';
+      if(type === 'run.completed') type = 'done';
+      if(type === 'run.started'){ this.updateAgentMessage(agentId, { streamLive:true, streamPhase:String(payload.phase || 'analyzing'), streamProgress:Number(payload.progress || 8), backgroundTaskId:String(payload.taskId || payload.agentTaskId || payload.rootTaskId || '') || undefined }); delivered = true; }
+      if(type === 'run.paused'){ this.updateAgentMessage(agentId, { streamLive:true, streamPhase:'paused', streamProgress:Number(payload.progress || 0), backgroundTaskId:String(payload.taskId || payload.agentTaskId || payload.rootTaskId || '') || undefined }); delivered = true; }
+      if(type === 'run.resumed'){ this.updateAgentMessage(agentId, { streamLive:true, streamPhase:String(payload.phase || 'analyzing'), streamProgress:Number(payload.progress || 0) }); delivered = true; }
+      if(type === 'plan.updated'){ this.recordAgentPlan(agentId, payload); this.updateAgentMessage(agentId, { interactionMode:'creation' }); delivered = true; }
+      if(type === 'step.started' || type === 'step.progress'){ this.recordAgentPlan(agentId, payload); this.recordAgentActivity(agentId, payload, payload.phase || 'analyzing', 'step'); delivered = true; }
       if(type === 'text'){
         if(!textStarted){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'writing', 38)); this.recordAgentActivity(agentId, payload, 'writing', 'text'); textStarted = true; }
         this.appendAgentText(agentId, payload.delta || payload.text || ''); delivered = true;
@@ -5391,18 +5412,20 @@ class Component extends DCLogic {
       if(type === 'generation'){ this.updateAgentMessage(agentId, { streamLive:false, streamPhase:'complete', streamProgress:100, citations:this.normalizeAgentCitations(payload) }); this.recordAgentActivity(agentId, payload, 'finalizing', 'generation'); this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
       if(type === 'done'){ this.bindProjectFromApi(payload); this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 }); delivered = true; }
       if(type === 'credits') this.applyCreditPayload(payload);
-      if(type === 'error') this.updateAgentMessage(agentId, { streamError:true });
+      if(type === 'error') this.updateAgentMessage(agentId, { streamError:true, streamLive:false, streamPhase:'error', streamProgress:0 });
       if(type === 'sources' || type === 'citations'){ this.updateAgentMessage(agentId, { citations:this.normalizeAgentCitations(payload) }); this.recordAgentActivity(agentId, payload, 'researching', 'search'); delivered = true; }
-      if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', text:this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.') }); delivered = true; }
+      if(type === 'cancelled'){ this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'cancelled', streamProgress:0, text:'Génération interrompue. Tu peux reprendre quand tu veux.' }); delivered = true; }
+      if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamError:true, streamPhase:'error', streamProgress:0, text:this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.') }); delivered = true; }
     };
     while(true){
       const chunk = await reader.read();
       if(chunk.done) break;
       buffer += decoder.decode(chunk.value, { stream:true });
-      const parts = buffer.split(/\n\n/);
+      const parts = buffer.split(/\r?\n\r?\n/);
       buffer = parts.pop() || '';
       parts.forEach(handle);
     }
+    buffer += decoder.decode();
     if(buffer.trim()) handle(buffer);
     this.flushAgentText(agentId);
     return delivered;
@@ -5832,6 +5855,12 @@ class Component extends DCLogic {
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message || 'Tâche indisponible.');
       this.setState({ workflowTasks:Array.isArray(data.workflows) ? data.workflows : this.state.workflowTasks });
+      const linked = (this.state.messages || []).find(message=>message && message.backgroundTaskId && String(message.backgroundTaskId) === String(taskId));
+      if(linked){
+        if(action === 'pause') this.updateAgentMessage(linked.id, { streamLive:true, streamPhase:'paused' });
+        if(action === 'resume') this.updateAgentMessage(linked.id, { streamLive:true, streamPhase:'analyzing' });
+        if(action === 'cancel') this.updateAgentMessage(linked.id, { streamLive:false, streamPhase:'cancelled', streamProgress:0, typing:false, text:'Génération interrompue. Tu peux reprendre quand tu veux.' });
+      }
       this.notify(({pause:'Tâche mise en pause.',resume:'Tâche reprise.',cancel:'Tâche annulée.',retry:'Nouvelle tentative lancée.'})[action] || 'Tâche mise à jour.');
       this.loadBackgroundTasks();
     }catch(err){ this.notify(String(err && err.message || 'Impossible de modifier cette tâche.')); }
@@ -7889,16 +7918,9 @@ class Component extends DCLogic {
           text: m.text || '',
           hasUserAttachments: Array.isArray(m.attachments) && m.attachments.length > 0,
           userAttachments: (m.attachments || []).map(a=>({ name:a.name || 'Fichier joint', icon:this.attachmentIcon(a.kind) })),
-          richText: this.markdownBlocks(m.text || ''),
-          isTyping: !!m.typing && !m.text,
-          activityLabel: m.activity || 'AgentFlow prépare ta demande',
-          showLiveStatus: !!m.streamLive && !!m.text,
           streamProgress,
           streamProgressPct: streamProgress + '%',
           streamPhaseLabel: this.streamPhaseLabel(streamPhase),
-          shimmerPhrase: this.streamPhraseFor(streamPhase, st.streamPhraseIndex),
-          streamTool: String(m.streamTool || ''),
-          showText: !!m.text,
           agentUi: this.agentMessageUi(m, media, status === 'failed' ? 'error' : (status === 'loading' ? 'generating' : (status === 'done' ? 'complete' : undefined)), streamProgress, streamPhase),
           hasMedia: !!m.media,
           imgLoading: status==='loading' && !isVideo && !isVoice,

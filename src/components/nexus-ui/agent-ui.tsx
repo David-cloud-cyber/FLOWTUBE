@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import {
   Check,
   ChevronDown,
@@ -25,6 +25,7 @@ export type AgentRunStatus = 'queued' | 'working' | 'paused' | 'complete' | 'err
 export type AgentActivityKind = 'step' | 'text' | 'search' | 'tool' | 'trace' | 'generation' | 'approval';
 export type AgentTaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'failed';
 export type AgentMediaStatus = 'queued' | 'generating' | 'refining' | 'complete' | 'error';
+export type AgentInteractionMode = 'conversation' | 'creation' | 'approval' | 'result';
 
 export interface AgentActivityItem {
   id: string;
@@ -58,6 +59,7 @@ export interface AgentApproval {
 }
 
 export interface AgentMessagePanelProps {
+  interactionMode?: AgentInteractionMode;
   status?: AgentRunStatus;
   phase?: string;
   progress?: number;
@@ -85,13 +87,13 @@ export interface AgentMessagePanelProps {
 const phaseLabels: Record<string, string> = {
   analyzing: 'Analyse de la demande',
   routing: 'Choix du meilleur moteur',
-  writing: 'Composition de la reponse',
-  researching: 'Verification des sources',
-  rendering: 'Generation du rendu',
-  assembling: 'Assemblage des elements',
-  finalizing: 'Controle qualite',
-  complete: 'Resultat pret',
-  cancelled: 'Generation interrompue',
+  writing: 'Composition de la réponse',
+  researching: 'Vérification des sources',
+  rendering: 'Génération du rendu',
+  assembling: 'Assemblage des éléments',
+  finalizing: 'Contrôle qualité',
+  complete: 'Résultat prêt',
+  cancelled: 'Génération interrompue',
 };
 
 function labelForPhase(phase?: string) {
@@ -142,7 +144,7 @@ export function AgentProgress({
   const elapsed = elapsedSeconds ?? internalElapsed;
   const resolvedProgress = Math.max(0, Math.min(100, Number(progress) || 0));
   return (
-    <div className="hf-agent-progress" role="status" aria-live="polite" aria-busy={active}>
+    <div className="hf-agent-progress" role="group" aria-label={`${label || labelForPhase('analyzing')}, ${Math.round(resolvedProgress)}%`} aria-busy={active}>
       <span className="hf-agent-grid" aria-hidden="true">
         {cells.map((cell) => (
           <motion.span
@@ -164,12 +166,13 @@ export function AgentProgress({
   );
 }
 
-export function ReasoningText({ phase, active = true }: { phase?: string; active?: boolean }) {
+export function ReasoningText({ phase, active = true, compact = false }: { phase?: string; active?: boolean; compact?: boolean }) {
   const reduce = useReducedMotion() ?? false;
   const phrases = useMemo(() => {
+    if (compact) return ['Réflexion en cours'];
     const label = labelForPhase(phase);
-    return active ? [label, `${label}...`, 'AgentFlow coordonne les etapes'] : [label];
-  }, [active, phase]);
+    return active ? [label, `${label}…`, 'AgentFlow coordonne les étapes'] : [label];
+  }, [active, compact, phase]);
   const [index, setIndex] = useState(0);
   useEffect(() => {
     if (!active || phrases.length < 2) return undefined;
@@ -177,7 +180,7 @@ export function ReasoningText({ phase, active = true }: { phase?: string; active
     return () => window.clearInterval(timer);
   }, [active, phrases]);
   return (
-    <span className="hf-agent-reasoning" role="status" aria-live="polite">
+    <span className={`hf-agent-reasoning${compact ? ' is-compact' : ''}`} role="status" aria-live="polite" aria-atomic="true">
       <span className="hf-agent-reasoning-mark" aria-hidden="true" />
       <AnimatePresence initial={false} mode="wait">
         <motion.span
@@ -196,20 +199,22 @@ export function ReasoningText({ phase, active = true }: { phase?: string; active
 
 function ActivityDisclosure({ items }: { items: AgentActivityItem[] }) {
   const reduce = useReducedMotion() ?? false;
+  const baseId = useId();
+  const contentId = `${baseId}-activity`;
   const [open, setOpen] = useState(false);
   if (!items.length) return null;
   const completed = items.filter((item) => item.status === 'complete').length;
   return (
     <div className="hf-agent-activity">
-      <button type="button" className="hf-agent-disclosure-trigger" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      <button type="button" className="hf-agent-disclosure-trigger" aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
         <span className="hf-agent-disclosure-leading"><ListChecks aria-hidden="true" /></span>
-        <span className="hf-agent-disclosure-title">Activite AgentFlow</span>
+        <span className="hf-agent-disclosure-title">Activité AgentFlow</span>
         <span className="hf-agent-disclosure-count">{completed}/{items.length}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 30 }}><ChevronDown aria-hidden="true" /></motion.span>
       </button>
       <AnimatePresence initial={false}>
         {open ? (
-          <motion.div className="hf-agent-activity-list" initial={reduce ? { opacity: 1 } : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}>
+          <motion.div id={contentId} role="region" aria-label="Activité de l’agent" className="hf-agent-activity-list" initial={reduce ? { opacity: 1 } : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}>
             {items.map((item) => (
               <div className="hf-agent-activity-row" key={item.id}>
                 <span className="hf-agent-activity-kind">{activityIcon(item.kind)}</span>
@@ -229,17 +234,19 @@ function ActivityDisclosure({ items }: { items: AgentActivityItem[] }) {
 
 function TaskList({ tasks }: { tasks: AgentTaskItem[] }) {
   const [open, setOpen] = useState(true);
+  const baseId = useId();
+  const contentId = `${baseId}-plan`;
   if (!tasks.length) return null;
   const completed = tasks.filter((task) => task.status === 'completed').length;
   return (
     <div className="hf-agent-tasks">
-      <button type="button" className="hf-agent-disclosure-trigger" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      <button type="button" className="hf-agent-disclosure-trigger" aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
         <span className="hf-agent-disclosure-leading"><ListChecks aria-hidden="true" /></span>
         <span className="hf-agent-disclosure-title">Plan d execution</span>
         <span className="hf-agent-disclosure-count">{completed}/{tasks.length}</span>
         <ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
       </button>
-      {open ? <div className="hf-agent-task-list">
+    {open ? <div id={contentId} role="region" aria-label="Plan d’exécution" className="hf-agent-task-list">
         {tasks.map((task) => {
           const status = task.status || 'pending';
           const progress = Math.max(0, Math.min(100, Number(task.progress) || (status === 'completed' ? 100 : 0)));
@@ -255,15 +262,26 @@ function TaskList({ tasks }: { tasks: AgentTaskItem[] }) {
 
 function Citations({ citations }: { citations: AgentCitationItem[] }) {
   const [open, setOpen] = useState(false);
+  const baseId = useId();
+  const contentId = `${baseId}-sources`;
   if (!citations.length) return null;
   return <div className="hf-agent-citations">
-    <button type="button" className="hf-agent-citation-trigger" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+    <button type="button" className="hf-agent-citation-trigger" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls={contentId}>
       <Search aria-hidden="true" /><span>{citations.length} source{citations.length > 1 ? 's' : ''}</span><ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
     </button>
-    {open ? <div className="hf-agent-citation-list">{citations.map((citation) => {
-      const content = <><span className="hf-agent-favicon" aria-hidden="true">{citation.domain?.slice(0, 1).toUpperCase() || 'W'}</span><span className="hf-agent-citation-text"><strong>{citation.title}</strong><small>{citation.domain || citation.url || 'Source verifiee'}</small></span><ExternalLink aria-hidden="true" /></>;
+    {open ? <div id={contentId} role="region" aria-label="Sources" className="hf-agent-citation-list">{citations.map((citation) => {
+      const content = <><span className="hf-agent-favicon" aria-hidden="true">{citation.domain?.slice(0, 1).toUpperCase() || 'W'}</span><span className="hf-agent-citation-text"><strong>{citation.title}</strong><small>{citation.domain || citation.url || 'Source vérifiée'}</small></span><ExternalLink aria-hidden="true" /></>;
       return citation.url ? <a key={citation.id} href={citation.url} target="_blank" rel="noreferrer noopener">{content}</a> : <div key={citation.id}>{content}</div>;
     })}</div> : null}
+  </div>;
+}
+
+function StreamingResponse({ text, status }: { text: string; status: AgentRunStatus }) {
+  const paragraphs = String(text || '').split(/\n{2,}/).filter(Boolean);
+  if (!paragraphs.length) return null;
+  return <div className="hf-agent-response-text" aria-live={status === 'working' ? 'off' : 'polite'}>
+    {paragraphs.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 12)}`}>{paragraph}</p>)}
+    {status === 'working' ? <span className="hf-agent-response-cursor" aria-hidden="true" /> : null}
   </div>;
 }
 
@@ -288,20 +306,25 @@ function ResponseActions({ responseText, status, onRetry, onCopy, onFeedback, re
   if (status === 'working' || status === 'queued') return null;
   const copy = async () => { if (onCopy) await onCopy(); else if (responseText && navigator.clipboard) await navigator.clipboard.writeText(responseText); setCopied(true); window.setTimeout(() => setCopied(false), 1500); };
   const react = (value: 'up' | 'down') => { const next = feedback === value ? null : value; setFeedback(next); onFeedback?.(next); };
-  return <div className="hf-agent-response-actions"><button type="button" title={copied ? 'Copie' : 'Copier la reponse'} onClick={copy}>{copied ? <Check /> : <Copy />}</button>{onRetry ? <button type="button" title={retryLabel || 'Reessayer'} onClick={onRetry}><RotateCcw /></button> : null}{status === 'complete' ? <><button type="button" title="Utile" aria-pressed={feedback === 'up'} className={feedback === 'up' ? 'is-active' : ''} onClick={() => react('up')}><ThumbsUp /></button><button type="button" title="Pas utile" aria-pressed={feedback === 'down'} className={feedback === 'down' ? 'is-active' : ''} onClick={() => react('down')}><ThumbsDown /></button></> : null}{status === 'error' ? <span className="hf-agent-error-label">Une erreur est survenue</span> : null}</div>;
+  return <div className="hf-agent-response-actions"><button type="button" aria-label={copied ? 'Réponse copiée' : 'Copier la réponse'} title={copied ? 'Réponse copiée' : 'Copier la réponse'} onClick={copy}>{copied ? <Check /> : <Copy />}</button>{onRetry ? <button type="button" aria-label={retryLabel || 'Réessayer'} title={retryLabel || 'Réessayer'} onClick={onRetry}><RotateCcw /></button> : null}{status === 'complete' ? <><button type="button" aria-label="Réponse utile" title="Réponse utile" aria-pressed={feedback === 'up'} className={feedback === 'up' ? 'is-active' : ''} onClick={() => react('up')}><ThumbsUp /></button><button type="button" aria-label="Réponse peu utile" title="Réponse peu utile" aria-pressed={feedback === 'down'} className={feedback === 'down' ? 'is-active' : ''} onClick={() => react('down')}><ThumbsDown /></button></> : null}{status === 'error' ? <span className="hf-agent-error-label">Une erreur est survenue</span> : null}</div>;
 }
 
 export function AgentMessagePanel({
-  status = 'working', phase, progress = 0, elapsedSeconds = 0, activity = [], tasks = [], citations = [], mediaStatus, mediaLabel, approval, responseText, retryLabel, onRetry, onCopy, onFeedback, onPause, onResume, onCancel, onApprove, onReject, onRequestChanges, className,
+  interactionMode, status = 'working', phase, progress = 0, elapsedSeconds = 0, activity = [], tasks = [], citations = [], mediaStatus, mediaLabel, approval, responseText, retryLabel, onRetry, onCopy, onFeedback, onPause, onResume, onCancel, onApprove, onReject, onRequestChanges, className,
 }: AgentMessagePanelProps) {
   const active = status === 'working' || status === 'queued' || status === 'paused';
   const hasDetails = activity.length || tasks.length || citations.length || approval || mediaStatus;
+  const mode = interactionMode || (hasDetails ? 'creation' : 'conversation');
+  const compactConversation = mode === 'conversation' && active;
+  const hasResponse = Boolean(String(responseText || '').trim());
   if (!active && !hasDetails && !onRetry && !onCopy) return null;
   return <div className={`hf-agent-panel ${active ? 'is-active' : ''} ${className || ''}`}>
-    {active ? <AgentProgress label={status === 'paused' ? 'Generation en pause' : labelForPhase(phase)} elapsedSeconds={elapsedSeconds} progress={progress} status={status} /> : null}
-    {active ? <ReasoningText phase={phase} /> : null}
-    {activity.length ? <ActivityDisclosure items={activity} /> : null}
-    {tasks.length ? <TaskList tasks={tasks} /> : null}
+    {compactConversation && !hasResponse ? <ReasoningText phase={phase} active compact /> : null}
+    {active && !compactConversation ? <AgentProgress label={status === 'paused' ? 'Génération en pause' : labelForPhase(phase)} elapsedSeconds={elapsedSeconds} progress={progress} status={status} /> : null}
+    {active && !compactConversation && !hasResponse ? <ReasoningText phase={phase} /> : null}
+    {hasResponse ? <StreamingResponse text={responseText || ''} status={status} /> : null}
+    {!compactConversation && activity.length ? <ActivityDisclosure items={activity} /> : null}
+    {!compactConversation && tasks.length ? <TaskList tasks={tasks} /> : null}
     {mediaStatus ? <MediaStatus status={mediaStatus} label={mediaLabel} /> : null}
     {approval ? <ApprovalCard approval={approval} onApprove={onApprove} onReject={onReject} onRequestChanges={onRequestChanges} /> : null}
     {citations.length ? <Citations citations={citations} /> : null}

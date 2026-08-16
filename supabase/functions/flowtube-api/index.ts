@@ -4598,7 +4598,7 @@ function artifactRequestType(prompt: string): string | null {
 }
 
 function artifactTitleFromPrompt(prompt: string) {
-  const compact = compactText(prompt.replace(/^\s*(cree|crÃ©e|construis|build|make)\s+/i, ""), 80);
+  const compact = compactText(prompt.replace(/^\s*(cree|crée|construis|build|make)\s+/i, ""), 80);
   return compact || "Artifact AgentFlow";
 }
 
