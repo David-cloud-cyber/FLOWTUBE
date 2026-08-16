@@ -49,6 +49,7 @@ export interface AgentRunState {
   approval?: Record<string, unknown>;
   costEstimate?: Record<string, unknown>;
   creditsCharged?: number;
+  errorMessage?: string;
   sequence: number;
   lastEventId?: string;
 }
@@ -78,6 +79,53 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {};
 }
 
+function upsertById(items: Array<Record<string, unknown>>, value: Record<string, unknown>) {
+  const id = String(value.id || value.stepId || value.artifactId || value.url || '');
+  if (!id) return items.concat(value);
+  const index = items.findIndex((item) => String(item.id || item.stepId || item.artifactId || item.url || '') === id);
+  if (index < 0) return items.concat(value);
+  return items.map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item);
+}
+
+export function parseSseBlock(block: string): AgentRunEvent | null {
+  const lines = String(block || '').split(/\r?\n/);
+  let eventType = '';
+  let eventId = '';
+  const dataLines: string[] = [];
+  for (const line of lines) {
+    if (!line || line.startsWith(':')) continue;
+    const separator = line.indexOf(':');
+    const field = separator >= 0 ? line.slice(0, separator) : line;
+    const value = separator >= 0 ? line.slice(separator + 1).replace(/^ /, '') : '';
+    if (field === 'event') eventType = value.trim();
+    if (field === 'id') eventId = value.trim();
+    if (field === 'data') dataLines.push(value);
+  }
+  if (!dataLines.length) return null;
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(dataLines.join('\n')) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const payload = asRecord(parsed.payload || parsed.data || parsed);
+  const type = String(parsed.type || eventType || 'message') as AgentRunEventType;
+  const sequence = Number(parsed.sequence || parsed.seq || payload.sequence || 0);
+  if (!Number.isFinite(sequence) || sequence <= 0) return null;
+  const runId = String(parsed.runId || payload.runId || '');
+  const messageId = String(parsed.messageId || payload.messageId || '');
+  if (!runId || !messageId) return null;
+  return {
+    type,
+    runId,
+    messageId,
+    stepId: String(parsed.stepId || payload.stepId || '') || undefined,
+    sequence,
+    timestamp: String(parsed.timestamp || payload.timestamp || new Date().toISOString()),
+    payload: { ...payload, ...(eventId ? { eventId } : {}) },
+  };
+}
+
 export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent): AgentRunState {
   if (!event || event.runId !== state.runId || event.messageId !== state.messageId) return state;
   if (!Number.isFinite(event.sequence) || event.sequence <= state.sequence) return state;
@@ -101,11 +149,11 @@ export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent):
     case 'assistant.delta':
       return { ...next, status: 'working', responseText: state.responseText + String(payload.delta || payload.text || '') };
     case 'citation.added':
-      return { ...next, citations: state.citations.concat([payload]) };
+      return { ...next, citations: upsertById(state.citations, payload) };
     case 'artifact.progress':
-      return { ...next, status: 'working', progress: clampProgress(payload.progress), artifacts: state.artifacts.concat([payload]) };
+      return { ...next, status: 'working', progress: clampProgress(payload.progress), artifacts: upsertById(state.artifacts, payload) };
     case 'artifact.ready':
-      return { ...next, artifacts: state.artifacts.concat([payload]) };
+      return { ...next, artifacts: upsertById(state.artifacts, payload) };
     case 'approval.required':
       return { ...next, status: 'paused', approval: payload };
     case 'run.paused':
@@ -113,7 +161,7 @@ export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent):
     case 'run.resumed':
       return { ...next, status: 'working' };
     case 'run.failed':
-      return { ...next, status: 'error', progress: 0 };
+      return { ...next, status: 'error', progress: 0, errorMessage: String(payload.message || payload.error || 'La génération a échoué.') };
     case 'run.cancelled':
       return { ...next, status: 'cancelled', progress: 0 };
     case 'run.completed':
@@ -124,6 +172,6 @@ export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent):
 }
 
 export function splitSseBlocks(buffer: string) {
-  const parts = String(buffer || '').split(/\r?\n\r?\n/);
-  return { blocks: parts.slice(0, -1), remainder: parts.at(-1) || '' };
+  const parts = String(buffer || '').split(/\r?\n(?:\r?\n)+/);
+  return { blocks: parts.slice(0, -1), remainder: parts[parts.length - 1] || '' };
 }

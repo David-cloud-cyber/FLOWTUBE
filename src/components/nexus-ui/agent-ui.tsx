@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { EASE_IN_OUT, EASE_OUT, SPRING_LAYOUT, SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
 
 import './agent-ui.css';
 
@@ -151,7 +152,7 @@ export function AgentProgress({
             key={cell}
             className="hf-agent-grid-cell"
             animate={reduce ? { opacity: 0.62 } : { opacity: [0.28, 1, 0.28], scale: [0.72, 1, 0.72] }}
-            transition={reduce ? { duration: 0 } : { duration: 1.45, repeat: Infinity, delay: cell * 0.08, ease: 'easeInOut' }}
+            transition={reduce ? { duration: 0 } : { duration: 1.45, repeat: Infinity, delay: cell * 0.08, ease: EASE_IN_OUT }}
           />
         ))}
       </span>
@@ -160,7 +161,7 @@ export function AgentProgress({
         <span>{formatElapsed(elapsed)}</span>
       </span>
       <span className="hf-agent-progress-track" aria-hidden="true">
-        <motion.span animate={{ width: `${resolvedProgress}%` }} transition={{ duration: reduce ? 0 : 0.28, ease: 'easeOut' }} />
+        <motion.span animate={{ width: `${resolvedProgress}%` }} transition={{ duration: reduce ? 0 : 0.28, ease: EASE_OUT }} />
       </span>
     </div>
   );
@@ -210,7 +211,7 @@ function ActivityDisclosure({ items }: { items: AgentActivityItem[] }) {
         <span className="hf-agent-disclosure-leading"><ListChecks aria-hidden="true" /></span>
         <span className="hf-agent-disclosure-title">Activité AgentFlow</span>
         <span className="hf-agent-disclosure-count">{completed}/{items.length}</span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 30 }}><ChevronDown aria-hidden="true" /></motion.span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={reduce ? { duration: 0 } : SPRING_SWAP}><ChevronDown aria-hidden="true" /></motion.span>
       </button>
       <AnimatePresence initial={false}>
         {open ? (
@@ -248,14 +249,14 @@ function TaskList({ tasks }: { tasks: AgentTaskItem[] }) {
         <ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
       </button>
     <AnimatePresence initial={false}>
-      {open ? <motion.div id={contentId} role="region" aria-label="Plan d’exécution" className="hf-agent-task-list" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? undefined : { opacity: 0, height: 0 }} transition={{ duration: reduce ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}>
+      {open ? <motion.div id={contentId} role="region" aria-label="Plan d’exécution" className="hf-agent-task-list" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? undefined : { opacity: 0, height: 0 }} transition={reduce ? { duration: 0 } : { duration: 0.22, ease: EASE_OUT }}>
         <AnimatePresence initial={false} mode="popLayout">
           {tasks.map((task) => {
             const status = task.status || 'pending';
             const progress = Math.max(0, Math.min(100, Number(task.progress) || (status === 'completed' ? 100 : 0)));
-            return <motion.div className="hf-agent-task-row" key={task.id} layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}>
+            return <motion.div className="hf-agent-task-row" key={task.id} layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.18, ease: EASE_OUT }}>
               <span className={`hf-agent-task-mark is-${status}`} aria-hidden="true">{status === 'completed' ? <Check /> : status === 'failed' ? <X /> : status === 'in-progress' ? <span /> : null}</span>
-              <span className="hf-agent-task-body"><strong>{task.title}</strong>{task.detail ? <small>{task.detail}</small> : null}<span className="hf-agent-task-track"><motion.span animate={{ width: `${progress}%` }} transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }} /></span></span>
+              <span className="hf-agent-task-body"><strong>{task.title}</strong>{task.detail ? <small>{task.detail}</small> : null}<span className="hf-agent-task-track"><motion.span animate={{ width: `${progress}%` }} transition={reduce ? { duration: 0 } : { duration: 0.24, ease: EASE_OUT }} /></span></span>
             </motion.div>;
           })}
         </AnimatePresence>
@@ -276,11 +277,11 @@ function Citations({ citations }: { citations: AgentCitationItem[] }) {
       <Search aria-hidden="true" /><span>{citations.length} source{citations.length > 1 ? 's' : ''}</span><ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
     </button>
     <AnimatePresence initial={false}>
-      {open ? <motion.div id={contentId} role="region" aria-label="Sources" className="hf-agent-citation-list" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? undefined : { opacity: 0, height: 0 }} transition={{ duration: reduce ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}>
+      {open ? <motion.div id={contentId} role="region" aria-label="Sources" className="hf-agent-citation-list" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? undefined : { opacity: 0, height: 0 }} transition={reduce ? { duration: 0 } : { duration: 0.22, ease: EASE_OUT }}>
         <AnimatePresence initial={false} mode="popLayout">
           {citations.map((citation) => {
             const content = <><span className="hf-agent-favicon" aria-hidden="true">{citation.domain?.slice(0, 1).toUpperCase() || 'W'}</span><span className="hf-agent-citation-text"><strong>{citation.title}</strong><small>{citation.domain || citation.url || 'Source vérifiée'}</small></span><ExternalLink aria-hidden="true" /></>;
-            return citation.url ? <motion.a layout key={citation.id} href={citation.url} target="_blank" rel="noreferrer noopener" initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}>{content}</motion.a> : <motion.div layout key={citation.id} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}>{content}</motion.div>;
+            return citation.url ? <motion.a layout="position" key={citation.id} href={citation.url} target="_blank" rel="noreferrer noopener" initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={reduce ? { duration: 0 } : { duration: 0.18, ease: EASE_OUT }}>{content}</motion.a> : <motion.div layout="position" key={citation.id} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={reduce ? { duration: 0 } : { duration: 0.18, ease: EASE_OUT }}>{content}</motion.div>;
           })}
         </AnimatePresence>
       </motion.div> : null}
@@ -318,12 +319,14 @@ function ResponseActions({ responseText, status, onRetry, onCopy, onFeedback, re
   if (status === 'working' || status === 'queued') return null;
   const copy = async () => { if (onCopy) await onCopy(); else if (responseText && navigator.clipboard) await navigator.clipboard.writeText(responseText); setCopied(true); window.setTimeout(() => setCopied(false), 1500); };
   const react = (value: 'up' | 'down') => { const next = feedback === value ? null : value; setFeedback(next); onFeedback?.(next); };
-  return <div className="hf-agent-response-actions"><button type="button" aria-label={copied ? 'Réponse copiée' : 'Copier la réponse'} title={copied ? 'Réponse copiée' : 'Copier la réponse'} onClick={copy}>{copied ? <Check /> : <Copy />}</button>{onRetry ? <button type="button" aria-label={retryLabel || 'Réessayer'} title={retryLabel || 'Réessayer'} onClick={onRetry}><RotateCcw /></button> : null}{status === 'complete' ? <><button type="button" aria-label="Réponse utile" title="Réponse utile" aria-pressed={feedback === 'up'} className={feedback === 'up' ? 'is-active' : ''} onClick={() => react('up')}><ThumbsUp /></button><button type="button" aria-label="Réponse peu utile" title="Réponse peu utile" aria-pressed={feedback === 'down'} className={feedback === 'down' ? 'is-active' : ''} onClick={() => react('down')}><ThumbsDown /></button></> : null}{status === 'error' ? <span className="hf-agent-error-label">Une erreur est survenue</span> : null}</div>;
+  const actionProps = { whileTap: { scale: 0.9 }, transition: SPRING_PRESS };
+  return <div className="hf-agent-response-actions"><motion.button {...actionProps} type="button" aria-label={copied ? 'Réponse copiée' : 'Copier la réponse'} title={copied ? 'Réponse copiée' : 'Copier la réponse'} onClick={copy}>{copied ? <Check /> : <Copy />}</motion.button>{onRetry ? <motion.button {...actionProps} type="button" aria-label={retryLabel || 'Réessayer'} title={retryLabel || 'Réessayer'} onClick={onRetry}><RotateCcw /></motion.button> : null}{status === 'complete' ? <><motion.button {...actionProps} type="button" aria-label="Réponse utile" title="Réponse utile" aria-pressed={feedback === 'up'} className={feedback === 'up' ? 'is-active' : ''} onClick={() => react('up')}><ThumbsUp /></motion.button><motion.button {...actionProps} type="button" aria-label="Réponse peu utile" title="Réponse peu utile" aria-pressed={feedback === 'down'} className={feedback === 'down' ? 'is-active' : ''} onClick={() => react('down')}><ThumbsDown /></motion.button></> : null}{status === 'error' ? <span className="hf-agent-error-label">Une erreur est survenue</span> : null}</div>;
 }
 
 export function AgentMessagePanel({
   interactionMode, status = 'working', phase, progress = 0, elapsedSeconds = 0, activity = [], tasks = [], citations = [], mediaStatus, mediaLabel, approval, responseText, retryLabel, onRetry, onCopy, onFeedback, onPause, onResume, onCancel, onApprove, onReject, onRequestChanges, className,
 }: AgentMessagePanelProps) {
+  const reduce = useReducedMotion() ?? false;
   const active = status === 'working' || status === 'queued' || status === 'paused';
   const hasDetails = activity.length || tasks.length || citations.length || approval || mediaStatus;
   const mode = interactionMode || (hasDetails ? 'creation' : 'conversation');
@@ -334,13 +337,13 @@ export function AgentMessagePanel({
     {compactConversation && !hasResponse ? <ReasoningText phase={phase} active compact /> : null}
     {active && !compactConversation ? <AgentProgress label={status === 'paused' ? 'Génération en pause' : labelForPhase(phase)} elapsedSeconds={elapsedSeconds} progress={progress} status={status} /> : null}
     {active && !compactConversation && !hasResponse ? <ReasoningText phase={phase} /> : null}
-    {hasResponse ? <StreamingResponse text={responseText || ''} status={status} /> : null}
+      {hasResponse ? <StreamingResponse text={responseText || ''} status={status} /> : null}
     <AnimatePresence initial={false} mode="popLayout">
-      {!compactConversation && activity.length ? <motion.div key="activity" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><ActivityDisclosure items={activity} /></motion.div> : null}
-      {!compactConversation && tasks.length ? <motion.div key="tasks" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><TaskList tasks={tasks} /></motion.div> : null}
-      {mediaStatus ? <motion.div key="media" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><MediaStatus status={mediaStatus} label={mediaLabel} /></motion.div> : null}
-      {approval ? <motion.div key="approval" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><ApprovalCard approval={approval} onApprove={onApprove} onReject={onReject} onRequestChanges={onRequestChanges} /></motion.div> : null}
-      {citations.length ? <motion.div key="citations" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><Citations citations={citations} /></motion.div> : null}
+      {!compactConversation && activity.length ? <motion.div key="activity" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><ActivityDisclosure items={activity} /></motion.div> : null}
+      {!compactConversation && tasks.length ? <motion.div key="tasks" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><TaskList tasks={tasks} /></motion.div> : null}
+      {mediaStatus ? <motion.div key="media" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><MediaStatus status={mediaStatus} label={mediaLabel} /></motion.div> : null}
+      {approval ? <motion.div key="approval" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><ApprovalCard approval={approval} onApprove={onApprove} onReject={onReject} onRequestChanges={onRequestChanges} /></motion.div> : null}
+      {citations.length ? <motion.div key="citations" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><Citations citations={citations} /></motion.div> : null}
     </AnimatePresence>
     {active && (onPause || onResume || onCancel) ? <div className="hf-agent-run-controls">{status === 'paused' && onResume ? <button type="button" onClick={onResume}><Play /> Reprendre</button> : status !== 'paused' && onPause ? <button type="button" onClick={onPause}><Pause /> Pause</button> : null}{onCancel ? <button type="button" className="is-quiet" onClick={onCancel}><X /> Annuler</button> : null}</div> : null}
     <ResponseActions responseText={responseText} status={status} onRetry={onRetry} onCopy={onCopy} onFeedback={onFeedback} retryLabel={retryLabel} />

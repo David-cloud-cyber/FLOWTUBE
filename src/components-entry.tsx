@@ -16,12 +16,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Attachment, AttachmentList, type AttachmentMeta } from '@/components/nexus-ui/attachments';
 import { AgentMessagePanel } from '@/components/nexus-ui/agent-ui';
-import { initialAgentRunState, reduceAgentRunEvent, splitSseBlocks } from '@/components/nexus-ui/agent-run';
+import { initialAgentRunState, parseSseBlock, reduceAgentRunEvent, splitSseBlocks } from '@/components/nexus-ui/agent-run';
 import './beui-dark.css';
 
 // Re-export for use as React elements within dc-runtime computed props
 export { Attachment, AttachmentList };
-export { AgentMessagePanel, initialAgentRunState, reduceAgentRunEvent, splitSseBlocks };
+export { AgentMessagePanel, initialAgentRunState, parseSseBlock, reduceAgentRunEvent, splitSseBlocks };
 export type { AttachmentMeta };
 
 // WeakMap cache: each container gets its root created only once
@@ -73,5 +73,5 @@ declare global {
     HFComponents: typeof import('./components-entry');
   }
 }
-(window as any).HFComponents = { Attachment, AttachmentList, AgentMessagePanel, initialAgentRunState, reduceAgentRunEvent, splitSseBlocks, mountAttachments, mountAgentMessage };
+(window as any).HFComponents = { Attachment, AttachmentList, AgentMessagePanel, initialAgentRunState, parseSseBlock, reduceAgentRunEvent, splitSseBlocks, mountAttachments, mountAgentMessage };
 window.dispatchEvent(new Event('hf-components-ready'));

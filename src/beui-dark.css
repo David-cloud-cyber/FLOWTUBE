@@ -17,10 +17,14 @@
   --beui-radius-md: 12px;
   --beui-radius-lg: 24px;
   --beui-radius-full: 9999px;
-  --beui-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --beui-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --beui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --beui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --beui-duration-fast: 160ms;
   --beui-duration: 220ms;
   --beui-duration-page: 320ms;
+  --beui-transition-panel: 360ms var(--beui-ease-drawer);
+  --beui-transition-reduced: 160ms var(--beui-ease);
   --beui-focus: 0 0 0 3px rgba(209, 254, 23, 0.16);
 }
 
@@ -31,6 +35,36 @@ input,
 textarea,
 select {
   letter-spacing: 0;
+}
+
+html {
+  color-scheme: dark;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  color: var(--beui-accent-ink);
+  background: var(--beui-accent);
+}
+
+button,
+[role="button"],
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 0;
+  box-shadow: var(--beui-focus);
 }
 
 button,
@@ -183,10 +217,12 @@ select {
   from {
     opacity: 0;
     transform: translate3d(0, 10px, 0) scale(0.995);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -210,6 +246,35 @@ select {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
+}
+
+@keyframes beui-skeleton-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.hf-beui-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hf-beui-skeleton::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  animation: beui-skeleton-shimmer 1.35s var(--beui-ease-in-out) infinite;
+}
+
+.hf-beui-surface,
+.hf-beui-card,
+.hf-beui-button-primary,
+.hf-beui-button-secondary,
+.hf-beui-input,
+.hf-beui-chip {
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 [data-hf-app-shell="true"] {
@@ -248,11 +313,43 @@ select {
 [data-hf-app-shell="true"] [data-hf-model-menu="true"],
 [data-hf-app-shell="true"] [data-hf-agent-menu],
 [data-hf-app-shell="true"] [data-hf-command-dialog],
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"],
 [data-hf-app-shell="true"] [data-hf-toast],
 [data-hf-app-shell="true"] .hf-connector-add-menu,
 [data-hf-app-shell="true"] .hf-settings-add-menu {
   animation: beui-popover-enter var(--beui-duration) var(--beui-ease) both !important;
   transform-origin: center bottom;
+}
+
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"] {
+  border-color: var(--beui-border) !important;
+  border-radius: var(--beui-radius-lg) !important;
+  background: rgba(28, 28, 28, 0.98) !important;
+  box-shadow: 0 28px 70px -38px rgba(0, 0, 0, 0.92) !important;
+  transform-origin: right top;
+}
+
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"] [data-hf-notif-task="true"],
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"] [data-hf-notif-empty="true"] {
+  transition:
+    background-color var(--beui-duration-fast) var(--beui-ease),
+    border-color var(--beui-duration-fast) var(--beui-ease),
+    transform var(--beui-duration-fast) var(--beui-ease);
+}
+
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"] [data-hf-notif-task="true"]:hover {
+  border-color: rgba(209, 254, 23, 0.24) !important;
+  background: rgba(209, 254, 23, 0.07) !important;
+  transform: translateY(-1px);
+}
+
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"] [data-hf-notif-task="true"]:focus-visible {
+  outline: none;
+  box-shadow: var(--beui-focus);
+}
+
+[data-hf-app-shell="true"] [data-hf-notif-dropdown="true"] [data-hf-notif-empty="true"] {
+  color: var(--beui-muted);
 }
 
 [data-hf-app-shell="true"] .hf-settings-shell,
@@ -299,6 +396,19 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .hf-beui-skeleton::after {
+    display: none;
+  }
+
   [data-hf-app-shell="true"] > aside,
   [data-hf-app-shell="true"] > main,
   [data-hf-app-shell="true"] [data-hf-studio-panel="true"],
@@ -315,6 +425,7 @@ select {
   [data-hf-app-shell="true"] [data-hf-studio-panel="true"],
   [data-hf-app-shell="true"] [data-hf-model-menu="true"],
   [data-hf-app-shell="true"] [data-hf-agent-menu],
+  [data-hf-app-shell="true"] [data-hf-notif-dropdown="true"],
   [data-hf-app-shell="true"] [data-hf-command-dialog],
   [data-hf-app-shell="true"] [data-hf-toast],
   [data-hf-app-shell="true"] .hf-settings-shell,
