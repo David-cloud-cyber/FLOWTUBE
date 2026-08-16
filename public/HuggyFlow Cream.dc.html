@@ -1368,7 +1368,7 @@ input:focus,textarea:focus{outline:none}
                     <video src="{{ g.resultUrl }}" muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
                   </sc-if>
                   <sc-if value="{{ g.showSlot }}" hint-placeholder-val="{{ true }}">
-                    <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
+                    <x-import component-from-global-scope="image-slot" from="/image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
                   </sc-if>
                   <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}">
                     <span style="position:absolute;right:10px;top:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.45);font-family:'JetBrains Mono',monospace;font-size:10px;color:#D6F94E;pointer-events:none">▶ {{ g.duration }}</span>

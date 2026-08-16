@@ -528,6 +528,7 @@ type AgentBillingContext = {
   reason: string;
   multiplier?: number;
   send?: (event: string, payload: unknown) => void;
+  idempotencyKey?: string;
 };
 
 function agentCreditsForTurn(modelId: string, multiplier = 1) {
@@ -561,6 +562,57 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     : fallbackUsage;
   const credits = usagePricing.credits;
   if (credits <= 0) return { charged: 0, balance: undefined as number | undefined };
+  const idempotencyKey = String(billing.idempotencyKey || `${billing.userId}:${billing.reason}:${crypto.randomUUID()}`).slice(0, 180);
+  const metadata = {
+    provider: isOpenRouterAgentModel(modelId) ? "openrouter" : "anthropic",
+    model_id: modelId,
+    credit_rate_label: rate.label,
+    cost_class: rate.margin,
+    reason: billing.reason,
+    multiplier: Math.max(1, billing.multiplier || 1),
+    input_tokens: usagePricing.inputTokens,
+    output_tokens: usagePricing.outputTokens,
+    infrastructure_cost_usd: usagePricing.infrastructureCostUsd,
+    protected_cost_usd: usagePricing.protectedCostUsd,
+    billing_mode: usage ? "actual_tokens" : "estimated_tokens",
+  };
+  const { data: atomicCharge, error: atomicChargeError } = await billing.supabase.rpc("charge_agent_credits", {
+    p_user_id: billing.userId,
+    p_credits: credits,
+    p_idempotency_key: idempotencyKey,
+    p_metadata: metadata,
+  });
+  if (!atomicChargeError && Array.isArray(atomicCharge) && atomicCharge[0]) {
+    const result = atomicCharge[0] as Record<string, unknown>;
+    const balanceAfter = Number(result.balance_after || 0);
+    if (result.charged === false && Number(result.available || 0) < credits) {
+      throw new FlowtubeError(402, "Solde de credits insuffisant pour continuer.", {
+        code: "INSUFFICIENT_AGENT_CREDITS",
+        creditsRequired: credits,
+        creditsAvailable: Number(result.available || 0),
+        modelId,
+      });
+    }
+    if (result.charged === false) return { charged: 0, balance: balanceAfter };
+    await billing.supabase.from("pricing_audit_logs").insert({
+      user_id: billing.userId,
+      credits_charged: credits,
+      credit_floor_usd: CREDIT_FLOOR_USD,
+      retail_credit_usd: RETAIL_CREDIT_USD,
+      provider_cost_usd: usagePricing.providerCostUsd,
+      infrastructure_cost_usd: usagePricing.infrastructureCostUsd,
+      protected_cost_usd: usagePricing.protectedCostUsd,
+      payment_reserve_ratio: PAYMENT_RESERVE_RATIO,
+      risk_reserve_ratio: RISK_RESERVE_RATIO,
+      status: "completed",
+      metadata: { ...metadata, idempotency_key: idempotencyKey, margin_multiplier: agentMarginMultiplierForModel(modelId) },
+    });
+    if (billing.send) billing.send("credits", {
+      credits: balanceAfter,
+      creditsMax: Number(result.credits_max || 100),
+    });
+    return { charged: credits, balance: balanceAfter };
+  }
   const { data: profile, error } = await billing.supabase.from("profiles").select("credits,credits_max").eq("id", billing.userId).single();
   if (error) throw new FlowtubeError(500, "Impossible de verifier ton solde de credits.");
   const creditsAvailable = Number(profile?.credits || 0);
@@ -594,19 +646,7 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
     amount: -credits,
     reason: "agent_message",
     balance_after: balanceAfter,
-    metadata: {
-      provider: isOpenRouterAgentModel(modelId) ? "openrouter" : "anthropic",
-      model_id: modelId,
-      credit_rate_label: rate.label,
-      cost_class: rate.margin,
-      reason: billing.reason,
-      multiplier: Math.max(1, billing.multiplier || 1),
-      input_tokens: usagePricing.inputTokens,
-      output_tokens: usagePricing.outputTokens,
-      infrastructure_cost_usd: usagePricing.infrastructureCostUsd,
-      protected_cost_usd: usagePricing.protectedCostUsd,
-      billing_mode: usage ? "actual_tokens" : "estimated_tokens",
-    },
+    metadata: { ...metadata, idempotency_key: idempotencyKey },
   });
   await billing.supabase.from("pricing_audit_logs").insert({
     user_id: billing.userId,
@@ -638,8 +678,8 @@ async function chargeAgentCredits(billing: AgentBillingContext | undefined, mode
   return { charged: credits, balance: balanceAfter };
 }
 
-function agentBilling(ctx: Omit<AgentBillingContext, "reason">, reason: string, multiplier = 1): AgentBillingContext {
-  return { ...ctx, reason, multiplier };
+function agentBilling(ctx: Omit<AgentBillingContext, "reason" | "idempotencyKey">, reason: string, multiplier = 1, idempotencyKey?: string): AgentBillingContext {
+  return { ...ctx, reason, multiplier, idempotencyKey };
 }
 
 function openRouterContent(content: unknown) {
@@ -5173,6 +5213,7 @@ type AgentLoopCtx = {
   body: Record<string, unknown>;
   agentModelId: string;
   send: (event: string, payload: unknown) => void;
+  billingKey?: string;
 };
 
 async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<string, unknown>): Promise<string> {
@@ -5278,7 +5319,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         url,
         Boolean(input.is_video) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url),
         ctx.agentModelId,
-        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_visual_analysis"),
+        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_visual_analysis", 1, `${ctx.billingKey || crypto.randomUUID()}:visual`),
       );
     }
     if (name === "research_url") {
@@ -5288,7 +5329,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         url,
         String(ctx.body.message || ""),
         ctx.agentModelId,
-        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_web_research"),
+        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_web_research", 1, `${ctx.billingKey || crypto.randomUUID()}:research`),
       );
     }
     if (name === "market_research") {
@@ -5298,7 +5339,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         query,
         String(ctx.body.message || query),
         ctx.agentModelId,
-        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_market_research"),
+        agentBilling({ supabase, userId, send: ctx.send }, "agent_tool_market_research", 1, `${ctx.billingKey || crypto.randomUUID()}:market`),
       );
     }
     if (name === "save_skill") {
@@ -5362,7 +5403,7 @@ async function runAgentLoop(
       supabase: ctx.supabase,
       userId: ctx.userId,
       send: ctx.send,
-    }, `agent_loop_iteration_${iteration + 1}`));
+    }, `agent_loop_iteration_${iteration + 1}`, 1, `${ctx.billingKey || crypto.randomUUID()}:loop:${iteration + 1}`));
     const data = await response.json();
     const content: ApiContent[] = Array.isArray(data.content) ? data.content : [];
     for (const block of content) {
@@ -7040,14 +7081,29 @@ async function chat(req: Request) {
         const existingSkills = await loadLearnedSkills(supabase, userId);
         const matchedExistingSkill = matchLearnedSkill(prompt, existingSkills);
         const autoSkill = matchedExistingSkill ? null : autoLearnSkillCandidate(prompt, requestAttachments);
-        send("status", { phase: "analyzing", progress: 12, label: "AgentFlow cadre ta demande" });
+        const requestMode = String(body.mode || "image");
+        const simpleConversation = !requestAttachments.length
+          && !shouldGenerateMedia(prompt, requestMode)
+          && !isVisualAnalysisRequest(prompt)
+          && !isResearchRequest(prompt)
+          && !extractSkillDirective(prompt)
+          && !isCostReportRequest(prompt)
+          && !extractElementDirective(prompt);
+        const billingRequestKey = String(body.idempotencyKey || body.idempotency_key || crypto.randomUUID()).slice(0, 120);
+        const billingCounters = new Map<string, number>();
+        const nextBillingKey = (reason: string) => {
+          const count = (billingCounters.get(reason) || 0) + 1;
+          billingCounters.set(reason, count);
+          return `${billingRequestKey}:${reason}:${count}`.slice(0, 180);
+        };
+        if (!simpleConversation) send("status", { phase: "analyzing", progress: 12, label: "AgentFlow cadre ta demande" });
         if (autoSkill) {
           send("skill", { phase: "creating", name: autoSkill.name, label: "AgentFlow cree une competence reutilisable" });
           await saveLearnedSkill(supabase, userId, String(project.id), autoSkill.name, autoSkill.triggers, autoSkill.playbook, true);
           send("skill", { phase: "ready", name: autoSkill.name, label: "Competence sauvegardee et prete pour cette generation" });
         }
         const learnedSkills = await loadLearnedSkills(supabase, userId);
-        send("status", { phase: "routing", progress: 24, label: matchedExistingSkill ? "AgentFlow réactive une compétence existante" : "AgentFlow prépare le meilleur workflow" });
+        if (!simpleConversation) send("status", { phase: "routing", progress: 24, label: matchedExistingSkill ? "AgentFlow réactive une compétence existante" : "AgentFlow prépare le meilleur workflow" });
         await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -7067,7 +7123,7 @@ async function chat(req: Request) {
           });
         };
         const billAgent = (reason: string, multiplier = 1) =>
-          agentBilling({ supabase, userId, send }, reason, multiplier);
+          agentBilling({ supabase, userId, send }, reason, multiplier, nextBillingKey(reason));
 
         const metadata = cleanMetadata(profile.metadata);
         const pending = metadata.pending_generation as Record<string, unknown> | undefined;
@@ -7223,9 +7279,9 @@ async function chat(req: Request) {
         }
 
         // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
-        if (agentLoopEnabled()) {
-          send("status", { phase: "routing", progress: 32, label: "AgentFlow orchestre les outils adaptés", tool: "AgentFlow Loop" });
-          const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, agentModelId, send };
+        if (agentLoopEnabled() && !simpleConversation) {
+          if (!simpleConversation) send("status", { phase: "routing", progress: 32, label: "AgentFlow orchestre les outils adaptés", tool: "AgentFlow Loop" });
+          const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, agentModelId, send, billingKey: `${billingRequestKey}:loop` };
           const loopMatched = matchLearnedSkill(prompt, learnedSkills);
           const loopContext: ReplyContext = {
             planName: plan.displayName,
@@ -7333,7 +7389,7 @@ async function chat(req: Request) {
           attachments: attachmentContext,
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
-        send("status", { phase: willGenerate ? "writing" : "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: agentModelId });
+        if (!simpleConversation) send("status", { phase: "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: agentModelId });
         const reply = await anthropicReply(
           prompt,
           type,
@@ -7675,41 +7731,19 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
   if (generation.debited_at || generation.status !== "completed") return;
   const userId = String(generation.user_id);
   const credits = Number(generation.credits || 0);
-  const debitAt = new Date().toISOString();
-  const { data: debitClaim, error: debitClaimError } = await supabase.from("generations")
-    .update({ debited_at: debitAt })
-    .eq("id", generation.id)
-    .eq("status", "completed")
-    .is("debited_at", null)
-    .select("id")
-    .maybeSingle();
-  if (debitClaimError) throw debitClaimError;
-  if (!debitClaim?.id) return;
-  const { data: profile } = await supabase.from("profiles").select("credits").eq("id", userId).single();
-  const nextCredits = Math.max(0, Number(profile?.credits || 0) - credits);
+  const { data: debitResult, error: debitError } = await supabase.rpc("debit_completed_generation", {
+    p_generation_id: generation.id,
+  });
+  if (debitError) throw debitError;
+  const debit = Array.isArray(debitResult) ? debitResult[0] as Record<string, unknown> | undefined : undefined;
+  if (!debit || debit.charged !== true) return;
+  const nextCredits = Number(debit.balance_after || 0);
   const creditFloorUsd = Number(generation.credit_floor_usd || CREDIT_FLOOR_USD);
   const retailCreditUsd = Number(generation.retail_credit_usd || RETAIL_CREDIT_USD);
   const providerCostUsd = Number(generation.cost_usd || 0);
   const revenueFloorUsd = Number((credits * creditFloorUsd).toFixed(4));
   const grossMarginFloorUsd = Number((revenueFloorUsd - providerCostUsd).toFixed(4));
   const grossMarginFloorRatio = ratioFromAmounts(revenueFloorUsd, providerCostUsd);
-  await supabase.from("profiles").update({ credits: nextCredits }).eq("id", userId);
-  await supabase.from("credit_transactions").insert({
-    user_id: userId,
-    generation_id: generation.id,
-    amount: -credits,
-    reason: "generation_completed",
-    balance_after: nextCredits,
-    metadata: {
-      pricing_model_id: generation.pricing_model_id || generation.model_id,
-      credit_floor_usd: creditFloorUsd,
-      retail_credit_usd: retailCreditUsd,
-      provider_cost_usd: providerCostUsd,
-      revenue_floor_usd: revenueFloorUsd,
-      gross_margin_floor_usd: grossMarginFloorUsd,
-      gross_margin_floor_ratio: grossMarginFloorRatio,
-    },
-  });
   await supabase.from("pricing_audit_logs").insert({
     user_id: userId,
     generation_id: generation.id,

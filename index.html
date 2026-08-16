@@ -485,9 +485,8 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
  [data-hf-app-shell="true"]{--hf-motion-ease:cubic-bezier(.16,1,.3,1)}
 [data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:beui-route-enter var(--hf-motion-page,320ms) var(--hf-motion-ease) both!important;will-change:opacity,transform}
 @media (prefers-reduced-motion:reduce){[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:none!important;will-change:auto}}
-/* beUI Dark adaptation: use BeUI's white primary on HuggyFlow's charcoal shell,
-   with lime kept out of the core interaction language. */
- :root{--beui-primary:#fff;--beui-secondary:#e6edf3;--beui-neutral:#151515;--beui-surface:#1c1c1c;--beui-on-surface:#e6edf3;--beui-muted:#8a8f98;--beui-border:rgba(255,255,255,.07);--beui-accent:#fff;--beui-accent-ink:#151515;--beui-radius-lg:24px;--beui-radius-full:9999px;--beui-ease:cubic-bezier(.16,1,.3,1)}
+/* HuggyFlow brand adaptation: electric cyan primary on a restrained charcoal shell. */
+ :root{--beui-primary:#6EE7FF;--beui-secondary:#e6edf3;--beui-neutral:#151515;--beui-surface:#1c1c1c;--beui-on-surface:#e6edf3;--beui-muted:#8a8f98;--beui-border:rgba(255,255,255,.07);--beui-accent:#6EE7FF;--beui-accent-ink:#0D171A;--beui-radius-lg:24px;--beui-radius-full:9999px;--beui-ease:cubic-bezier(.16,1,.3,1)}
 [data-hf-app-shell="true"]{font-family:Geist,Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif!important;letter-spacing:0!important;color:var(--beui-on-surface)}
 [data-hf-app-shell="true"] h1,[data-hf-app-shell="true"] h2,[data-hf-app-shell="true"] h3,[data-hf-app-shell="true"] h4{letter-spacing:0!important}
 [data-hf-app-shell="true"] button,[data-hf-app-shell="true"] input,[data-hf-app-shell="true"] textarea,[data-hf-app-shell="true"] select{font-family:inherit;letter-spacing:0}
@@ -500,7 +499,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-model-menu="true"] [data-hf-model-search="true"]{height:40px!important;border-color:rgba(255,255,255,.08)!important;border-radius:9999px!important;background:#151515!important}
 [data-hf-model-menu="true"] [data-hf-model-row]{border-radius:12px!important;transition:background .16s var(--beui-ease),border-color .16s var(--beui-ease),transform .16s var(--beui-ease)!important}
 [data-hf-model-menu="true"] [data-hf-model-row]:hover{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.08)!important}
-[data-hf-model-menu="true"] [data-hf-model-row].is-active{background:rgba(209,254,23,.08)!important;border-color:rgba(209,254,23,.22)!important}
+[data-hf-model-menu="true"] [data-hf-model-row].is-active{background:rgba(110,231,255,.08)!important;border-color:rgba(110,231,255,.22)!important}
 [data-hf-model-menu="true"] [data-hf-model-logo]{border-radius:12px!important;background:#202124!important}
 [data-hf-composer-tools]{border-color:rgba(255,255,255,.06)!important;border-radius:0 0 24px 24px!important;background:#151515!important;box-shadow:none!important}
 [data-hf-composer-tool]{border-radius:9999px!important;color:#e6edf3!important;transition:background .16s var(--beui-ease),color .16s var(--beui-ease),transform .16s var(--beui-ease)!important}
@@ -526,28 +525,28 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 [data-hf-app-shell="true"] [data-hf-rail-item]:hover{border-color:rgba(255,255,255,.07)!important;background:rgba(255,255,255,.05)!important}
 [data-hf-app-shell="true"] [data-hf-rail-item]:active{transform:scale(.985)}
 [data-hf-app-shell="true"] [data-hf-rail-item] [data-hf-rail-icon]{transition:color .16s var(--beui-ease),background .16s var(--beui-ease)!important}
-[data-hf-app-shell="true"] [style*="background:#D1FE17"],[data-hf-app-shell="true"] [style*="background:#d1fe17"]{background:#fff!important;color:#151515!important}
-[data-hf-app-shell="true"] [style*="color:#D1FE17"],[data-hf-app-shell="true"] [style*="color:#d1fe17"]{color:#fff!important}
-[data-hf-app-shell="true"] [style*="background: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="background:rgba(209,254,23"],[data-hf-app-shell="true"] [style*="background: rgba(209, 254, 23"]{background:#fff!important;background-color:#fff!important;color:#151515!important}
-[data-hf-app-shell="true"] [style*="color: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="color:rgba(209,254,23"],[data-hf-app-shell="true"] [style*="color: rgba(209, 254, 23"]{color:#fff!important}
-[data-hf-app-shell="true"] [style*="box-shadow: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="box-shadow: rgba(209,254,23"],[data-hf-app-shell="true"] [style*="box-shadow: rgba(209, 254, 23"]{box-shadow:0 0 14px -8px rgba(255,255,255,.22)!important}
-[data-hf-app-shell="true"] [style*="rgba(209,254,23"],[data-hf-app-shell="true"] [style*="rgba(209, 254, 23"]{background-color:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:0 0 14px -8px rgba(255,255,255,.22)!important}
-[data-hf-app-shell="true"] [style*="stroke:#D1FE17"],[data-hf-app-shell="true"] [style*="stroke:#d1fe17"]{stroke:#fff!important}
-[data-hf-model-menu="true"] [data-hf-model-row].is-active{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.22)!important}
-[data-hf-model-menu="true"] [data-hf-model-check]{color:#fff!important}
-.hf-settings-brand-mark,.hf-settings-avatar{background:#fff!important;color:#151515!important;box-shadow:0 0 18px -8px rgba(255,255,255,.28)!important}
-.hf-settings-nav-item.is-active{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.20)!important;color:#fff!important;box-shadow:inset 2px 0 0 #fff!important}
-.hf-settings-nav-item.is-active .hf-settings-nav-icon{background:#fff!important;color:#151515!important}
-.hf-settings-kicker{color:#fff!important}
-.hf-settings-badge,.hf-settings-status{background:rgba(255,255,255,.10)!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
-.hf-settings-progress span{background:#fff!important}
-.hf-settings-control:focus,.hf-settings-textarea:focus,.hf-settings-search input:focus{border-color:rgba(255,255,255,.66)!important;box-shadow:0 0 0 3px rgba(255,255,255,.10)!important}
-.hf-explore-kicker{color:#fff!important}
-.hf-explore-primary-action{background:#fff!important;color:#151515!important}
-.hf-explore-card:hover,.hf-explore-card:focus-visible{border-color:rgba(255,255,255,.24)!important}
-.hf-settings-primary{border-color:#fff!important;background:#fff!important;color:#151515!important}
+[data-hf-app-shell="true"] [style*="background:#D1FE17"],[data-hf-app-shell="true"] [style*="background:#d1fe17"]{background:#6EE7FF!important;color:#0D171A!important}
+[data-hf-app-shell="true"] [style*="color:#D1FE17"],[data-hf-app-shell="true"] [style*="color:#d1fe17"]{color:#6EE7FF!important}
+[data-hf-app-shell="true"] [style*="background: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="background:rgba(209,254,23"],[data-hf-app-shell="true"] [style*="background: rgba(209, 254, 23"]{background:#6EE7FF!important;background-color:#6EE7FF!important;color:#0D171A!important}
+[data-hf-app-shell="true"] [style*="color: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="color:rgba(209,254,23"],[data-hf-app-shell="true"] [style*="color: rgba(209, 254, 23"]{color:#6EE7FF!important}
+[data-hf-app-shell="true"] [style*="box-shadow: rgb(209, 254, 23)"],[data-hf-app-shell="true"] [style*="box-shadow: rgba(209,254,23"],[data-hf-app-shell="true"] [style*="box-shadow: rgba(209, 254, 23"]{box-shadow:0 0 14px -8px rgba(110,231,255,.28)!important}
+[data-hf-app-shell="true"] [style*="rgba(209,254,23"],[data-hf-app-shell="true"] [style*="rgba(209, 254, 23"]{background-color:rgba(110,231,255,.10)!important;border-color:rgba(110,231,255,.22)!important;color:#6EE7FF!important;box-shadow:0 0 14px -8px rgba(110,231,255,.28)!important}
+[data-hf-app-shell="true"] [style*="stroke:#D1FE17"],[data-hf-app-shell="true"] [style*="stroke:#d1fe17"]{stroke:#6EE7FF!important}
+[data-hf-model-menu="true"] [data-hf-model-row].is-active{background:rgba(110,231,255,.10)!important;border-color:rgba(110,231,255,.22)!important}
+[data-hf-model-menu="true"] [data-hf-model-check]{color:#6EE7FF!important}
+.hf-settings-brand-mark,.hf-settings-avatar{background:#6EE7FF!important;color:#0D171A!important;box-shadow:0 0 18px -8px rgba(110,231,255,.35)!important}
+.hf-settings-nav-item.is-active{background:rgba(110,231,255,.10)!important;border-color:rgba(110,231,255,.20)!important;color:#6EE7FF!important;box-shadow:inset 2px 0 0 #6EE7FF!important}
+.hf-settings-nav-item.is-active .hf-settings-nav-icon{background:#6EE7FF!important;color:#0D171A!important}
+.hf-settings-kicker{color:#6EE7FF!important}
+.hf-settings-badge,.hf-settings-status{background:rgba(110,231,255,.10)!important;color:#6EE7FF!important;border-color:rgba(110,231,255,.18)!important}
+.hf-settings-progress span{background:#6EE7FF!important}
+.hf-settings-control:focus,.hf-settings-textarea:focus,.hf-settings-search input:focus{border-color:rgba(110,231,255,.66)!important;box-shadow:0 0 0 3px rgba(110,231,255,.10)!important}
+.hf-explore-kicker{color:#6EE7FF!important}
+.hf-explore-primary-action{background:#6EE7FF!important;color:#0D171A!important}
+.hf-explore-card:hover,.hf-explore-card:focus-visible{border-color:rgba(110,231,255,.24)!important}
+.hf-settings-primary{border-color:#6EE7FF!important;background:#6EE7FF!important;color:#0D171A!important}
 .hf-explore-type{background:rgba(21,21,21,.82)!important}
-[data-hf-app-shell="true"] ::selection{color:#151515;background:#fff}
+[data-hf-app-shell="true"] ::selection{color:#0D171A;background:#6EE7FF}
 @media (prefers-reduced-motion:reduce){[data-hf-app-shell="true"] *,[data-hf-app-shell="true"] *::before,[data-hf-app-shell="true"] *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </helmet>
@@ -815,7 +814,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
-                  <button type="button" data-hf-model-trigger="true" onClick="{{ toggleAgentSettings }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
+                  <button type="button" data-hf-model-trigger="true" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
                     <span data-hf-model-trigger-icon="true" aria-hidden="true">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg>
                     </span>
@@ -1046,7 +1045,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               </button>
               <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
-                <button type="button" data-hf-model-trigger="true" onClick="{{ toggleAgentSettings }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
+                <button type="button" data-hf-model-trigger="true" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
                   <span data-hf-model-trigger-icon="true" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg></span>
                   <span data-hf-model-trigger-name="true">{{ curModelName }}</span><span data-hf-model-trigger-mode="true">{{ agentModeLabel }}</span>
                   <span data-hf-model-trigger-chevron="true" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
@@ -2215,11 +2214,11 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Adresse e-mail</div><div class="hf-settings-row-hint">Utilisée pour la connexion et les reçus.</div></div><input class="hf-settings-control" type="email" value="{{ settingsEmail }}" onChange="{{ onSettingsEmail }}"/></div>
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Mot de passe</div><div class="hf-settings-row-hint">Recevoir un lien sécurisé de modification.</div></div><button class="hf-settings-secondary" onClick="{{ requestPasswordReset }}">Modifier</button></div>
                 <div class="hf-settings-row"><div><div class="hf-settings-row-label">Session actuelle</div><div class="hf-settings-row-hint">Déconnecte cet appareil et invalide la session.</div></div><button class="hf-settings-secondary" onClick="{{ logout }}">Se déconnecter</button></div>
-                <div class="hf-settings-row"><div><div class="hf-settings-row-label">Double authentification</div><div class="hf-settings-row-hint">Protège le compte avec une application TOTP. La configuration Supabase est vérifiée avant activation.</div><div class="hf-settings-inline-note">{{ mfaStatusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ toggle2fa }}" disabled="{{ mfaLoading }}">{{ mfaLoading ? 'Configuration...' : (tfa ? 'Désactiver' : 'Activer') }}</button></div>
+              <div class="hf-settings-row"><div><div class="hf-settings-row-label">Double authentification</div><div class="hf-settings-row-hint">Protège le compte avec une application TOTP. La configuration Supabase est vérifiée avant activation.</div><div class="hf-settings-inline-note">{{ mfaStatusLabel }}</div></div><button class="hf-settings-secondary" onClick="{{ toggle2fa }}" disabled="{{ mfaLoading }}">{{ mfaActionLabel }}</button></div>
               </div>
               <sc-if value="{{ mfaSetup }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row-label">Finaliser la double authentification</div><div class="hf-settings-row-hint">Scanne le QR code dans 1Password, Google Authenticator ou une application TOTP, puis confirme le code affiché.</div><div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px"><sc-if value="{{ mfaSetup.qrCode }}" hint-placeholder-val="{{ false }}"><img src="{{ mfaSetup.qrCode }}" alt="QR code de configuration MFA" width="148" height="148" style="display:block;border-radius:10px;background:#fff;padding:8px"/></sc-if><div style="min-width:190px;flex:1"><label class="hf-settings-row-hint" for="hf-mfa-code">Code à 6 chiffres</label><input id="hf-mfa-code" class="hf-settings-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{ mfaCode }}" onChange="{{ onMfaCode }}" placeholder="000000"/><div class="hf-settings-action-row" style="margin-top:10px"><button class="hf-settings-secondary" onClick="{{ cancelMfaSetup }}">Annuler</button><button class="hf-settings-primary" onClick="{{ verifyMfaSetup }}" disabled="{{ mfaLoading }}">{{ mfaLoading ? 'Vérification...' : 'Confirmer' }}</button></div></div></div><sc-if value="{{ mfaSetup.secret }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-inline-note">Clé de secours : <code>{{ mfaSetup.secret }}</code></div></sc-if></div></sc-if>
               <sc-if value="{{ tfa }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Codes de récupération</div><div class="hf-settings-row-hint">Ils permettent de récupérer l’accès si ton application TOTP est indisponible. Chaque génération invalide les anciens codes.</div></div><button class="hf-settings-secondary" onClick="{{ regenerateRecoveryCodes }}">Générer</button></div><sc-if value="{{ recoveryCodesVisible }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px"><sc-for list="{{ recoveryCodes }}" as="code" hint-placeholder-count="8"><code style="padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.05);color:#D1FE17;font:12px 'JetBrains Mono',monospace;text-align:center">{{ code }}</code></sc-for></div><div class="hf-settings-inline-note" style="margin-top:10px">Copie-les maintenant : ils ne seront plus affichés après avoir quitté cette page.</div></sc-if></div></sc-if>
-              <div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Sessions et appareils</div><div class="hf-settings-row-hint">Révoque un appareil perdu ou déconnecte toutes les autres sessions.</div></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ loadSecurity }}">Actualiser</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ revokeAllSecuritySessions }}">Déconnecter les autres</button></div></div><sc-if value="{{ securityLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Vérification des sessions…</div></sc-if><sc-for list="{{ securitySessionCards }}" as="session" hint-placeholder-count="3"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ session.deviceLabel }} {{ session.current ? '· session actuelle' : '' }}</div><div style="margin-top:4px;font-size:10.5px;color:#898A8B">{{ session.userAgent }} · dernière activité {{ session.lastSeen }}</div></div><sc-if value="{{ session.canRevoke }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ session.onRevoke }}">Révoquer</button></sc-if></div></sc-for><sc-if value="{{ securitySessionsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune autre session enregistrée.</div></sc-if></div>
+              <div class="hf-settings-card" style="margin-top:14px;padding:18px"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Sessions et appareils</div><div class="hf-settings-row-hint">Révoque un appareil perdu ou déconnecte toutes les autres sessions.</div></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ loadSecurity }}">Actualiser</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ revokeAllSecuritySessions }}">Déconnecter les autres</button></div></div><sc-if value="{{ securityLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Vérification des sessions…</div></sc-if><sc-for list="{{ securitySessionCards }}" as="session" hint-placeholder-count="3"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ session.deviceLabel }}{{ session.currentLabel }}</div><div style="margin-top:4px;font-size:10.5px;color:#898A8B">{{ session.userAgent }} · dernière activité {{ session.lastSeen }}</div></div><sc-if value="{{ session.canRevoke }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary hf-settings-danger" onClick="{{ session.onRevoke }}">Révoquer</button></sc-if></div></sc-for><sc-if value="{{ securitySessionsEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucune autre session enregistrée.</div></sc-if></div>
               <div class="hf-settings-card" style="padding:18px"><div class="hf-settings-row-label">Zone sensible</div><div class="hf-settings-row-hint">Télécharge tes données ou supprime définitivement ton compte.</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="hf-settings-secondary" onClick="{{ exportAccountData }}">Exporter mes données</button><button class="hf-settings-secondary hf-settings-danger" onClick="{{ openAccountDeletion }}">Supprimer le compte</button></div></div>
             </sc-if>
 
@@ -2236,7 +2235,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>Facturation</h3><p>Paiements MoneyFusion, crédits réels et historique de ton compte.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les offres</button></div>
               <div class="hf-settings-metric-grid"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Offre actuelle</div><div class="hf-settings-metric-value" style="font-size:20px">{{ billingPlanName }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits disponibles</div><div class="hf-settings-metric-value">{{ creditsLabel }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Prochain renouvellement</div><div class="hf-settings-metric-value" style="font-size:17px">{{ billingNextDate }}</div></div></div>
-              <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Statut de l’abonnement</div><div class="hf-settings-row-hint">{{ billingPlanPrice }} · Paiement en {{ billingCurrency }}</div></div><span class="hf-settings-badge">{{ billingProviderLabel }}</span></div><div class="hf-settings-row"><div><div class="hf-settings-row-label">E-mail de facturation</div><div class="hf-settings-row-hint">Les confirmations sont envoyées à cette adresse.</div></div><span style="color:#F7F7F8;font-size:13px">{{ settingsEmail }}</span></div></div>
+              <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Statut de l’abonnement</div><div class="hf-settings-row-hint">{{ billingPlanPrice }} · Paiement en {{ billingCurrencyLabel }}</div></div><span class="hf-settings-badge">{{ billingProviderLabel }}</span></div><div class="hf-settings-row"><div><div class="hf-settings-row-label">E-mail de facturation</div><div class="hf-settings-row-hint">Les confirmations sont envoyées à cette adresse.</div></div><span style="color:#F7F7F8;font-size:13px">{{ settingsEmail }}</span></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Historique</span><button class="hf-settings-secondary" onClick="{{ downloadBillingExport }}">Exporter</button></div><sc-if value="{{ billingLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Chargement de l’historique…</div></sc-if><sc-if value="{{ billingEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucun paiement enregistré pour le moment.</div></sc-if><sc-for list="{{ invoices }}" as="invoice" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ invoice.label }}</div><div style="margin-top:4px;font-size:11px">{{ invoice.date }}</div></div><div style="text-align:right"><div style="color:#F7F7F8">{{ invoice.amount }}</div><div style="margin-top:4px;color:#D1FE17;font-size:11px">{{ invoice.status }}</div></div></div></sc-for></div>
             </sc-if>
 
@@ -2743,7 +2742,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
                      <video src="{{ g.resultUrl }}" muted loop playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
                   </sc-if>
                   <sc-if value="{{ g.showSlot }}" hint-placeholder-val="{{ true }}">
-                    <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
+                    <x-import component-from-global-scope="image-slot" from="/image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
                   </sc-if>
                   <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}">
                     <span style="position:absolute;right:10px;top:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.45);font-family:'JetBrains Mono',monospace;font-size:10px;color:#D1FE17;pointer-events:none">▶ {{ g.duration }}</span>
@@ -4406,10 +4405,22 @@ class Component extends DCLogic {
     this.settingsKeydown = (event)=>{
       if(!event) return;
       const target = event.target;
+      const modelTrigger = target && target.closest ? target.closest('[data-hf-model-trigger="true"]') : null;
+      if(modelTrigger && (event.key === 'Enter' || event.key === ' ')){
+        event.preventDefault();
+        this.toggleAgentSettings();
+        return;
+      }
       const notifTrigger = target && target.closest ? target.closest('[data-hf-notification-trigger="true"]') : null;
       if(notifTrigger && (event.key === 'Enter' || event.key === ' ')){
         event.preventDefault();
         this.toggleBackgroundTasks();
+        return;
+      }
+      const notifClose = target && target.closest ? target.closest('[data-hf-notif-close="true"]') : null;
+      if(notifClose && (event.key === 'Enter' || event.key === ' ')){
+        event.preventDefault();
+        this.dismissBackgroundTasks();
         return;
       }
       const notifTask = target && target.closest ? target.closest('[data-hf-notif-task="true"]') : null;
@@ -4478,6 +4489,12 @@ class Component extends DCLogic {
     if(typeof document !== 'undefined') document.addEventListener('click', this.notificationClick);
     this.composerPointerDown = (event)=>{
       const target = event && event.target;
+      const modelTrigger = target && target.closest ? target.closest('[data-hf-model-trigger="true"]') : null;
+      if(modelTrigger){
+        event.preventDefault();
+        this.toggleAgentSettings();
+        return;
+      }
       if(target && target.closest && target.closest('[data-hf-model-selector=\"true\"],[data-hf-model-menu=\"true\"]')) return;
       if(target && target.closest && target.closest('[data-hf-notification-trigger=\"true\"]')){
         this.toggleBackgroundTasks();
@@ -5502,6 +5519,7 @@ class Component extends DCLogic {
       mode,
       modelId:'auto',
       agentModelId:this.agentModelApiId(model.id),
+      idempotencyKey:agentId,
       aspectRatio:this.aspectRatioForMode(mode),
       interactionMode:(this.state.messages.find(message=>message.id === agentId) || {}).interactionMode || 'conversation'
     }, attachmentPayload || {});
@@ -7583,6 +7601,7 @@ class Component extends DCLogic {
         deviceLabel:session.deviceLabel || 'Appareil',
         userAgent:String(session.userAgent || '').slice(0,90),
         current:!!session.current,
+        currentLabel: session.current ? ' · session actuelle' : '',
         lastSeen:session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : 'inconnue',
         canRevoke:!session.current && !session.revoked,
         onRevoke:()=>this.revokeSecuritySession(session.id)
@@ -7603,6 +7622,8 @@ class Component extends DCLogic {
       tfaTrackStyle: this.switchTrack(!!st.tfa),
       tfaKnobStyle: this.switchKnob(!!st.tfa),
       mfaStatusLabel: st.mfaLoading ? 'Configuration sécurisée en cours…' : (st.tfa ? 'MFA TOTP actif sur ce compte' : 'Ajoute une application d’authentification pour sécuriser ton compte'),
+      mfaActionLabel: st.mfaLoading ? 'Configuration…' : (st.tfa ? 'Désactiver' : 'Activer'),
+      billingCurrencyLabel: st.billingCurrency || 'XOF',
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),

@@ -11,8 +11,8 @@
   --beui-muted: #8a8f98;
   --beui-border: rgba(255, 255, 255, 0.07);
   --beui-error: #ff5a5f;
-  --beui-accent: #ffffff;
-  --beui-accent-ink: #151515;
+  --beui-accent: #6ee7ff;
+  --beui-accent-ink: #0d171a;
   --beui-radius-sm: 6px;
   --beui-radius-md: 12px;
   --beui-radius-lg: 24px;
@@ -25,7 +25,7 @@
   --beui-duration-page: 320ms;
   --beui-transition-panel: 360ms var(--beui-ease-drawer);
   --beui-transition-reduced: 160ms var(--beui-ease);
-  --beui-focus: 0 0 0 3px rgba(255, 255, 255, 0.16);
+  --beui-focus: 0 0 0 3px rgba(110, 231, 255, 0.2);
 }
 
 html,
@@ -536,4 +536,97 @@ select {
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
+}
+
+/* Brand accent migration: legacy HTML templates still carry the former lime
+   value in inline styles. Keep those templates consistent until retired. */
+:root {
+  --hf-accent: #6ee7ff;
+  --hf-accent-ink: #0d171a;
+}
+
+[data-hf-app-shell="true"] [style*="#D1FE17"],
+[data-hf-app-shell="true"] [style*="#d1fe17"],
+.hf-settings-shell [style*="#D1FE17"],
+.hf-settings-shell [style*="#d1fe17"] {
+  color: var(--hf-accent) !important;
+  stroke: var(--hf-accent) !important;
+}
+
+[data-hf-app-shell="true"] [style*="background:#D1FE17"],
+[data-hf-app-shell="true"] [style*="background:#d1fe17"],
+.hf-settings-shell [style*="background:#D1FE17"],
+.hf-settings-shell [style*="background:#d1fe17"] {
+  background: var(--hf-accent) !important;
+}
+
+[data-hf-app-shell="true"] [style*="background:#D1FE17"][style*="color:#131517"],
+[data-hf-app-shell="true"] [style*="background:#d1fe17"][style*="color:#131517"],
+.hf-settings-shell [style*="background:#D1FE17"][style*="color:#131517"],
+.hf-settings-shell [style*="background:#d1fe17"][style*="color:#131517"] {
+  color: var(--hf-accent-ink) !important;
+}
+
+[data-hf-app-shell="true"] [style*="rgba(209,254,23"],
+.hf-settings-shell [style*="rgba(209,254,23"] {
+  background-color: rgba(110, 231, 255, 0.12) !important;
+  border-color: rgba(110, 231, 255, 0.28) !important;
+}
+
+[data-hf-app-shell="true"] [style*="stroke=\"#D1FE17\""],
+[data-hf-app-shell="true"] [style*="stroke=\"#d1fe17\""],
+.hf-settings-shell [style*="stroke=\"#D1FE17\""],
+.hf-settings-shell [style*="stroke=\"#d1fe17\""] {
+  stroke: var(--hf-accent) !important;
+}
+
+.hf-agent-grid-cell,
+.hf-agent-reasoning-mark,
+.hf-agent-status-dot,
+.hf-agent-response-cursor,
+.hf-agent-media-indicator > span,
+.hf-agent-task-mark.is-in-progress span {
+  background: var(--beui-accent) !important;
+  box-shadow: 0 0 10px rgba(110, 231, 255, 0.28) !important;
+}
+
+.hf-agent-disclosure-leading,
+.hf-agent-activity-kind,
+.hf-agent-favicon,
+.hf-agent-citation-trigger,
+.hf-agent-response-actions button.is-active {
+  color: var(--beui-accent) !important;
+}
+
+.hf-agent-activity-kind,
+.hf-agent-favicon,
+.hf-agent-media-indicator {
+  background: rgba(110, 231, 255, 0.1) !important;
+  color: var(--beui-accent) !important;
+}
+
+.hf-agent-task-track span,
+.hf-agent-progress-track span {
+  background: var(--beui-accent) !important;
+}
+
+.hf-agent-media-status.is-generating,
+.hf-agent-media-status.is-refining {
+  border-color: rgba(110, 231, 255, 0.22) !important;
+  background: rgba(110, 231, 255, 0.07) !important;
+}
+
+.hf-agent-media-indicator {
+  background: rgba(110, 231, 255, 0.12) !important;
+}
+
+.hf-agent-task-mark.is-in-progress {
+  border-color: var(--beui-accent) !important;
+}
+
+.hf-agent-approval-actions button:not(.is-secondary):not(.is-quiet),
+.hf-agent-run-controls button:not(.is-secondary):not(.is-quiet) {
+  border-color: var(--beui-accent) !important;
+  background: var(--beui-accent) !important;
+  color: var(--beui-accent-ink) !important;
 }
