@@ -17,6 +17,7 @@ import ReactDOM from 'react-dom/client';
 import { Attachment, AttachmentList, type AttachmentMeta } from '@/components/nexus-ui/attachments';
 import { AgentMessagePanel } from '@/components/nexus-ui/agent-ui';
 import { initialAgentRunState, reduceAgentRunEvent, splitSseBlocks } from '@/components/nexus-ui/agent-run';
+import './beui-dark.css';
 
 // Re-export for use as React elements within dc-runtime computed props
 export { Attachment, AttachmentList };

@@ -242,7 +242,7 @@ function TaskList({ tasks }: { tasks: AgentTaskItem[] }) {
     <div className="hf-agent-tasks">
       <button type="button" className="hf-agent-disclosure-trigger" aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
         <span className="hf-agent-disclosure-leading"><ListChecks aria-hidden="true" /></span>
-        <span className="hf-agent-disclosure-title">Plan d execution</span>
+        <span className="hf-agent-disclosure-title">Plan d’exécution</span>
         <span className="hf-agent-disclosure-count">{completed}/{tasks.length}</span>
         <ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
       </button>
@@ -287,7 +287,7 @@ function StreamingResponse({ text, status }: { text: string; status: AgentRunSta
 
 function MediaStatus({ status, label }: { status: AgentMediaStatus; label?: string }) {
   const active = status !== 'complete' && status !== 'error';
-  const text = status === 'queued' ? 'En file d attente' : status === 'generating' ? 'Generation en cours' : status === 'refining' ? 'Amelioration du rendu' : status === 'error' ? 'Generation echouee' : 'Rendu pret';
+  const text = status === 'queued' ? 'En file d’attente' : status === 'generating' ? 'Génération en cours' : status === 'refining' ? 'Amélioration du rendu' : status === 'error' ? 'Génération échouée' : 'Rendu prêt';
   return <div className={`hf-agent-media-status is-${status}`} role="status" aria-busy={active}><span className="hf-agent-media-indicator" aria-hidden="true">{status === 'complete' ? <Check /> : status === 'error' ? <CircleAlert /> : <span />}</span><span><strong>{label || text}</strong><small>{active ? 'Le rendu apparaitra ici sans deplacer la conversation.' : text}</small></span></div>;
 }
 
@@ -296,7 +296,7 @@ function ApprovalCard({ approval, onApprove, onReject, onRequestChanges }: { app
   const interactive = status === 'pending';
   return <div className={`hf-agent-approval is-${status}`}>
     <div className="hf-agent-approval-icon"><ShieldCheck aria-hidden="true" /></div>
-    <div className="hf-agent-approval-body"><div className="hf-agent-approval-head"><strong>{approval.title}</strong><span>{status === 'approved' ? 'Approuve' : status === 'rejected' ? 'Refuse' : status === 'changes-requested' ? 'Modifications demandees' : 'Validation requise'}</span></div>{approval.description ? <p>{approval.description}</p> : null}{interactive ? <div className="hf-agent-approval-actions"><button type="button" onClick={onApprove}>Approuver</button>{onRequestChanges ? <button type="button" className="is-secondary" onClick={onRequestChanges}>Modifier</button> : null}{onReject ? <button type="button" className="is-quiet" onClick={onReject}>Refuser</button> : null}</div> : null}</div>
+    <div className="hf-agent-approval-body"><div className="hf-agent-approval-head"><strong>{approval.title}</strong><span>{status === 'approved' ? 'Approuvé' : status === 'rejected' ? 'Refusé' : status === 'changes-requested' ? 'Modifications demandées' : 'Validation requise'}</span></div>{approval.description ? <p>{approval.description}</p> : null}{interactive ? <div className="hf-agent-approval-actions"><button type="button" onClick={onApprove}>Approuver</button>{onRequestChanges ? <button type="button" className="is-secondary" onClick={onRequestChanges}>Modifier</button> : null}{onReject ? <button type="button" className="is-quiet" onClick={onReject}>Refuser</button> : null}</div> : null}</div>
   </div>;
 }
 

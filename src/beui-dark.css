@@ -1,0 +1,279 @@
+/* HuggyFlow adaptation of the beUI Dark language. Keep these tokens local so
+   the shell and the React islands can share one visual contract. */
+:root {
+  --beui-primary: #ffffff;
+  --beui-secondary: #e6edf3;
+  --beui-tertiary: rgba(255, 255, 255, 0.05);
+  --beui-neutral: #151515;
+  --beui-surface: #1c1c1c;
+  --beui-surface-raised: #202124;
+  --beui-on-surface: #e6edf3;
+  --beui-muted: #8a8f98;
+  --beui-border: rgba(255, 255, 255, 0.07);
+  --beui-error: #ff5a5f;
+  --beui-accent: #d1fe17;
+  --beui-accent-ink: #131517;
+  --beui-radius-sm: 6px;
+  --beui-radius-md: 12px;
+  --beui-radius-lg: 24px;
+  --beui-radius-full: 9999px;
+  --beui-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --beui-duration-fast: 160ms;
+  --beui-duration: 220ms;
+  --beui-focus: 0 0 0 3px rgba(209, 254, 23, 0.16);
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+  letter-spacing: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: Geist, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Reusable primitives for new and migrated surfaces. */
+.hf-beui-surface {
+  color: var(--beui-on-surface);
+  background: var(--beui-surface);
+  border: 1px solid var(--beui-border);
+  border-radius: var(--beui-radius-lg);
+}
+
+.hf-beui-card {
+  min-width: 0;
+  color: var(--beui-on-surface);
+  background: var(--beui-surface);
+  border: 1px solid var(--beui-border);
+  border-radius: var(--beui-radius-lg);
+  transition: border-color var(--beui-duration) var(--beui-ease),
+    background var(--beui-duration) var(--beui-ease),
+    transform var(--beui-duration) var(--beui-ease);
+}
+
+.hf-beui-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--beui-surface-raised);
+}
+
+.hf-beui-button-primary,
+.hf-beui-button-secondary,
+.hf-beui-button-tertiary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 20px;
+  border-radius: var(--beui-radius-full);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--beui-duration-fast) var(--beui-ease),
+    background var(--beui-duration-fast) var(--beui-ease),
+    border-color var(--beui-duration-fast) var(--beui-ease),
+    transform var(--beui-duration-fast) var(--beui-ease);
+}
+
+.hf-beui-button-primary {
+  border: 1px solid var(--beui-accent);
+  color: var(--beui-accent-ink);
+  background: var(--beui-accent);
+}
+
+.hf-beui-button-primary:hover {
+  filter: brightness(1.05);
+}
+
+.hf-beui-button-secondary {
+  border: 1px solid var(--beui-border);
+  color: var(--beui-on-surface);
+  background: var(--beui-neutral);
+}
+
+.hf-beui-button-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #202020;
+}
+
+.hf-beui-button-tertiary {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  color: var(--beui-on-surface);
+  background: transparent;
+}
+
+.hf-beui-button-tertiary:hover {
+  color: var(--beui-primary);
+}
+
+.hf-beui-button-primary:active,
+.hf-beui-button-secondary:active,
+.hf-beui-button-tertiary:active {
+  transform: scale(0.97);
+}
+
+.hf-beui-input {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--beui-border);
+  border-radius: var(--beui-radius-full);
+  color: var(--beui-on-surface);
+  background: var(--beui-surface);
+  transition: border-color var(--beui-duration-fast) var(--beui-ease),
+    background var(--beui-duration-fast) var(--beui-ease),
+    box-shadow var(--beui-duration-fast) var(--beui-ease);
+}
+
+.hf-beui-input::placeholder {
+  color: var(--beui-muted);
+}
+
+.hf-beui-input:focus {
+  outline: none;
+  border-color: rgba(209, 254, 23, 0.66);
+  box-shadow: var(--beui-focus);
+}
+
+.hf-beui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--beui-border);
+  border-radius: var(--beui-radius-full);
+  color: var(--beui-on-surface);
+  background: var(--beui-neutral);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Shared motion rules: quiet, responsive, and safe for reduced-motion users. */
+[data-beui-motion="enter"] {
+  animation: beui-enter 220ms var(--beui-ease) both;
+}
+
+[data-beui-motion="press"] {
+  transition: transform var(--beui-duration-fast) var(--beui-ease);
+}
+
+[data-beui-motion="press"]:active {
+  transform: scale(0.97);
+}
+
+@keyframes beui-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Agent surfaces: one quiet hierarchy with pill actions and subtle borders. */
+.hf-agent-panel {
+  color: var(--beui-on-surface);
+  font-family: Geist, Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.hf-agent-activity,
+.hf-agent-tasks,
+.hf-agent-citations {
+  border-color: var(--beui-border);
+  border-radius: var(--beui-radius-md);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.hf-agent-disclosure-trigger,
+.hf-agent-citation-trigger {
+  min-height: 36px;
+  border-radius: var(--beui-radius-md);
+  color: var(--beui-muted);
+  transition: background var(--beui-duration-fast) var(--beui-ease),
+    color var(--beui-duration-fast) var(--beui-ease);
+}
+
+.hf-agent-disclosure-trigger:hover,
+.hf-agent-citation-trigger:hover {
+  color: var(--beui-on-surface);
+  background: var(--beui-tertiary);
+}
+
+.hf-agent-disclosure-leading,
+.hf-agent-reasoning-mark,
+.hf-agent-status-dot,
+.hf-agent-grid-cell {
+  color: var(--beui-accent);
+  background-color: var(--beui-accent);
+}
+
+.hf-agent-approval-actions button,
+.hf-agent-run-controls button {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: var(--beui-radius-full);
+  border-color: rgba(209, 254, 23, 0.36);
+  font-weight: 600;
+}
+
+.hf-agent-response-actions button {
+  border-radius: var(--beui-radius-full);
+  transition: color var(--beui-duration-fast) var(--beui-ease),
+    background var(--beui-duration-fast) var(--beui-ease),
+    border-color var(--beui-duration-fast) var(--beui-ease),
+    transform var(--beui-duration-fast) var(--beui-ease);
+}
+
+.hf-agent-response-actions button:hover,
+.hf-agent-response-actions button.is-active {
+  border-color: var(--beui-border);
+  background: var(--beui-tertiary);
+}
+
+/* The live islands use the same card and control vocabulary. */
+.af-control-card {
+  border-color: var(--beui-border);
+  border-radius: var(--beui-radius-lg);
+  background: var(--beui-surface);
+}
+
+.af-control-button {
+  min-height: 32px;
+  border-color: var(--beui-border);
+  border-radius: var(--beui-radius-full);
+  background: var(--beui-neutral);
+  color: var(--beui-on-surface);
+}
+
+.af-control-button:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #202020;
+}
+
+/* Shared keyboard affordance. */
+.hf-agent-panel button:focus-visible,
+.af-island button:focus-visible,
+[data-hf-app-shell="true"] button:focus-visible,
+[data-hf-app-shell="true"] [role="button"]:focus-visible,
+[data-hf-app-shell="true"] input:focus-visible,
+[data-hf-app-shell="true"] textarea:focus-visible,
+[data-hf-app-shell="true"] select:focus-visible {
+  outline: none;
+  box-shadow: var(--beui-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-beui-motion="enter"],
+  .hf-agent-panel *,
+  .af-island * {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
