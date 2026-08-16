@@ -20,6 +20,7 @@
   --beui-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --beui-duration-fast: 160ms;
   --beui-duration: 220ms;
+  --beui-duration-page: 320ms;
   --beui-focus: 0 0 0 3px rgba(209, 254, 23, 0.16);
 }
 
@@ -174,6 +175,154 @@ select {
 @keyframes beui-enter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Global motion foundation. Dynamic views are mounted by the HTML shell, so
+   these selectors give every route and overlay the same calm entrance. */
+@keyframes beui-route-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes beui-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(16px, 0, 0) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes beui-popover-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+[data-hf-app-shell="true"] {
+  --hf-motion-ease: var(--beui-ease);
+  --hf-motion-page: var(--beui-duration-page);
+  isolation: isolate;
+}
+
+[data-hf-app-shell="true"] > aside,
+[data-hf-app-shell="true"] > main,
+[data-hf-app-shell="true"] [data-hf-studio-panel="true"] {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+[data-hf-app-shell="true"] > aside,
+[data-hf-app-shell="true"] > main {
+  transition:
+    background-color var(--beui-duration) var(--beui-ease),
+    border-color var(--beui-duration) var(--beui-ease),
+    padding-right var(--beui-duration) var(--beui-ease);
+}
+
+[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],
+[data-hf-app-shell="true"].hf-route-transition [data-screen-label="true"],
+[data-hf-app-shell="true"].hf-route-transition [data-screen-label] {
+  animation: beui-route-enter var(--hf-motion-page) var(--hf-motion-ease) both !important;
+  will-change: opacity, transform;
+}
+
+[data-hf-app-shell="true"] [data-hf-studio-panel="true"] {
+  animation: beui-panel-enter var(--beui-duration-page) var(--beui-ease) both !important;
+  transform-origin: right center;
+}
+
+[data-hf-app-shell="true"] [data-hf-model-menu="true"],
+[data-hf-app-shell="true"] [data-hf-agent-menu],
+[data-hf-app-shell="true"] [data-hf-command-dialog],
+[data-hf-app-shell="true"] [data-hf-toast],
+[data-hf-app-shell="true"] .hf-connector-add-menu,
+[data-hf-app-shell="true"] .hf-settings-add-menu {
+  animation: beui-popover-enter var(--beui-duration) var(--beui-ease) both !important;
+  transform-origin: center bottom;
+}
+
+[data-hf-app-shell="true"] .hf-settings-shell,
+[data-hf-app-shell="true"] .hf-explore-shell,
+[data-hf-app-shell="true"] .hf-settings-content-inner {
+  animation: beui-route-enter var(--hf-motion-page) var(--beui-ease) both !important;
+  will-change: opacity, transform;
+}
+
+[data-hf-app-shell="true"] .hf-settings-content-inner {
+  animation-delay: 24ms !important;
+}
+
+[data-hf-app-shell="true"] [data-hf-card="true"],
+[data-hf-app-shell="true"] .hf-settings-card,
+[data-hf-app-shell="true"] .hf-explore-card,
+[data-hf-app-shell="true"] .hf-explore-viewer,
+[data-hf-app-shell="true"] .hf-pricing-card {
+  transition:
+    border-color var(--beui-duration) var(--beui-ease),
+    background-color var(--beui-duration) var(--beui-ease),
+    color var(--beui-duration-fast) var(--beui-ease),
+    transform var(--beui-duration) var(--beui-ease);
+}
+
+[data-hf-app-shell="true"] [data-hf-rail-item],
+[data-hf-app-shell="true"] [data-hf-composer-tool],
+[data-hf-app-shell="true"] [data-hf-model-trigger],
+[data-hf-app-shell="true"] .hf-settings-nav-item,
+[data-hf-app-shell="true"] .hf-explore-icon-button,
+[data-hf-app-shell="true"] .hf-explore-primary-action,
+[data-hf-app-shell="true"] .hf-explore-secondary-action {
+  transition:
+    color var(--beui-duration-fast) var(--beui-ease),
+    background-color var(--beui-duration-fast) var(--beui-ease),
+    border-color var(--beui-duration-fast) var(--beui-ease),
+    opacity var(--beui-duration-fast) var(--beui-ease),
+    transform var(--beui-duration-fast) var(--beui-ease);
+}
+
+[data-hf-app-shell="true"] button:active,
+[data-hf-app-shell="true"] [role="button"]:active {
+  transform: scale(0.975);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-hf-app-shell="true"] > aside,
+  [data-hf-app-shell="true"] > main,
+  [data-hf-app-shell="true"] [data-hf-studio-panel="true"],
+  [data-hf-app-shell="true"] [data-hf-card="true"],
+  [data-hf-app-shell="true"] .hf-settings-card,
+  [data-hf-app-shell="true"] .hf-explore-card,
+  [data-hf-app-shell="true"] .hf-explore-viewer {
+    transition: none !important;
+  }
+
+  [data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],
+  [data-hf-app-shell="true"].hf-route-transition [data-screen-label="true"],
+  [data-hf-app-shell="true"].hf-route-transition [data-screen-label],
+  [data-hf-app-shell="true"] [data-hf-studio-panel="true"],
+  [data-hf-app-shell="true"] [data-hf-model-menu="true"],
+  [data-hf-app-shell="true"] [data-hf-agent-menu],
+  [data-hf-app-shell="true"] [data-hf-command-dialog],
+  [data-hf-app-shell="true"] [data-hf-toast],
+  [data-hf-app-shell="true"] .hf-settings-shell,
+  [data-hf-app-shell="true"] .hf-explore-shell,
+  [data-hf-app-shell="true"] .hf-settings-content-inner {
+    animation: none !important;
+    will-change: auto;
+  }
 }
 
 /* Agent surfaces: one quiet hierarchy with pill actions and subtle borders. */

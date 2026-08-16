@@ -483,7 +483,7 @@ input:focus,textarea:focus{outline:1px solid rgba(209,254,23,.32);outline-offset
 @media (max-width:760px){.hf-explore-shell{left:72px}.hf-explore-inner{padding:22px 16px 48px}.hf-explore-heading{margin-bottom:18px}.hf-explore-card-grid{grid-template-columns:1fr}.hf-explore-viewer{display:flex;flex-direction:column;min-height:0;overflow:visible}.hf-explore-stage{min-height:58vh;padding:36px 48px}.hf-explore-stage-media{max-height:55vh}.hf-explore-details{max-height:none;border-top:1px solid rgba(247,247,248,.09);border-left:0}.hf-explore-action-row{margin-top:18px}.hf-explore-search{min-width:100%;flex:1}}
 @media (prefers-reduced-motion:reduce){.hf-explore-shell,.hf-explore-card,.hf-explore-viewer,.hf-explore-stage-media{animation:none}.hf-explore-shell,.hf-explore-card,.hf-explore-stage-arrow,.hf-explore-icon-button,.hf-explore-primary-action,.hf-explore-secondary-action{transition:none!important;scroll-behavior:auto}}
 [data-hf-app-shell="true"]{--hf-motion-ease:cubic-bezier(.22,1,.36,1)}
-[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:hfRouteEnter .26s var(--hf-motion-ease) both!important;will-change:opacity,transform}
+[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:beui-route-enter var(--hf-motion-page,320ms) var(--hf-motion-ease) both!important;will-change:opacity,transform}
 @media (prefers-reduced-motion:reduce){[data-hf-app-shell="true"].hf-route-transition [data-hf-route-view="true"],[data-hf-app-shell="true"].hf-route-transition [data-screen-label]{animation:none!important;will-change:auto}}
 /* beUI Dark adaptation: keep HuggyFlow lime as the product action while
    moving the shell toward BeUI's quieter charcoal, pill and border language. */
@@ -3113,20 +3113,11 @@ class Component extends DCLogic {
     try{ localStorage.setItem(key, String(top)); }catch(e){}
   }
   restoreRouteScroll(page, exploreId){
-    if(!page || page === 'app' || this.isSettingsPage(page)) return;
-    const key = this.routeScrollKey(page, exploreId);
-    let requestedTop = this.routeScrollPositions && this.routeScrollPositions[key];
-    if(requestedTop === undefined){
-      try{ requestedTop = Number(localStorage.getItem(key) || 0); }catch(e){ requestedTop = 0; }
-    }
-    const target = Math.max(0, Number(requestedTop) || 0);
+    // Route changes must never move the user's viewport behind their back.
+    // The browser keeps the current scroll position, while each view starts
+    // naturally at its own top when it is mounted. Explicit jump actions use
+    // their own handlers and remain intentional.
     clearTimeout(this.routeScrollRestoreTimer);
-    this.routeScrollRestoreTimer = setTimeout(()=>{
-      const element = this.routeScrollElement(page);
-      if(!element) return;
-      const maxTop = Math.max(0, element.scrollHeight - element.clientHeight);
-      element.scrollTop = Math.min(target, maxTop);
-    }, 0);
   }
   startRouteTransition(){
     if(typeof document === 'undefined') return;

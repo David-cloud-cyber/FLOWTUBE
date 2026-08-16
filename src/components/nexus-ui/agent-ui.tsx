@@ -233,6 +233,7 @@ function ActivityDisclosure({ items }: { items: AgentActivityItem[] }) {
 }
 
 function TaskList({ tasks }: { tasks: AgentTaskItem[] }) {
+  const reduce = useReducedMotion() ?? false;
   const [open, setOpen] = useState(true);
   const baseId = useId();
   const contentId = `${baseId}-plan`;
@@ -246,21 +247,26 @@ function TaskList({ tasks }: { tasks: AgentTaskItem[] }) {
         <span className="hf-agent-disclosure-count">{completed}/{tasks.length}</span>
         <ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
       </button>
-    {open ? <div id={contentId} role="region" aria-label="Plan d’exécution" className="hf-agent-task-list">
-        {tasks.map((task) => {
-          const status = task.status || 'pending';
-          const progress = Math.max(0, Math.min(100, Number(task.progress) || (status === 'completed' ? 100 : 0)));
-          return <div className="hf-agent-task-row" key={task.id}>
-            <span className={`hf-agent-task-mark is-${status}`} aria-hidden="true">{status === 'completed' ? <Check /> : status === 'failed' ? <X /> : status === 'in-progress' ? <span /> : null}</span>
-            <span className="hf-agent-task-body"><strong>{task.title}</strong>{task.detail ? <small>{task.detail}</small> : null}<span className="hf-agent-task-track"><span style={{ width: `${progress}%` }} /></span></span>
-          </div>;
-        })}
-      </div> : null}
+    <AnimatePresence initial={false}>
+      {open ? <motion.div id={contentId} role="region" aria-label="Plan d’exécution" className="hf-agent-task-list" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? undefined : { opacity: 0, height: 0 }} transition={{ duration: reduce ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}>
+        <AnimatePresence initial={false} mode="popLayout">
+          {tasks.map((task) => {
+            const status = task.status || 'pending';
+            const progress = Math.max(0, Math.min(100, Number(task.progress) || (status === 'completed' ? 100 : 0)));
+            return <motion.div className="hf-agent-task-row" key={task.id} layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}>
+              <span className={`hf-agent-task-mark is-${status}`} aria-hidden="true">{status === 'completed' ? <Check /> : status === 'failed' ? <X /> : status === 'in-progress' ? <span /> : null}</span>
+              <span className="hf-agent-task-body"><strong>{task.title}</strong>{task.detail ? <small>{task.detail}</small> : null}<span className="hf-agent-task-track"><motion.span animate={{ width: `${progress}%` }} transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }} /></span></span>
+            </motion.div>;
+          })}
+        </AnimatePresence>
+      </motion.div> : null}
+    </AnimatePresence>
     </div>
   );
 }
 
 function Citations({ citations }: { citations: AgentCitationItem[] }) {
+  const reduce = useReducedMotion() ?? false;
   const [open, setOpen] = useState(false);
   const baseId = useId();
   const contentId = `${baseId}-sources`;
@@ -269,10 +275,16 @@ function Citations({ citations }: { citations: AgentCitationItem[] }) {
     <button type="button" className="hf-agent-citation-trigger" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls={contentId}>
       <Search aria-hidden="true" /><span>{citations.length} source{citations.length > 1 ? 's' : ''}</span><ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
     </button>
-    {open ? <div id={contentId} role="region" aria-label="Sources" className="hf-agent-citation-list">{citations.map((citation) => {
-      const content = <><span className="hf-agent-favicon" aria-hidden="true">{citation.domain?.slice(0, 1).toUpperCase() || 'W'}</span><span className="hf-agent-citation-text"><strong>{citation.title}</strong><small>{citation.domain || citation.url || 'Source vérifiée'}</small></span><ExternalLink aria-hidden="true" /></>;
-      return citation.url ? <a key={citation.id} href={citation.url} target="_blank" rel="noreferrer noopener">{content}</a> : <div key={citation.id}>{content}</div>;
-    })}</div> : null}
+    <AnimatePresence initial={false}>
+      {open ? <motion.div id={contentId} role="region" aria-label="Sources" className="hf-agent-citation-list" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduce ? undefined : { opacity: 0, height: 0 }} transition={{ duration: reduce ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}>
+        <AnimatePresence initial={false} mode="popLayout">
+          {citations.map((citation) => {
+            const content = <><span className="hf-agent-favicon" aria-hidden="true">{citation.domain?.slice(0, 1).toUpperCase() || 'W'}</span><span className="hf-agent-citation-text"><strong>{citation.title}</strong><small>{citation.domain || citation.url || 'Source vérifiée'}</small></span><ExternalLink aria-hidden="true" /></>;
+            return citation.url ? <motion.a layout key={citation.id} href={citation.url} target="_blank" rel="noreferrer noopener" initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}>{content}</motion.a> : <motion.div layout key={citation.id} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}>{content}</motion.div>;
+          })}
+        </AnimatePresence>
+      </motion.div> : null}
+    </AnimatePresence>
   </div>;
 }
 
@@ -280,7 +292,7 @@ function StreamingResponse({ text, status }: { text: string; status: AgentRunSta
   const paragraphs = String(text || '').split(/\n{2,}/).filter(Boolean);
   if (!paragraphs.length) return null;
   return <div className="hf-agent-response-text" aria-live={status === 'working' ? 'off' : 'polite'}>
-    {paragraphs.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 12)}`}>{paragraph}</p>)}
+    {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
     {status === 'working' ? <span className="hf-agent-response-cursor" aria-hidden="true" /> : null}
   </div>;
 }
@@ -323,11 +335,13 @@ export function AgentMessagePanel({
     {active && !compactConversation ? <AgentProgress label={status === 'paused' ? 'Génération en pause' : labelForPhase(phase)} elapsedSeconds={elapsedSeconds} progress={progress} status={status} /> : null}
     {active && !compactConversation && !hasResponse ? <ReasoningText phase={phase} /> : null}
     {hasResponse ? <StreamingResponse text={responseText || ''} status={status} /> : null}
-    {!compactConversation && activity.length ? <ActivityDisclosure items={activity} /> : null}
-    {!compactConversation && tasks.length ? <TaskList tasks={tasks} /> : null}
-    {mediaStatus ? <MediaStatus status={mediaStatus} label={mediaLabel} /> : null}
-    {approval ? <ApprovalCard approval={approval} onApprove={onApprove} onReject={onReject} onRequestChanges={onRequestChanges} /> : null}
-    {citations.length ? <Citations citations={citations} /> : null}
+    <AnimatePresence initial={false} mode="popLayout">
+      {!compactConversation && activity.length ? <motion.div key="activity" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><ActivityDisclosure items={activity} /></motion.div> : null}
+      {!compactConversation && tasks.length ? <motion.div key="tasks" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><TaskList tasks={tasks} /></motion.div> : null}
+      {mediaStatus ? <motion.div key="media" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><MediaStatus status={mediaStatus} label={mediaLabel} /></motion.div> : null}
+      {approval ? <motion.div key="approval" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><ApprovalCard approval={approval} onApprove={onApprove} onReject={onReject} onRequestChanges={onRequestChanges} /></motion.div> : null}
+      {citations.length ? <motion.div key="citations" layout initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}><Citations citations={citations} /></motion.div> : null}
+    </AnimatePresence>
     {active && (onPause || onResume || onCancel) ? <div className="hf-agent-run-controls">{status === 'paused' && onResume ? <button type="button" onClick={onResume}><Play /> Reprendre</button> : status !== 'paused' && onPause ? <button type="button" onClick={onPause}><Pause /> Pause</button> : null}{onCancel ? <button type="button" className="is-quiet" onClick={onCancel}><X /> Annuler</button> : null}</div> : null}
     <ResponseActions responseText={responseText} status={status} onRetry={onRetry} onCopy={onCopy} onFeedback={onFeedback} retryLabel={retryLabel} />
   </div>;
