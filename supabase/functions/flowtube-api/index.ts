@@ -136,6 +136,125 @@ const AGENT_TOKEN_PRICES: Record<string, { input: number; output: number }> = {
 
 type AgentUsage = { inputTokens?: number; outputTokens?: number };
 
+type ModelCapability =
+  | "text"
+  | "streaming"
+  | "reasoning"
+  | "tools"
+  | "parallel_tools"
+  | "vision"
+  | "image"
+  | "image_edit"
+  | "video"
+  | "audio"
+  | "documents"
+  | "research"
+  | "structured_output"
+  | "long_context"
+  | "batch";
+
+type ModelCapabilityProfile = {
+  modelId: string;
+  capabilities: ModelCapability[];
+  inputModalities: string[];
+  outputModalities: string[];
+  contextTokens?: number;
+  maxOutputTokens?: number;
+  confirmedAt: string | null;
+  source: "openrouter" | "catalog";
+};
+
+const OPENROUTER_CAPABILITIES = new Map<string, ModelCapabilityProfile>();
+
+function hasSupportedParameter(model: OpenRouterRemoteModel, name: string) {
+  const parameters = model.supported_parameters;
+  if (Array.isArray(parameters)) return parameters.some((value) => String(value).toLowerCase() === name.toLowerCase());
+  if (!parameters || typeof parameters !== "object") return false;
+  return Object.keys(parameters).some((key) => key.toLowerCase() === name.toLowerCase());
+}
+
+function capabilityProfileForOpenRouterModel(model: OpenRouterRemoteModel, confirmedAt: string | null = openRouterCatalogCache.syncedAt): ModelCapabilityProfile {
+  const modelId = String(model.id || "");
+  const inputModalities = (model.architecture?.input_modalities || []).map(String).map((value) => value.toLowerCase());
+  const outputModalities = (model.architecture?.output_modalities || []).map(String).map((value) => value.toLowerCase());
+  const capabilities = new Set<ModelCapability>();
+  const isBatch = isBatchModel(modelId);
+  const isAgent = OPENROUTER_AGENT_IDS.has(modelId) && !isBatch;
+  const isImage = outputModalities.includes("image") || OPENROUTER_CURATED_IMAGE_IDS.includes(modelId as typeof OPENROUTER_CURATED_IMAGE_IDS[number]);
+  const isVideo = outputModalities.includes("video") || OPENROUTER_CURATED_VIDEO_IDS.includes(modelId as typeof OPENROUTER_CURATED_VIDEO_IDS[number]);
+  const isAudio = outputModalities.includes("audio") || outputModalities.includes("speech");
+
+  if (isAgent) {
+    capabilities.add("text");
+    capabilities.add("streaming");
+  } else if (isBatch) {
+    capabilities.add("batch");
+  }
+  if (inputModalities.includes("image") || inputModalities.includes("video")) capabilities.add("vision");
+  if (inputModalities.includes("file") || inputModalities.includes("document") || inputModalities.includes("pdf")) capabilities.add("documents");
+  if (isImage) capabilities.add("image");
+  if (isImage && inputModalities.includes("image")) capabilities.add("image_edit");
+  if (isVideo) capabilities.add("video");
+  if (isAudio) capabilities.add("audio");
+  if (hasSupportedParameter(model, "tools") || hasSupportedParameter(model, "tool_choice")) capabilities.add("tools");
+  if (hasSupportedParameter(model, "parallel_tool_calls")) capabilities.add("parallel_tools");
+  if (hasSupportedParameter(model, "response_format") || hasSupportedParameter(model, "structured_outputs")) capabilities.add("structured_output");
+  if (hasSupportedParameter(model, "reasoning") || /reason|think|o[134]|opus|sol|deepseek/i.test(modelId)) capabilities.add("reasoning");
+  const contextTokens = Number((model as OpenRouterRemoteModel & { context_length?: number }).context_length || 0);
+  const maxOutputTokens = Number((model as OpenRouterRemoteModel & { max_output_tokens?: number }).max_output_tokens || 0);
+  if (contextTokens >= 100_000) capabilities.add("long_context");
+  if (hasSupportedParameter(model, "web_search_options") || hasSupportedParameter(model, "search")) capabilities.add("research");
+
+  return {
+    modelId,
+    capabilities: [...capabilities],
+    inputModalities,
+    outputModalities,
+    ...(contextTokens > 0 ? { contextTokens } : {}),
+    ...(maxOutputTokens > 0 ? { maxOutputTokens } : {}),
+    confirmedAt,
+    source: "openrouter",
+  };
+}
+
+function rebuildOpenRouterCapabilityRegistry() {
+  OPENROUTER_CAPABILITIES.clear();
+  const confirmedAt = openRouterCatalogCache.syncedAt;
+  for (const model of [...openRouterCatalogCache.agent, ...openRouterCatalogCache.batch, ...openRouterCatalogCache.image, ...openRouterCatalogCache.video]) {
+    const profile = capabilityProfileForOpenRouterModel(model, confirmedAt);
+    OPENROUTER_CAPABILITIES.set(profile.modelId, profile);
+  }
+}
+
+function modelCapabilityProfile(modelId: string) {
+  return OPENROUTER_CAPABILITIES.get(internalModelId(modelId));
+}
+
+function modelHasCapability(modelId: string, capability: ModelCapability) {
+  return Boolean(modelCapabilityProfile(modelId)?.capabilities.includes(capability));
+}
+
+function capabilityLabel(capability: ModelCapability) {
+  const labels: Record<ModelCapability, string> = {
+    text: "Texte",
+    streaming: "Streaming",
+    reasoning: "Raisonnement",
+    tools: "Outils",
+    parallel_tools: "Outils paralleles",
+    vision: "Vision",
+    image: "Image",
+    image_edit: "Edition image",
+    video: "Video",
+    audio: "Audio",
+    documents: "Documents",
+    research: "Recherche",
+    structured_output: "Sortie structuree",
+    long_context: "Contexte long",
+    batch: "Traitement en lot",
+  };
+  return labels[capability];
+}
+
 const OPENROUTER_LIVE_PRICES: Record<string, { input: number; output: number }> = {};
 const OPENROUTER_PRICE_REFRESHED_AT: Record<string, number> = {};
 const OPENROUTER_AGENT_IDS = new Set<string>(OPENROUTER_CURATED_AGENT_IDS);
@@ -179,7 +298,9 @@ type OpenRouterRemoteModel = {
   description?: string;
   pricing?: { prompt?: string | number; completion?: string | number; image?: string | number; request?: string | number } | null;
   architecture?: { input_modalities?: string[]; output_modalities?: string[] } | null;
-  supported_parameters?: Record<string, unknown> | null;
+  supported_parameters?: Record<string, unknown> | string[] | null;
+  context_length?: number;
+  max_output_tokens?: number;
   pricing_skus?: Record<string, string | number> | null;
   supported_durations?: number[] | null;
   supported_resolutions?: string[] | null;
@@ -257,6 +378,7 @@ async function refreshOpenRouterCatalog(force = false) {
   const video = byId(videoModels, OPENROUTER_CURATED_VIDEO_IDS);
   const live = agent.length + batch.length + image.length + video.length > 0;
   openRouterCatalogCache = { agent, batch, image, video, syncedAt: new Date().toISOString(), live };
+  rebuildOpenRouterCapabilityRegistry();
   for (const model of agent) {
     const input = Number(model.pricing?.prompt);
     const output = Number(model.pricing?.completion);
@@ -411,7 +533,11 @@ function agentMarginMultiplierForModel(modelId: string) {
 
 function safeModelName(modelId: string, remoteName?: string) {
   const fallback = modelId.split("/").pop()?.replace(/[-_]+/g, " ") || "Modele";
-  return String(remoteName || fallback).replace(/^[^:]{2,24}:\s*/i, "").trim() || fallback;
+  return String(remoteName || fallback)
+    .replace(/^[^:]{2,24}:\s*/i, "")
+    .replace(/\b(openrouter|openai|anthropic|google|deepseek|qwen|tencent|mistral|meta|microsoft|x-ai|xai)\b/ig, "")
+    .replace(/\s{2,}/g, " ")
+    .trim() || fallback;
 }
 
 function publicModelDescription(capabilities: string[], tier: string) {
@@ -431,16 +557,12 @@ function publicAgentModels() {
       return countB - countA || a.index - b.index;
     })
     .map(({ item }) => item);
-  const models = [{ id: "auto", modelKey: "auto", name: "Auto", description: "Choisit automatiquement le modele le plus adapte a ta demande.", tier: "balanced", capabilities: ["tools", "vision", "reasoning"] }, ...remote.map((item) => {
+  const confirmedCapabilities = [...new Set(remote.flatMap((item) => capabilityProfileForOpenRouterModel(item).capabilities))];
+  const models = [{ id: "auto", modelKey: "auto", name: "Auto", description: "Choisit automatiquement la configuration la plus adaptee a ta demande.", tier: "balanced", capabilities: confirmedCapabilities }, ...remote.map((item) => {
     const id = String(item.id || "");
     const key = rememberPublicModel(id);
-    const inputModalities = item.architecture?.input_modalities || [];
-    const outputModalities = item.architecture?.output_modalities || [];
-    const capabilities = [
-      ...(inputModalities.includes("image") ? ["vision"] : []),
-      ...(outputModalities.includes("audio") ? ["audio"] : []),
-      ...(item.supported_parameters && Object.prototype.hasOwnProperty.call(item.supported_parameters, "tools") ? ["tools"] : ["reasoning"]),
-    ];
+    const profile = capabilityProfileForOpenRouterModel(item);
+    const capabilities = profile.capabilities;
     const tier = /opus|pro|sol|sora/i.test(id) ? "premium" : /flash|mini|luna/i.test(id) ? "fast" : "balanced";
     return { id: key, modelKey: key, name: safeModelName(id, item.name).replace(/openrouter/ig, "").trim() || "Modele", description: publicModelDescription(capabilities, tier), tier, capabilities };
   })];
@@ -506,6 +628,70 @@ function resolveAgentModelId(value: unknown) {
 
 function agentModelFromBody(body: Record<string, unknown>) {
   return resolveAgentModelId(body.agentModelId || body.agent_model_id || body.anthropicModel || body.anthropic_model);
+}
+
+function requestedAgentModelValue(body: Record<string, unknown>) {
+  return body.agentModelId || body.agent_model_id || body.anthropicModel || body.anthropic_model || "auto";
+}
+
+function requestedAgentCapabilities(prompt: string, body: Record<string, unknown>, simpleConversation = false): ModelCapability[] {
+  const required = new Set<ModelCapability>(["text"]);
+  const attachments = normalizeRequestAttachments(body.attachments);
+  const attachmentText = attachments.map((item) => `${item.name || ""} ${item.kind || ""} ${item.contentType || ""} ${item.url || ""}`).join(" ").toLowerCase();
+  if (attachments.length || body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url) {
+    required.add(/pdf|document|docx|txt|csv|spreadsheet|file/.test(attachmentText) ? "documents" : "vision");
+  }
+  if (body.outputFormat === "json" || body.output_format === "json" || body.responseFormat === "json" || body.response_format === "json" || body.structuredOutput || body.structured_output) required.add("structured_output");
+  if (body.tools || body.toolChoice || body.tool_choice || agentLoopEnabled()) required.add("tools");
+  if (body.useModelResearch === true || body.use_model_research === true) required.add("research");
+  if (!simpleConversation && /raisonne|analyse en profondeur|planifie|strategie|strat[eé]gie|complexe|deep research|think|reason/i.test(stripAccents(prompt))) required.add("reasoning");
+  return [...required];
+}
+
+function selectAgentModelForRequest(body: Record<string, unknown>, prompt: string, required: ModelCapability[], simpleConversation = false) {
+  const requested = String(requestedAgentModelValue(body) || "auto").trim();
+  const isAuto = requested === "" || requested.toLowerCase() === "auto" || requested.toLowerCase() === "huggy-auto";
+  const confirmed = openRouterCatalogCache.agent.filter((item) => {
+    const id = String(item.id || "");
+    const profile = capabilityProfileForOpenRouterModel(item);
+    return id && !isBatchModel(id) && required.every((capability) => profile.capabilities.includes(capability));
+  });
+  if (!OPENROUTER_AGENT_ENABLED || !OPENROUTER_API_KEY) return agentModelFromBody(body);
+  if (!isAuto) {
+    const modelId = internalModelId(requested);
+    const model = openRouterCatalogCache.agent.find((item) => String(item.id || "") === modelId);
+    if (!model || isBatchModel(modelId)) throw new FlowtubeError(400, "Ce modele n'est pas disponible pour cette demande.", { code: "MODEL_UNAVAILABLE" });
+    const profile = capabilityProfileForOpenRouterModel(model);
+    const missing = required.filter((capability) => !profile.capabilities.includes(capability));
+    if (missing.length) {
+      throw new FlowtubeError(400, "Ce modele ne prend pas en charge cette capacite. Choisis Auto ou un modele compatible.", { code: "MODEL_CAPABILITY_UNAVAILABLE", capabilities: missing });
+    }
+    return modelId;
+  }
+  if (!confirmed.length) {
+    throw new FlowtubeError(503, "Aucun modele compatible n'est disponible pour cette demande.", { code: "NO_COMPATIBLE_MODEL" });
+  }
+  const popularity = modelPopularityCache.counts;
+  const normalizedPrompt = stripAccents(prompt.toLowerCase());
+  return confirmed
+    .map((item, index) => {
+      const id = String(item.id || "");
+      const profile = capabilityProfileForOpenRouterModel(item);
+      const price = agentTokenPriceForModel(id);
+      let score = (popularity.get(id) || 0) * 25 - price.input - price.output * 0.15;
+      if (profile.capabilities.includes("reasoning") && /raisonne|strategie|complexe|deep|planifie/.test(normalizedPrompt)) score += 15;
+      if (profile.capabilities.includes("vision") && required.includes("vision")) score += 12;
+      if (profile.capabilities.includes("tools") && required.includes("tools")) score += 10;
+      if (profile.capabilities.includes("structured_output") && required.includes("structured_output")) score += 8;
+      return { id, score, index };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)[0].id;
+}
+
+function assertAgentCapability(modelId: string, capability: ModelCapability) {
+  if (!isOpenRouterAgentModel(modelId)) return;
+  if (modelHasCapability(modelId, capability)) return;
+  throw new FlowtubeError(400, `La capacite ${capabilityLabel(capability).toLowerCase()} n'est pas disponible pour ce modele.`, { code: "MODEL_CAPABILITY_UNAVAILABLE", capability });
 }
 
 function agentModelFallbacks(preferred?: string) {
@@ -738,6 +924,10 @@ function openRouterPayload(payload: Record<string, unknown>, modelId: string) {
   const tools = openRouterTools(payload.tools);
   if (tools?.length) request.tools = tools;
   if (payload.tool_choice !== undefined) request.tool_choice = payload.tool_choice;
+  const profile = modelCapabilityProfile(modelId);
+  if (payload.response_format !== undefined && profile?.capabilities.includes("structured_output")) request.response_format = payload.response_format;
+  if (payload.reasoning !== undefined && profile?.capabilities.includes("reasoning")) request.reasoning = payload.reasoning;
+  if (payload.parallel_tool_calls !== undefined && profile?.capabilities.includes("parallel_tools")) request.parallel_tool_calls = payload.parallel_tool_calls;
   if (request.stream) request.stream_options = { include_usage: true };
   return request;
 }
@@ -781,9 +971,11 @@ function openRouterStreamResponse(raw: string, modelId: string) {
   const toolCalls = new Map<number, { id: string; name: string; args: string }>();
   let usage: AgentUsage = {};
   for (const block of raw.split(/\r?\n\r?\n/)) {
-    const dataLine = block.split(/\r?\n/).find((line) => line.startsWith("data:"));
-    if (!dataLine) continue;
-    const value = dataLine.slice(5).trim();
+    const dataLines = block.split(/\r?\n/)
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).replace(/^ /, ""));
+    if (!dataLines.length) continue;
+    const value = dataLines.join("\n").trim();
     if (!value || value === "[DONE]") continue;
     try {
       const event = JSON.parse(value) as Record<string, unknown>;
@@ -826,6 +1018,100 @@ function openRouterStreamResponse(raw: string, modelId: string) {
   return { response: new Response(chunks.join(""), { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8" } }), usage };
 }
 
+function openRouterLiveStreamResponse(body: ReadableStream<Uint8Array>, modelId: string, billing?: AgentBillingContext) {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const reader = body.getReader();
+      let buffer = "";
+      let blockIndex = 0;
+      let textBlockOpen = false;
+      let finished = false;
+      let providerFinished = false;
+      let billingPromise: Promise<unknown> | null = null;
+      const toolBlocks = new Map<number, { blockIndex: number; id: string }>();
+      let usage: AgentUsage = {};
+      const emit = (event: string, payload: unknown) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
+      };
+      emit("message_start", { type: "message_start", message: { id: crypto.randomUUID(), type: "message", role: "assistant", content: [], model: "selected" } });
+
+      const handleData = (value: string) => {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed === "[DONE]" || finished) return;
+        try {
+          const event = JSON.parse(trimmed) as Record<string, unknown>;
+          if (event.usage) usage = openRouterUsage(event.usage);
+          if (providerFinished) return;
+          const choice = ((event.choices as unknown[]) || [])[0] as Record<string, unknown> | undefined;
+          const delta = (choice?.delta || {}) as Record<string, unknown>;
+          const content = typeof delta.content === "string" ? delta.content : "";
+          if (content) {
+            if (!textBlockOpen) {
+              textBlockOpen = true;
+              emit("content_block_start", { type: "content_block_start", index: blockIndex, content_block: { type: "text", text: "" } });
+            }
+            emit("content_block_delta", { type: "content_block_delta", index: blockIndex, delta: { type: "text_delta", text: content } });
+          }
+          const deltas = Array.isArray(delta.tool_calls) ? delta.tool_calls : [];
+          for (const rawCall of deltas) {
+            const call = rawCall as Record<string, unknown>;
+            const index = Number(call.index || 0);
+            const fn = (call.function || {}) as Record<string, unknown>;
+            let tool = toolBlocks.get(index);
+            if (!tool) {
+              tool = { blockIndex: blockIndex + (textBlockOpen ? 1 : 0) + toolBlocks.size, id: String(call.id || crypto.randomUUID()) };
+              toolBlocks.set(index, tool);
+              emit("content_block_start", { type: "content_block_start", index: tool.blockIndex, content_block: { type: "tool_use", id: tool.id, name: String(fn.name || "tool"), input: {} } });
+            }
+            const partial = String(fn.arguments || "");
+            if (partial) emit("content_block_delta", { type: "content_block_delta", index: tool.blockIndex, delta: { type: "input_json_delta", partial_json: partial } });
+          }
+          if (choice?.finish_reason === "stop" || choice?.finish_reason === "tool_calls") providerFinished = true;
+        } catch (_error) {
+          // Les fragments ou evenements inconnus du fournisseur sont ignores sans exposer de details internes.
+        }
+      };
+
+      const pump = async () => {
+        try {
+          while (!finished) {
+            const chunk = await reader.read();
+            if (chunk.done) break;
+            buffer += decoder.decode(chunk.value, { stream: true });
+            const frames = buffer.split(/\r?\n\r?\n/);
+            buffer = frames.pop() || "";
+            for (const frame of frames) {
+              const data = frame.split(/\r?\n/).filter((line) => line.startsWith("data:")).map((line) => line.slice(5).replace(/^ /, "")).join("\n");
+              handleData(data);
+            }
+          }
+          buffer += decoder.decode();
+          if (buffer.trim() && !finished) {
+            const data = buffer.split(/\r?\n/).filter((line) => line.startsWith("data:")).map((line) => line.slice(5).replace(/^ /, "")).join("\n");
+            handleData(data);
+          }
+          if (!finished) {
+            finished = true;
+            if (textBlockOpen) emit("content_block_stop", { type: "content_block_stop", index: blockIndex });
+            for (const tool of toolBlocks.values()) emit("content_block_stop", { type: "content_block_stop", index: tool.blockIndex });
+            emit("message_delta", { type: "message_delta", delta: { stop_reason: toolBlocks.size ? "tool_use" : "end_turn" }, usage });
+            emit("message_stop", { type: "message_stop" });
+            billingPromise = chargeAgentCredits(billing, modelId, usage);
+          }
+          if (billingPromise) await billingPromise;
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      };
+      void pump();
+    },
+  });
+  return new Response(stream, { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
+}
+
 function anthropicStreamUsage(raw: string): AgentUsage {
   let usage: AgentUsage = {};
   for (const line of raw.split(/\r?\n/)) {
@@ -850,6 +1136,14 @@ async function openRouterMessages(payload: Record<string, unknown>, preferredMod
   if (!OPENROUTER_AGENT_ENABLED || !OPENROUTER_API_KEY) {
     throw new FlowtubeError(503, "Le modele selectionne est momentanement indisponible.", { code: "MODEL_NOT_CONFIGURED", modelId: model });
   }
+  assertAgentCapability(model, "text");
+  if (payload.stream) assertAgentCapability(model, "streaming");
+  const hasImageContent = JSON.stringify(payload.messages || []).includes('"image_url"');
+  if (hasImageContent) assertAgentCapability(model, "vision");
+  if (Array.isArray(payload.tools) && payload.tools.length) assertAgentCapability(model, "tools");
+  if (payload.response_format !== undefined || payload.structured_output || payload.structuredOutput) assertAgentCapability(model, "structured_output");
+  if (payload.reasoning !== undefined || payload.reasoning_effort !== undefined) assertAgentCapability(model, "reasoning");
+  if (payload.parallel_tool_calls === true) assertAgentCapability(model, "parallel_tools");
   await refreshOpenRouterPrice(model);
   await ensureAgentCreditsAvailable(billing, model, estimatedAgentCreditsForPayload(model, payload, billing?.multiplier));
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
@@ -862,18 +1156,18 @@ async function openRouterMessages(payload: Record<string, unknown>, preferredMod
     },
     body: JSON.stringify(openRouterPayload(payload, model)),
   });
-  const raw = await response.text();
   if (!response.ok) {
+    const raw = await response.text();
     const providerStatus = response.status;
     const status = [401, 402, 429].includes(providerStatus) || providerStatus >= 500 ? providerStatus : 502;
     const code = providerStatus === 401 ? "OPENROUTER_UNAUTHORIZED" : providerStatus === 402 ? "OPENROUTER_PAYMENT_REQUIRED" : providerStatus === 429 ? "OPENROUTER_RATE_LIMITED" : "OPENROUTER_ERROR";
     throw new FlowtubeError(status, providerStatus === 402 ? "Cette generation ne peut pas etre lancee pour le moment." : "Le modele selectionne n'est pas disponible pour le moment.", { code, modelId: model, providerStatus });
   }
   if (Boolean(payload.stream)) {
-    const streamed = openRouterStreamResponse(raw, model);
-    await chargeAgentCredits(billing, model, streamed.usage);
-    return { response: streamed.response, model };
+    if (!response.body) throw new FlowtubeError(502, "La reponse du modele est indisponible.", { code: "EMPTY_MODEL_STREAM" });
+    return { response: openRouterLiveStreamResponse(response.body, model, billing), model };
   }
+  const raw = await response.text();
   const normalized = openRouterAnthropicResponse(JSON.parse(raw) as Record<string, unknown>);
   await chargeAgentCredits(billing, model, normalized.usage);
   return { response: new Response(JSON.stringify(normalized), { status: 200, headers: { "Content-Type": "application/json" } }), model };
@@ -1644,7 +1938,7 @@ function compactModelName(model: PricingModel) {
 function modelUiBadge(model: PricingModel) {
   const tier = String((model.metadata || {}).quality_tier || "");
   if (tier === "premium" || model.premium) return "PRO";
-  if (/fast|turbo|lite|mini|schnell/i.test(model.endpoint)) return "FAST";
+  if (/fast|turbo|lite|mini|schnell/i.test(String(model.endpoint || ""))) return "FAST";
   return "";
 }
 
@@ -2280,38 +2574,6 @@ function publicPricingModels(catalog: PricingModel[]) {
       costLabel: `${quote.credits} credits par ${model.pricingUnit === "second" ? "seconde" : "creation"}`,
     };
   });
-  const agent = publicAgentModels().map((model) => {
-    const price = agentTokenPriceForModel(model.id);
-    const resolved = resolveAgentModelId(model.id);
-    const exampleCredits = agentCreditsForUsage(resolved, { inputTokens: 2000, outputTokens: 800 }).credits;
-    return {
-      id: `agentflow:${model.id}`,
-      name: `AgentFlow · ${model.name}`,
-      type: "document",
-      provider: model.provider,
-      pricingUnit: "1M tokens",
-      defaultUnits: 1,
-      minimumUnits: 1,
-      maximumUnits: null,
-      costPerUnitUsd: price.input,
-      costPerUnitXof: usdToXof(price.input),
-      outputCostPerUnitUsd: price.output,
-      outputCostPerUnitXof: usdToXof(price.output),
-      creditsPerDefaultUnit: exampleCredits,
-      defaultCostUsd: Number(((2000 * price.input + 800 * price.output) / 1_000_000).toFixed(6)),
-      defaultCostXof: usdToXof((2000 * price.input + 800 * price.output) / 1_000_000),
-      creditFloorUsd: CREDIT_FLOOR_USD,
-      retailCreditUsd: RETAIL_CREDIT_USD,
-      qualityTier: String(model.tier || "standard"),
-      marginClass: String(model.costClass || "standard"),
-      free: Boolean(model.free),
-      freeUntil: model.freeUntil || null,
-      capabilities: model.capabilities || [],
-      inputUsdPerMillionTokens: price.input,
-      outputUsdPerMillionTokens: price.output,
-      costLabel: `${price.input} USD / MTok entree · ${price.output} USD / MTok sortie`,
-    };
-  });
   // Agent LLMs remain available through `agentModels` for chat orchestration,
   // but are intentionally not mixed into the curated media model catalog.
   return media;
@@ -2847,7 +3109,7 @@ async function ensureSeedData(supabase: ReturnType<typeof adminClient>, userId: 
 }
 
 function mediaFromGeneration(generation: Record<string, unknown>) {
-  const batch = cleanMetadata(generation.params).batch;
+  const batch = cleanMetadata(generation.params).batch as Record<string, unknown> | undefined;
   return {
     id: generation.id,
     generationId: generation.id,
@@ -4245,7 +4507,7 @@ async function artifactRoute(req: Request, artifactId?: string) {
     const { data: versions, error: versionError } = await supabase.from("artifact_versions").select("*").eq("artifact_id", id).eq("user_id", userId).in("id", versionIds);
     if (versionError) throw versionError;
     if (!versions || versions.length !== 2) throw new FlowtubeError(404, "Versions introuvables.", { code: "ARTIFACT_VERSIONS_NOT_FOUND" });
-    const ordered = versionIds.map((versionId) => versions.find((version) => String(version.id) === versionId)).filter(Boolean) as Record<string, unknown>[];
+    const ordered = versionIds.map((versionId: string) => versions.find((version) => String(version.id) === versionId)).filter(Boolean) as Record<string, unknown>[];
     const files = [...new Set(ordered.flatMap((version) => safeArtifactFiles(version.files).map((file) => file.path)))];
     const diff = files.map((path) => {
       const left = safeArtifactFiles(ordered[0].files).find((file) => file.path === path);
@@ -4381,7 +4643,7 @@ async function exploreRoute(req: Request) {
 
   if (req.method !== "POST") return json({ error: { message: "Méthode non autorisée." } }, 405);
   const userId = await userIdFromRequest(req, supabase);
-  const body = await readJson(req);
+  const body = await bodyJson(req);
   const action = String(body.action || "");
 
   if (action === "publish") {
@@ -4667,7 +4929,8 @@ function autoLearnSkillCandidate(prompt: string, attachments: ReturnType<typeof 
 // ===== Analyse visuelle (vision): breakdown d'une image/pub de reference =====
 async function anthropicVision(imageUrl: string, question: string, preferredModel?: string, billing?: AgentBillingContext): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return "";
+  const routedToOpenRouter = OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) && isOpenRouterAgentModel(resolveAgentModelId(preferredModel));
+  if (!apiKey && !routedToOpenRouter) return "";
   const { response } = await anthropicMessages({
     max_tokens: 900,
     messages: [{
@@ -4859,7 +5122,8 @@ async function runWebResearch(url: string, userPrompt: string, preferredModel?: 
     return `La page ${url} n'expose pas de texte lisible (souvent une SPA/JS). Donne-moi une URL avec du contenu HTML ou colle le texte.`;
   }
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
+  const routedToOpenRouter = OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) && isOpenRouterAgentModel(resolveAgentModelId(preferredModel));
+  if (!apiKey && !routedToOpenRouter) return `Contenu recupere de ${url} :\n${pageText.slice(0, 800)}...`;
   try {
     const { response } = await anthropicMessages({
       max_tokens: 1000,
@@ -4891,7 +5155,8 @@ async function runMarketResearch(query: string, userPrompt: string, preferredMod
     ].join("\n");
   }
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
+  const routedToOpenRouter = OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) && isOpenRouterAgentModel(resolveAgentModelId(preferredModel));
+  if (!apiKey && !routedToOpenRouter) return `Signaux recuperes pour "${query}" :\n${corpus.slice(0, 1000)}...`;
   try {
     const { response } = await anthropicMessages({
       max_tokens: 1100,
@@ -4966,8 +5231,9 @@ async function anthropicReply(
   billing?: AgentBillingContext,
 ) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const routedToOpenRouter = OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) && isOpenRouterAgentModel(resolveAgentModelId(preferredModel));
   const emit = (text: string) => { if (onDelta && text) onDelta(text); };
-  if (!apiKey) {
+  if (!apiKey && !routedToOpenRouter) {
     const text = fallbackReply(prompt, type, credits);
     emit(text);
     return text;
@@ -5034,6 +5300,7 @@ async function anthropicReply(
   } catch (err) {
     if (err instanceof FlowtubeError) throw err;
     if (full.trim()) return full.trim();
+    if (routedToOpenRouter) throw err;
     const text = fallbackReply(prompt, type, credits);
     emit(text);
     return text;
@@ -5344,7 +5611,8 @@ async function runAgentLoop(
   context: ReplyContext,
 ): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) {
+  const routedToOpenRouter = OPENROUTER_AGENT_ENABLED && Boolean(OPENROUTER_API_KEY) && isOpenRouterAgentModel(ctx.agentModelId);
+  if (!apiKey && !routedToOpenRouter) {
     const text = fallbackReply(prompt, "image", 0);
     ctx.send("text", { delta: text });
     return text;
@@ -5418,7 +5686,7 @@ async function runAgentLoop(
   return emitted.trim();
 }
 
-function firstString(value: unknown) {
+function firstString(value: unknown): string {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -5559,7 +5827,7 @@ async function storeProviderBytes(
   const signedSeconds = Math.max(3600, Math.min(retentionDays * 24 * 60 * 60, 60 * 60 * 24 * 30));
   const extension = extensionFromContentType(contentType, String(generation.type || "image"));
   const path = `${generation.user_id}/${generation.id}/result.${extension}`;
-  const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, new Blob([bytes], { type: contentType }), { contentType, upsert: true });
+  const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], { type: contentType }), { contentType, upsert: true });
   if (uploadError) throw uploadError;
   const { data: signed, error: signedError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, signedSeconds);
   if (signedError) throw signedError;
@@ -5829,7 +6097,7 @@ async function verifyFalWebhook(req: Request, rawBody: Uint8Array) {
   const timestampSeconds = Number(timestamp);
   if (!Number.isFinite(timestampSeconds) || Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds) > 300) return false;
 
-  const bodyHash = await crypto.subtle.digest("SHA-256", rawBody);
+  const bodyHash = await crypto.subtle.digest("SHA-256", new Uint8Array(rawBody).buffer as ArrayBuffer);
   const bodyHashHex = Array.from(new Uint8Array(bodyHash)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
   const message = new TextEncoder().encode(`${requestId}\n${userId}\n${timestamp}\n${bodyHashHex}`);
   const signatureBytes = (() => {
@@ -7029,6 +7297,7 @@ async function chat(req: Request) {
   const requestAttachments = normalizeRequestAttachments((body as Record<string, unknown>).attachments);
   const attachmentContext = attachmentContextFromBody(body as Record<string, unknown>);
   let agentModelId = "auto";
+  const runId = String(body.runId || body.run_id || crypto.randomUUID()).slice(0, 120);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -7036,11 +7305,23 @@ async function chat(req: Request) {
       let eventSequence = 0;
       const send = (event: string, payload: unknown) => {
         if (req.signal.aborted) return;
-        let nextPayload = payload;
+        eventSequence += 1;
+        const normalizedType = event === "text"
+          ? "assistant.delta"
+          : event === "done"
+            ? "run.completed"
+            : event === "error"
+              ? "run.failed"
+              : event === "cancelled"
+                ? "run.cancelled"
+                : event;
+        let nextPayload: Record<string, unknown> = payload && typeof payload === "object"
+          ? { ...(payload as Record<string, unknown>), type: normalizedType, runId, sequence: eventSequence, timestamp: new Date().toISOString() }
+          : { type: normalizedType, runId, sequence: eventSequence, timestamp: new Date().toISOString(), value: payload };
         if (event === "text" && payload && typeof payload === "object" && typeof (payload as Record<string, unknown>).delta === "string") {
           nextPayload = { ...(payload as Record<string, unknown>), delta: cleanAgentDisplayText(String((payload as Record<string, unknown>).delta || "")) };
+          nextPayload = { ...(nextPayload as Record<string, unknown>), type: normalizedType, runId, sequence: eventSequence, timestamp: new Date().toISOString() };
         }
-        eventSequence += 1;
         controller.enqueue(encoder.encode(`id: ${eventSequence}\nevent: ${event}\ndata: ${JSON.stringify(nextPayload)}\n\n`));
       };
       const heartbeat = setInterval(() => send("heartbeat", { at: new Date().toISOString() }), 15000);
@@ -7048,7 +7329,6 @@ async function chat(req: Request) {
         const supabase = adminClient();
         const userId = await userIdFromRequest(req, supabase);
         await refreshOpenRouterCatalog();
-        agentModelId = agentModelFromBody(body as Record<string, unknown>);
         const profile = await ensureProfile(supabase, userId);
         await enforceRateLimit(req, supabase, "chat", userId, DEFAULT_RATE_LIMIT);
         const plan = await resolvePlan(supabase, String(profile.plan || "free"));
@@ -7072,6 +7352,9 @@ async function chat(req: Request) {
           && !extractSkillDirective(prompt)
           && !isCostReportRequest(prompt)
           && !extractElementDirective(prompt);
+        const requiredAgentCapabilities = requestedAgentCapabilities(prompt, body as Record<string, unknown>, simpleConversation);
+        agentModelId = selectAgentModelForRequest(body as Record<string, unknown>, prompt, requiredAgentCapabilities, simpleConversation);
+        send("run.started", { phase: simpleConversation ? "thinking" : "analyzing", progress: simpleConversation ? 4 : 10, model: agentModelId === "auto" ? undefined : "selected" });
         const billingRequestKey = String(body.idempotencyKey || body.idempotency_key || crypto.randomUUID()).slice(0, 120);
         const billingCounters = new Map<string, number>();
         const nextBillingKey = (reason: string) => {
@@ -7372,7 +7655,7 @@ async function chat(req: Request) {
           attachments: attachmentContext,
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
-        if (!simpleConversation) send("status", { phase: "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: agentModelId });
+        if (!simpleConversation) send("status", { phase: "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: "selected" });
         const reply = await anthropicReply(
           prompt,
           type,
@@ -7796,7 +8079,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       const model = resolveModelFromCatalog(catalog, String(generation.model_id), String(generation.type));
       if (!model.endpoint) throw new Error("No fal.ai endpoint configured for model");
       const status = await fal.queue.status(String(model.endpoint), { requestId: String(generation.fal_job_id), logs: true });
-      const statusText = String((status as Record<string, unknown>).status || "").toUpperCase();
+      const statusText = String((status as unknown as Record<string, unknown>).status || "").toUpperCase();
       if (statusText === "COMPLETED") {
         const result = await fal.queue.result(String(model.endpoint), { requestId: String(generation.fal_job_id) });
         const resultUrl = extractUrl((result as Record<string, unknown>).data || result);

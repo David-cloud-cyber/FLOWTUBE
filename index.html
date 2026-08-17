@@ -54,6 +54,14 @@
   <symbol id="hf-settings-skills" viewBox="0 0 24 24"><path d="M4 5h6a4 4 0 0 1 4 4v10a3 3 0 0 0-3-2.5H4V5ZM20 5h-6a4 4 0 0 0-4 4v10a3 3 0 0 1 3-2.5h7V5Z"/></symbol>
   <symbol id="hf-settings-connectors" viewBox="0 0 24 24"><path d="M8 12h8M12 8v8"/><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
   <symbol id="hf-settings-plugins" viewBox="0 0 24 24"><path d="M8 3v4a2 2 0 0 1-2 2H3v4h3a2 2 0 0 1 2 2v6h4v-6a2 2 0 0 1 2-2h4V9h-4a2 2 0 0 1-2-2V3H8Z"/></symbol>
+  <symbol id="hf-model-auto" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 11 7.4-3.8M8.2 13l7.4 3.8"/></symbol>
+  <symbol id="hf-model-fast" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z"/></symbol>
+  <symbol id="hf-model-reasoning" viewBox="0 0 24 24"><path d="M9.5 4a3.5 3.5 0 0 0-3.4 4.3A3.5 3.5 0 0 0 4 11.5a3.5 3.5 0 0 0 2.7 3.4A3.5 3.5 0 0 0 10 19h2V4H9.5Z"/><path d="M14.5 4a3.5 3.5 0 0 1 3.4 4.3A3.5 3.5 0 0 1 20 11.5a3.5 3.5 0 0 1-2.7 3.4A3.5 3.5 0 0 1 14 19h-2V4h2.5Z"/><path d="M8 10h2M14 10h2M8 14h2M14 14h2"/></symbol>
+  <symbol id="hf-model-vision" viewBox="0 0 24 24"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="hf-model-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4.5 17 4.6-4.5 3.1 3 2.2-2.2 5.1 5"/></symbol>
+  <symbol id="hf-model-video" viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/><path d="m8 9 4 3-4 3V9Z"/></symbol>
+  <symbol id="hf-model-audio" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></symbol>
+  <symbol id="hf-model-capability" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 12h5M8 15h8"/></symbol>
 </svg>
 <noscript><main style="max-width:760px;margin:0 auto;padding:48px 24px;font:16px/1.6 system-ui;color:#17191c"><h1>HuggyFlow, le workspace créatif multimédia par IA</h1><p>HuggyFlow aide les équipes à transformer une intention en images, vidéos, voix, documents et campagnes organisées, avec mémoire de projet, exécution en arrière-plan et contrôle qualité.</p><h2>Que peut faire HuggyFlow&nbsp;?</h2><ul><li>Planifier et produire des contenus multimédia.</li><li>Générer des variantes et conserver les versions.</li><li>Continuer les tâches longues même lorsque la page change.</li><li>Vérifier les résultats avant livraison.</li></ul><h2>Questions fréquentes</h2><p><strong>HuggyFlow est-il un générateur vidéo&nbsp;?</strong> Oui. Il coordonne la préparation, la génération, la vérification et l’organisation de créations vidéo et d’autres formats.</p><p><strong>Où voir les tarifs&nbsp;?</strong> Consulte la page <a href="/pricing">Pricing</a>.</p></main></noscript>
 <x-dc>
@@ -625,7 +633,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
 
       <div data-hf-hide-rail="true" data-hf-super-section="true">Personnaliser</div>
       <div data-hf-rail-item="true" onClick="{{ clickSkills }}" title="Skills" class="{{ skillsNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
-        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"></path><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"></path></svg></span>
+        <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6a4 4 0 0 1 4 4v10a3 3 0 0 0-3-2.5H4V5Z"></path><path d="M20 5h-6a4 4 0 0 0-4 4v10a3 3 0 0 1 3-2.5h7V5Z"></path></svg></span>
         <span data-hf-hide-rail="true" style="flex:1">Skills</span>
       </div>
       <div data-hf-rail-item="true" onClick="{{ clickConnectors }}" title="Connecteurs" class="{{ connectorsNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
@@ -816,10 +824,9 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                 <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
                   <button type="button" data-hf-model-trigger="true" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
                     <span data-hf-model-trigger-icon="true" aria-hidden="true">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1.4-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ curModelIconRef }}"></use></svg>
                     </span>
                     <span data-hf-model-trigger-name="true">{{ curModelName }}</span>
-                    <span data-hf-model-trigger-mode="true">{{ agentModeLabel }}</span>
                     <span data-hf-model-trigger-chevron="true" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                   </button>
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
@@ -834,10 +841,10 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                         <div data-hf-model-group="true" style="{{ g.headStyle }}">{{ g.label }}</div>
                         <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
                           <button type="button" data-hf-model-row="true" class="{{ it.activeClass }}" onClick="{{ it.onClick }}" title="{{ it.desc }}">
-                            <span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.4 5.6L5 10l5.6 1.4L12 17l1.4-5.6L19 10l-5.6-1.4L12 3Z"></path><path d="m19 15-.7 2.3-2.3.7 2.3.7L19 21l.7-2.3 2.3-.7-2.3-.7L19 15Z"></path></svg></span>
+                            <span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.iconRef }}"></use></svg></span>
                             <span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span>
                             <span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span>
-                            <span data-hf-model-capabilities="true" title="Capacités du modèle" aria-label="Capacités du modèle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="m4.2 6.2 2.1 2.1"></path><path d="m17.7 17.7 2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="m4.2 17.8 2.1-2.1"></path><path d="m17.7 6.3 2.1-2.1"></path><circle cx="12" cy="12" r="4"></circle></svg></span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modele verrouille"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modele selectionne">✓</span></sc-if>
+                            <span data-hf-model-capabilities="true" title="{{ it.capabilityLabel }}" aria-label="{{ it.capabilityLabel }}"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.capabilityIconRef }}"></use></svg></span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modele verrouille"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modele selectionne">✓</span></sc-if>
                           </button>
                         </sc-for>
                       </sc-for>
@@ -1046,15 +1053,15 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
               </button>
               <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
                 <button type="button" data-hf-model-trigger="true" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
-                  <span data-hf-model-trigger-icon="true" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.3 14.2c1 2.7 3.3 4.2 6.8 4.2 3.6 0 6-1.6 7-4.7"></path><path d="M5.1 13.3c-.9-.8-1.4-1.9-1-3.1a4.5 4.5 0 0 1 8.1-2.7 4.5 4.5 0 0 1 8.1 2.7c0 1.1-.4 2.1-1 2.9"></path><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"></circle><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"></circle></svg></span>
-                  <span data-hf-model-trigger-name="true">{{ curModelName }}</span><span data-hf-model-trigger-mode="true">{{ agentModeLabel }}</span>
+                  <span data-hf-model-trigger-icon="true" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ curModelIconRef }}"></use></svg></span>
+                  <span data-hf-model-trigger-name="true">{{ curModelName }}</span>
                   <span data-hf-model-trigger-chevron="true" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                 </button>
                 <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                   <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
                     <div data-hf-model-title="true">Modèles</div>
                     <div data-hf-model-search="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modèle"/></div>
-                    <div data-hf-model-list="true"><sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3"><div data-hf-model-group="true" style="{{ g.headStyle }}">{{ g.label }}</div><sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2"><button type="button" data-hf-model-row="true" class="{{ it.activeClass }}" onClick="{{ it.onClick }}" title="{{ it.desc }}"><span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.4 5.6L5 10l5.6 1.4L12 17l1.4-5.6L19 10l-5.6-1.4L12 3Z"></path></svg></span><span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span><span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modèle verrouillé"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modèle sélectionné">✓</span></sc-if></button></sc-for></sc-for><sc-if value="{{ modelMenuEmpty }}" hint-placeholder-val="{{ false }}"><div data-hf-model-empty="true">Aucun modèle trouvé.</div></sc-if></div>
+                    <div data-hf-model-list="true"><sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3"><div data-hf-model-group="true" style="{{ g.headStyle }}">{{ g.label }}</div><sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2"><button type="button" data-hf-model-row="true" class="{{ it.activeClass }}" onClick="{{ it.onClick }}" title="{{ it.desc }}"><span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.iconRef }}"></use></svg></span><span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span><span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modèle verrouillé"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modèle sélectionné">✓</span></sc-if></button></sc-for></sc-for><sc-if value="{{ modelMenuEmpty }}" hint-placeholder-val="{{ false }}"><div data-hf-model-empty="true">Aucun modèle trouvé.</div></sc-if></div>
                   </div>
                 </sc-if>
               </div>
@@ -1066,7 +1073,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
             </div>
             <div data-hf-optional-composer-control="true" data-hf-composer-tools="true" aria-label="Outils du projet">
               <button type="button" data-hf-composer-tool="true" onClick="{{ clickSkills }}" title="Ouvrir les compétences" aria-label="Compétences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z"></path></svg><span data-hf-composer-label="true">Compétences</span></button>
-              <button type="button" data-hf-composer-tool="true" onClick="{{ clickConnectors }}" title="Ouvrir les connecteurs" aria-label="Connecteurs"><span data-hf-connector-stack="true" aria-hidden="true"><i>J</i><i>✦</i><i>▶</i></span><span data-hf-composer-label="true">Connecteurs</span></button>
+              <button type="button" data-hf-composer-tool="true" onClick="{{ clickConnectors }}" title="Ouvrir les connecteurs" aria-label="Connecteurs"><span data-hf-connector-stack="true" aria-hidden="true"><i>J</i><i>C</i><i>▶</i></span><span data-hf-composer-label="true">Connecteurs</span></button>
               <button type="button" data-hf-composer-tool="true" onClick="{{ openMcp }}" title="Configurer les outils MCP" aria-label="Essayer MCP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7.5 16.5 3l1.5 3-9.5 4.5-1.5-3Z"></path><path d="m8 11 9.5-4.5 1.5 3-9.5 4.5L8 11Z"></path><path d="m9 15 7.5-3.5 1.5 3-7.5 3.5L9 15Z"></path></svg><span data-hf-composer-label="true">Essayez MCP</span></button>
             </div>
           </div>
@@ -2264,7 +2271,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
               <div class="hf-settings-section-head"><div><h3>Capacités</h3><p>Contrôle les modèles, les services disponibles et l’identité qui guide tes workflows créatifs.</p></div><div class="hf-settings-action-row"><button class="hf-settings-secondary" onClick="{{ refreshCapabilities }}" disabled="{{ capabilitiesRefreshing }}">{{ capabilitiesRefreshing ? 'Actualisation…' : 'Actualiser' }}</button><button class="hf-settings-primary" onClick="{{ saveBrand }}" disabled="{{ brandSaving }}">{{ brandSaving ? 'Enregistrement…' : 'Enregistrer' }}</button></div></div>
               <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Nom de la marque</div><div class="hf-settings-row-hint">Utilisé dans les briefs et les scripts.</div></div><input class="hf-settings-control" value="{{ brandName }}" onChange="{{ onBrandName }}" placeholder="Ma marque"/></div><div style="padding:18px"><div class="hf-settings-row-label">Positionnement</div><div class="hf-settings-row-hint" style="margin-bottom:12px">Décris les codes, le ton et le public à respecter.</div><textarea class="hf-settings-textarea" value="{{ brandDescription }}" onChange="{{ onBrandDescription }}" placeholder="Ex. Une marque moderne, accessible et audacieuse…"></textarea></div></div>
               <div data-agentflow-island="capabilities"></div>
-              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Modèles disponibles</span><span style="color:#898A8B">{{ capabilityModelCount }} modèles · {{ creditsLabel }} disponibles</span></div><sc-for list="{{ capabilityModelCards }}" as="model" hint-placeholder-count="6"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ model.name }}</div><div style="margin-top:4px;font-size:11px">{{ model.provider }} · {{ model.capabilities }}</div></div><div style="text-align:right;white-space:nowrap"><div style="color:#6EE7FF;font-weight:700">{{ model.cost }}</div><div style="margin-top:3px;font-size:10px;color:#898A8B">{{ model.tier }}</div><span class="hf-settings-status {{ model.availabilityClass }}" style="margin-top:6px">{{ model.availability }}</span></div></div></sc-for></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Modèles disponibles</span><span style="color:#898A8B">{{ capabilityModelCount }} modèles · {{ creditsLabel }} disponibles</span></div><sc-for list="{{ capabilityModelCards }}" as="model" hint-placeholder-count="6"><div class="hf-settings-table-row"><div style="min-width:0"><div style="color:#F7F7F8;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ model.name }}</div><div style="margin-top:4px;font-size:11px">{{ model.capabilities }}</div></div><div style="text-align:right;white-space:nowrap"><div style="color:#6EE7FF;font-weight:700">{{ model.cost }}</div><div style="margin-top:3px;font-size:10px;color:#898A8B">{{ model.tier }}</div><span class="hf-settings-status {{ model.availabilityClass }}" style="margin-top:6px">{{ model.availability }}</span></div></div></sc-for></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Services</span><span style="color:#898A8B">État actuel</span></div><sc-for list="{{ capabilityServices }}" as="service" hint-placeholder-count="4"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ service.label }}</div><div style="margin-top:4px;font-size:11px;color:#898A8B">{{ service.detail }}</div></div><span class="hf-settings-badge">{{ service.status }}</span></div></sc-for></div>
             </sc-if>
 
@@ -2816,7 +2823,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
               <h1 class="hf-explore-detail-title">{{ exploreActiveTitle }}</h1>
               <div class="hf-explore-detail-description">{{ exploreActiveDescription }}</div>
               <div class="hf-explore-prompt">{{ exploreActivePrompt }}</div>
-              <div class="hf-explore-chips"><span class="hf-explore-chip">✦ {{ exploreActiveModel }}</span><span class="hf-explore-chip">▣ {{ exploreActiveRatio }}</span><span class="hf-explore-chip">◷ {{ exploreActiveDuration }}</span><sc-if value="{{ exploreActiveHasAudio }}" hint-placeholder-val="{{ false }}"><span class="hf-explore-chip">◖ Audio</span></sc-if></div>
+              <div class="hf-explore-chips"><span class="hf-explore-chip">◉ {{ exploreActiveModel }}</span><span class="hf-explore-chip">▣ {{ exploreActiveRatio }}</span><span class="hf-explore-chip">◷ {{ exploreActiveDuration }}</span><sc-if value="{{ exploreActiveHasAudio }}" hint-placeholder-val="{{ false }}"><span class="hf-explore-chip">◖ Audio</span></sc-if></div>
               <div class="hf-explore-detail-stats"><div class="hf-explore-stat">{{ exploreActiveLikes }}<small>Réactions</small></div><div class="hf-explore-stat">{{ exploreActiveRemixes }}<small>Remixes</small></div><div class="hf-explore-stat">{{ exploreActiveSaves }}<small>Enregistrements</small></div></div>
               <div style="display:flex;align-items:center;gap:8px;margin-top:14px"><button class="hf-explore-secondary-action" onClick="{{ toggleExploreLike }}" title="Réagir" aria-label="Réagir">{{ exploreActiveLiked ? '♥' : '♡' }}</button><button class="hf-explore-secondary-action" onClick="{{ toggleExploreSave }}" title="Enregistrer" aria-label="Enregistrer">{{ exploreActiveSaved ? '★' : '☆' }}</button><button class="hf-explore-secondary-action" onClick="{{ shareExploreItem }}" title="Partager" aria-label="Partager"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"></line><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"></line></svg></button></div>
               <div class="hf-explore-action-row"><button class="hf-explore-primary-action" onClick="{{ remixExploreItem }}">Remixer cette création</button><button class="hf-explore-secondary-action" onClick="{{ reportExploreItem }}" title="Signaler" aria-label="Signaler">⋯</button></div>
@@ -3330,7 +3337,6 @@ class Component extends DCLogic {
     { id:'nvidia/nemotron-3-super-120b-a12b:free', name:'Nemotron 3 Super gratuit', group:'NVIDIA', provider:'nvidia', desc:'Planification multi-agents et raisonnement long contexte', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
     { id:'openai/gpt-oss-120b:free', name:'GPT OSS 120B gratuit', group:'OpenAI', provider:'openai', desc:'Modele ouvert pour raisonnement et execution agentique', creditsLabel:'Gratuit', free:true, dot:'#F4F4F5', capabilities:['tools','reasoning'] },
     { id:'google/gemma-4-31b-it:free', name:'Gemma 4 31B gratuit', group:'Google', provider:'google', desc:'Modele compact pour reponses rapides et outils', creditsLabel:'Gratuit', free:true, dot:'#4285F4', capabilities:['tools','reasoning'] },
-    { id:'tencent/hy3:free', name:'Tencent Hy3 gratuit', group:'Tencent', provider:'tencent', desc:'Modele agent gratuit jusqu\'au 21 juillet 2026', creditsLabel:'Gratuit', free:true, current:true, freeUntil:'2026-07-21T23:59:59.999Z', dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'tencent/hy3', name:'Tencent Hy3', group:'Tencent', provider:'tencent', desc:'Raisonnement et execution agentique polyvalente', creditsLabel:'5 cr', dot:'#18DCFF', capabilities:['tools','reasoning'] },
     { id:'poolside/laguna-xs-2.1:free', name:'Laguna XS 2.1 gratuit', group:'Poolside', provider:'poolside', desc:'Agent code compact avec outils et raisonnement', creditsLabel:'Gratuit', free:true, dot:'#8F9BFF', capabilities:['tools','reasoning'] },
     { id:'poolside/laguna-xs-2.1', name:'Laguna XS 2.1', group:'Poolside', provider:'poolside', desc:'Agent logiciel rapide et economique', creditsLabel:'2 cr', dot:'#8F9BFF', capabilities:['tools','reasoning'] },
@@ -4293,7 +4299,7 @@ class Component extends DCLogic {
           id:m.modelKey || m.id || 'auto',
           modelKey:m.modelKey || m.id || 'auto',
           name:m.name || 'AgentFlow',
-          group:m.id === 'auto' ? 'Rapide' : (Array.isArray(m.capabilities) && m.capabilities.includes('vision') ? 'Vision' : (m.tier === 'premium' || (Array.isArray(m.capabilities) && m.capabilities.includes('reasoning')) ? 'Raisonnement' : 'Rapide')),
+          group:m.id === 'auto' ? 'Rapide' : (Array.isArray(m.capabilities) && m.capabilities.includes('video') ? 'Vidéo' : (Array.isArray(m.capabilities) && m.capabilities.includes('image') ? 'Image' : (Array.isArray(m.capabilities) && m.capabilities.includes('audio') ? 'Audio' : (Array.isArray(m.capabilities) && m.capabilities.includes('vision') ? 'Vision' : (m.tier === 'premium' || (Array.isArray(m.capabilities) && m.capabilities.includes('reasoning')) ? 'Raisonnement' : 'Rapide'))))),
           desc:m.description || 'Cerveau AgentFlow',
           creditsLabel:m.creditsLabel || ((m.creditsPerMessage || 0) ? ('Environ ' + m.creditsPerMessage + ' cr') : 'Selon la tache'),
           free:!!m.free,
@@ -4862,7 +4868,7 @@ class Component extends DCLogic {
     const settingsEntries = [
       ['settings','Profil','P','profil personnalisation'],['account','Compte','C','compte securite'],['privacy','Confidentialite','◈','privacy donnees'],
       ['billing','Facturation','▣','paiement abonnement'],['team','Equipe','E','membres collaboration'],['stats','Utilisation','U','statistiques credits'],
-      ['capabilities','Capacites','✦','modeles limites'],['api','API','<>','cles developpeur'],['skills','Competences','✧','templates workflows'],['connectors','Connecteurs','↗','drive slack notion']
+      ['capabilities','Capacites','◈','modeles limites'],['api','API','<>','cles developpeur'],['skills','Competences','◇','templates workflows'],['connectors','Connecteurs','↗','drive slack notion']
     ].map(item=>({ id:'setting-'+item[0], label:'Parametres · '+item[1], icon:item[2], shortcut:'', terms:'parametres '+item[3], action:()=>this.openSettingsModal(item[0]) }));
     const projectEntries = (this.state.projectsData || []).slice(0,8).map(project=>({
       id:'project-'+project.id, label:'Projet · '+String(project.title || 'Sans titre').slice(0,52), icon:'P', shortcut:'', terms:'projet espace conversation',
@@ -6772,6 +6778,19 @@ class Component extends DCLogic {
   agentUiModels(){
     return Array.isArray(this.MODELS) ? this.MODELS : [];
   }
+  modelIconRef(model){
+    const item = model || {};
+    const id = String(item.id || item.modelKey || '').toLowerCase();
+    const capabilities = Array.isArray(item.capabilities) ? item.capabilities : [];
+    if(id === 'auto' || item.current) return '#hf-model-auto';
+    if(capabilities.includes('video')) return '#hf-model-video';
+    if(capabilities.includes('image')) return '#hf-model-image';
+    if(capabilities.includes('audio')) return '#hf-model-audio';
+    if(capabilities.includes('vision')) return '#hf-model-vision';
+    if(capabilities.includes('reasoning') || capabilities.includes('tools')) return '#hf-model-reasoning';
+    if(id.includes('flash') || item.group === 'Rapide') return '#hf-model-fast';
+    return '#hf-model-auto';
+  }
   curModel(){
     return this.agentUiModels().concat(this.MODELS).find(m=>m.id===this.state.modelId) || this.agentUiModels()[0] || this.MODELS[0];
   }
@@ -6864,8 +6883,8 @@ class Component extends DCLogic {
       settingItem('privacy','Confidentialité','◈',['privacy','analytics','données']),
       settingItem('team','Équipe','♧',['membres','collaboration','invitation','roles']),
       settingItem('api','API','<>',['clés','intégrations','développeur','scopes']),
-      settingItem('capabilities','Capacités','✦',['marque','modèles','limites','openrouter']),
-      settingItem('skills','Compétences','✧',['templates','workflows']),
+      settingItem('capabilities','Capacités','◈',['marque','modèles','limites','openrouter']),
+      settingItem('skills','Compétences','◇',['templates','workflows']),
       settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth']),
       settingItem('plugins','Plugins','✚',['store','extensions'])
     ].filter(item=>item.visible);
@@ -7821,6 +7840,7 @@ class Component extends DCLogic {
       modelMenuSearch: st.modelMenuSearch || '',
       curModelName: this.curModel().name,
       curModelDot: this.curModel().dot,
+      curModelIconRef: this.modelIconRef(this.curModel()),
        modelGroups: (()=>{
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const grouped = {};
@@ -7837,10 +7857,10 @@ class Component extends DCLogic {
           headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
-            name:m.name, dot:m.dot, logo:m.logo || (m.capabilities && m.capabilities.includes('vision') ? '◉' : (m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '✳')), desc:m.desc,
+            name:m.name, dot:m.dot, iconRef:this.modelIconRef(m), capabilityIconRef:'#hf-model-capability', desc:m.desc,
             creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
-            costLabel:m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s*cr\b/i,'').trim(),
-            capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? '⚒' : '',m.capabilities && m.capabilities.includes('vision') ? '◉' : '',m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '',m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
+            costLabel:m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s+cr$/i,'').trim(),
+            capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? 'Outils' : '',m.capabilities && m.capabilities.includes('vision') ? 'Vision' : '',m.capabilities && m.capabilities.includes('image') ? 'Image' : '',m.capabilities && m.capabilities.includes('video') ? 'Vidéo' : '',m.capabilities && m.capabilities.includes('audio') ? 'Audio' : '',m.capabilities && m.capabilities.includes('documents') ? 'Documents' : '',m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : '',m.capabilities && m.capabilities.includes('research') ? 'Recherche' : ''].filter(Boolean).join(' · '),
             check:m.id === st.modelId ? '✓' : '',
             rowStyle:'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
             onClick:()=>this.setState({ modelId:m.id, modelMenu:false, modelMenuSearch:'' })
@@ -7851,10 +7871,10 @@ class Component extends DCLogic {
           headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items: grouped[g].map(m=>({
             activeClass: m.id === st.modelId ? 'is-active' : '',
-            name: m.name, dot: m.dot, logo:m.logo || (m.capabilities && m.capabilities.includes('vision') ? '◉' : (m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '✳')), desc: m.desc,
+            name: m.name, dot: m.dot, iconRef:this.modelIconRef(m), capabilityIconRef:'#hf-model-capability', desc: m.desc,
             creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
-            costLabel: m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s*cr\b/i,'').trim(),
-            capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? '⚒' : '', m.capabilities && m.capabilities.includes('vision') ? '◉' : '', m.capabilities && m.capabilities.includes('reasoning') ? '✦' : '', m.capabilities && m.capabilities.includes('research') ? '⌁' : ''].filter(Boolean).join(' '),
+            costLabel: m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s+cr$/i,'').trim(),
+            capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? 'Outils' : '', m.capabilities && m.capabilities.includes('vision') ? 'Vision' : '', m.capabilities && m.capabilities.includes('image') ? 'Image' : '', m.capabilities && m.capabilities.includes('video') ? 'Vidéo' : '', m.capabilities && m.capabilities.includes('audio') ? 'Audio' : '', m.capabilities && m.capabilities.includes('documents') ? 'Documents' : '', m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : '', m.capabilities && m.capabilities.includes('research') ? 'Recherche' : ''].filter(Boolean).join(' · '),
             check: m.id === st.modelId ? '✓' : '',
             rowStyle: 'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
             onClick: ()=> this.setState({ modelId: m.id, modelMenu:false, modelMenuSearch:'' })
