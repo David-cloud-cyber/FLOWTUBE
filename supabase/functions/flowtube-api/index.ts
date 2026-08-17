@@ -9820,7 +9820,6 @@ async function pricingRoute() {
     },
     creditPacks: creditPacks || [],
     billing: {
-      stripeConfigured: Boolean(stripeSecret()),
       paymentConfigured: fapshiConfigured() || moneyFusionConfigured() || Boolean(stripeSecret()),
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
