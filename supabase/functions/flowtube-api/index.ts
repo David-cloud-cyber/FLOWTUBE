@@ -585,12 +585,13 @@ function publicBatchModels() {
   return openRouterCatalogCache.batch.map((item) => {
     const id = String(item.id || "");
     const modelKey = rememberPublicModel(id);
+    const profile = capabilityProfileForOpenRouterModel(item);
     const credits = agentCreditsForUsage(id, { inputTokens: 2000, outputTokens: 800 }).credits;
     return {
       modelKey,
       name: safeModelName(id, item.name).replace(/openrouter/ig, "").trim() || "Modele batch",
       description: "Traitement en lot pour les taches longues et planifiees.",
-      capabilities: ["batch", "reasoning"],
+      capabilities: profile.capabilities,
       tier: "premium",
       available: true,
       creditsLabel: `Environ ${credits} cr par tache`,
