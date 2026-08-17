@@ -59,12 +59,12 @@ where plan_id in ('basic', 'pro')
 insert into public.credit_packs
   (id, label, credits, amount_xof, price_usd, floor_credit_usd, active, metadata)
 values
-  ('topup-5', '5 crédits', 5, 100, 0.17, 0.008, true, '{"pricing_unit":"100_xof_for_5_credits"}'),
-  ('topup-10', '10 crédits', 10, 200, 0.33, 0.008, true, '{"pricing_unit":"100_xof_for_5_credits"}'),
-  ('topup-25', '25 crédits', 25, 500, 0.83, 0.008, true, '{"pricing_unit":"100_xof_for_5_credits"}'),
-  ('topup-50', '50 crédits', 50, 1000, 1.67, 0.008, true, '{"pricing_unit":"100_xof_for_5_credits"}'),
-  ('topup-100', '100 crédits', 100, 2000, 3.33, 0.008, true, '{"pricing_unit":"100_xof_for_5_credits"}'),
-  ('topup-250', '250 crédits', 250, 5000, 8.33, 0.008, true, '{"pricing_unit":"100_xof_for_5_credits"}')
+  ('topup-5', '5 crédits', 5, 100, 0.17, 0.008, true, '{}'),
+  ('topup-10', '10 crédits', 10, 200, 0.33, 0.008, true, '{}'),
+  ('topup-25', '25 crédits', 25, 500, 0.83, 0.008, true, '{}'),
+  ('topup-50', '50 crédits', 50, 1000, 1.67, 0.008, true, '{}'),
+  ('topup-100', '100 crédits', 100, 2000, 3.33, 0.008, true, '{}'),
+  ('topup-250', '250 crédits', 250, 5000, 8.33, 0.008, true, '{}')
 on conflict (id) do update set
   label = excluded.label,
   credits = excluded.credits,
