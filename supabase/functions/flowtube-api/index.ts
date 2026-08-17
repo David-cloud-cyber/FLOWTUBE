@@ -41,6 +41,8 @@ const DEFAULT_MONEYFUSION_CHECKOUT_URL = "https://pay.moneyfusion.net/HuggyFlow/
 const DEFAULT_MONEYFUSION_STATUS_URL = "https://www.pay.moneyfusion.net/paiementNotif/{token}";
 const DEFAULT_USD_XOF_RATE = Number(Deno.env.get("MONEYFUSION_USD_XOF_RATE") || Deno.env.get("MONEYFUSION_USD_RATE") || 600);
 const DEFAULT_BILLING_CURRENCY = (Deno.env.get("MONEYFUSION_CURRENCY") || "XOF").toUpperCase();
+const FAPSHI_BASE_URL = (Deno.env.get("FAPSHI_BASE_URL") || "https://api.fapshi.com").replace(/\/$/, "");
+const FAPSHI_DIRECT_PAY_ENABLED = (Deno.env.get("FAPSHI_DIRECT_PAY_ENABLED") || "false").toLowerCase() === "true";
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || "";
 const OPENROUTER_ENABLED = (Deno.env.get("OPENROUTER_ENABLED") || "").toLowerCase() === "true" || Boolean(OPENROUTER_API_KEY);
 const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_MEDIA_ENABLED") || "").toLowerCase() === "true";
@@ -1225,7 +1227,7 @@ async function anthropicMessages(payload: Record<string, unknown>, preferredMode
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret, x-huggyflow-secret, x-flowtube-admin-secret, x-huggyflow-admin-secret, stripe-signature, x-moneyfusion-secret, x-moneyfusion-signature, x-flowtube-provider-secret, x-fal-webhook-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-flowtube-secret, x-huggyflow-secret, x-flowtube-admin-secret, x-huggyflow-admin-secret, stripe-signature, x-moneyfusion-secret, x-moneyfusion-signature, x-wh-secret, x-fapshi-secret, x-flowtube-provider-secret, x-fal-webhook-secret",
   "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
 };
 
@@ -2659,7 +2661,27 @@ async function publicPricingPlans(supabase: ReturnType<typeof adminClient>) {
   if (!plans.length) {
     throw new FlowtubeError(503, "Aucun tarif actif n'est configure.", { code: "NO_ACTIVE_PRICING" });
   }
-  return plans.map(planPublic);
+  const { data: options } = await supabase.from("pricing_plan_options")
+    .select("id,plan_id,credits,monthly_price_xof,annual_price_xof,sort_order,metadata")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+  const optionsByPlan = new Map<string, Record<string, unknown>[]>();
+  for (const row of options || []) {
+    const planId = String(row.plan_id || "");
+    const list = optionsByPlan.get(planId) || [];
+    list.push({
+      id: String(row.id),
+      credits: Number(row.credits || 0),
+      monthlyPriceXof: Number(row.monthly_price_xof || 0),
+      annualPriceXof: Number(row.annual_price_xof || 0),
+      metadata: row.metadata || {},
+    });
+    optionsByPlan.set(planId, list);
+  }
+  return plans.map((plan) => ({
+    ...planPublic(plan),
+    creditOptions: optionsByPlan.get(plan.id) || [],
+  }));
 }
 
 function planAmountXof(plan: PlanLimits, interval: "monthly" | "annual") {
@@ -2671,22 +2693,14 @@ function planAmountXof(plan: PlanLimits, interval: "monthly" | "annual") {
 function planPublic(plan: PlanLimits) {
   const monthlyBaseXof = plan.monthlyPriceUsd > 0 ? planAmountXof(plan, "monthly") : 0;
   const annualBaseXof = plan.annualPriceUsd > 0 ? planAmountXof(plan, "annual") : 0;
-  const monthlyFeeXof = moneyFusionFeeXof(monthlyBaseXof);
-  const annualFeeXof = moneyFusionFeeXof(annualBaseXof);
-  const monthlyXof = monthlyBaseXof + monthlyFeeXof;
-  const annualXof = annualBaseXof + annualFeeXof;
   return {
     id: plan.id,
     displayName: plan.displayName,
     includedCredits: plan.includedCredits,
     monthlyPriceUsd: plan.monthlyPriceUsd,
     annualPriceUsd: plan.annualPriceUsd,
-    monthlyPriceXof: monthlyXof,
-    annualPriceXof: annualXof,
-    baseMonthlyPriceXof: monthlyBaseXof,
-    baseAnnualPriceXof: annualBaseXof,
-    moneyFusionMonthlyFeeXof: monthlyFeeXof,
-    moneyFusionAnnualFeeXof: annualFeeXof,
+    monthlyPriceXof: monthlyBaseXof,
+    annualPriceXof: annualBaseXof,
     pricingVersion: plan.pricingVersion,
     currency: DEFAULT_BILLING_CURRENCY,
     usdXofRate: DEFAULT_USD_XOF_RATE,
@@ -2704,10 +2718,15 @@ function planPublic(plan: PlanLimits) {
     supportLevel: plan.supportLevel,
     priorityQueue: plan.priorityQueue,
     checkoutEnabled: Boolean(plan.metadata.checkout !== false && (plan.monthlyPriceUsd > 0 || plan.annualPriceUsd > 0)),
-    checkoutAmounts: { monthlyXof, annualXof },
-    moneyFusionFees: moneyFusionFeeConfig(),
-    stripeConfigured: Boolean(plan.stripeMonthlyPriceId || plan.stripeAnnualPriceId),
-    metadata: plan.metadata,
+    checkoutAmounts: { monthlyXof: monthlyBaseXof, annualXof: annualBaseXof },
+    paymentFees: { configured: true, included: true },
+    metadata: {
+      badge: plan.metadata.badge || null,
+      tagline: plan.metadata.tagline || plan.metadata.description || null,
+      audience: plan.metadata.audience || null,
+      popular: Boolean(plan.metadata.popular || plan.metadata.best_value),
+      checkout: plan.metadata.checkout !== false,
+    },
   };
 }
 
@@ -3269,6 +3288,69 @@ async function bootstrap(req: Request) {
     },
     projects,
   });
+}
+
+function fapshiApiKey() {
+  return Deno.env.get("FAPSHI_API_KEY") || "";
+}
+
+function fapshiApiUser() {
+  return Deno.env.get("FAPSHI_API_USER") || "";
+}
+
+function fapshiConfigured() {
+  return Boolean(fapshiApiKey() && fapshiApiUser());
+}
+
+function fapshiHeaders() {
+  return {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    apikey: fapshiApiKey(),
+    apiuser: fapshiApiUser(),
+  };
+}
+
+function fapshiPhone(value: unknown) {
+  const normalized = String(value || "").trim().replace(/[\s().-]/g, "");
+  return /^\+?[0-9]{8,16}$/.test(normalized) ? normalized : "";
+}
+
+function fapshiPublicUrl(value: unknown) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" && (url.hostname === "fapshi.com" || url.hostname.endsWith(".fapshi.com"));
+  } catch (_err) {
+    return false;
+  }
+}
+
+async function fapshiRequest(path: string, payload: Record<string, unknown>) {
+  if (!fapshiConfigured()) {
+    throw new FlowtubeError(503, "Le paiement est momentanément indisponible.", { code: "PAYMENT_NOT_CONFIGURED" });
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.max(3000, Number(Deno.env.get("FAPSHI_TIMEOUT_MS") || 12000)));
+  let response: Response;
+  try {
+    response = await fetch(`${FAPSHI_BASE_URL}${path}`, {
+      method: "POST",
+      headers: fapshiHeaders(),
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (_err) {
+    throw new FlowtubeError(503, "Le paiement est momentanément indisponible.", { code: "PAYMENT_UNAVAILABLE" });
+  } finally {
+    clearTimeout(timeout);
+  }
+  const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok) {
+    throw new FlowtubeError(response.status === 429 || response.status >= 500 ? 503 : response.status,
+      response.status === 429 ? "Trop de demandes de paiement. Réessaie dans un instant." : "Le paiement n’a pas pu être créé.",
+      { code: "PAYMENT_PROVIDER_ERROR", status: response.status });
+  }
+  return data;
 }
 
 const HUGGYFLOW_SYSTEM_PROMPT = [
@@ -8888,6 +8970,7 @@ async function createMoneyFusionCheckout(
   let article = `${APP_NAME} credits`;
   let plan: PlanLimits | null = null;
   let pack: Record<string, unknown> | null = null;
+  let creditOption: Record<string, unknown> | null = null;
   const metadata: Record<string, unknown> = { provider: "moneyfusion", type, interval, ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}) };
 
   if (type === "credits") {
@@ -8902,14 +8985,28 @@ async function createMoneyFusionCheckout(
     const planId = normalizePlanId(String(body.planId || "basic"));
     plan = await resolvePlan(supabase, planId);
     if (plan.id === "free") throw new FlowtubeError(400, "Le plan Free ne necessite pas de checkout.", { code: "FREE_PLAN" });
+    const optionId = String(body.creditOptionId || body.credit_option_id || "").trim();
+    if (optionId) {
+      const { data: option } = await supabase.from("pricing_plan_options")
+        .select("id,plan_id,credits,monthly_price_xof,annual_price_xof,metadata")
+        .eq("id", optionId)
+        .eq("plan_id", plan.id)
+        .eq("active", true)
+        .maybeSingle();
+      if (!option) throw new FlowtubeError(400, "Cette option de crédits n’est plus disponible.", { code: "CREDIT_OPTION_UNAVAILABLE" });
+      creditOption = option;
+    }
     amountUsd = interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd;
     article = `${APP_NAME} ${plan.displayName} ${interval}`;
     metadata.plan_id = plan.id;
+    if (creditOption) metadata.credit_option_id = creditOption.id;
   }
 
   const reference = crypto.randomUUID();
   const baseAmountXof = plan
-    ? planAmountXof(plan, interval === "annual" ? "annual" : "monthly")
+    ? creditOption
+      ? Number(interval === "annual" ? creditOption.annual_price_xof : creditOption.monthly_price_xof)
+      : planAmountXof(plan, interval === "annual" ? "annual" : "monthly")
     : moneyFusionAmount(amountUsd);
   const amountXof = moneyFusionCheckoutAmountXof(baseAmountXof);
   metadata.base_amount_xof = baseAmountXof;
@@ -8951,6 +9048,8 @@ async function createMoneyFusionCheckout(
     mode: type === "credits" ? "payment" : "subscription",
     plan_id: plan?.id || null,
     credit_pack_id: pack?.id || null,
+    credit_option_id: creditOption?.id || null,
+    payment_phone: phone,
     billing_interval: type === "credits" ? null : interval,
     status: "open",
     amount_usd: amountUsd,
@@ -8958,12 +9057,118 @@ async function createMoneyFusionCheckout(
     currency: DEFAULT_BILLING_CURRENCY.toLowerCase(),
     checkout_url: session.paymentUrl,
     pricing_version: pricingVersion,
-    pricing_snapshot: plan ? planPublic(plan) : { pack },
-    metadata: { moneyfusion: session.data, payload, amount_xof: amountXof, usd_xof_rate: DEFAULT_USD_XOF_RATE, pricing_version: pricingVersion, plan: plan ? planPublic(plan) : null, pack },
+    pricing_snapshot: plan ? { ...planPublic(plan), creditOption } : { pack },
+    metadata: { moneyfusion: { configured: true }, payload: cleanMetadata(payload), amount_xof: amountXof, usd_xof_rate: DEFAULT_USD_XOF_RATE, pricing_version: pricingVersion, plan: plan ? planPublic(plan) : null, pack, credit_option_id: creditOption?.id || null },
     provider_payload: session.data,
   });
 
   return json({ url: session.paymentUrl, sessionId: reference, provider: "moneyfusion", token: providerToken, amountXof, baseAmountXof, moneyFusionFeeXof: amountXof - baseAmountXof });
+}
+
+async function createFapshiCheckout(
+  supabase: ReturnType<typeof adminClient>,
+  profile: Record<string, unknown>,
+  body: Record<string, unknown>,
+  type: string,
+  interval: string,
+  successUrl: string,
+) {
+  const userId = String(profile.id);
+  const profileMetadata = (profile.metadata || {}) as Record<string, unknown>;
+  const idempotencyKey = String(body.idempotencyKey || body.idempotency_key || "").trim().slice(0, 120);
+  if (idempotencyKey) {
+    const { data: existing } = await supabase.from("billing_checkout_sessions")
+      .select("checkout_url,provider_session_id,provider_payment_token,status,metadata")
+      .eq("user_id", userId)
+      .eq("provider", "fapshi")
+      .contains("metadata", { idempotency_key: idempotencyKey })
+      .maybeSingle();
+    if (existing?.provider_session_id) {
+      return json({
+        url: existing.checkout_url || null,
+        sessionId: existing.provider_session_id,
+        status: existing.status,
+        reused: true,
+        direct: !existing.checkout_url,
+      });
+    }
+  }
+
+  let plan: PlanLimits | null = null;
+  let pack: Record<string, unknown> | null = null;
+  let creditOption: Record<string, unknown> | null = null;
+  let amountXof = 0;
+  if (type === "credits") {
+    const packId = String(body.creditPackId || body.packId || "");
+    const { data } = await supabase.from("credit_packs").select("*").eq("id", packId).eq("active", true).maybeSingle();
+    if (!data) throw new FlowtubeError(404, "Pack de crédits introuvable.", { code: "PACK_NOT_FOUND" });
+    pack = data;
+    amountXof = Math.max(100, Number(data.amount_xof || Math.round(Number(data.price_usd || 0) * DEFAULT_USD_XOF_RATE)));
+  } else {
+    plan = await resolvePlan(supabase, String(body.planId || "basic"));
+    if (plan.id === "free") throw new FlowtubeError(400, "Le plan Free ne nécessite pas de paiement.", { code: "FREE_PLAN" });
+    const optionId = String(body.creditOptionId || body.credit_option_id || "").trim();
+    if (optionId) {
+      const { data: option } = await supabase.from("pricing_plan_options")
+        .select("id,plan_id,credits,monthly_price_xof,annual_price_xof,metadata")
+        .eq("id", optionId).eq("plan_id", plan.id).eq("active", true).maybeSingle();
+      if (!option) throw new FlowtubeError(400, "Cette option de crédits n’est plus disponible.", { code: "CREDIT_OPTION_UNAVAILABLE" });
+      creditOption = option;
+    }
+    amountXof = creditOption
+      ? Number(interval === "annual" ? creditOption.annual_price_xof : creditOption.monthly_price_xof)
+      : planAmountXof(plan, interval === "annual" ? "annual" : "monthly");
+  }
+  if (!Number.isFinite(amountXof) || amountXof < 100) throw new FlowtubeError(400, "Le montant du paiement est invalide.", { code: "PAYMENT_AMOUNT_INVALID" });
+
+  const phone = fapshiPhone(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "");
+  const email = String(profile.billing_email || profile.email || "").trim().slice(0, 160);
+  const externalId = crypto.randomUUID();
+  const callbackUrl = Deno.env.get("FAPSHI_WEBHOOK_URL") || `${APP_BASE_URL}/api/billing/fapshi-webhook`;
+  const returnUrl = moneyFusionSafeAppUrl(body.successUrl || successUrl, `${APP_BASE_URL}/?checkout=success`);
+  const direct = FAPSHI_DIRECT_PAY_ENABLED && Boolean(phone);
+  const providerPayload = direct
+    ? { amount: amountXof, phone, medium: String(body.medium || "mobile money"), name: String(profile.display_name || "Client"), email, userId, externalId, message: `${APP_NAME} ${plan?.displayName || "crédits"}` }
+    : { amount: amountXof, email, redirectUrl: returnUrl, userId, externalId, message: `${APP_NAME} ${plan?.displayName || "crédits"}` };
+  const result = await fapshiRequest(direct ? "/direct-pay" : "/initiate-pay", providerPayload);
+  const transactionId = String(result.transId || result.transactionId || result.trans_id || result.id || "");
+  const paymentUrl = String(result.link || result.url || result.paymentUrl || "");
+  if (!transactionId) throw new FlowtubeError(502, "Le paiement n’a pas renvoyé de référence.", { code: "PAYMENT_REFERENCE_MISSING" });
+  if (!direct && !fapshiPublicUrl(paymentUrl)) throw new FlowtubeError(502, "La page de paiement est momentanément indisponible.", { code: "PAYMENT_URL_MISSING" });
+  const metadata = {
+    idempotency_key: idempotencyKey || null,
+    provider: "fapshi",
+    type,
+    interval,
+    plan_id: plan?.id || null,
+    credit_pack_id: pack?.id || null,
+    credit_option_id: creditOption?.id || null,
+    amount_xof: amountXof,
+    direct,
+  };
+  await supabase.from("billing_checkout_sessions").insert({
+    user_id: userId,
+    provider: "fapshi",
+    provider_session_id: transactionId,
+    provider_payment_token: transactionId,
+    stripe_session_id: `fapshi:${transactionId}`,
+    mode: type === "credits" ? "payment" : "subscription",
+    plan_id: plan?.id || null,
+    credit_pack_id: pack?.id || null,
+    credit_option_id: creditOption?.id || null,
+    payment_phone: phone || null,
+    billing_interval: type === "credits" ? null : interval,
+    status: "open",
+    amount_usd: plan ? (interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd) : Number(pack?.price_usd || 0),
+    amount_xof: amountXof,
+    currency: "xaf",
+    checkout_url: paymentUrl || null,
+    pricing_version: plan?.pricingVersion || "2026-08-launch-v2",
+    pricing_snapshot: plan ? { ...planPublic(plan), creditOption } : { pack },
+    metadata,
+    provider_payload: { transactionId, direct },
+  });
+  return json({ url: paymentUrl || null, sessionId: transactionId, amountXof, direct, status: "pending" });
 }
 
 async function createCheckout(req: Request) {
@@ -8977,7 +9182,7 @@ async function createCheckout(req: Request) {
   const successUrl = String(body.successUrl || `${APP_BASE_URL}/?checkout=success`);
   const cancelUrl = String(body.cancelUrl || `${APP_BASE_URL}/?checkout=cancelled`);
   const provider = String(
-    body.provider || Deno.env.get("BILLING_PROVIDER") || (moneyFusionConfigured() ? "moneyfusion" : "stripe"),
+    body.provider || Deno.env.get("BILLING_PROVIDER") || (fapshiConfigured() ? "fapshi" : (moneyFusionConfigured() ? "moneyfusion" : "stripe")),
   ).toLowerCase();
   void recordProductEvent(supabase, userId, "checkout_started", {
     provider,
@@ -8989,6 +9194,9 @@ async function createCheckout(req: Request) {
 
   if (provider === "moneyfusion" || provider === "fusionpay") {
     return await createMoneyFusionCheckout(supabase, profile, body as Record<string, unknown>, type, interval, successUrl, cancelUrl);
+  }
+  if (provider === "fapshi") {
+    return await createFapshiCheckout(supabase, profile, body as Record<string, unknown>, type, interval, successUrl);
   }
 
   if (type === "credits") {
@@ -9073,7 +9281,7 @@ async function billingStatus(req: Request) {
     creditsMax: profile.credits_max,
     currency: DEFAULT_BILLING_CURRENCY,
     usdXofRate: DEFAULT_USD_XOF_RATE,
-    moneyFusionConfigured: moneyFusionConfigured(),
+    paymentConfigured: fapshiConfigured() || moneyFusionConfigured() || Boolean(stripeSecret()),
     paymentPhoneRequired: true,
     subscription,
     invoices: invoices || [],
@@ -9613,8 +9821,7 @@ async function pricingRoute() {
     creditPacks: creditPacks || [],
     billing: {
       stripeConfigured: Boolean(stripeSecret()),
-      moneyFusionConfigured: moneyFusionConfigured(),
-      moneyFusionCallbackUrl: moneyFusionCallbackUrl(),
+      paymentConfigured: fapshiConfigured() || moneyFusionConfigured() || Boolean(stripeSecret()),
       currency: DEFAULT_BILLING_CURRENCY,
       usdXofRate: DEFAULT_USD_XOF_RATE,
       siteUrl: APP_BASE_URL,
@@ -9830,7 +10037,7 @@ async function verifyStripeSignature(req: Request, raw: string) {
   }
 }
 
-async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string, grantKey?: string) {
+async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string, grantKey?: string, creditOptionId?: string) {
   const plan = await resolvePlan(supabase, planId);
   const idempotencyKey = String(grantKey || (subscriptionId ? `plan:${subscriptionId}:${interval}:${periodEnd || "initial"}` : `plan:${userId}:${plan.id}:${interval}:${new Date().toISOString().slice(0, 10)}`));
   const { data: existingGrant } = await supabase.from("credit_transactions")
@@ -9842,12 +10049,22 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
     .maybeSingle();
   if (existingGrant?.id) return;
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
-  const nextCredits = Number(profile?.credits || 0) + plan.includedCredits;
+  let includedCredits = plan.includedCredits;
+  if (creditOptionId) {
+    const { data: option } = await supabase.from("pricing_plan_options")
+      .select("credits,plan_id")
+      .eq("id", creditOptionId)
+      .eq("plan_id", plan.id)
+      .eq("active", true)
+      .maybeSingle();
+    if (option) includedCredits = Number(option.credits || includedCredits);
+  }
+  const nextCredits = Number(profile?.credits || 0) + includedCredits;
   await supabase.from("profiles").update({
     plan: plan.id,
     billing_status: "active",
     credits: nextCredits,
-    credits_max: Math.max(Number(profile?.credits_max || 0), plan.includedCredits),
+    credits_max: Math.max(Number(profile?.credits_max || 0), includedCredits),
     current_period_end: periodEnd || null,
   }).eq("id", userId);
   await supabase.from("subscriptions").upsert({
@@ -9861,10 +10078,10 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
   }, { onConflict: "stripe_subscription_id" });
   await supabase.from("credit_transactions").insert({
     user_id: userId,
-    amount: plan.includedCredits,
+    amount: includedCredits,
     reason: "subscription_renewal",
     balance_after: nextCredits,
-    metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null, grant_key: idempotencyKey },
+    metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null, credit_option_id: creditOptionId || null, grant_key: idempotencyKey },
   });
   await settleAffiliateConversion(
     supabase,
@@ -9873,7 +10090,7 @@ async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId
     "subscription_renewal",
     idempotencyKey,
   );
-  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${plan.includedCredits} credits.</p>`, { plan_id: plan.id });
+  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${includedCredits} credits.</p>`, { plan_id: plan.id, credit_option_id: creditOptionId || null });
 }
 
 async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string, grantKey?: string) {
@@ -10087,7 +10304,7 @@ async function moneyFusionCallback(req: Request) {
       const userId = String(claimed.user_id || "");
       try {
         if (claimed.credit_pack_id) await grantCreditPack(supabase, userId, String(claimed.credit_pack_id), `moneyfusion:credit:${eventId}`);
-        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`, undefined, `moneyfusion:plan:${eventId}`);
+        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`, undefined, `moneyfusion:plan:${eventId}`, claimed.credit_option_id ? String(claimed.credit_option_id) : undefined);
         await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", claimed.id);
         void recordProductEvent(supabase, userId, "checkout_completed", { provider: "moneyfusion", type: claimed.credit_pack_id ? "credits" : "subscription" });
       } catch (err) {
@@ -10105,6 +10322,48 @@ async function moneyFusionCallback(req: Request) {
 
   await supabase.from("payment_events").update({ processed: true }).eq("provider", "moneyfusion").eq("provider_event_id", eventId);
   return json({ received: true, processed: paid });
+}
+
+async function fapshiWebhook(req: Request) {
+  const expectedSecret = Deno.env.get("FAPSHI_WEBHOOK_SECRET") || "";
+  const receivedSecret = req.headers.get("x-wh-secret") || req.headers.get("x-fapshi-secret") || "";
+  if (expectedSecret && !safeEqual(receivedSecret, expectedSecret)) return unauthorized();
+  const body = await bodyJson(req);
+  const transactionId = String(body.transId || body.transactionId || body.trans_id || body.id || body.externalId || "");
+  if (!transactionId) throw new FlowtubeError(400, "Référence de paiement manquante.", { code: "PAYMENT_REFERENCE_MISSING" });
+  const supabase = adminClient();
+  const { data: session } = await supabase.from("billing_checkout_sessions")
+    .select("*").eq("provider", "fapshi").eq("provider_session_id", transactionId).maybeSingle();
+  if (!session) return json({ received: true, ignored: true });
+  const rawStatus = String(body.status || body.state || body.paymentStatus || "").toLowerCase();
+  const eventId = `${transactionId}:${rawStatus || "update"}`;
+  const { data: existingEvent } = await supabase.from("payment_events")
+    .select("processed").eq("provider", "fapshi").eq("provider_event_id", eventId).maybeSingle();
+  if (existingEvent?.processed) return json({ received: true, duplicate: true });
+  await supabase.from("payment_events").upsert({
+    provider: "fapshi", provider_event_id: eventId, event_type: rawStatus || "update",
+    user_id: session.user_id, processed: false, metadata: { transaction_id: transactionId, status: rawStatus },
+  }, { onConflict: "provider,provider_event_id" });
+
+  const successful = ["successful", "success", "completed", "paid", "succeeded"].some((value) => rawStatus.includes(value));
+  const failed = ["failed", "expired", "cancelled", "canceled"].some((value) => rawStatus.includes(value));
+  if (successful) {
+    const { data: claimed, error } = await supabase.from("billing_checkout_sessions")
+      .update({ status: "processing", provider_payload: { status: rawStatus, transaction_id: transactionId } })
+      .eq("id", session.id).in("status", ["open", "pending", "failed"]).select("*").maybeSingle();
+    if (error) throw error;
+    if (claimed) {
+      if (claimed.credit_pack_id) await grantCreditPack(supabase, String(claimed.user_id), String(claimed.credit_pack_id), `fapshi:credit:${eventId}`);
+      else if (claimed.plan_id) await grantPlanCredits(supabase, String(claimed.user_id), String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `fapshi:${eventId}`, undefined, `fapshi:plan:${eventId}`, claimed.credit_option_id ? String(claimed.credit_option_id) : undefined);
+      await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", claimed.id);
+    }
+  } else if (failed) {
+    await supabase.from("billing_checkout_sessions").update({ status: rawStatus.includes("expired") ? "expired" : "failed", provider_payload: { status: rawStatus, transaction_id: transactionId } }).eq("id", session.id);
+  } else {
+    await supabase.from("billing_checkout_sessions").update({ status: "pending", provider_payload: { status: rawStatus, transaction_id: transactionId } }).eq("id", session.id);
+  }
+  await supabase.from("payment_events").update({ processed: true }).eq("provider", "fapshi").eq("provider_event_id", eventId);
+  return json({ received: true, processed: successful });
 }
 
 async function consentRoute(req: Request) {
@@ -10241,6 +10500,7 @@ Deno.serve(async (req: Request) => {
     if (first === "billing" && route[1] === "status" && req.method === "GET") return await billingStatus(req);
     if (first === "billing" && route[1] === "webhook" && req.method === "POST") return await stripeWebhook(req);
     if (first === "billing" && route[1] === "moneyfusion-callback" && (req.method === "POST" || req.method === "GET")) return await moneyFusionCallback(req);
+    if (first === "billing" && route[1] === "fapshi-webhook" && req.method === "POST") return await fapshiWebhook(req);
     if (first === "legal" && route[1] === "consent" && req.method === "POST") return await consentRoute(req);
     if (first === "provider" && route[1] === "fal-webhook" && req.method === "POST") return await falWebhook(req);
     if (first === "admin" && route[1]) return await adminRoute(req, route[1]);

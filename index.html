@@ -195,6 +195,10 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
 [data-hf-model-copy] [data-hf-model-name]{display:block;flex:none}
 [data-hf-model-desc]{min-width:0;overflow:hidden;color:var(--hf-model-muted);font-size:10px;font-weight:450;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
 [data-hf-model-menu="true"]{top:36px;width:350px;max-width:min(350px,calc(100vw - 24px));max-height:min(490px,calc(100vh - 32px));padding:7px;border-radius:13px;background:rgba(27,29,31,.97);box-shadow:0 20px 48px -26px rgba(0,0,0,.92)}
+[data-hf-model-tabs]{display:flex;gap:3px;margin:0 0 7px;padding:3px;border-radius:9px;background:rgba(247,247,248,.045)}
+[data-hf-model-tabs] button{flex:1;height:27px;border:0;border-radius:7px;background:transparent;color:var(--hf-model-muted);font:650 11px ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .16s ease,color .16s ease}
+[data-hf-model-tabs] button:hover,[data-hf-model-tabs] button.is-active{background:rgba(247,247,248,.10);color:var(--hf-model-ink)}
+[data-hf-model-tabs] button:focus-visible{outline:2px solid #6EE7FF;outline-offset:1px}
 [data-hf-model-menu="true"] [data-hf-model-search="true"]{height:38px;margin-bottom:7px;padding:0 10px;border-radius:10px;background:rgba(247,247,248,.06)}
 [data-hf-model-menu="true"] [data-hf-model-search="true"] input{font-size:13px}
 [data-hf-model-menu="true"] [data-hf-model-list]{max-height:420px;padding:0 1px 3px}
@@ -822,7 +826,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
                 <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
-                  <button type="button" data-hf-model-trigger="true" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
+                  <button type="button" data-hf-model-trigger="true" onClick="{{ showModelCatalog }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
                     <span data-hf-model-trigger-icon="true" aria-hidden="true">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ curModelIconRef }}"></use></svg>
                     </span>
@@ -832,6 +836,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                   <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
                       <div data-hf-model-title="true">Modèles</div>
+                      <div data-hf-model-tabs="true" role="tablist" aria-label="Type de modèle"><button type="button" role="tab" aria-selected="{{ modelCatalogTabAgentSelected }}" class="{{ modelCatalogTabAgentClass }}" onClick="{{ setModelCatalogTabAgent }}">Agent</button><button type="button" role="tab" aria-selected="{{ modelCatalogTabMediaSelected }}" class="{{ modelCatalogTabMediaClass }}" onClick="{{ setModelCatalogTabMedia }}">Média</button></div>
                       <div data-hf-model-search="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
                         <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
@@ -1052,7 +1057,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               </button>
               <div data-hf-optional-composer-control="true" data-hf-model-selector="true" data-open="{{ modelMenu }}">
-                <button type="button" data-hf-model-trigger="true" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
+                <button type="button" data-hf-model-trigger="true" onClick="{{ showModelCatalog }}" aria-haspopup="menu" aria-expanded="{{ modelMenu }}" aria-label="Modèles">
                   <span data-hf-model-trigger-icon="true" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ curModelIconRef }}"></use></svg></span>
                   <span data-hf-model-trigger-name="true">{{ curModelName }}</span>
                   <span data-hf-model-trigger-chevron="true" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
@@ -1060,6 +1065,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                 <sc-if value="{{ modelMenu }}" hint-placeholder-val="{{ false }}">
                   <div data-hf-model-menu="true" data-hf-model-theme="{{ settingsResolvedTheme }}">
                     <div data-hf-model-title="true">Modèles</div>
+                    <div data-hf-model-tabs="true" role="tablist" aria-label="Type de modèle"><button type="button" role="tab" aria-selected="{{ modelCatalogTabAgentSelected }}" class="{{ modelCatalogTabAgentClass }}" onClick="{{ setModelCatalogTabAgent }}">Agent</button><button type="button" role="tab" aria-selected="{{ modelCatalogTabMediaSelected }}" class="{{ modelCatalogTabMediaClass }}" onClick="{{ setModelCatalogTabMedia }}">Média</button></div>
                     <div data-hf-model-search="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modèle"/></div>
                     <div data-hf-model-list="true"><sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3"><div data-hf-model-group="true" style="{{ g.headStyle }}">{{ g.label }}</div><sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2"><button type="button" data-hf-model-row="true" class="{{ it.activeClass }}" onClick="{{ it.onClick }}" title="{{ it.desc }}"><span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.iconRef }}"></use></svg></span><span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span><span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modèle verrouillé"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modèle sélectionné">✓</span></sc-if></button></sc-for></sc-for><sc-if value="{{ modelMenuEmpty }}" hint-placeholder-val="{{ false }}"><div data-hf-model-empty="true">Aucun modèle trouvé.</div></sc-if></div>
                   </div>
@@ -1184,7 +1190,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
             <div style="color:#6EE7FF">Des créations prêtes à publier.</div>
             <div style="color:#F7F7F8">Tu paies seulement ce qui réussit.</div>
           </div>
-          <div style="margin-top:14px;font-size:14px;color:rgba(249,246,238,.62)">Choisis un rythme adapté à tes projets. HuggyFlow te prévient avant les rendus les plus lourds.</div>
+          <div style="margin-top:14px;font-size:14px;color:rgba(249,246,238,.62)">Choisis le volume qui correspond à ton rythme. Les crédits sont visibles avant les créations importantes.</div>
         </div>
 
         <div style="margin-bottom:26px">
@@ -1192,14 +1198,14 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
           <div style="margin-top:8px;font-size:14.5px;color:{{ tText3 }}">Des offres simples pour créer des images, vidéos, voix et contenus prêts à utiliser.</div>
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:34px">
-          <div style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:34px">
+          <div style="display:none;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
             <sc-for list="{{ segmentTabs }}" as="t" hint-placeholder-count="3">
               <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
             </sc-for>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <button onClick="{{ openCompare }}" style="display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">
+            <button onClick="{{ openCompare }}" style="display:none;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
               Comparer
               <span style="padding:2px 8px;border-radius:999px;background:#6EE7FF;color:#131517;font-size:9.5px;font-weight:700;letter-spacing:.08em">NOUVEAU</span>
@@ -1224,6 +1230,24 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                 <span style="{{ pl.tagStyle }}">{{ pl.tag }}</span>
               </div>
               <div style="margin-top:5px;font-size:13px;color:{{ tText3 }}">{{ pl.tagline }}</div>
+
+              <sc-if value="{{ pl.hasOptions }}" hint-placeholder-val="{{ false }}">
+                <div style="position:relative;margin-top:18px">
+                  <button onClick="{{ pl.toggleOptions }}" aria-expanded="{{ pl.optionOpen }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:42px;padding:0 13px;border-radius:10px;border:1px solid rgba({{ tLineRGB }},.14);background:{{ tSurfaceSoft }};color:{{ tInk }};font-size:12.5px;font-weight:650;cursor:pointer;font-family:inherit;text-align:left">
+                    <span>{{ pl.selectedOptionLabel }}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;transform:rotate({{ pl.optionChevron }})"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                  <sc-if value="{{ pl.optionOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;top:calc(100% + 7px);right:0;left:0;z-index:40;padding:6px;border:1px solid rgba({{ tLineRGB }},.14);border-radius:12px;background:{{ tSurface }};box-shadow:0 22px 46px -24px rgba(0,0,0,.85);animation:modalScale .18s cubic-bezier(.22,1,.36,1) both">
+                      <sc-for list="{{ pl.optionItems }}" as="option" hint-placeholder-count="4">
+                        <button onClick="{{ option.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:36px;padding:0 9px;border:0;border-radius:8px;background:{{ option.activeStyle }};color:{{ tInk }};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">
+                          <span>{{ option.label }}</span><span style="color:{{ tText3 }}">{{ option.price }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
 
               <div data-hf-plan-panel="true" style="display:none">
                 <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700">
@@ -1324,7 +1348,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
           <div style="margin-top:10px;font-size:11px;color:{{ tText4 }}">{{ pricingFeeNote }}</div>
         </section>
 
-         <div style="margin-top:26px;text-align:center;font-size:12.5px;color:{{ tText4 }}">Le prix affiché correspond au montant envoyé à MoneyFusion. Le détail de la transaction reste visible dans ton espace.</div>
+          <div style="margin-top:26px;text-align:center;font-size:12.5px;color:{{ tText4 }}">Le montant affiché est celui qui sera demandé au moment du paiement. Le détail de la transaction reste visible dans ton espace.</div>
 
         <div style="max-width:620px;margin:64px auto 0">
           <div style="text-align:center;font-family:'Space Grotesk',ui-sans-serif;font-size:28px;margin-bottom:22px">Questions utiles</div>
@@ -2240,7 +2264,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
             </sc-if>
 
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
-              <div class="hf-settings-section-head"><div><h3>Facturation</h3><p>Paiements MoneyFusion, crédits réels et historique de ton compte.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les offres</button></div>
+              <div class="hf-settings-section-head"><div><h3>Facturation</h3><p>Paiements sécurisés, crédits réels et historique de ton compte.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les offres</button></div>
               <div class="hf-settings-metric-grid"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Offre actuelle</div><div class="hf-settings-metric-value" style="font-size:20px">{{ billingPlanName }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits disponibles</div><div class="hf-settings-metric-value">{{ creditsLabel }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Prochain renouvellement</div><div class="hf-settings-metric-value" style="font-size:17px">{{ billingNextDate }}</div></div></div>
               <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Statut de l’abonnement</div><div class="hf-settings-row-hint">{{ billingPlanPrice }} · Paiement en {{ billingCurrencyLabel }}</div></div><span class="hf-settings-badge">{{ billingProviderLabel }}</span></div><div class="hf-settings-row"><div><div class="hf-settings-row-label">E-mail de facturation</div><div class="hf-settings-row-hint">Les confirmations sont envoyées à cette adresse.</div></div><span style="color:#F7F7F8;font-size:13px">{{ settingsEmail }}</span></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Historique</span><button class="hf-settings-secondary" onClick="{{ downloadBillingExport }}">Exporter</button></div><sc-if value="{{ billingLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Chargement de l’historique…</div></sc-if><sc-if value="{{ billingEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucun paiement enregistré pour le moment.</div></sc-if><sc-for list="{{ invoices }}" as="invoice" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ invoice.label }}</div><div style="margin-top:4px;font-size:11px">{{ invoice.date }}</div></div><div style="text-align:right"><div style="color:#F7F7F8">{{ invoice.amount }}</div><div style="margin-top:4px;color:#6EE7FF;font-size:11px">{{ invoice.status }}</div></div></div></sc-for></div>
@@ -3229,6 +3253,7 @@ class Component extends DCLogic {
     messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
     modelMenu: false,
     modelMenuSearch: '',
+    modelCatalogTab: 'agent',
     agentSettingsMenu: false,
     agentMode: ['manual','auto','confirm'].includes(this.initialUiState.agentMode) ? this.initialUiState.agentMode : 'confirm',
     commandPaletteOpen: false,
@@ -3256,6 +3281,8 @@ class Component extends DCLogic {
     projectsData: Array.isArray(this.initialUiState.projectsData) ? this.initialUiState.projectsData : [],
     studioContextByProject: this.initialUiState.studioContextByProject && typeof this.initialUiState.studioContextByProject === 'object' ? this.initialUiState.studioContextByProject : {},
     pricingPlans: [],
+    pricingOptionOpenPlan: '',
+    pricingSelections: {},
     pricingModels: [],
     pricingMeta: {},
     modelSync: { available:false, capabilities:{} },
@@ -3275,7 +3302,7 @@ class Component extends DCLogic {
     memoryItems: [], memoryConflicts: [], memoryLoading: false,
     securitySessions: [], securityEvents: [], securityLoading: false,
     usageData: null, usageLoading: false, usageThreshold: 80, usageAlertEnabled: true,
-    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutBusy: false, checkoutRequestId: '',
+    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutCreditOptionPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
     chatUnread: false,
@@ -3430,42 +3457,38 @@ class Component extends DCLogic {
     const fmtXof = n => fmt(Number(n || 0)) + ' FCFA';
     const fmtUsd = n => '$' + Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
     const TYPE_LABELS = { image:'images', video:'vidéos', audio:'voix et sons', lipsync:'visages parlants', image_edit:'retouches image', video_edit:'retouches vidéo', voice_clone:'clonage de voix' };
-    const pricingModels = Array.isArray(this.state.pricingModels) ? this.state.pricingModels : [];
-    const cheapestModel = types => pricingModels.filter(m => types.indexOf(String(m.type || '').toLowerCase()) >= 0 && Number(m.creditsPerDefaultUnit || 0) > 0).sort((a,b) => Number(a.creditsPerDefaultUnit || 0) - Number(b.creditsPerDefaultUnit || 0))[0];
-    const modelEstimate = (credits, types, label) => {
-      const model = cheapestModel(types);
-      if(!model) return 'Selon le modèle choisi';
-      const per = Math.max(1, Number(model.creditsPerDefaultUnit || 1));
-      const count = Math.max(0, Math.floor(Number(credits || 0) / per));
-      const unit = String(model.pricingUnit || 'unit');
-      const duration = unit === 'second' && Number(model.defaultUnits || 0) > 1 ? (' · ' + Number(model.defaultUnits) + 's') : '';
-      return '~' + count + ' ' + label + ' · ' + String(model.name || 'modèle') + duration;
-    };
     const feat = (ok, text) => ({ ok, no: !ok, text, color: ok ? T.inkSoft : T.text4 });
-    const allocOn = 'padding:3px 9px;border-radius:999px;background:#6EE7FF;color:#191813;font-size:10.5px;font-weight:700;white-space:nowrap';
-    const allocOff = 'padding:3px 9px;border-radius:999px;background:rgba(' + T.lineRGB + ',.06);color:' + T.text4 + ';font-size:10.5px;font-weight:600;white-space:nowrap';
     const tagStyles = {
       muted: 'padding:3px 9px;border-radius:999px;background:rgba(' + T.lineRGB + ',.07);color:' + T.text3 + ';font-size:10px;font-weight:700;letter-spacing:.06em',
-      blue: 'padding:3px 9px;border-radius:999px;background:#DCE6F0;color:#3E5A78;font-size:10px;font-weight:700;letter-spacing:.06em',
-      lime: 'padding:3px 9px;border-radius:999px;background:#6EE7FF;color:#191813;font-size:10px;font-weight:700;letter-spacing:.06em'
+      blue: 'padding:3px 9px;border-radius:999px;background:rgba(201,168,232,.16);color:#DCC7F4;font-size:10px;font-weight:700;letter-spacing:.06em',
+      lime: 'padding:3px 9px;border-radius:999px;background:rgba(110,231,255,.16);color:#6EE7FF;font-size:10px;font-weight:700;letter-spacing:.06em'
     };
     const apiPlans = (this.state.pricingPlans || []).filter(p=>{
-      const id = String(p.id || '');
-      const meta = p.metadata || {};
-      const seg = meta.segment || ((['free','starter','basic','creator','pro'].indexOf(id) >= 0) ? 'solo' : (['crew','squad'].indexOf(id) >= 0 ? 'team' : 'business'));
-      return seg === this.state.segment;
+      return ['free','basic','pro'].indexOf(String(p.id || '').toLowerCase()) >= 0;
     }).map(p=>{
       const meta = p.metadata || {};
       const name = String(p.displayName || p.id || 'Plan');
+      const rawOptions = Array.isArray(p.creditOptions) ? p.creditOptions : [];
+      const launchOptions = p.id === 'basic' ? [{id:'creator-500',credits:500,monthlyPriceXof:7900,annualPriceXof:83000},{id:'creator-1000',credits:1000,monthlyPriceXof:14900,annualPriceXof:156450},{id:'creator-2500',credits:2500,monthlyPriceXof:34900,annualPriceXof:366450},{id:'creator-5000',credits:5000,monthlyPriceXof:64900,annualPriceXof:681450}] : p.id === 'pro' ? [{id:'pro-1500',credits:1500,monthlyPriceXof:19900,annualPriceXof:208950},{id:'pro-3000',credits:3000,monthlyPriceXof:37900,annualPriceXof:397950},{id:'pro-6000',credits:6000,monthlyPriceXof:71900,annualPriceXof:755950},{id:'pro-10000',credits:10000,monthlyPriceXof:114900,annualPriceXof:1206450}] : [];
+      const fallbackOption = launchOptions.length ? launchOptions : (Number(p.includedCredits || 0) > 0 && Number(p.monthlyPriceXof || 0) > 0 ? [{ id:p.id + '-default', credits:Number(p.includedCredits || 0), monthlyPriceXof:Number(p.monthlyPriceXof || 0), annualPriceXof:Number(p.annualPriceXof || 0) }] : []);
+      const options = rawOptions.length ? rawOptions : fallbackOption;
+      const selectedId = this.state.pricingSelections && this.state.pricingSelections[p.id];
+      const selected = options.find(o=>String(o.id) === String(selectedId)) || options[0] || null;
+      const monthlyXof = selected ? Number(selected.monthlyPriceXof || 0) : Number(p.monthlyPriceXof || 0);
+      const annualXof = selected ? Number(selected.annualPriceXof || 0) : Number(p.annualPriceXof || 0);
+      const selectedCredits = selected ? Number(selected.credits || 0) : Number(p.includedCredits || 0);
+      const displayedXof = annual && annualXof ? Math.round(annualXof / 12) : monthlyXof;
+      const annualDiscount = monthlyXof > 0 && annualXof > 0 ? Math.max(0, Math.round((1 - annualXof / (monthlyXof * 12)) * 100)) : 0;
       return {
         id:p.id, name:name, tag:meta.badge || ((meta.popular || meta.best_value || p.priorityQueue) ? 'POPULAIRE' : 'OFFRE'), tagKind:(meta.popular || meta.best_value || p.priorityQueue) ? 'lime' : 'muted',
         popular:!!(meta.popular || meta.best_value || p.priorityQueue), tagline:meta.tagline || meta.audience || meta.description || 'Pour creer avec HuggyFlow',
-        credits:Number(p.includedCredits || 0), m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
-        mXof:toXof(p.monthlyPriceUsd, p.monthlyPriceXof), aMXof:p.annualPriceXof ? Math.round(Number(p.annualPriceXof || 0) / 12) : toXof(p.monthlyPriceUsd, p.monthlyPriceXof), aYXof:toXof(p.annualPriceUsd, p.annualPriceXof),
+        credits:selectedCredits, m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
+        mXof:monthlyXof, aMXof:annualXof ? Math.round(annualXof / 12) : monthlyXof, aYXof:annualXof,
+        creditOptions:options, selectedOptionId:selected ? String(selected.id) : '', selectedOptionLabel:selected ? fmt(selectedCredits) + ' crédits mensuels' : 'Crédits inclus', optionOpen:this.state.pricingOptionOpenPlan === p.id, annualDiscount,
+        optionItems:options.map(o=>({ label:fmt(Number(o.credits || 0)) + ' crédits mensuels', price:fmtXof(annual && o.annualPriceXof ? Math.round(Number(o.annualPriceXof) / 12) : Number(o.monthlyPriceXof || 0)), active:String(o.id) === String(selected ? selected.id : ''), activeStyle:String(o.id) === String(selected ? selected.id : '') ? 'rgba(110,231,255,.12)' : 'transparent', onClick:()=>this.setState(s=>({ pricingSelections:Object.assign({}, s.pricingSelections || {}, { [p.id]:String(o.id) }), pricingOptionOpenPlan:'' })) })),
         cta:meta.cta || (Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte'),
          vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
-         estimates: [modelEstimate(p.includedCredits, ['video','video_edit'], 'vidéos'), modelEstimate(p.includedCredits, ['image','image_edit'], 'images'), modelEstimate(p.includedCredits, ['document'], 'documents')],
-        gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
+         gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
       };
     });
     const planList = this.visiblePricingPlans(apiPlans);
@@ -3476,19 +3499,20 @@ class Component extends DCLogic {
       return {
         name: d.name, tag: d.tag, tagStyle: tagStyles[d.tagKind], tagline: d.tagline,
         hasOldPrice: annual && !free,
-        oldPrice: fmtXof(toXof(d.m, d.mXof)),
-        price: fmtXof(free ? 0 : (annual ? toXof(d.aM, d.aMXof) : toXof(d.m, d.mXof))),
-        per: free ? 'inclus' : (annual ? ("par mois, soit " + fmtUsd(d.aM) + ", payé à l'année") : ("par mois, soit " + fmtUsd(d.m))),
-        billedNote: (annual && !free) ? ('Facturé ' + fmtXof(toXof(d.aY, d.aYXof)) + '/an (' + fmtUsd(d.aY) + '/an)') : '',
+        oldPrice: fmtXof(d.mXof),
+        price: fmtXof(free ? 0 : d.aMXof || d.mXof),
+        per: free ? '100 crédits offerts une seule fois' : (annual ? ('par mois · -' + d.annualDiscount + '%') : 'par mois'),
+        billedNote: (annual && !free) ? ('Facturé ' + fmtXof(d.aYXof) + '/an') : '',
         cta: d.cta,
+        selectedOptionLabel:d.selectedOptionLabel, selectedOptionId:d.selectedOptionId, hasOptions:d.optionItems.length > 0, optionOpen:d.optionOpen, optionChevron:d.optionOpen ? '180deg' : '0deg', optionItems:d.optionItems,
+        toggleOptions:()=>this.setState(s=>({ pricingOptionOpenPlan:s.pricingOptionOpenPlan === d.id ? '' : d.id })),
         features: [
-          feat(true, d.vidJobs + ' vidéo / ' + d.imgJobs + ' image en même temps'),
-          feat(true, d.dailyVid + (d.dailyVid > 1 ? ' vidéos' : ' vidéo') + ' par jour'),
-          feat(true, fmt(d.msg) + ' idées et demandes par mois'),
-          feat(true, fmt(d.gb) + " Go d'espace, médias gardés " + d.days + ' jours'),
+          feat(true, fmt(d.credits) + ' crédits inclus'),
+          feat(true, fmt(d.msg) + ' demandes par mois'),
           feat(true, d.types.map(t=>TYPE_LABELS[t]).join(', ')),
-          feat(d.priority, 'Traitement prioritaire'),
-          feat(d.seats > 1, d.seats + (d.seats > 1 ? ' utilisateurs' : ' utilisateur'))
+          feat(true, fmt(d.gb) + " Go d'espace · " + d.days + ' jours de conservation'),
+          feat(d.priority, d.priority ? 'Traitement prioritaire' : 'Traitement standard'),
+          feat(!d.watermark, d.watermark ? 'Filigrane sur les exports' : 'Exports sans filigrane')
         ],
         rhythm: [
           feat(true, fmt(d.gb) + ' Go pour tes médias'),
@@ -3498,11 +3522,11 @@ class Component extends DCLogic {
         ],
         cardStyle: 'position:relative;display:flex;flex-direction:column;border-radius:16px;padding:22px 20px;min-height:100%;' +
           (d.popular
-            ? 'background:' + T.surface + ';border:1px solid #6EE7FF;box-shadow:0 22px 50px -34px rgba(110,231,255,.28)'
+            ? 'background:' + T.surface + ';border:1px solid rgba(110,231,255,.7);box-shadow:0 22px 50px -34px rgba(110,231,255,.28)'
             : 'background:' + T.surfaceSoft + ';border:1px solid rgba(' + T.lineRGB + ',.13)'),
         ctaStyle: 'margin-top:20px;width:100%;min-height:44px;padding:12px 14px;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;' +
           (d.popular ? 'border:none;background:#6EE7FF;color:#131517' : (d.m === 0 ? 'border:1px solid rgba(' + T.lineRGB + ',.20);background:transparent;color:' + T.ink : 'border:1px solid rgba(' + T.lineRGB + ',.18);background:' + T.ink + ';color:' + T.pageBg)),
-        onSelect: ()=> this.startCheckout(d.id)
+        onSelect: ()=> this.startCheckout(d.id, undefined, d.selectedOptionId)
       };
     });
   }
@@ -3510,8 +3534,7 @@ class Component extends DCLogic {
   visiblePricingPlans(planList){
     let list = (planList || []).slice();
     if(this.state.segment === 'solo'){
-      if(this.state.authToken) list = list.filter(p=>p.id !== 'free');
-      const order = this.state.authToken ? ['basic','pro'] : ['free','basic','pro'];
+      const order = ['free','basic','pro'];
       list.sort((a,b)=>{
         const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
         return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
@@ -4275,8 +4298,8 @@ class Component extends DCLogic {
       apiData:{ keys:[{ id:'demo-api-key', name:'Preview automation', masked:'hf_demo_••••••42', createdAt:new Date().toISOString(), scopes:['chat','generate','artifacts'], expiresAt:new Date(Date.now()+7776000000).toISOString(), dailyLimit:1000, usageCount:284 } ] },
       teamData:{ seatLimit:5, members:[{ name:'Sarah Demo', email:'demo@huggyflow.local', initials:'SD', role:'owner', status:'active', isYou:true },{ name:'Alex Martin', email:'alex@huggyflow.local', initials:'AM', role:'editor', status:'active' },{ name:'Nina Cole', email:'nina@huggyflow.local', initials:'NC', role:'viewer', status:'active' }], invites:[{ id:'demo-invite-1', email:'studio@huggyflow.local', createdAt:new Date(Date.now()-86400000).toISOString() }], projectAccess:[{ projectId:'demo-brand', memberUserId:'Alex Martin', role:'editor', permissions:{ view:true, edit:true, publish:false } }], approvalRequests:[{ id:'demo-approval-team', artifact_id:'demo-artifact-1', status:'pending', created_at:new Date().toISOString() }] },
       affiliateData:{ link:'https://huggyflow.fun/r/sarah-demo', stats:{ clicks:1248, activeSubscribers:18, earningsUsd:186.4, availableUsd:74.2, paidUsd:112.2 }, referrals:[{ name:'Studio M', amountUsd:28.4, status:'active' },{ name:'Nova Brand', amountUsd:16.8, status:'paid' }], payouts:[{ requested_at:new Date(Date.now()-2592000000).toISOString(), amount_usd:82, status:'paid' }] },
-      billingStatus:{ user:{ plan:'Pro', currentPeriodEnd:new Date(Date.now()+1728000000).toISOString() }, subscription:{ status:'active' }, moneyFusionConfigured:true, invoices:[{ id:'demo-invoice-1', createdAt:new Date(Date.now()-2592000000).toISOString(), description:'Abonnement Pro', amount_paid:2900, currency:'USD', status:'paid' },{ id:'demo-invoice-2', createdAt:new Date(Date.now()-5184000000).toISOString(), description:'Pack de credits', amount_paid:1200, currency:'USD', status:'paid' }] },
-      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:29, annualPriceUsd:290, includedCredits:1000, metadata:{ segment:'solo', popular:true, tagline:'Pour creer et publier plus vite' }, allowedMediaTypes:['image','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
+      billingStatus:{ user:{ plan:'Pro', currentPeriodEnd:new Date(Date.now()+1728000000).toISOString() }, subscription:{ status:'active' }, paymentConfigured:true, invoices:[{ id:'demo-invoice-1', createdAt:new Date(Date.now()-2592000000).toISOString(), description:'Abonnement Pro', amount_paid:2900, currency:'USD', status:'paid' },{ id:'demo-invoice-2', createdAt:new Date(Date.now()-5184000000).toISOString(), description:'Pack de credits', amount_paid:1200, currency:'USD', status:'paid' }] },
+      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'basic', displayName:'Creator', monthlyPriceUsd:13, annualPriceUsd:130, includedCredits:500, metadata:{ segment:'solo', popular:true, best_value:true, tagline:'Pour creer chaque semaine' }, creditOptions:[{ id:'creator-500', credits:500, monthlyPriceXof:7900, annualPriceXof:83000 },{ id:'creator-1000', credits:1000, monthlyPriceXof:14900, annualPriceXof:156450 },{ id:'creator-2500', credits:2500, monthlyPriceXof:34900, annualPriceXof:366450 },{ id:'creator-5000', credits:5000, monthlyPriceXof:64900, annualPriceXof:681450 }], allowedMediaTypes:['image','image_edit','video'], concurrentVideoJobs:1, concurrentImageJobs:2, storageGb:10, mediaRetentionDays:30 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:33, annualPriceUsd:330, includedCredits:1500, metadata:{ segment:'solo', popular:false, tagline:'Pour creer et publier plus vite' }, creditOptions:[{ id:'pro-1500', credits:1500, monthlyPriceXof:19900, annualPriceXof:208950 },{ id:'pro-3000', credits:3000, monthlyPriceXof:37900, annualPriceXof:397950 },{ id:'pro-6000', credits:6000, monthlyPriceXof:71900, annualPriceXof:755950 },{ id:'pro-10000', credits:10000, monthlyPriceXof:114900, annualPriceXof:1206450 }], allowedMediaTypes:['image','image_edit','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
       artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
       integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
       backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
@@ -4493,14 +4516,18 @@ class Component extends DCLogic {
       }
     };
     if(typeof document !== 'undefined') document.addEventListener('click', this.notificationClick);
+    this.modelClick = (event)=>{
+      const target = event && event.target;
+      const trigger = target && target.closest ? target.closest('[data-hf-model-trigger="true"]') : null;
+      if(!trigger) return;
+      event.preventDefault();
+      this.showModelCatalog();
+    };
+    if(typeof document !== 'undefined') document.addEventListener('click', this.modelClick);
     this.composerPointerDown = (event)=>{
       const target = event && event.target;
       const modelTrigger = target && target.closest ? target.closest('[data-hf-model-trigger="true"]') : null;
-      if(modelTrigger){
-        event.preventDefault();
-        this.toggleAgentSettings();
-        return;
-      }
+      if(modelTrigger) return;
       if(target && target.closest && target.closest('[data-hf-model-selector=\"true\"],[data-hf-model-menu=\"true\"]')) return;
       if(target && target.closest && target.closest('[data-hf-notification-trigger=\"true\"]')){
         this.toggleBackgroundTasks();
@@ -4571,6 +4598,7 @@ class Component extends DCLogic {
     if(typeof document !== 'undefined' && this.settingsKeydown) document.removeEventListener('keydown', this.settingsKeydown);
     if(typeof document !== 'undefined' && this.notificationClick) document.removeEventListener('click', this.notificationClick);
     if(typeof document !== 'undefined' && this.composerPointerDown) document.removeEventListener('pointerdown', this.composerPointerDown);
+    if(typeof document !== 'undefined' && this.modelClick) document.removeEventListener('click', this.modelClick);
     if(this.themeMedia && this.themeMediaListener){
       if(this.themeMedia.removeEventListener) this.themeMedia.removeEventListener('change', this.themeMediaListener);
       else if(this.themeMedia.removeListener) this.themeMedia.removeListener(this.themeMediaListener);
@@ -5634,12 +5662,12 @@ class Component extends DCLogic {
     return delivered;
   }
   checkoutPlanId(id){ return String(id || 'free'); }
-  openCheckoutPhone(planId){
+  openCheckoutPhone(planId, creditOptionId){
     let storedPhone = '';
     try{ storedPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
-    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId, checkoutPhone:this.state.checkoutPhone || storedPhone, checkoutRequestId:'', pricingNotice:'' });
+    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId, checkoutCreditOptionPending:creditOptionId || '', checkoutPhone:this.state.checkoutPhone || storedPhone, checkoutRequestId:'', pricingNotice:'' });
   }
-  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutBusy:false, checkoutRequestId:'' }); }
+  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutCreditOptionPending:'', checkoutBusy:false, checkoutRequestId:'' }); }
   submitCheckoutPhone(){
     const phone = String(this.state.checkoutPhone || '').trim();
     if(!/^[+0-9][0-9 .()\-]{7,23}$/.test(phone)){
@@ -5648,15 +5676,16 @@ class Component extends DCLogic {
     }
     try{ localStorage.setItem('huggyflow_checkout_phone', phone); }catch(e){}
     const planId = this.state.checkoutPlanPending;
-    this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', pricingNotice:'' }, ()=>this.startCheckout(planId, phone));
+    const creditOptionId = this.state.checkoutCreditOptionPending;
+    this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutCreditOptionPending:'', pricingNotice:'' }, ()=>this.startCheckout(planId, phone, creditOptionId));
   }
   isTrustedPaymentUrl(value){
     try{
       const url = new URL(String(value || ''));
-      return url.protocol === 'https:' && (url.hostname === 'moneyfusion.net' || url.hostname.endsWith('.moneyfusion.net'));
+      return url.protocol === 'https:' && (url.hostname === 'fapshi.com' || url.hostname.endsWith('.fapshi.com') || url.hostname === 'moneyfusion.net' || url.hostname.endsWith('.moneyfusion.net'));
     }catch(e){ return false; }
   }
-  async startCheckout(planId, suppliedPhone){
+  async startCheckout(planId, suppliedPhone, creditOptionId){
     const checkoutPlanId = this.checkoutPlanId(planId);
     if(checkoutPlanId === 'free'){
       if(!this.requireAuth('Cree un compte gratuit pour recevoir tes credits de depart.', { type:'checkout', planId })) return;
@@ -5669,18 +5698,23 @@ class Component extends DCLogic {
       try{ customerPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
     }
     this.trackEvent('checkout_intent', { planId:checkoutPlanId, interval:this.state.billing || 'annual' });
-    if(!customerPhone){ this.openCheckoutPhone(planId); return; }
+    if(!customerPhone){ this.openCheckoutPhone(planId, creditOptionId); return; }
     try{
       this.trackEvent('checkout_started', { planId:checkoutPlanId, interval:this.state.billing || 'annual' });
       const checkoutRequestId = this.state.checkoutRequestId || ('hf-checkout-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9));
       this.setState({ checkoutBusy:true, checkoutRequestId, pricingNotice:'' });
       const res = await this.apiFetch('/api/billing/checkout', {
         method:'POST',
-        body:JSON.stringify({ provider:'moneyfusion', type:'subscription', planId:checkoutPlanId, interval:this.state.billing || 'annual', customerPhone, idempotencyKey:checkoutRequestId })
+        body:JSON.stringify({ provider:'fapshi', type:'subscription', planId:checkoutPlanId, creditOptionId:creditOptionId || null, interval:this.state.billing || 'monthly', customerPhone, idempotencyKey:checkoutRequestId })
       });
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
-      if(!this.isTrustedPaymentUrl(data.url)) throw new Error('La page de paiement securisee est indisponible. Reessaie dans un instant.');
+      if(data.direct || !data.url){
+        this.trackEvent('checkout_pending', { planId:checkoutPlanId, interval:this.state.billing || 'monthly', amountXof:data.amountXof || null });
+        this.setState({ pricingNotice:'La demande de paiement a été envoyée. Confirme-la sur ton téléphone pour activer ton offre.' });
+        return;
+      }
+      if(!this.isTrustedPaymentUrl(data.url)) throw new Error('La page de paiement sécurisée est indisponible. Réessaie dans un instant.');
       this.trackEvent('checkout_redirected', { planId:checkoutPlanId, interval:this.state.billing || 'annual', amountXof:data.amountXof || null });
       window.location.assign(data.url);
     }catch(err){
@@ -6402,7 +6436,7 @@ class Component extends DCLogic {
     if(!email){ this.notify('Ajoute ton e-mail avant de demander un lien.'); return; }
     this.setState({ page:'auth', authMode:'login', authEmail:email, authStatus:'' }, ()=>this.authRecover());
   }
-  openBillingHelp(){ this.notify('Le moyen de paiement est choisi et sécurisé dans le checkout MoneyFusion.'); }
+  openBillingHelp(){ this.notify('Le moyen de paiement est choisi et sécurisé dans le paiement.'); }
   teamMemberOptions(member){ this.notify('Les rôles de ' + String((member && member.name) || 'ce membre') + ' se gèrent depuis l espace Équipe.'); }
   downloadInvoice(invoice){
     const stamp = String((invoice && invoice.date) || new Date().toISOString().slice(0,10)).replace(/[^a-z0-9]+/gi, '-');
@@ -6798,6 +6832,16 @@ class Component extends DCLogic {
     const all = this.agentUiModels().concat(this.MODELS);
     return [...new Map(all.map(model=>[model.id, model])).values()];
   }
+  modelGroupsHasResults(tab, search){
+    const query = String(search || '').trim().toLowerCase();
+    const mediaTypes = ['image','image_edit','video','video_edit','audio','voice','music','lipsync'];
+    return this.modelPickerModels().some(model=>{
+      const caps = Array.isArray(model.capabilities) ? model.capabilities : [];
+      const media = mediaTypes.includes(String(model.type || '').toLowerCase()) || caps.some(cap=>['image','video','audio','lipsync'].includes(String(cap).toLowerCase()));
+      if(tab === 'media' ? !(model.id === 'auto' || media) : !(model.id === 'auto' || !media)) return false;
+      return !query || [model.name, model.desc, model.id, model.group].join(' ').toLowerCase().includes(query);
+    });
+  }
   positionModelMenu(){
     if(typeof window === 'undefined' || typeof document === 'undefined') return;
     const selector = document.querySelector('[data-hf-model-selector="true"]');
@@ -6829,6 +6873,9 @@ class Component extends DCLogic {
   setAgentMode(mode){ this.setState({ agentMode:mode, agentSettingsMenu:false, modelMenu:false, modelMenuSearch:'' }); }
   openModelCatalog(){
     this.setState(s=>({ modelId:s.modelId || 'auto', modelMenu:!s.modelMenu, modelMenuSearch:'', agentSettingsMenu:false }));
+  }
+  showModelCatalog(){
+    this.setState(s=>({ modelId:s.modelId || 'auto', modelMenu:true, modelMenuSearch:'', agentSettingsMenu:false }));
   }
   openMemory(){ this.openSettingsSection('settings'); this.notify('Memoire disponible dans les parametres.'); }
   openMcp(){ this.openSettingsSection('claudecode'); this.notify('Les outils MCP sont prets a etre configures.'); }
@@ -7821,11 +7868,19 @@ class Component extends DCLogic {
       sendButtonStyleLarge: 'width:40px;height:40px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 9px 22px -15px rgba(110,231,255,.72)',
       sendButtonStyleSmall: 'width:34px;height:34px;border-radius:999px;border:none;background:' + sendColor + ';color:' + sendFg + ';cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -15px rgba(110,231,255,.68)',
       toggleModelMenu: ()=> this.setState(s=>({ modelMenu: !s.modelMenu, modelMenuSearch: '', agentSettingsMenu:false })),
+      setModelCatalogTabAgent: ()=> this.setState({ modelCatalogTab:'agent', modelMenuSearch:'' }),
+      setModelCatalogTabMedia: ()=> this.setState({ modelCatalogTab:'media', modelMenuSearch:'' }),
+      modelCatalogTab: st.modelCatalogTab === 'media' ? 'media' : 'agent',
+      modelCatalogTabAgentClass: st.modelCatalogTab === 'agent' ? 'is-active' : '',
+      modelCatalogTabMediaClass: st.modelCatalogTab === 'media' ? 'is-active' : '',
+      modelCatalogTabAgentSelected: st.modelCatalogTab === 'agent' ? 'true' : 'false',
+      modelCatalogTabMediaSelected: st.modelCatalogTab === 'media' ? 'true' : 'false',
       toggleAgentSettings: ()=> this.toggleAgentSettings(),
       setManualMode: ()=> this.setAgentMode('manual'),
       setAutoMode: ()=> this.setAgentMode('auto'),
       setConfirmMode: ()=> this.setAgentMode('confirm'),
       openModelCatalog: ()=> this.openModelCatalog(),
+      showModelCatalog: ()=> this.showModelCatalog(),
       agentSettingsMenu: !!st.agentSettingsMenu,
       agentModeLabel: st.agentMode === 'auto' ? 'Auto' : 'Manuel',
       agentModeManualClass: st.agentMode === 'manual' ? 'is-active' : '',
@@ -7843,15 +7898,33 @@ class Component extends DCLogic {
       curModelIconRef: this.modelIconRef(this.curModel()),
        modelGroups: (()=>{
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
+        const tab = st.modelCatalogTab === 'media' ? 'media' : 'agent';
+        const isMedia = m => ['image','image_edit','video','video_edit','audio','voice','music','lipsync'].includes(String(m.type || '').toLowerCase()) || (Array.isArray(m.capabilities) && m.capabilities.some(cap=>['image','video','audio','lipsync'].includes(String(cap).toLowerCase())));
+        const groupFor = m => {
+          const caps = Array.isArray(m.capabilities) ? m.capabilities : [];
+          const type = String(m.type || '').toLowerCase();
+          if(tab === 'media') {
+            if(type.includes('video') || caps.includes('video')) return type.includes('edit') ? 'Edition' : 'Vidéo';
+            if(type.includes('audio') || type.includes('voice') || type.includes('music') || caps.includes('audio')) return 'Audio';
+            return type.includes('edit') || caps.includes('image_edit') ? 'Édition' : 'Image';
+          }
+          if(caps.includes('documents') || caps.includes('files')) return 'Documents';
+          if(caps.includes('vision')) return 'Vision';
+          if(caps.includes('reasoning')) return 'Raisonnement';
+          if(caps.includes('tools')) return 'Outils';
+          return 'Rapide';
+        };
+        const available = this.modelPickerModels().filter(m=>tab === 'media' ? (m.id === 'auto' || isMedia(m)) : (m.id === 'auto' || !isMedia(m)));
         const grouped = {};
         const groupOrder = [];
         const curated = [];
-        this.modelPickerModels().filter(m=>!query || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
+        available.filter(m=>!query || [m.name,groupFor(m),m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
           if(m.id === 'auto' || m.free || m.current){ curated.push(m); return; }
-          const key = m.group || (m.capabilities && m.capabilities.includes('vision') ? 'Vision' : (m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : 'Rapide'));
+          const key = groupFor(m);
           if(!grouped[key]) groupOrder.push(key);
           (grouped[key] || (grouped[key] = [])).push(m);
         });
+        curated.sort((a,b)=>(a.id === 'auto' ? -1 : 1) - (b.id === 'auto' ? -1 : 1));
         const sections = curated.length ? [{
           label:'Modèles vedettes',
           headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
@@ -7881,8 +7954,8 @@ class Component extends DCLogic {
           }))
         })));
       })(),
-      hasModelMenuResults: this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
-      modelMenuEmpty: !this.modelPickerModels().some(m=>{ const q=String(st.modelMenuSearch || '').trim().toLowerCase(); return !q || [m.name,m.group,m.desc,m.id].join(' ').toLowerCase().includes(q); }),
+      hasModelMenuResults: this.modelGroupsHasResults(st.modelCatalogTab, st.modelMenuSearch),
+      modelMenuEmpty: !this.modelGroupsHasResults(st.modelCatalogTab, st.modelMenuSearch),
       suggestions: this.SUGGESTION_SETS[st.suggestionSet].map(s=>({
         tag: s.tag, tagBg: s.tagBg, text: s.text,
         onClick: ()=> this.setState({ input: s.text })
@@ -7897,9 +7970,7 @@ class Component extends DCLogic {
        pricingCostFilters: pricingCostFilters.map(filter=>({ label:filter[1], style:this.tabStyle(st.pricingCostFilter === filter[0]), onClick:()=>this.setState({ pricingCostFilter:filter[0] }) })),
        pricingCostRows,
        pricingCostEmpty: pricingCostRows.length === 0,
-       pricingFeeNote: (st.pricingMeta && st.pricingMeta.moneyFusionFees && st.pricingMeta.moneyFusionFees.configured)
-         ? 'Frais MoneyFusion inclus : ' + Number(st.pricingMeta.moneyFusionFees.percent || 0) + '% + ' + Number(st.pricingMeta.moneyFusionFees.fixedXof || 0).toLocaleString('fr-FR') + ' FCFA.'
-         : 'Le montant affiché est la source de vérité checkout. Configure les frais MoneyFusion côté serveur pour les inclure automatiquement.',
+       pricingFeeNote: 'Le montant affiché est la source de vérité du paiement. Aucun frais caché n’est ajouté au checkout.',
       segmentTabs: [['solo','Solo'],['team','Équipe'],['business','Business Plan']].map(p=>({
         label: p[1],
         style: this.tabStyle(st.segment === p[0]),
@@ -8011,7 +8082,7 @@ class Component extends DCLogic {
       planLabel: st.user ? ('Offre ' + (st.user.plan || 'Free')) : 'Offre gratuite',
       billingPlanName: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.plan) || (st.user && st.user.plan) || 'Free',
       billingPlanPrice: st.billingLoading ? 'Chargement...' : ((st.billingStatus && st.billingStatus.subscription) ? 'Abonnement actif' : 'Aucun abonnement actif'),
-      billingProviderLabel: (st.billingStatus && st.billingStatus.moneyFusionConfigured) ? 'MONEYFUSION ACTIF' : 'PAIEMENT SÉCURISÉ',
+      billingProviderLabel: 'PAIEMENT SÉCURISÉ',
       billingEmpty: !((st.billingStatus && st.billingStatus.invoices && st.billingStatus.invoices.length) || 0),
       openBillingHelp: ()=>this.openBillingHelp(),
       requestPasswordReset: ()=>this.requestPasswordReset(),

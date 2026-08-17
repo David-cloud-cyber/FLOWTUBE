@@ -47,6 +47,7 @@ jobs:
           migration_names = [
               "20260813100000_add_provider_agnostic_generation_jobs.sql",
               "20260816100000_atomic_agent_and_generation_credits.sql",
+              "20260817120000_huggyflow_launch_pricing_and_fapshi.sql",
           ]
           endpoint = f"https://api.supabase.com/v1/projects/{project_ref}/database/query"
           for name in migration_names:
