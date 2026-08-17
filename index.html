@@ -2267,6 +2267,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
               <div class="hf-settings-section-head"><div><h3>Facturation</h3><p>Paiements sécurisés, crédits réels et historique de ton compte.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les offres</button></div>
               <div class="hf-settings-metric-grid"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Offre actuelle</div><div class="hf-settings-metric-value" style="font-size:20px">{{ billingPlanName }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits disponibles</div><div class="hf-settings-metric-value">{{ creditsLabel }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Prochain renouvellement</div><div class="hf-settings-metric-value" style="font-size:17px">{{ billingNextDate }}</div></div></div>
               <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Statut de l’abonnement</div><div class="hf-settings-row-hint">{{ billingPlanPrice }} · Paiement en {{ billingCurrencyLabel }}</div></div><span class="hf-settings-badge">{{ billingProviderLabel }}</span></div><div class="hf-settings-row"><div><div class="hf-settings-row-label">E-mail de facturation</div><div class="hf-settings-row-hint">Les confirmations sont envoyées à cette adresse.</div></div><span style="color:#F7F7F8;font-size:13px">{{ settingsEmail }}</span></div></div>
+              <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-section-head" style="margin-bottom:12px"><div><h3>Recharger des crédits</h3><p>Achète uniquement le complément dont tu as besoin.</p></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"><sc-for list="{{ creditPackCards }}" as="pack" hint-placeholder-count="6"><button onClick="{{ pack.onSelect }}" class="hf-settings-secondary" style="display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;min-height:48px" disabled="{{ checkoutBusy }}"><span><strong style="display:block;color:#F7F7F8">{{ pack.credits }} crédits</strong><small style="display:block;margin-top:3px;color:#898A8B">{{ pack.amount }}</small></span><span style="color:#6EE7FF">Ajouter</span></button></sc-for></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Historique</span><button class="hf-settings-secondary" onClick="{{ downloadBillingExport }}">Exporter</button></div><sc-if value="{{ billingLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Chargement de l’historique…</div></sc-if><sc-if value="{{ billingEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucun paiement enregistré pour le moment.</div></sc-if><sc-for list="{{ invoices }}" as="invoice" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ invoice.label }}</div><div style="margin-top:4px;font-size:11px">{{ invoice.date }}</div></div><div style="text-align:right"><div style="color:#F7F7F8">{{ invoice.amount }}</div><div style="margin-top:4px;color:#6EE7FF;font-size:11px">{{ invoice.status }}</div></div></div></sc-for></div>
             </sc-if>
 
@@ -3263,7 +3264,7 @@ class Component extends DCLogic {
     placeholderIdx: 0,
     streamPhraseIndex: 0,
     suggestionSet: 0,
-    billing: this.initialUiState.billing || 'annual',
+    billing: this.initialUiState.billing || 'monthly',
     segment: this.initialUiState.segment || 'solo',
     faqOpen: 0,
     exploreItems: [], exploreLoading: false, exploreSort: this.initialUiState.exploreSort || 'trending', exploreSearch: '', exploreActiveId: this.initialRoute.exploreId || '', exploreNewDismissed: this.initialUiState.exploreNewDismissed === true, exploreLikedIds: {}, exploreSavedIds: {},
@@ -3302,7 +3303,7 @@ class Component extends DCLogic {
     memoryItems: [], memoryConflicts: [], memoryLoading: false,
     securitySessions: [], securityEvents: [], securityLoading: false,
     usageData: null, usageLoading: false, usageThreshold: 80, usageAlertEnabled: true,
-    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutCreditOptionPending: '', checkoutBusy: false, checkoutRequestId: '',
+    checkoutPhone: '', checkoutPhoneOpen: false, checkoutPlanPending: '', checkoutCreditOptionPending: '', checkoutCreditPackPending: '', checkoutBusy: false, checkoutRequestId: '',
     backendReady: false, backendError: false,
     sendLocked: false,
     chatUnread: false,
@@ -3471,9 +3472,10 @@ class Component extends DCLogic {
       const rawOptions = Array.isArray(p.creditOptions) ? p.creditOptions : [];
       const launchOptions = p.id === 'basic' ? [{id:'creator-500',credits:500,monthlyPriceXof:7900,annualPriceXof:83000},{id:'creator-1000',credits:1000,monthlyPriceXof:14900,annualPriceXof:156450},{id:'creator-2500',credits:2500,monthlyPriceXof:34900,annualPriceXof:366450},{id:'creator-5000',credits:5000,monthlyPriceXof:64900,annualPriceXof:681450}] : p.id === 'pro' ? [{id:'pro-1500',credits:1500,monthlyPriceXof:19900,annualPriceXof:208950},{id:'pro-3000',credits:3000,monthlyPriceXof:37900,annualPriceXof:397950},{id:'pro-6000',credits:6000,monthlyPriceXof:71900,annualPriceXof:755950},{id:'pro-10000',credits:10000,monthlyPriceXof:114900,annualPriceXof:1206450}] : [];
       const fallbackOption = launchOptions.length ? launchOptions : (Number(p.includedCredits || 0) > 0 && Number(p.monthlyPriceXof || 0) > 0 ? [{ id:p.id + '-default', credits:Number(p.includedCredits || 0), monthlyPriceXof:Number(p.monthlyPriceXof || 0), annualPriceXof:Number(p.annualPriceXof || 0) }] : []);
-      const options = rawOptions.length ? rawOptions : fallbackOption;
+      const options = rawOptions.length ? rawOptions : (this.demoMode ? launchOptions : fallbackOption);
       const selectedId = this.state.pricingSelections && this.state.pricingSelections[p.id];
-      const selected = options.find(o=>String(o.id) === String(selectedId)) || options[0] || null;
+      const preferredId = p.id === 'basic' ? 'creator-500' : (p.id === 'pro' ? 'pro-1500' : '');
+      const selected = options.find(o=>String(o.id) === String(selectedId)) || options.find(o=>String(o.id) === preferredId) || options[0] || null;
       const monthlyXof = selected ? Number(selected.monthlyPriceXof || 0) : Number(p.monthlyPriceXof || 0);
       const annualXof = selected ? Number(selected.annualPriceXof || 0) : Number(p.annualPriceXof || 0);
       const selectedCredits = selected ? Number(selected.credits || 0) : Number(p.includedCredits || 0);
@@ -3487,7 +3489,7 @@ class Component extends DCLogic {
         creditOptions:options, selectedOptionId:selected ? String(selected.id) : '', selectedOptionLabel:selected ? fmt(selectedCredits) + ' crédits mensuels' : 'Crédits inclus', optionOpen:this.state.pricingOptionOpenPlan === p.id, annualDiscount,
         optionItems:options.map(o=>({ label:fmt(Number(o.credits || 0)) + ' crédits mensuels', price:fmtXof(annual && o.annualPriceXof ? Math.round(Number(o.annualPriceXof) / 12) : Number(o.monthlyPriceXof || 0)), active:String(o.id) === String(selected ? selected.id : ''), activeStyle:String(o.id) === String(selected ? selected.id : '') ? 'rgba(110,231,255,.12)' : 'transparent', onClick:()=>this.setState(s=>({ pricingSelections:Object.assign({}, s.pricingSelections || {}, { [p.id]:String(o.id) }), pricingOptionOpenPlan:'' })) })),
         cta:meta.cta || (Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte'),
-         vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
+         vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyImg:Number(p.dailyImageLimit || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
          gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
       };
     });
@@ -3500,7 +3502,7 @@ class Component extends DCLogic {
         name: d.name, tag: d.tag, tagStyle: tagStyles[d.tagKind], tagline: d.tagline,
         hasOldPrice: annual && !free,
         oldPrice: fmtXof(d.mXof),
-        price: fmtXof(free ? 0 : d.aMXof || d.mXof),
+        price: fmtXof(free ? 0 : (annual ? (d.aMXof || d.mXof) : d.mXof)),
         per: free ? '100 crédits offerts une seule fois' : (annual ? ('par mois · -' + d.annualDiscount + '%') : 'par mois'),
         billedNote: (annual && !free) ? ('Facturé ' + fmtXof(d.aYXof) + '/an') : '',
         cta: d.cta,
@@ -3509,6 +3511,7 @@ class Component extends DCLogic {
         features: [
           feat(true, fmt(d.credits) + ' crédits inclus'),
           feat(true, fmt(d.msg) + ' demandes par mois'),
+          feat(true, fmt(d.dailyImg) + ' images par jour · ' + fmt(d.dailyVid) + ' vidéos par jour'),
           feat(true, d.types.map(t=>TYPE_LABELS[t]).join(', ')),
           feat(true, fmt(d.gb) + " Go d'espace · " + d.days + ' jours de conservation'),
           feat(d.priority, d.priority ? 'Traitement prioritaire' : 'Traitement standard'),
@@ -4299,7 +4302,7 @@ class Component extends DCLogic {
       teamData:{ seatLimit:5, members:[{ name:'Sarah Demo', email:'demo@huggyflow.local', initials:'SD', role:'owner', status:'active', isYou:true },{ name:'Alex Martin', email:'alex@huggyflow.local', initials:'AM', role:'editor', status:'active' },{ name:'Nina Cole', email:'nina@huggyflow.local', initials:'NC', role:'viewer', status:'active' }], invites:[{ id:'demo-invite-1', email:'studio@huggyflow.local', createdAt:new Date(Date.now()-86400000).toISOString() }], projectAccess:[{ projectId:'demo-brand', memberUserId:'Alex Martin', role:'editor', permissions:{ view:true, edit:true, publish:false } }], approvalRequests:[{ id:'demo-approval-team', artifact_id:'demo-artifact-1', status:'pending', created_at:new Date().toISOString() }] },
       affiliateData:{ link:'https://huggyflow.fun/r/sarah-demo', stats:{ clicks:1248, activeSubscribers:18, earningsUsd:186.4, availableUsd:74.2, paidUsd:112.2 }, referrals:[{ name:'Studio M', amountUsd:28.4, status:'active' },{ name:'Nova Brand', amountUsd:16.8, status:'paid' }], payouts:[{ requested_at:new Date(Date.now()-2592000000).toISOString(), amount_usd:82, status:'paid' }] },
       billingStatus:{ user:{ plan:'Pro', currentPeriodEnd:new Date(Date.now()+1728000000).toISOString() }, subscription:{ status:'active' }, paymentConfigured:true, invoices:[{ id:'demo-invoice-1', createdAt:new Date(Date.now()-2592000000).toISOString(), description:'Abonnement Pro', amount_paid:2900, currency:'USD', status:'paid' },{ id:'demo-invoice-2', createdAt:new Date(Date.now()-5184000000).toISOString(), description:'Pack de credits', amount_paid:1200, currency:'USD', status:'paid' }] },
-      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, storageGb:1, mediaRetentionDays:7 },{ id:'basic', displayName:'Creator', monthlyPriceUsd:13, annualPriceUsd:130, includedCredits:500, metadata:{ segment:'solo', popular:true, best_value:true, tagline:'Pour creer chaque semaine' }, creditOptions:[{ id:'creator-500', credits:500, monthlyPriceXof:7900, annualPriceXof:83000 },{ id:'creator-1000', credits:1000, monthlyPriceXof:14900, annualPriceXof:156450 },{ id:'creator-2500', credits:2500, monthlyPriceXof:34900, annualPriceXof:366450 },{ id:'creator-5000', credits:5000, monthlyPriceXof:64900, annualPriceXof:681450 }], allowedMediaTypes:['image','image_edit','video'], concurrentVideoJobs:1, concurrentImageJobs:2, storageGb:10, mediaRetentionDays:30 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:33, annualPriceUsd:330, includedCredits:1500, metadata:{ segment:'solo', popular:false, tagline:'Pour creer et publier plus vite' }, creditOptions:[{ id:'pro-1500', credits:1500, monthlyPriceXof:19900, annualPriceXof:208950 },{ id:'pro-3000', credits:3000, monthlyPriceXof:37900, annualPriceXof:397950 },{ id:'pro-6000', credits:6000, monthlyPriceXof:71900, annualPriceXof:755950 },{ id:'pro-10000', credits:10000, monthlyPriceXof:114900, annualPriceXof:1206450 }], allowedMediaTypes:['image','image_edit','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'demo-pack', name:'Pack 500 credits', credits:500, priceUsd:12 }],
+      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, monthlyMessageLimit:60, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, dailyImageLimit:3, dailyVideoLimit:0, watermarkRequired:true, storageGb:1, mediaRetentionDays:7 },{ id:'basic', displayName:'Creator', monthlyPriceUsd:13.17, annualPriceUsd:138.25, includedCredits:500, monthlyMessageLimit:300, metadata:{ segment:'solo', popular:true, best_value:true, tagline:'Pour creer chaque semaine' }, creditOptions:[{ id:'creator-250', credits:250, monthlyPriceXof:4900, annualPriceXof:51450 },{ id:'creator-500', credits:500, monthlyPriceXof:7900, annualPriceXof:82950 },{ id:'creator-1000', credits:1000, monthlyPriceXof:14900, annualPriceXof:156450 },{ id:'creator-2500', credits:2500, monthlyPriceXof:34900, annualPriceXof:366450 },{ id:'creator-5000', credits:5000, monthlyPriceXof:64900, annualPriceXof:681450 },{ id:'creator-7500', credits:7500, monthlyPriceXof:89900, annualPriceXof:943950 }], allowedMediaTypes:['image','image_edit','video'], concurrentVideoJobs:1, concurrentImageJobs:2, dailyImageLimit:10, dailyVideoLimit:2, storageGb:10, mediaRetentionDays:30 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:33.17, annualPriceUsd:348.25, includedCredits:1500, monthlyMessageLimit:900, metadata:{ segment:'solo', popular:false, priority:true, tagline:'Pour creer et publier plus vite' }, creditOptions:[{ id:'pro-750', credits:750, monthlyPriceXof:12900, annualPriceXof:135450 },{ id:'pro-1500', credits:1500, monthlyPriceXof:19900, annualPriceXof:208950 },{ id:'pro-3000', credits:3000, monthlyPriceXof:37900, annualPriceXof:397950 },{ id:'pro-6000', credits:6000, monthlyPriceXof:71900, annualPriceXof:754950 },{ id:'pro-10000', credits:10000, monthlyPriceXof:114900, annualPriceXof:1206450 },{ id:'pro-15000', credits:15000, monthlyPriceXof:159900, annualPriceXof:1678950 }], allowedMediaTypes:['image','image_edit','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, dailyImageLimit:30, dailyVideoLimit:8, priorityQueue:true, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'topup-5', label:'5 crédits', credits:5, amountXof:100 },{ id:'topup-10', label:'10 crédits', credits:10, amountXof:200 },{ id:'topup-25', label:'25 crédits', credits:25, amountXof:500 },{ id:'topup-50', label:'50 crédits', credits:50, amountXof:1000 },{ id:'topup-100', label:'100 crédits', credits:100, amountXof:2000 },{ id:'topup-250', label:'250 crédits', credits:250, amountXof:5000 }],
       artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
       integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
       backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
@@ -4695,7 +4698,7 @@ class Component extends DCLogic {
         modelId:this.state.modelId || 'auto',
         agentMode:this.state.agentMode || 'confirm',
         mode:this.state.mode || 'image',
-        billing:this.state.billing || 'annual',
+        billing:this.state.billing || 'monthly',
         segment:this.state.segment || 'solo',
         pricingCostFilter:this.state.pricingCostFilter || 'all',
         theme:this.state.theme || 'dark',
@@ -5662,12 +5665,12 @@ class Component extends DCLogic {
     return delivered;
   }
   checkoutPlanId(id){ return String(id || 'free'); }
-  openCheckoutPhone(planId, creditOptionId){
+  openCheckoutPhone(planId, creditOptionId, creditPackId){
     let storedPhone = '';
     try{ storedPhone = localStorage.getItem('huggyflow_checkout_phone') || ''; }catch(e){}
-    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId, checkoutCreditOptionPending:creditOptionId || '', checkoutPhone:this.state.checkoutPhone || storedPhone, checkoutRequestId:'', pricingNotice:'' });
+    this.setState({ checkoutPhoneOpen:true, checkoutPlanPending:planId || '', checkoutCreditOptionPending:creditOptionId || '', checkoutCreditPackPending:creditPackId || '', checkoutPhone:this.state.checkoutPhone || storedPhone, checkoutRequestId:'', pricingNotice:'' });
   }
-  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutCreditOptionPending:'', checkoutBusy:false, checkoutRequestId:'' }); }
+  closeCheckoutPhone(){ this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutCreditOptionPending:'', checkoutCreditPackPending:'', checkoutBusy:false, checkoutRequestId:'' }); }
   submitCheckoutPhone(){
     const phone = String(this.state.checkoutPhone || '').trim();
     if(!/^[+0-9][0-9 .()\-]{7,23}$/.test(phone)){
@@ -5677,7 +5680,8 @@ class Component extends DCLogic {
     try{ localStorage.setItem('huggyflow_checkout_phone', phone); }catch(e){}
     const planId = this.state.checkoutPlanPending;
     const creditOptionId = this.state.checkoutCreditOptionPending;
-    this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutCreditOptionPending:'', pricingNotice:'' }, ()=>this.startCheckout(planId, phone, creditOptionId));
+    const creditPackId = this.state.checkoutCreditPackPending;
+    this.setState({ checkoutPhoneOpen:false, checkoutPlanPending:'', checkoutCreditOptionPending:'', checkoutCreditPackPending:'', pricingNotice:'' }, ()=>creditPackId ? this.startCreditCheckout(creditPackId, phone) : this.startCheckout(planId, phone, creditOptionId));
   }
   isTrustedPaymentUrl(value){
     try{
@@ -6022,6 +6026,27 @@ class Component extends DCLogic {
       const active = brands[0] || null;
       this.setState({ brandKits:brands, brandName:active ? active.name : this.state.brandName, brandDescription:active && active.profile ? (active.profile.description || '') : this.state.brandDescription });
     }catch(err){ this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de charger ton identite de marque.') }); }
+  }
+  async startCreditCheckout(packId, suppliedPhone){
+    if(!this.requireAuth('Connecte-toi pour acheter des crédits et les ajouter à ton compte.')) return;
+    const customerPhone = String(suppliedPhone || this.state.checkoutPhone || '').trim();
+    try{
+      const checkoutRequestId = this.state.checkoutRequestId || ('hf-topup-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9));
+      this.setState({ checkoutBusy:true, checkoutRequestId, pricingNotice:'' });
+      const res = await this.apiFetch('/api/billing/checkout', { method:'POST', body:JSON.stringify({ provider:'fapshi', type:'credits', creditPackId:packId, customerPhone, idempotencyKey:checkoutRequestId }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Le paiement est indisponible.');
+      if(data.direct || !data.url){
+        this.setState({ pricingNotice:'La recharge a été envoyée. Confirme-la sur ton téléphone pour ajouter les crédits.' });
+        return;
+      }
+      if(!this.isTrustedPaymentUrl(data.url)) throw new Error('La page de paiement sécurisée est indisponible. Réessaie dans un instant.');
+      window.location.assign(data.url);
+    }catch(err){
+      this.setState({ pricingNotice:this.friendlyError(err && err.message, 'La recharge est indisponible pour le moment.') });
+    }finally{
+      this.setState({ checkoutBusy:false });
+    }
   }
   async updateApprovalRequest(request, status){
     if(!request || !request.id) return;
@@ -6891,6 +6916,11 @@ class Component extends DCLogic {
     const studioMediaItems = this.studioMediaItems();
     const artifactItems = (st.artifactItems || []).map(a=>this.normalizeArtifact(a)).filter(Boolean);
     const renderedPlans = this.buildPlans();
+    const creditPackCards = (this.state.creditPacks || []).map(pack=>({
+      credits:Number(pack.credits || 0).toLocaleString('fr-FR'),
+      amount:Number(pack.amountXof || 0).toLocaleString('fr-FR') + ' FCFA',
+      onSelect:()=>this.openCheckoutPhone('', '', String(pack.id || ''))
+    }));
     const pricingCostFilters = [];
     const pricingCostRows = [];
     const sidebarSearchQuery = String(st.sidebarSearchQuery || '').trim().toLowerCase();
@@ -7690,6 +7720,7 @@ class Component extends DCLogic {
       mfaStatusLabel: st.mfaLoading ? 'Configuration sécurisée en cours…' : (st.tfa ? 'MFA TOTP actif sur ce compte' : 'Ajoute une application d’authentification pour sécuriser ton compte'),
       mfaActionLabel: st.mfaLoading ? 'Configuration…' : (st.tfa ? 'Désactiver' : 'Activer'),
       billingCurrencyLabel: st.billingCurrency || 'XOF',
+      creditPackCards,
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
       openGallery: ()=> this.setState({ page:'gallery', galleryFilter:'all', modelMenu:false }, ()=>this.notify('Bibliotheque ouverte.')),

@@ -1287,6 +1287,7 @@ type PlanLimits = {
   pricingVersion: string;
   monthlyMessageLimit: number;
   dailyMessageLimit: number;
+  dailyImageLimit: number;
   dailyVideoLimit: number;
   concurrentImageJobs: number;
   concurrentVideoJobs: number;
@@ -1979,6 +1980,7 @@ const FREE_FALLBACK_PLAN: PlanLimits = {
   pricingVersion: "2026-07-launch-v1",
   monthlyMessageLimit: 60,
   dailyMessageLimit: 10,
+  dailyImageLimit: 3,
   dailyVideoLimit: 0,
   concurrentImageJobs: 1,
   concurrentVideoJobs: 0,
@@ -2621,6 +2623,7 @@ function normalizePlan(row: Record<string, unknown>): PlanLimits {
     pricingVersion: String(row.pricing_version ?? metadata.pricing_version ?? "legacy"),
     monthlyMessageLimit: numeric(row.monthly_message_limit, 300),
     dailyMessageLimit: numeric(row.daily_message_limit, 50),
+    dailyImageLimit: numeric(row.daily_image_limit, id === "free" ? 3 : id === "basic" ? 10 : 30),
     dailyVideoLimit: numeric(row.daily_video_limit, 1),
     concurrentImageJobs: numeric(row.concurrent_image_jobs, 1),
     concurrentVideoJobs: numeric(row.concurrent_video_jobs, 0),
@@ -2706,6 +2709,7 @@ function planPublic(plan: PlanLimits) {
     usdXofRate: DEFAULT_USD_XOF_RATE,
     monthlyMessageLimit: plan.monthlyMessageLimit,
     dailyMessageLimit: plan.dailyMessageLimit,
+    dailyImageLimit: plan.dailyImageLimit,
     dailyVideoLimit: plan.dailyVideoLimit,
     concurrentImageJobs: plan.concurrentImageJobs,
     concurrentVideoJobs: plan.concurrentVideoJobs,
@@ -3217,7 +3221,7 @@ async function bootstrap(req: Request) {
     userId ? ensureProfile(supabase, userId) : Promise.resolve(null),
     userId ? listProjectData(supabase, userId) : Promise.resolve([]),
     publicPricingPlans(supabase),
-    supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true }),
+    supabase.from("credit_packs").select("*").eq("active", true).order("amount_xof", { ascending: true }),
     userId
       ? supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -3273,7 +3277,7 @@ async function bootstrap(req: Request) {
       id: pack.id,
       label: pack.label,
       credits: pack.credits,
-      priceUsd: pack.price_usd,
+      amountXof: Math.max(0, Number(pack.amount_xof || Math.round(Number(pack.price_usd || 0) * DEFAULT_USD_XOF_RATE))),
       checkoutEnabled: Boolean(pack.metadata?.checkout !== false),
     })),
     billing: {
@@ -6860,6 +6864,18 @@ async function enforceGenerationGuards(
     }
   }
 
+  if (model.type === "image" || model.type === "image_edit") {
+    const { count: dailyImages } = await supabase.from("generations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("type", ["image", "image_edit"])
+      .gte("created_at", dayStartIso())
+      .not("status", "in", "(failed,cancelled)");
+    if ((dailyImages || 0) >= plan.dailyImageLimit) {
+      throw new FlowtubeError(429, `Plafond image journalier atteint pour le plan ${plan.displayName}.`, { code: "DAILY_IMAGE_LIMIT" });
+    }
+  }
+
   const runningType = model.type === "video" ? "video" : "image";
   const maxConcurrent = model.type === "video" ? plan.concurrentVideoJobs : plan.concurrentImageJobs;
   const { count: runningJobs } = await supabase.from("generations")
@@ -7151,6 +7167,17 @@ async function enforceBatchGuards(
       .not("status", "in", "(failed,cancelled)");
     if ((dailyVideos || 0) + count > plan.dailyVideoLimit) {
       throw new FlowtubeError(429, `Ce lot depasse le plafond video journalier du plan ${plan.displayName} (${plan.dailyVideoLimit}/jour).`, { code: "DAILY_VIDEO_LIMIT" });
+    }
+  }
+  if (model.type === "image" || model.type === "image_edit") {
+    const { count: dailyImages } = await supabase.from("generations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", String(profile.id))
+      .in("type", ["image", "image_edit"])
+      .gte("created_at", dayStartIso())
+      .not("status", "in", "(failed,cancelled)");
+    if ((dailyImages || 0) + count > plan.dailyImageLimit) {
+      throw new FlowtubeError(429, `Ce lot depasse le plafond image journalier du plan ${plan.displayName} (${plan.dailyImageLimit}/jour).`, { code: "DAILY_IMAGE_LIMIT" });
     }
   }
 }
@@ -8958,7 +8985,7 @@ async function createMoneyFusionCheckout(
       .contains("metadata", { idempotency_key: idempotencyKey })
       .maybeSingle();
     if (existing?.checkout_url) {
-      return json({ url: existing.checkout_url, sessionId: existing.provider_session_id, provider: "moneyfusion", token: existing.provider_payment_token, reused: true });
+      return json({ url: existing.checkout_url, sessionId: existing.provider_session_id, reused: true });
     }
   }
   const phone = moneyFusionPhone(body.customerPhone || body.phone || profile.billing_phone || profileMetadata.phone || "");
@@ -9007,7 +9034,7 @@ async function createMoneyFusionCheckout(
     ? creditOption
       ? Number(interval === "annual" ? creditOption.annual_price_xof : creditOption.monthly_price_xof)
       : planAmountXof(plan, interval === "annual" ? "annual" : "monthly")
-    : moneyFusionAmount(amountUsd);
+    : Math.max(100, Number(pack?.amount_xof || moneyFusionAmount(amountUsd)));
   const amountXof = moneyFusionCheckoutAmountXof(baseAmountXof);
   metadata.base_amount_xof = baseAmountXof;
   metadata.moneyfusion_fee_xof = amountXof - baseAmountXof;
@@ -9062,7 +9089,7 @@ async function createMoneyFusionCheckout(
     provider_payload: session.data,
   });
 
-  return json({ url: session.paymentUrl, sessionId: reference, provider: "moneyfusion", token: providerToken, amountXof, baseAmountXof, moneyFusionFeeXof: amountXof - baseAmountXof });
+  return json({ url: session.paymentUrl, sessionId: reference, status: "pending" });
 }
 
 async function createFapshiCheckout(
@@ -9809,7 +9836,7 @@ async function statsRoute(req: Request) {
 async function pricingRoute() {
   const supabase = adminClient();
   const [plans, catalog] = await Promise.all([publicPricingPlans(supabase), pricingCatalog(supabase)]);
-  const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("price_usd", { ascending: true });
+  const { data: creditPacks } = await supabase.from("credit_packs").select("*").eq("active", true).order("amount_xof", { ascending: true });
   return json({
     plans,
     models: publicPricingModels(catalog),
@@ -9818,7 +9845,13 @@ async function pricingRoute() {
       usdXofRate: DEFAULT_USD_XOF_RATE,
       creditsLabel: "Les credits sont calcules selon la tache.",
     },
-    creditPacks: creditPacks || [],
+    creditPacks: (creditPacks || []).map((pack) => ({
+      id: pack.id,
+      label: pack.label,
+      credits: pack.credits,
+      amountXof: Math.max(0, Number(pack.amount_xof || Math.round(Number(pack.price_usd || 0) * DEFAULT_USD_XOF_RATE))),
+      checkoutEnabled: Boolean(pack.metadata?.checkout !== false),
+    })),
     billing: {
       paymentConfigured: fapshiConfigured() || moneyFusionConfigured() || Boolean(stripeSecret()),
       currency: DEFAULT_BILLING_CURRENCY,
