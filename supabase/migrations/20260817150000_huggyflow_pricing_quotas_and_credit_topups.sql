@@ -8,6 +8,52 @@ alter table public.credit_packs
     check (amount_xof is null or amount_xof >= 100);
 
 update public.pricing_plans
+set active = false
+where id not in ('free', 'basic', 'pro');
+
+update public.pricing_plans
+set display_name = 'Free',
+    monthly_price_xof = 0,
+    annual_price_xof = 0,
+    included_credits = 100,
+    daily_video_limit = 0,
+    concurrent_video_jobs = 0,
+    allowed_media_types = array['image']::text[],
+    watermark_required = true,
+    media_retention_days = 7,
+    priority_queue = false,
+    active = true
+where id = 'free';
+
+update public.pricing_plans
+set display_name = 'Creator',
+    monthly_price_xof = 7900,
+    annual_price_xof = 82950,
+    included_credits = 500,
+    daily_video_limit = 2,
+    concurrent_video_jobs = 1,
+    allowed_media_types = array['image', 'image_edit', 'video']::text[],
+    watermark_required = false,
+    media_retention_days = 30,
+    priority_queue = false,
+    active = true
+where id = 'basic';
+
+update public.pricing_plans
+set display_name = 'Pro',
+    monthly_price_xof = 19900,
+    annual_price_xof = 208950,
+    included_credits = 1500,
+    daily_video_limit = 8,
+    concurrent_video_jobs = 2,
+    allowed_media_types = array['image', 'image_edit', 'video', 'audio']::text[],
+    watermark_required = false,
+    media_retention_days = 90,
+    priority_queue = true,
+    active = true
+where id = 'pro';
+
+update public.pricing_plans
 set daily_image_limit = case id
   when 'free' then 3
   when 'basic' then 10
