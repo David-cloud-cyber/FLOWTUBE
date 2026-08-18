@@ -1338,8 +1338,9 @@ function publicErrorPayload(err: FlowtubeError) {
     "MARGIN_GUARD",
     "RATE_LIMITED",
     "BATCH_LIMIT_REACHED",
+    "MEDIA_CONSENT_REQUIRED",
   ]);
-  for (const key of ["code", "creditsRequired", "creditsAvailable", "requiresConfirmation", "planId", "packId"]) {
+  for (const key of ["code", "creditsRequired", "creditsAvailable", "requiresConfirmation", "requiresConsent", "planId", "packId"]) {
     if (key === "code" && !publicCodes.has(String(err.payload[key] || ""))) continue;
     if (err.payload[key] !== undefined) payload[key] = err.payload[key];
   }
@@ -1775,7 +1776,13 @@ function falModel(endpoint: string, override: ModelOverride = {}): PricingModel 
   };
 }
 
-const modelRegistry: PricingModel[] = FAL_ENDPOINTS.map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
+// The override manifest is also the verified pricing/capability manifest. Keeping
+// its endpoints in the registry activates the audio, avatar, lipsync, upscale,
+// editing and alternate video families that are not part of the short default list.
+const modelRegistry: PricingModel[] = Array.from(new Set([
+  ...FAL_ENDPOINTS,
+  ...Object.keys(FAL_ENDPOINT_OVERRIDES),
+])).map((endpoint) => falModel(endpoint, FAL_ENDPOINT_OVERRIDES[endpoint]));
 
 function openRouterMediaModel(id: string, type: "image" | "video", remote?: OpenRouterRemoteModel): PricingModel {
   const video = type === "video";
@@ -1840,13 +1847,18 @@ const OPENROUTER_MEDIA_REGISTRY: PricingModel[] = [
   ...OPENROUTER_CURATED_VIDEO_IDS.map((id) => openRouterMediaModel(id, "video")),
 ];
 
+function falMediaConfigured() {
+  return Boolean(String(Deno.env.get("FAL_KEY") || "").trim());
+}
+
 function enabledModelRegistry() {
-  if (!OPENROUTER_MEDIA_ENABLED || !openRouterCatalogCache.live) return modelRegistry;
+  const falModels = falMediaConfigured() ? modelRegistry : [];
+  if (!OPENROUTER_MEDIA_ENABLED || !openRouterCatalogCache.live) return falModels;
   const liveIds = new Set([
     ...openRouterCatalogCache.image.map((model) => String(model.id || "")),
     ...openRouterCatalogCache.video.map((model) => String(model.id || "")),
   ]);
-  return [...modelRegistry, ...OPENROUTER_MEDIA_REGISTRY.filter((model) => liveIds.has(model.id))];
+  return [...falModels, ...OPENROUTER_MEDIA_REGISTRY.filter((model) => liveIds.has(model.id))];
 }
 
 const FEATURED_MODEL_IDS: string[] = [];
@@ -1856,9 +1868,10 @@ function isHuggyflowPriorityModel(model: PricingModel) {
 }
 
 function priorityModelCatalog(catalog: PricingModel[]) {
-  return catalog
-    .filter(isHuggyflowPriorityModel)
-    .sort((a, b) => {
+  return [...catalog].sort((a, b) => {
+      const priorityA = isHuggyflowPriorityModel(a) ? 0 : 1;
+      const priorityB = isHuggyflowPriorityModel(b) ? 0 : 1;
+      if (priorityA !== priorityB) return priorityA - priorityB;
       const familyA = String(a.metadata?.huggyflow_family || "");
       const familyB = String(b.metadata?.huggyflow_family || "");
       return familyA.localeCompare(familyB) || String(a.name).localeCompare(String(b.name));
@@ -2305,6 +2318,7 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
   const type = String(row.media_type || row.type || "image");
   const endpoint = row.fal_endpoint ? String(row.fal_endpoint) : undefined;
   const metadata = (row.metadata || {}) as Record<string, unknown>;
+  const provider: PricingModel["provider"] = String(row.provider || metadata.provider || "fal").toLowerCase() === "openrouter" ? "openrouter" : "fal";
   const qualityTier = String(metadata.quality_tier || row.quality_tier || qualityTierForEndpoint(endpoint || String(row.id || "")));
   const marginClass = marginClassForModel(type, qualityTier, endpoint || String(row.id || ""));
   const marginMultiplier = Number(row.margin_multiplier || QUALITY_MARGIN_MULTIPLIERS[marginClass] || MEDIA_MARGIN_MULTIPLIER);
@@ -2313,6 +2327,7 @@ function normalizePricingModel(row: Record<string, unknown>): PricingModel {
     name: String(row.label || row.name || row.id),
     type,
     endpoint,
+    provider,
     pricingUnit: String(row.pricing_unit || "unit") as PricingModel["pricingUnit"],
     costPerUnitUsd: Number(row.cost_per_unit_usd || row.costUsd || 0.04),
     defaultUnits: Number(row.default_units || row.duration || 1),
@@ -2374,7 +2389,7 @@ async function pricingCatalog(supabase: ReturnType<typeof adminClient>) {
     for (const model of dbById.values()) {
       const isOpenRouterModel = model.provider === "openrouter";
       const isLiveOpenRouterModel = liveMediaIds.has(model.id);
-      if (model.endpoint && (!isOpenRouterModel || isLiveOpenRouterModel)) merged.push({
+      if (model.endpoint && (isOpenRouterModel ? isLiveOpenRouterModel : falMediaConfigured())) merged.push({
         ...model,
         metadata: { ...(model.metadata || {}), provider: model.provider || "fal.ai", ...(model.provider === "openrouter" ? { openrouter_only: true } : { fal_only: true }) },
       });
@@ -2389,11 +2404,21 @@ function modelCapabilities(model: PricingModel) {
   return Array.isArray(raw) ? raw.map(String) : capabilitiesForEndpoint(String(model.endpoint || ""));
 }
 
+function normalizeMediaType(type: string, body: Record<string, unknown> = {}) {
+  const normalized = String(type || "").toLowerCase().trim();
+  if (normalized === "upscale") {
+    return body.videoUrl || body.video_url || body.sourceVideoUrl || body.source_video_url
+      ? "video_edit"
+      : "image_edit";
+  }
+  return normalized;
+}
+
 function requestTypeFromBody(body: Record<string, unknown>, prompt: string) {
   const explicitType = String(body.type || "").toLowerCase();
   const raw = String(body.mode || "").toLowerCase();
-  const allowedTypes = ["image", "video", "audio", "document", "lipsync", "image_edit", "video_edit", "voice_clone"];
-  if (allowedTypes.includes(explicitType)) return explicitType;
+  const allowedTypes = ["image", "video", "audio", "document", "lipsync", "image_edit", "video_edit", "upscale", "voice_clone"];
+  if (allowedTypes.includes(explicitType)) return normalizeMediaType(explicitType, body);
   if (raw === "document") return "document";
   const text = stripAccents(prompt.toLowerCase());
   if (/lip[-\s]?sync|synchronise.*l[eè]vres|doublage.*l[eè]vres/.test(text)) return "lipsync";
@@ -2403,7 +2428,7 @@ function requestTypeFromBody(body: Record<string, unknown>, prompt: string) {
   if (/reframe|extend|prolonge|upscale.*video|sous-titre|subtitle|fond.*video|restyle|style.*video|transform.*video|remix.*video|runway/.test(text) && (raw === "video" || Boolean(body.videoUrl || body.video_url))) return "video_edit";
   if (/\b(video|clip|reels?|tiktok|ugc|pub video|spot|storyboard anime|animation)\b/.test(text)) return "video";
   if (/\b(image|photo|visuel|affiche|poster|miniature|thumbnail|packshot)\b/.test(text)) return raw === "video" ? "video" : "image";
-  if (allowedTypes.includes(raw)) return raw;
+  if (allowedTypes.includes(raw)) return normalizeMediaType(raw, body);
   return "image";
 }
 
@@ -2564,10 +2589,14 @@ function publicPricingModels(catalog: PricingModel[]) {
     .map(({ model }) => {
     const quote = quoteFor(model);
     const modelKey = rememberPublicModel(model.id);
+    const capabilities = modelCapabilities(model);
+    const kind = model.type === "image_edit" ? "edition d'image" : model.type === "video_edit" ? "edition video" : model.type === "lipsync" ? "synchronisation" : model.type === "voice_clone" ? "voix personnalisee" : model.type === "audio" ? "audio" : model.type;
+    const creditsLabel = `${quote.credits} credits par ${model.pricingUnit === "second" ? "seconde" : model.pricingUnit === "thousand_chars" ? "1 000 caracteres" : "creation"}`;
     return {
       id: modelKey,
       modelKey,
       name: safeModelName(model.id, model.name),
+      description: `Configuration ${kind} adaptee a ta demande.`,
       type: model.type,
       pricingUnit: model.pricingUnit,
       defaultUnits: model.defaultUnits,
@@ -2575,8 +2604,10 @@ function publicPricingModels(catalog: PricingModel[]) {
       maximumUnits: model.maximumUnits || null,
       creditsPerDefaultUnit: quote.credits,
       qualityTier: String(model.metadata?.quality_tier || "standard"),
-      capabilities: modelCapabilities(model),
-      costLabel: `${quote.credits} credits par ${model.pricingUnit === "second" ? "seconde" : "creation"}`,
+      capabilities,
+      available: true,
+      creditsLabel,
+      costLabel: creditsLabel,
     };
   });
   // Agent LLMs remain available through `agentModels` for chat orchestration,
@@ -3152,7 +3183,9 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
     dur: generation.duration_seconds ? `0:${String(generation.duration_seconds).padStart(2, "0")}` : undefined,
     resultUrl: generation.result_url || "",
     credits: generation.credits || 0,
-    errorMessage: generation.error_message || "",
+    errorMessage: generation.status === "failed"
+      ? publicErrorMessage(String(generation.error_message || ""), "Le resultat n'a pas pu etre finalise.")
+      : "",
     batchId: batch?.id ? String(batch.id) : null,
     batchIndex: batch?.index ? Number(batch.index) : null,
     batchTotal: batch?.total ? Number(batch.total) : null,
@@ -5405,17 +5438,21 @@ const AGENT_LOOP_MAX_ITERATIONS = 3;
 const AGENT_TOOLS = [
   {
     name: "generate_media",
-    description: "Lance la creation d'un media (image ou video) avec un prompt visuel dense et complet. Si le cout est eleve, une confirmation sera demandee a l'utilisateur — dans ce cas relaie le message de confirmation et arrete-toi.",
+    description: "Lance une creation media confirmee (image, video, audio, edition, upscale ou synchronisation). Si le cout ou le risque est eleve, une confirmation sera demandee a l'utilisateur — dans ce cas relaie le message et arrete-toi.",
     input_schema: {
       type: "object",
       properties: {
         prompt: { type: "string", description: "Prompt visuel dense: sujet, action, cadrage, lumiere, style" },
-        type: { type: "string", enum: ["image", "video", "image_edit", "audio"] },
+        type: { type: "string", enum: ["image", "video", "image_edit", "video_edit", "audio", "lipsync", "upscale", "voice_clone"] },
         aspect_ratio: { type: "string", description: "Ex: 9:16, 16:9, 1:1, 4:5" },
         model_id: { type: "string", description: "Optionnel, laisser vide pour l'orchestrateur auto" },
         reference_element: { type: "string", description: "Nom d'un element epingle a utiliser comme reference visuelle (coherence personnage/produit)" },
+        reference_urls: { type: "array", items: { type: "string" }, description: "URLs de references visuelles publiques" },
+        video_url: { type: "string", description: "URL publique de la video source pour edition, remix ou lipsync" },
+        audio_url: { type: "string", description: "URL publique de l'audio source pour voix, doublage ou lipsync" },
         first_frame_url: { type: "string", description: "URL publique de l'image de depart pour un raccord video" },
         last_frame_url: { type: "string", description: "URL publique de l'image finale visee pour un raccord video" },
+        consent_confirmed: { type: "boolean", description: "Consentement explicite pour lipsync ou clonage vocal" },
       },
       required: ["prompt", "type"],
     },
@@ -5469,7 +5506,7 @@ const AGENT_TOOLS = [
       type: "object",
       properties: {
         prompt: { type: "string" },
-        type: { type: "string", enum: ["image", "video", "image_edit", "audio"] },
+        type: { type: "string", enum: ["image", "video", "image_edit", "video_edit", "audio", "lipsync", "upscale", "voice_clone"] },
         count: { type: "integer", minimum: 1, maximum: 50 },
       },
       required: ["type"],
@@ -5570,8 +5607,12 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         modelId: String(input.model_id || "auto"),
         aspectRatio: aspectRatioForRequest({ ...ctx.body, aspectRatio: input.aspect_ratio || ctx.body.aspectRatio }, String(input.prompt || ""), String(input.type || "image")),
         imageUrl: referenceUrl,
+        referenceUrls: Array.isArray(input.reference_urls) ? input.reference_urls : [],
+        videoUrl: input.video_url || input.videoUrl || ctx.body.videoUrl || ctx.body.video_url,
+        audioUrl: input.audio_url || input.audioUrl || ctx.body.audioUrl || ctx.body.audio_url,
         firstFrameUrl: input.first_frame_url || input.firstFrameUrl || ctx.body.firstFrameUrl || ctx.body.first_frame_url,
         lastFrameUrl: input.last_frame_url || input.lastFrameUrl || ctx.body.lastFrameUrl || ctx.body.last_frame_url,
+        consentConfirmed: input.consent_confirmed === true,
         confirmed: false,
       });
       ctx.send("generation", result.generation);
@@ -5630,7 +5671,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
       return "Information memorisee durablement.";
     }
     if (name === "estimate_cost") {
-      const type = String(input.type || "image");
+      const type = normalizeMediaType(String(input.type || "image"), input);
       const prompt = String(input.prompt || "");
       const count = Math.max(1, Math.min(50, Number(input.count || 1)));
       const catalog = await pricingCatalog(supabase);
@@ -5876,10 +5917,10 @@ function ensureProviderReady(model: PricingModel) {
     return;
   }
   if (!Deno.env.get("FAL_KEY")) {
-    throw new FlowtubeError(503, "fal.ai n'est pas encore configure. Ajoute FAL_KEY dans Supabase avant de lancer des generations.", { code: "PROVIDER_NOT_CONFIGURED" });
+    throw new FlowtubeError(503, "Le moteur media selectionne est momentanement indisponible.", { code: "PROVIDER_NOT_CONFIGURED" });
   }
   if (!model.endpoint) {
-    throw new FlowtubeError(503, `Endpoint fal.ai manquant pour ${model.name}.`, { code: "PROVIDER_ENDPOINT_MISSING", modelId: model.id });
+    throw new FlowtubeError(503, "Le moteur media selectionne est momentanement indisponible.", { code: "PROVIDER_ENDPOINT_MISSING", modelId: model.id });
   }
 }
 
@@ -6108,7 +6149,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
   if (!key || !model.endpoint) {
     await supabase.from("generations").update({
       status: "failed",
-      error_message: !key ? "fal.ai is not configured" : "fal.ai endpoint is missing",
+      error_message: "Le moteur media selectionne est momentanement indisponible.",
       provider_payload: { provider_configured: false },
       completed_at: new Date().toISOString(),
     }).eq("id", generation.id);
@@ -6135,9 +6176,9 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
   } catch (err) {
     const { data: failed } = await supabase.from("generations").update({
       status: "failed",
-      error_message: err instanceof Error ? err.message : "fal.ai submission failed",
+      error_message: err instanceof Error ? publicErrorMessage(err.message, "Le moteur media selectionne est momentanement indisponible.") : "Le moteur media selectionne est momentanement indisponible.",
       provider_payload: {
-        fal_error: err instanceof Error ? err.message : "fal.ai submission failed",
+        provider_error: safeLogMessage(err),
       },
       completed_at: new Date().toISOString(),
     }).eq("id", generation.id).select("*").single();
@@ -6823,6 +6864,35 @@ async function enforceMessageLimits(supabase: ReturnType<typeof adminClient>, us
   }
 }
 
+function mediaFamily(type: string) {
+  const normalized = String(type || "").toLowerCase();
+  if (["video", "video_edit", "lipsync"].includes(normalized)) return "video";
+  if (["audio", "voice_clone"].includes(normalized)) return "audio";
+  if (["image", "image_edit"].includes(normalized)) return "image";
+  return normalized;
+}
+
+function planAllowsMediaType(plan: PlanLimits, type: string) {
+  const normalized = String(type || "").toLowerCase();
+  const allowed = new Set(plan.allowedMediaTypes.map((value) => String(value).toLowerCase()));
+  if (allowed.has(normalized)) return true;
+  if (normalized === "video_edit" || normalized === "lipsync") return allowed.has("video");
+  if (normalized === "voice_clone") return allowed.has("audio");
+  return false;
+}
+
+function dailyQuotaType(type: string) {
+  const family = mediaFamily(type);
+  return family === "image" || family === "video" ? family : null;
+}
+
+function concurrentLimitForType(plan: PlanLimits, type: string) {
+  const family = mediaFamily(type);
+  if (family === "video") return plan.concurrentVideoJobs;
+  if (family === "audio") return Math.max(1, Number(plan.metadata.concurrent_audio_jobs || 1));
+  return plan.concurrentImageJobs;
+}
+
 async function enforceGenerationGuards(
   supabase: ReturnType<typeof adminClient>,
   profile: Record<string, unknown>,
@@ -6831,7 +6901,7 @@ async function enforceGenerationGuards(
   quote: PricingQuote,
 ) {
   const userId = String(profile.id);
-  if (!plan.allowedMediaTypes.includes(model.type)) {
+  if (!planAllowsMediaType(plan, model.type)) {
     throw new FlowtubeError(403, `Le plan ${plan.displayName} ne permet pas encore ce type de generation.`, { code: "MEDIA_TYPE_NOT_ALLOWED" });
   }
   if (Number(profile.credits || 0) < quote.credits) {
@@ -6852,11 +6922,11 @@ async function enforceGenerationGuards(
     });
   }
 
-  if (model.type === "video") {
+  if (dailyQuotaType(model.type) === "video") {
     const { count: dailyVideos } = await supabase.from("generations")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .eq("type", "video")
+      .in("type", ["video", "video_edit", "lipsync"])
       .gte("created_at", dayStartIso())
       .not("status", "in", "(failed,cancelled)");
     if ((dailyVideos || 0) >= plan.dailyVideoLimit) {
@@ -6864,7 +6934,7 @@ async function enforceGenerationGuards(
     }
   }
 
-  if (model.type === "image" || model.type === "image_edit") {
+  if (dailyQuotaType(model.type) === "image") {
     const { count: dailyImages } = await supabase.from("generations")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
@@ -6876,12 +6946,12 @@ async function enforceGenerationGuards(
     }
   }
 
-  const runningType = model.type === "video" ? "video" : "image";
-  const maxConcurrent = model.type === "video" ? plan.concurrentVideoJobs : plan.concurrentImageJobs;
+  const runningType = mediaFamily(model.type);
+  const maxConcurrent = concurrentLimitForType(plan, model.type);
   const { count: runningJobs } = await supabase.from("generations")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("type", runningType)
+    .in("type", runningType === "video" ? ["video", "video_edit", "lipsync"] : runningType === "image" ? ["image", "image_edit"] : ["audio", "voice_clone"])
     .in("status", ["pending", "running"]);
   if ((runningJobs || 0) >= maxConcurrent) {
     throw new FlowtubeError(429, `Trop de generations ${runningType} en cours pour le plan ${plan.displayName}.`, { code: "CONCURRENT_JOB_LIMIT" });
@@ -6910,6 +6980,9 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
     .eq("user_id", userId);
   ({ project, conversation } = await renameUntitledProject(supabase, userId, project, conversation, prompt, previousMessages || 0));
   const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(project.id));
+  if (["lipsync", "voice_clone"].includes(model.type) && body.consentConfirmed !== true) {
+    throw new FlowtubeError(409, "Une autorisation explicite est requise pour cette operation media.", { code: "MEDIA_CONSENT_REQUIRED", requiresConsent: true });
+  }
   await enforceGenerationGuards(supabase, profile, plan, model, quote);
   ensureProviderReady(model);
 
@@ -6929,6 +7002,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       referenceUrls: body.referenceUrls || body.reference_urls,
       firstFrameUrl: body.firstFrameUrl || body.first_frame_url,
       lastFrameUrl: body.lastFrameUrl || body.last_frame_url,
+      consentConfirmed: body.consentConfirmed === true,
     };
     await savePendingGeneration(supabase, profile, {
       body: pendingBody,
@@ -6994,6 +7068,7 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
         referenceUrls: body.referenceUrls || body.reference_urls || [],
         firstFrameUrl: body.firstFrameUrl || body.first_frame_url || null,
         lastFrameUrl: body.lastFrameUrl || body.last_frame_url || null,
+        consent_confirmed: body.consentConfirmed === true,
         watermark_required: plan.watermarkRequired,
         media_retention_days: plan.mediaRetentionDays,
       },
@@ -7065,8 +7140,7 @@ function batchInfoOf(generation: Record<string, unknown>) {
 }
 
 function concurrencyForType(plan: PlanLimits, type: string) {
-  const isVideo = type === "video" || type === "video_edit" || type === "lipsync";
-  return Math.max(1, isVideo ? plan.concurrentVideoJobs : plan.concurrentImageJobs);
+  return Math.max(1, concurrentLimitForType(plan, type));
 }
 
 function batchConfirmationMessage(model: PricingModel, quote: PricingQuote, count: number, type: string) {
@@ -7143,7 +7217,7 @@ async function enforceBatchGuards(
   quote: PricingQuote,
   count: number,
 ) {
-  if (!plan.allowedMediaTypes.includes(model.type)) {
+  if (!planAllowsMediaType(plan, model.type)) {
     throw new FlowtubeError(403, `Le plan ${plan.displayName} ne permet pas encore ce type de generation.`, { code: "MEDIA_TYPE_NOT_ALLOWED" });
   }
   const planLimit = batchLimitForPlan(plan);
@@ -7158,18 +7232,18 @@ async function enforceBatchGuards(
       availableCredits: Number(profile.credits || 0),
     });
   }
-  if (model.type === "video") {
+  if (dailyQuotaType(model.type) === "video") {
     const { count: dailyVideos } = await supabase.from("generations")
       .select("id", { count: "exact", head: true })
       .eq("user_id", String(profile.id))
-      .eq("type", "video")
+      .in("type", ["video", "video_edit", "lipsync"])
       .gte("created_at", dayStartIso())
       .not("status", "in", "(failed,cancelled)");
     if ((dailyVideos || 0) + count > plan.dailyVideoLimit) {
       throw new FlowtubeError(429, `Ce lot depasse le plafond video journalier du plan ${plan.displayName} (${plan.dailyVideoLimit}/jour).`, { code: "DAILY_VIDEO_LIMIT" });
     }
   }
-  if (model.type === "image" || model.type === "image_edit") {
+  if (dailyQuotaType(model.type) === "image") {
     const { count: dailyImages } = await supabase.from("generations")
       .select("id", { count: "exact", head: true })
       .eq("user_id", String(profile.id))
@@ -7198,12 +7272,12 @@ async function launchBatchWave(supabase: ReturnType<typeof adminClient>, userId:
   const plan = await resolvePlan(supabase, String(profile.plan || "free"));
   const catalog = await pricingCatalog(supabase);
   const type = String(queued[0].type || "image");
-  const runningType = type === "video" ? "video" : "image";
+  const runningType = mediaFamily(type);
   const maxConcurrent = concurrencyForType(plan, type);
   const { count: runningJobs } = await supabase.from("generations")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("type", runningType)
+    .in("type", runningType === "video" ? ["video", "video_edit", "lipsync"] : runningType === "image" ? ["image", "image_edit"] : ["audio", "voice_clone"])
     .eq("status", "running");
   const freeSlots = Math.max(0, maxConcurrent - (runningJobs || 0));
   if (!freeSlots) return 0;
@@ -7256,6 +7330,9 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     .eq("user_id", userId);
   ({ project, conversation } = await renameUntitledProject(supabase, userId, project, conversation, prompt, previousMessages || 0));
   const moderation = await enforcePromptPolicy(supabase, profile, prompt, String(project.id));
+  if (["lipsync", "voice_clone"].includes(model.type) && body.consentConfirmed !== true) {
+    throw new FlowtubeError(409, "Une autorisation explicite est requise pour cette operation media.", { code: "MEDIA_CONSENT_REQUIRED", requiresConsent: true });
+  }
   await enforceBatchGuards(supabase, profile, plan, model, quote, count);
   ensureProviderReady(model);
 
@@ -7321,6 +7398,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
       referenceUrls: body.referenceUrls || body.reference_urls || [],
       firstFrameUrl: body.firstFrameUrl || body.first_frame_url || null,
       lastFrameUrl: body.lastFrameUrl || body.last_frame_url || null,
+      consent_confirmed: body.consentConfirmed === true,
       watermark_required: plan.watermarkRequired,
       media_retention_days: plan.mediaRetentionDays,
     },
@@ -8227,7 +8305,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
 
   const { data } = await supabase.from("generations").update({
     status: "failed",
-    error_message: Deno.env.get("FAL_KEY") ? "fal.ai job id missing" : "fal.ai is not configured",
+    error_message: "Le resultat n'a pas pu etre finalise.",
     completed_at: new Date().toISOString(),
   }).eq("id", generation.id).select("*").single();
   await refundFailedGeneration(supabase, data);
@@ -8865,13 +8943,14 @@ async function deleteAccountRoute(req: Request) {
 
 async function healthRoute() {
   await refreshOpenRouterCatalog();
+  const openRouterMediaReady = openRouterCatalogCache.image.length + openRouterCatalogCache.video.length > 0;
   return json({
     ok: true,
     service: "huggyflow",
     now: new Date().toISOString(),
     services: {
       models: openRouterCatalogCache.live ? "ready" : "degraded",
-      media: openRouterCatalogCache.image.length + openRouterCatalogCache.video.length > 0 ? "ready" : "fallback",
+      media: openRouterMediaReady || falMediaConfigured() ? "ready" : "degraded",
     },
     });
 }

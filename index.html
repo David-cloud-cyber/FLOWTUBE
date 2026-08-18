@@ -6842,9 +6842,9 @@ class Component extends DCLogic {
     const id = String(item.id || item.modelKey || '').toLowerCase();
     const capabilities = Array.isArray(item.capabilities) ? item.capabilities : [];
     if(id === 'auto' || item.current) return '#hf-model-auto';
-    if(capabilities.includes('video')) return '#hf-model-video';
-    if(capabilities.includes('image')) return '#hf-model-image';
-    if(capabilities.includes('audio')) return '#hf-model-audio';
+    if(capabilities.includes('video') || capabilities.includes('video-upscale')) return '#hf-model-video';
+    if(capabilities.includes('image') || capabilities.includes('image-upscale')) return '#hf-model-image';
+    if(capabilities.includes('audio') || capabilities.includes('voice-clone')) return '#hf-model-audio';
     if(capabilities.includes('vision')) return '#hf-model-vision';
     if(capabilities.includes('reasoning') || capabilities.includes('tools')) return '#hf-model-reasoning';
     if(id.includes('flash') || item.group === 'Rapide') return '#hf-model-fast';
@@ -6859,12 +6859,12 @@ class Component extends DCLogic {
   }
   modelGroupsHasResults(tab, search){
     const query = String(search || '').trim().toLowerCase();
-    const mediaTypes = ['image','image_edit','video','video_edit','audio','voice','music','lipsync'];
+    const mediaTypes = ['image','image_edit','video','video_edit','audio','voice','music','lipsync','voice_clone','upscale'];
     return this.modelPickerModels().some(model=>{
       const caps = Array.isArray(model.capabilities) ? model.capabilities : [];
-      const media = mediaTypes.includes(String(model.type || '').toLowerCase()) || caps.some(cap=>['image','video','audio','lipsync'].includes(String(cap).toLowerCase()));
+      const media = mediaTypes.includes(String(model.type || '').toLowerCase()) || caps.some(cap=>['image','video','audio','lipsync','voice-clone','image-upscale','video-upscale'].includes(String(cap).toLowerCase()));
       if(tab === 'media' ? !(model.id === 'auto' || media) : !(model.id === 'auto' || !media)) return false;
-      return !query || [model.name, model.desc, model.id, model.group].join(' ').toLowerCase().includes(query);
+      return !query || [model.name, model.description, model.desc, model.id, model.group].join(' ').toLowerCase().includes(query);
     });
   }
   positionModelMenu(){
@@ -7930,13 +7930,14 @@ class Component extends DCLogic {
        modelGroups: (()=>{
         const query = String(st.modelMenuSearch || '').trim().toLowerCase();
         const tab = st.modelCatalogTab === 'media' ? 'media' : 'agent';
-        const isMedia = m => ['image','image_edit','video','video_edit','audio','voice','music','lipsync'].includes(String(m.type || '').toLowerCase()) || (Array.isArray(m.capabilities) && m.capabilities.some(cap=>['image','video','audio','lipsync'].includes(String(cap).toLowerCase())));
+        const isMedia = m => ['image','image_edit','video','video_edit','audio','voice','music','lipsync','voice_clone','upscale'].includes(String(m.type || '').toLowerCase()) || (Array.isArray(m.capabilities) && m.capabilities.some(cap=>['image','video','audio','lipsync','voice-clone','image-upscale','video-upscale'].includes(String(cap).toLowerCase())));
         const groupFor = m => {
           const caps = Array.isArray(m.capabilities) ? m.capabilities : [];
           const type = String(m.type || '').toLowerCase();
           if(tab === 'media') {
             if(type.includes('video') || caps.includes('video')) return type.includes('edit') ? 'Edition' : 'Vidéo';
-            if(type.includes('audio') || type.includes('voice') || type.includes('music') || caps.includes('audio')) return 'Audio';
+            if(type.includes('audio') || type.includes('voice') || type.includes('music') || type === 'voice_clone' || caps.includes('audio') || caps.includes('voice-clone')) return 'Audio';
+            if(type === 'upscale' || caps.includes('image-upscale') || caps.includes('video-upscale')) return 'Édition';
             return type.includes('edit') || caps.includes('image_edit') ? 'Édition' : 'Image';
           }
           if(caps.includes('documents') || caps.includes('files')) return 'Documents';
@@ -7949,7 +7950,7 @@ class Component extends DCLogic {
         const grouped = {};
         const groupOrder = [];
         const curated = [];
-        available.filter(m=>!query || [m.name,groupFor(m),m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
+        available.filter(m=>!query || [m.name,m.description,groupFor(m),m.desc,m.id].join(' ').toLowerCase().includes(query)).forEach(m=>{
           if(m.id === 'auto' || m.free || m.current){ curated.push(m); return; }
           const key = groupFor(m);
           if(!grouped[key]) groupOrder.push(key);
@@ -7961,10 +7962,10 @@ class Component extends DCLogic {
           headStyle:'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items:curated.map(m=>({
             activeClass:m.id === st.modelId ? 'is-active' : '',
-            name:m.name, dot:m.dot, iconRef:this.modelIconRef(m), capabilityIconRef:'#hf-model-capability', desc:m.desc,
+            name:m.name, dot:m.dot, iconRef:this.modelIconRef(m), capabilityIconRef:'#hf-model-capability', desc:m.desc || m.description || 'Configuration adaptée à ta demande.',
             creditsLabel:m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             costLabel:m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s+cr$/i,'').trim(),
-            capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? 'Outils' : '',m.capabilities && m.capabilities.includes('vision') ? 'Vision' : '',m.capabilities && m.capabilities.includes('image') ? 'Image' : '',m.capabilities && m.capabilities.includes('video') ? 'Vidéo' : '',m.capabilities && m.capabilities.includes('audio') ? 'Audio' : '',m.capabilities && m.capabilities.includes('documents') ? 'Documents' : '',m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : '',m.capabilities && m.capabilities.includes('research') ? 'Recherche' : ''].filter(Boolean).join(' · '),
+            capabilityLabel:[m.capabilities && m.capabilities.includes('tools') ? 'Outils' : '',m.capabilities && m.capabilities.includes('vision') ? 'Vision' : '',m.capabilities && m.capabilities.includes('image') ? 'Image' : '',m.capabilities && m.capabilities.includes('video') ? 'Vidéo' : '',m.capabilities && m.capabilities.includes('audio') ? 'Audio' : '',m.capabilities && m.capabilities.includes('voice-clone') ? 'Voix personnalisée' : '',m.capabilities && m.capabilities.includes('lipsync') ? 'Synchronisation' : '',m.capabilities && (m.capabilities.includes('image-upscale') || m.capabilities.includes('video-upscale')) ? 'Upscale' : '',m.capabilities && m.capabilities.includes('documents') ? 'Documents' : '',m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : '',m.capabilities && m.capabilities.includes('research') ? 'Recherche' : ''].filter(Boolean).join(' · '),
             check:m.id === st.modelId ? '✓' : '',
             rowStyle:'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
             onClick:()=>this.setState({ modelId:m.id, modelMenu:false, modelMenuSearch:'' })
@@ -7975,10 +7976,10 @@ class Component extends DCLogic {
           headStyle: 'padding:6px 10px 3px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:' + T.text4 + ';font-weight:600',
           items: grouped[g].map(m=>({
             activeClass: m.id === st.modelId ? 'is-active' : '',
-            name: m.name, dot: m.dot, iconRef:this.modelIconRef(m), capabilityIconRef:'#hf-model-capability', desc: m.desc,
+            name: m.name, dot: m.dot, iconRef:this.modelIconRef(m), capabilityIconRef:'#hf-model-capability', desc: m.desc || m.description || 'Configuration adaptée à ta demande.',
             creditsLabel: m.free ? 'Gratuit' : (m.creditsLabel || 'Auto'),
             costLabel: m.free || m.current ? '0' : String(m.creditsLabel || 'Auto').replace(/\s+cr$/i,'').trim(),
-            capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? 'Outils' : '', m.capabilities && m.capabilities.includes('vision') ? 'Vision' : '', m.capabilities && m.capabilities.includes('image') ? 'Image' : '', m.capabilities && m.capabilities.includes('video') ? 'Vidéo' : '', m.capabilities && m.capabilities.includes('audio') ? 'Audio' : '', m.capabilities && m.capabilities.includes('documents') ? 'Documents' : '', m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : '', m.capabilities && m.capabilities.includes('research') ? 'Recherche' : ''].filter(Boolean).join(' · '),
+            capabilityLabel: [m.capabilities && m.capabilities.includes('tools') ? 'Outils' : '', m.capabilities && m.capabilities.includes('vision') ? 'Vision' : '', m.capabilities && m.capabilities.includes('image') ? 'Image' : '', m.capabilities && m.capabilities.includes('video') ? 'Vidéo' : '', m.capabilities && m.capabilities.includes('audio') ? 'Audio' : '', m.capabilities && m.capabilities.includes('voice-clone') ? 'Voix personnalisée' : '', m.capabilities && m.capabilities.includes('lipsync') ? 'Synchronisation' : '', m.capabilities && (m.capabilities.includes('image-upscale') || m.capabilities.includes('video-upscale')) ? 'Upscale' : '', m.capabilities && m.capabilities.includes('documents') ? 'Documents' : '', m.capabilities && m.capabilities.includes('reasoning') ? 'Raisonnement' : '', m.capabilities && m.capabilities.includes('research') ? 'Recherche' : ''].filter(Boolean).join(' · '),
             check: m.id === st.modelId ? '✓' : '',
             rowStyle: 'display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px ' + (m.id===st.modelId ? 'dashed rgba(' + T.lineRGB + ',.34)' : 'solid transparent') + ';background:' + (m.id===st.modelId ? 'rgba(0,0,0,.28)' : 'transparent'),
             onClick: ()=> this.setState({ modelId: m.id, modelMenu:false, modelMenuSearch:'' })

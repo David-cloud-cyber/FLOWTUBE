@@ -1,11 +1,39 @@
 -- HuggyFlow pricing truth: monthly quotas, XOF top-ups and launch options.
 alter table public.pricing_plans
+  add column if not exists monthly_price_xof bigint not null default 0,
+  add column if not exists annual_price_xof bigint not null default 0,
+  add column if not exists daily_image_limit integer not null default 0
+    check (daily_image_limit >= 0);
+
+create table if not exists public.pricing_plan_options (
+  id text primary key,
+  plan_id text not null references public.pricing_plans(id) on delete cascade,
+  credits integer not null check (credits > 0),
+  monthly_price_xof bigint not null check (monthly_price_xof >= 0),
+  annual_price_xof bigint not null check (annual_price_xof >= 0),
+  sort_order integer not null default 0,
+  active boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (plan_id, credits)
+);
+
+alter table public.credit_packs
+  add column if not exists amount_xof bigint
+    check (amount_xof is null or amount_xof >= 100);
+
+/* The remaining statements below are intentionally idempotent. */
+
+/*
+alter table public.pricing_plans
   add column if not exists daily_image_limit integer not null default 0
     check (daily_image_limit >= 0);
 
 alter table public.credit_packs
   add column if not exists amount_xof bigint
     check (amount_xof is null or amount_xof >= 100);
+*/
 
 update public.pricing_plans
 set active = false
