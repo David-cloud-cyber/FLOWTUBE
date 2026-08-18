@@ -61,6 +61,7 @@ jobs:
                       "Authorization": f"Bearer {token}",
                       "Content-Type": "application/json",
                       "Accept": "application/json",
+                      "User-Agent": "HuggyFlow-Supabase-Deploy/1.0 (+https://github.com/David-cloud-cyber/FLOWTUBE)",
                   },
                   method="POST",
               )
