@@ -10,7 +10,11 @@ export default defineConfig({
   },
   plugins: [react({ jsxRuntime: 'classic' })],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      'react/jsx-runtime': path.resolve(__dirname, './src/react-jsx-runtime-shim.ts'),
+      'react/jsx-dev-runtime': path.resolve(__dirname, './src/react-jsx-runtime-shim.ts'),
+    },
   },
   build: {
     lib: {
@@ -22,7 +26,23 @@ export default defineConfig({
     outDir: 'dist-components',
     // Agent UI components mount into their own React roots, isolated from the
     // legacy dc-runtime shell.
-    rollupOptions: { output: { inlineDynamicImports: true } },
+    // React is loaded once by support.js. Keeping it external prevents a
+    // React element from crossing into the shell's renderer from another copy.
+    rollupOptions: {
+      external: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+      ],
+      output: {
+        inlineDynamicImports: true,
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+          'react-dom/client': 'ReactDOM',
+        },
+      },
+    },
     minify: 'esbuild',
     sourcemap: false,
   },

@@ -19,6 +19,35 @@
   var h = ((...args) => getReact().createElement(
     ...args
   ));
+  function isReactElementLike(value) {
+    return !!value && typeof value === "object" &&
+      Object.prototype.hasOwnProperty.call(value, "$$typeof") &&
+      Object.prototype.hasOwnProperty.call(value, "type") &&
+      Object.prototype.hasOwnProperty.call(value, "props");
+  }
+  var warnedRenderables = /* @__PURE__ */ new Set();
+  function warnInvalidRenderable(ctx, expression, value) {
+    const name = ctx?.__name || "template";
+    const kind = isReactElementLike(value) ? "foreign React element" : typeof value;
+    const key = name + "\0" + expression + "\0" + kind;
+    if (warnedRenderables.has(key)) return;
+    warnedRenderables.add(key);
+    const local = typeof location !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+    if (local) console.warn("[dc-runtime] ignored invalid child in <" + name + "> for {{ " + expression + " }} (" + kind + ")");
+  }
+  function normalizeRenderable(value, ctx, expression) {
+    if (Array.isArray(value)) {
+      return value.map((item) => normalizeRenderable(item, ctx, expression)).filter((item) => item !== null);
+    }
+    if (getReact().isValidElement(value)) return value;
+    if (value === null || value === void 0 || typeof value === "boolean") return null;
+    if (typeof value === "string" || typeof value === "number") return value;
+    if (isReactElementLike(value) || typeof value === "object" || typeof value === "function" || typeof value === "symbol") {
+      warnInvalidRenderable(ctx, expression, value);
+      return null;
+    }
+    return String(value);
+  }
 
   // src/parse.ts
   function parseDcDocument(doc) {
@@ -112,8 +141,11 @@
       padding:0 3px}
     .sc-host.sc-has-error{position:relative}
     .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
-      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
-      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+      padding:10px 12px;background:#2a1719;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border:1px solid rgba(255,255,255,.14);border-radius:8px;white-space:pre-wrap;pointer-events:auto}
+    .sc-logic-error button{margin-top:8px;padding:5px 9px;border:1px solid rgba(255,255,255,.22);
+      border-radius:999px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font:inherit}
+    .sc-logic-error button:hover{background:rgba(255,255,255,.16)}
     /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts \u2014 keep both
        in sync until dc-runtime regains a build step. */
     @media print {
@@ -505,11 +537,12 @@
             p.trim()
           );
         }
-        if (getReact().isValidElement(v) || Array.isArray(v)) {
-          return h(getReact().Fragment, { key: i }, v);
+        const normalized = normalizeRenderable(v, ctx, p.trim());
+        if (normalized === null) return null;
+        if (getReact().isValidElement(normalized) || Array.isArray(normalized)) {
+          return h(getReact().Fragment, { key: i }, normalized);
         }
-        if (v === null || typeof v === "boolean") return null;
-        return h("span", { key: i, className: "sc-interp" }, String(v));
+        return h("span", { key: i, className: "sc-interp" }, String(normalized));
       })
     );
   }
@@ -779,6 +812,14 @@
       ) : null
     );
   }
+  function renderRecoveryNotice(onRetry) {
+    return h(
+      "div",
+      { className: "sc-logic-error", "data-omelette-chrome": "", role: "alert" },
+      h("div", null, "Cette section n'a pas pu etre affichee."),
+      h("button", { type: "button", onClick: onRetry }, "Reessayer")
+    );
+  }
   function hintToMin(hint) {
     if (!hint) return void 0;
     const [w, hgt] = hint.split(",");
@@ -956,15 +997,10 @@
           return h(
             "div",
             { ...hostBase, className: cls + " sc-has-error" },
-            h(
-              "div",
-              { className: "sc-logic-error", "data-omelette-chrome": "" },
-              this.__name + ": " + this.state.__err
-            ),
+            renderRecoveryNotice(() => this.setState({ __err: null })),
             h(Placeholder, {
               name: this.__name,
-              hintSize: this.props.__hintSize,
-              error: this.state.__err
+              hintSize: this.props.__hintSize
             })
           );
         }
@@ -991,11 +1027,7 @@
         return h(
           "div",
           { ...hostBase, className: cls + (renderErr ? " sc-has-error" : "") },
-          renderErr && h(
-            "div",
-            { className: "sc-logic-error", "data-omelette-chrome": "" },
-            renderErr
-          ),
+          renderErr && renderRecoveryNotice(() => this.setState({ __err: null })),
           h(
             AncestorContext.Provider,
             { value: [...chain, this.__name] },
@@ -1616,10 +1648,10 @@
   function loadReactUmd() {
     const w = window;
     if (w.React && w.ReactDOM) return Promise.resolve();
-    return Promise.all([
-      loadScript(REACT_URL, REACT_SRI),
-      loadScript(REACT_DOM_URL, REACT_DOM_SRI)
-    ]).then(() => void 0);
+    const scripts = [];
+    if (!w.React) scripts.push(loadScript(REACT_URL, REACT_SRI));
+    if (!w.ReactDOM) scripts.push(loadScript(REACT_DOM_URL, REACT_DOM_SRI));
+    return Promise.all(scripts).then(() => void 0);
   }
   function init() {
     const runtime = createRuntime(document);

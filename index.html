@@ -28,8 +28,13 @@
 <script>
 (() => {
   let requested = false;
+  let retryTimer = 0;
   const ensureComponents = () => {
     if (requested || window.HFComponents) return;
+    if (!window.React || !window.ReactDOM) {
+      if (!retryTimer) retryTimer = window.setTimeout(() => { retryTimer = 0; ensureComponents(); }, 250);
+      return;
+    }
     requested = true;
     const script = document.createElement('script');
     script.src = '/dist-components/hf-components.iife.js?boot=' + Date.now();
@@ -819,7 +824,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
             <div style="position:relative;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:12px 12px 8px;box-shadow:0 14px 34px -28px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
               <textarea data-hf-chat-input="true" value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="{{ placeholder }}" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:15.5px;line-height:1.55;font-family:inherit;padding:2px 4px;height:44px;min-height:44px;max-height:180px;overflow-y:hidden;resize:none;transition:height .12s ease"></textarea>
               <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
-                {{ attachmentsReactElement }}
+                <div data-hf-attachments-slot="true" aria-live="polite"></div>
               </sc-if>
               <div style="display:flex;align-items:center;gap:7px;margin-top:6px">
                 <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyle }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
@@ -1050,7 +1055,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
           <div style="background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:20px;padding:12px 12px 10px;box-shadow:0 18px 44px -30px rgba(12,11,9,.4)">
             <textarea value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" rows="1" placeholder="Continuer la conversation…" style="width:100%;display:block;background:transparent;border:none;color:{{ tInk }};font-size:14.5px;line-height:1.5;font-family:inherit;padding:4px 6px;min-height:28px;max-height:120px;overflow-y:auto"></textarea>
             <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}">
-              {{ attachmentsReactElement }}
+              <div data-hf-attachments-slot="true" aria-live="polite"></div>
             </sc-if>
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
               <button onClick="{{ openFilePicker }}" title="{{ attachButtonTitle }}" style="{{ attachButtonStyleSmall }}" style-hover="background:rgba({{ tLineRGB }},.05);color:{{ tInk }}">
@@ -4418,7 +4423,7 @@ class Component extends DCLogic {
     this.chatShouldStick = false;
     // Initial bootstrap/demo hydration is not an unread-message event.
     this.chatIgnoreNextMessageUpdate = true;
-    this.agentComponentsReady = ()=>this.syncAgentUiSlots();
+    this.agentComponentsReady = ()=>{ this.syncAgentUiSlots(); this.syncAttachmentSlots(); };
     if(typeof window !== 'undefined') window.addEventListener('hf-components-ready', this.agentComponentsReady);
     this.routePopstate = ()=>{
       const next = this.routeStateFromLocation();
@@ -4593,6 +4598,7 @@ class Component extends DCLogic {
     }
     this.syncChatInputSize();
     this.syncAgentUiSlots();
+    this.syncAttachmentSlots();
   }
   componentWillUnmount(){
     if(typeof window !== 'undefined' && this.routePopstate) window.removeEventListener('popstate', this.routePopstate);
@@ -4674,6 +4680,7 @@ class Component extends DCLogic {
     if(stateBefore.input !== this.state.input) this.syncChatInputSize();
     if(this.state.page === 'admin' && !this.isAdminUser()) this.setState({ page:'app', modelMenu:false });
     this.syncAgentUiSlots();
+    this.syncAttachmentSlots();
     if(this.state.modelMenu && typeof window !== 'undefined') requestAnimationFrame(()=>this.positionModelMenu());
     if(this.isSettingsPage(this.state.page) && !this.state.authToken && !this.demoMode){
       this.clearSettingsHash();
@@ -5164,6 +5171,19 @@ class Component extends DCLogic {
     const previous = index > 0 ? messages.slice(0, index).reverse().find(message=>message.role === 'user') : null;
     if(previous && previous.text) this.sendPrompt(previous.text);
     else this.notify('Impossible de relancer cette reponse.');
+  }
+  syncAttachmentSlots(){
+    if(typeof document === 'undefined' || !window.HFComponents || !window.HFComponents.mountAttachments) return;
+    const attachments = (this.state.attachments || []).map(item=>({
+      type: item.kind === 'image' ? 'image' : (item.kind === 'video' ? 'video' : (item.kind === 'audio' ? 'audio' : 'file')),
+      name: item.name || 'Fichier',
+      url: item.previewUrl || item.url || '',
+      mimeType: item.mimeType || item.contentType || '',
+      onRemove: ()=>this.removeAttachment(item.id)
+    }));
+    document.querySelectorAll('[data-hf-attachments-slot="true"]').forEach(slot=>{
+      window.HFComponents.mountAttachments(slot, attachments);
+    });
   }
   copyAgentMessage(text){
     const value = String(text || '').trim();
@@ -7834,9 +7854,9 @@ class Component extends DCLogic {
       ],
       openGalleryFromLost: ()=> this.setState({ page:'gallery', galleryFilter:'all' }),
       collections: [
-        { name:'Images', filter:'image', isNew:true, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8},React.createElement('rect',{x:3,y:3,width:18,height:18,rx:3}),React.createElement('path',{d:'M21 15l-5-5L5 21'})) },
-        { name:'Vidéos', filter:'video', isNew:false, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8},React.createElement('rect',{x:2,y:5,width:14,height:14,rx:3}),React.createElement('path',{d:'M22 8l-6 4 6 4z'})) },
-        { name:'Voix', filter:'voice', isNew:false, icon: React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round'},React.createElement('rect',{x:9,y:3,width:6,height:11,rx:3}),React.createElement('path',{d:'M5 11a7 7 0 0 0 14 0'}),React.createElement('line',{x1:12,y1:18,x2:12,y2:21})) }
+        { name:'Images', filter:'image', isNew:true, iconRef:'#hf-model-image' },
+        { name:'Vidéos', filter:'video', isNew:false, iconRef:'#hf-model-video' },
+        { name:'Voix', filter:'voice', isNew:false, iconRef:'#hf-model-audio' }
       ].map(c=>Object.assign({}, c, {
         style:'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === c.filter ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === c.filter ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === c.filter ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
         onOpen: ()=> this.setState({ page:'gallery', galleryFilter: c.filter, modelMenu:false }, ()=>this.notify(c.name + ' affichees.'))
@@ -7867,27 +7887,6 @@ class Component extends DCLogic {
       attachButtonStyle: 'width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       attachButtonStyleSmall: 'width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       hasAttachments: ((st.attachments || []).length > 0),
-      attachmentsReactElement: (() => {
-        if (!window.HFComponents || !window.React) return null;
-        const R = window.React;
-        const HFC = window.HFComponents;
-        const list = st.attachments || [];
-        if (list.length === 0) return null;
-        const items = list.map(a => ({
-          type: a.kind === 'image' ? 'image' : (a.kind === 'video' ? 'video' : (a.kind === 'audio' ? 'audio' : 'file')),
-          name: a.name || 'Fichier',
-          url: a.previewUrl || a.url || '',
-          mimeType: a.mimeType || '',
-        }));
-        return R.createElement(HFC.AttachmentList, { variant: 'compact' },
-          items.map((item, idx) => R.createElement(HFC.Attachment, {
-            key: idx,
-            variant: 'compact',
-            attachment: item,
-            onRemove: () => this.removeAttachment(list[idx].id)
-          }))
-        );
-      })(),
       attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', icon:this.attachmentIcon(a.kind), meta:this.attachmentMeta(a), statusLabel:a.status === 'uploading' ? 'Ajout...' : 'Pret', hasPreview:a.kind === 'image' && !!(a.previewUrl || a.url), showIcon:!(a.kind === 'image' && !!(a.previewUrl || a.url)), previewUrl:a.previewUrl || (a.kind === 'image' ? a.url : ''), onRemove:()=>this.removeAttachment(a.id) })),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
