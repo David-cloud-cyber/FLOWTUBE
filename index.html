@@ -2821,8 +2821,19 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
           </sc-for>
         </div>
 
+        <sc-if value="{{ galleryLoading }}" hint-placeholder-val="{{ false }}">
+          <div role="status" aria-label="Chargement des créations" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+            <div style="height:274px;border-radius:18px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.08);animation:softPulse 1.25s ease-in-out infinite"></div>
+            <div style="height:274px;border-radius:18px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.08);animation:softPulse 1.25s ease-in-out .12s infinite"></div>
+            <div style="height:274px;border-radius:18px;background:rgba({{ tLineRGB }},.045);border:1px solid rgba({{ tLineRGB }},.08);animation:softPulse 1.25s ease-in-out .24s infinite"></div>
+          </div>
+        </sc-if>
+
         <sc-if value="{{ galleryEmpty }}" hint-placeholder-val="{{ false }}">
           <div style="text-align:center;padding:70px 0;color:{{ tText4 }};font-size:14px"><div>Aucune création dans cette catégorie pour l'instant.</div><button onClick="{{ newProject }}" style="margin-top:14px;padding:9px 14px;border-radius:999px;border:none;background:#6EE7FF;color:#131517;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Créer la première</button></div>
+        </sc-if>
+        <sc-if value="{{ galleryError }}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="text-align:center;padding:70px 0;color:{{ tText3 }};font-size:14px"><div>Impossible de synchroniser la galerie pour le moment.</div><button onClick="{{ retryBootstrap }}" style="margin-top:14px;padding:9px 14px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Réessayer</button></div>
         </sc-if>
       </div>
     </div>
@@ -8024,7 +8035,10 @@ class Component extends DCLogic {
         onClick: ()=> this.setState({ galleryFilter: p[0] })
       })),
       galleryItems,
-      galleryEmpty: galleryItems.length === 0,
+      galleryLoading: !st.backendReady && !st.backendError,
+      galleryEmpty: st.backendReady && galleryItems.length === 0,
+      galleryError: st.backendError && galleryItems.length === 0,
+      retryBootstrap: ()=> this.bootstrap(),
       openBilling: ()=> this.openSettingsSection('billing'),
       billingPlanName: testAccessActive ? 'Pro · test' : ((st.user && st.user.plan) || 'Free'),
       billingPlanPrice: st.billingLoading ? 'Chargement...' : (testAccessActive ? '1 500 crédits · aucun paiement' : 'Aucun abonnement actif'),
