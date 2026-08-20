@@ -4247,6 +4247,8 @@ class Component extends DCLogic {
     const keyFor = message=>{
       const item = message || {};
       const media = item.media || {};
+      const generationId = String(media.generationId || '');
+      if(generationId) return 'generation|' + generationId;
       return [item.role || '', String(item.text || '').trim(), String(media.generationId || '')].join('|');
     };
     const known = new Set(server.map(keyFor));
