@@ -7664,7 +7664,10 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       provider_job_id: null,
       model_id: model.id,
       model_label: model.name,
-      pricing_model_id: model.id,
+      // Live catalog models are not persisted in pricing_models. Their full
+      // quote snapshot is stored on the generation, so the historical FK is
+      // intentionally left null instead of rejecting a valid routed model.
+      pricing_model_id: model.provider === "openrouter" ? null : model.id,
       prompt,
       aspect_ratio: aspectRatio,
       duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
@@ -8038,7 +8041,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
     provider_job_id: null,
     model_id: model.id,
     model_label: model.name,
-    pricing_model_id: model.id,
+    pricing_model_id: model.provider === "openrouter" ? null : model.id,
     prompt: contentPlan[index].prompt,
     aspect_ratio: aspectRatio,
     duration_seconds: model.pricingUnit === "second" ? Math.round(quote.units) : null,
