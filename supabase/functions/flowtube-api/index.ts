@@ -8649,6 +8649,10 @@ async function chat(req: Request) {
         send("credits", { credits: finalProfile?.credits ?? 0, creditsMax: finalProfile?.credits_max ?? 100 });
         send("done", projectDonePayload(project, conversation));
       } catch (err) {
+        console.error("[chat-run-failed]", JSON.stringify({
+          code: err instanceof FlowtubeError ? String(err.payload.code || "FLOWTUBE_ERROR") : "UNHANDLED_ERROR",
+          message: safeLogMessage(err),
+        }));
         if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
         else send("error", { message: "La création est indisponible pour le moment. Réessaie dans quelques instants." });
       } finally {
