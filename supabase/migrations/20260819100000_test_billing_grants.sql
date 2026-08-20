@@ -72,8 +72,8 @@ begin
   end if;
 
   select * into existing_grant
-  from public.billing_test_grants
-  where user_id = p_user_id and status = 'active'
+  from public.billing_test_grants as active_grant
+  where active_grant.user_id = p_user_id and active_grant.status = 'active'
   for update;
 
   if found then
@@ -92,8 +92,9 @@ begin
   if lower(coalesce(profile_row.plan, 'free')) not in ('free', 'basic', 'creator')
     or lower(coalesce(profile_row.billing_status, 'trialing')) in ('active', 'paid', 'past_due')
     or exists (
-      select 1 from public.subscriptions
-      where user_id = p_user_id and status in ('active', 'trialing')
+      select 1 from public.subscriptions as active_subscription
+      where active_subscription.user_id = p_user_id
+        and active_subscription.status in ('active', 'trialing')
     ) then
     raise exception using message = 'paid_account_not_eligible';
   end if;
@@ -170,8 +171,8 @@ declare
   profile_row public.profiles%rowtype;
 begin
   select * into grant_row
-  from public.billing_test_grants
-  where user_id = p_user_id and status = 'active'
+  from public.billing_test_grants as active_grant
+  where active_grant.user_id = p_user_id and active_grant.status = 'active'
   order by created_at desc
   limit 1
   for update;
