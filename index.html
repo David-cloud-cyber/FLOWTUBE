@@ -7239,17 +7239,19 @@ class Component extends DCLogic {
     const connectorListVisible = !connectorDetailVisible;
     const paywallPlan = this.paywallPlanDetails();
     const backgroundTaskCards = (st.backgroundTasks || []).slice(0, 4).map(task=>{
-      const active = task.status === 'loading';
-      const failed = task.status === 'failed';
+      const taskStatus = String(task.status || '').toLowerCase();
+      const active = ['loading','pending','queued','running'].includes(taskStatus);
+      const failed = ['failed','error','cancelled','canceled','interrupted'].includes(taskStatus);
+      const complete = ['done','completed','complete','success'].includes(taskStatus);
       const rawProgress = Math.max(0, Math.min(99, Math.round(Number(task.progress || 0))));
-      const progress = active ? (rawProgress > 0 ? rawProgress : 24) : (failed ? 0 : 100);
+      const progress = active ? (rawProgress > 0 ? rawProgress : 24) : (complete ? 100 : 0);
       return {
         id:String(task.id || task.generationId || ''),
         generationId:String(task.generationId || ''),
         title:this.backgroundTaskTitle(task),
-        statusLabel:active ? 'En cours' : (failed ? 'Échec' : 'Terminé'),
-        statusColor:active ? '#6EE7FF' : (failed ? '#FF9B8C' : '#A8E8C0'),
-        dot:active ? '#6EE7FF' : (failed ? '#C45840' : '#A8E8C0'),
+        statusLabel:active ? 'En cours' : (failed ? 'Échec' : (complete ? 'Terminé' : 'À vérifier')),
+        statusColor:active ? '#6EE7FF' : (failed ? '#FF9B8C' : (complete ? '#A8E8C0' : '#E8B25C')),
+        dot:active ? '#6EE7FF' : (failed ? '#C45840' : (complete ? '#A8E8C0' : '#E8B25C')),
         showProgress:active,
         progress,
         onClick:()=>this.openBackgroundTask(task),
@@ -7259,13 +7261,14 @@ class Component extends DCLogic {
     const backgroundWorkflowCards = (st.workflowTasks || []).slice(0, 3).map(workflow=>{
       const status = String(workflow.status || 'queued');
       const active = ['queued','running','paused'].includes(status);
-      const failed = status === 'failed';
+      const failed = ['failed','error','cancelled','canceled','interrupted'].includes(status);
+      const complete = ['completed','complete','done','success'].includes(status);
       const progress = Math.max(0, Math.min(100, Math.round(Number(workflow.progress || 0))));
       return {
         id:String(workflow.id || workflow.rootTaskId || ''),
         title:String(workflow.title || 'Workflow AgentFlow'),
-        meta:progress + '% - ' + (active ? 'orchestration en cours' : (failed ? 'a verifier' : 'verifie')),
-        dot:active ? '#6EE7FF' : (failed ? '#C45840' : '#A8E8C0'),
+        meta:(complete ? 100 : progress) + '% - ' + (active ? 'orchestration en cours' : (failed ? 'échec à traiter' : (complete ? 'workflow vérifié' : 'statut à vérifier'))),
+        dot:active ? '#6EE7FF' : (failed ? '#C45840' : (complete ? '#A8E8C0' : '#E8B25C')),
         action:status === 'paused' ? 'resume' : (failed ? 'retry' : (active ? 'pause' : '')),
         actionLabel:status === 'paused' ? 'Reprendre' : (failed ? 'Réessayer' : (active ? 'Pause' : '')),
         onAction:()=>this.controlAgentTask(String(workflow.id || workflow.rootTaskId || ''), status === 'paused' ? 'resume' : (failed ? 'retry' : 'pause')),
