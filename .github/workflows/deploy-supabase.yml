@@ -54,6 +54,7 @@ jobs:
               "20260819100000_test_billing_grants.sql",
               "20260819110000_fix_media_pricing_classification.sql",
               "20260819130000_media_cost_registry.sql",
+              "20260820100000_atomic_generation_credit_reservations.sql",
           ]
           endpoint = f"https://api.supabase.com/v1/projects/{project_ref}/database/query"
           for name in migration_names:

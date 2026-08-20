@@ -7690,6 +7690,39 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
     .single();
   if (error) throw error;
 
+  // The pre-check above is only a fast UX guard. This row-locked RPC is the
+  // authoritative reservation that prevents concurrent jobs from spending
+  // the same credits before a provider call starts.
+  const { data: reservationResult, error: reservationError } = await supabase.rpc("reserve_generation_credits", {
+    p_generation_id: generation.id,
+  });
+  if (reservationError) {
+    await supabase.from("generations").update({
+      status: "failed",
+      error_message: "La generation n'a pas pu etre reservee.",
+      completed_at: new Date().toISOString(),
+    }).eq("id", generation.id).eq("status", "pending");
+    throw reservationError;
+  }
+  const reservation = Array.isArray(reservationResult)
+    ? reservationResult[0] as Record<string, unknown> | undefined
+    : undefined;
+  if (!reservation?.reserved) {
+    const available = Number(reservation?.balance_after || 0);
+    await supabase.from("generations").update({
+      status: "failed",
+      error_message: "Solde insuffisant pour reserver cette generation.",
+      completed_at: new Date().toISOString(),
+    }).eq("id", generation.id).eq("status", "pending");
+    throw new FlowtubeError(402, `Solde insuffisant : ${credits} credits requis, ${available} disponibles.`, {
+      code: "INSUFFICIENT_CREDITS",
+      requiredCredits: credits,
+      availableCredits: available,
+    });
+  }
+  generation.reserved_credits = Number(reservation.credits || credits);
+  generation.credits_reserved_at = new Date().toISOString();
+
   await trackGenerationJob(supabase, generation, "queued", { queued_at: new Date().toISOString() });
   const workflowTask = await createWorkflowTaskGraph(supabase, {
     userId,
@@ -8026,6 +8059,39 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
   }));
   const { data: batchGenerations, error: insertError } = await supabase.from("generations").insert(rows).select("*");
   if (insertError) throw insertError;
+  const reservations = await Promise.all((batchGenerations || []).map(async (generation) => {
+    const { data, error: reservationError } = await supabase.rpc("reserve_generation_credits", {
+      p_generation_id: generation.id,
+    });
+    const reservation = Array.isArray(data) ? data[0] as Record<string, unknown> | undefined : undefined;
+    return { generation, error: reservationError, reservation };
+  }));
+  const failedReservation = reservations.find((item) => item.error || !item.reservation?.reserved);
+  if (failedReservation) {
+    for (const item of reservations) {
+      await supabase.from("generations").update({
+        status: "failed",
+        error_message: "Le lot n'a pas pu reserver tous les credits.",
+        completed_at: new Date().toISOString(),
+      }).eq("id", item.generation.id).eq("status", "pending");
+      await refundFailedGeneration(supabase, {
+        ...item.generation,
+        reserved_credits: Number(item.reservation?.credits || 0),
+        status: "failed",
+      });
+    }
+    if (failedReservation.error) throw failedReservation.error;
+    const available = Number(failedReservation.reservation?.balance_after || 0);
+    throw new FlowtubeError(402, `Solde insuffisant pour ce lot : ${totalCredits} credits requis, ${available} disponibles.`, {
+      code: "INSUFFICIENT_CREDITS",
+      requiredCredits: totalCredits,
+      availableCredits: available,
+    });
+  }
+  (batchGenerations || []).forEach((generation) => {
+    generation.reserved_credits = Number(generation.credits || quote.credits);
+    generation.credits_reserved_at = new Date().toISOString();
+  });
   await Promise.all((batchGenerations || []).map((generation) => trackGenerationJob(supabase, generation, "queued", { batch_id: batchId })));
   await createWorkflowTaskGraph(supabase, {
     userId,
@@ -8835,7 +8901,7 @@ async function uploadRoute(req: Request) {
 }
 
 async function refundFailedGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
-  if (!generation?.debited_at || generation.failure_refunded_at) return;
+  if ((!generation?.debited_at && Number(generation?.reserved_credits || 0) <= 0) || generation.failure_refunded_at) return;
   const { error } = await supabase.rpc("refund_failed_generation", { p_generation_id: generation.id });
   if (error) console.error("generation refund failed", safeLogMessage(error.message));
 }
