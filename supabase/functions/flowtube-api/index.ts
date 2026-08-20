@@ -8955,6 +8955,10 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
   if (generation.status === "failed" || generation.status === "cancelled") return generation;
   // Item de lot en file d'attente : il attend un slot, la vague suivante le lancera.
   if (generation.status === "pending" && !generation.fal_job_id && !generation.provider_job_id && batchInfoOf(generation)) return generation;
+  const createdAt = new Date(String(generation.created_at || "")).getTime();
+  if (Number.isFinite(createdAt) && createdAt > 0 && Date.now() - createdAt > 15 * 60 * 1000) {
+    return await failProviderGeneration(supabase, generation, new Error("Le délai maximal de génération est dépassé."), "generation_timeout").then(() => ({ ...generation, status: "failed" }));
+  }
   if (String(generation.provider || "") === "openrouter" && generation.provider_job_id) {
     try {
       const payload = cleanMetadata(generation.provider_payload);
@@ -9014,8 +9018,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
     }
   }
 
-  const createdAt = new Date(String(generation.created_at)).getTime();
-  if (Deno.env.get("FAL_KEY") && Date.now() - createdAt < 120000) return generation;
+  if (Deno.env.get("FAL_KEY") && Number.isFinite(createdAt) && Date.now() - createdAt < 120000) return generation;
 
   const { data } = await supabase.from("generations").update({
     status: "failed",

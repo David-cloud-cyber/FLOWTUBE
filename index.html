@@ -5449,8 +5449,17 @@ class Component extends DCLogic {
     this.polls = this.polls || {};
     if(this.polls[generationId]) return;
     let failures = 0;
+    const startedAt = Date.now();
     const run = async ()=>{
       try{
+        if(Date.now() - startedAt > 15 * 60 * 1000){
+          delete this.polls[generationId];
+          const current = this.state.messages.find(message=>message.id === messageId);
+          const mediaType = current && current.media && current.media.type ? current.media.type : 'image';
+          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, progress:0, resultConfirmed:false }, streamLive:false, streamPhase:'error', streamError:true, typing:false });
+          this.notify('Le rendu a dépassé le délai prévu. Aucun résultat incomplet n’a été enregistré.');
+          return;
+        }
         const res = await this.apiFetch('/api/generations/'+encodeURIComponent(generationId));
         if(res.status === 401 || res.status === 403 || res.status === 404){
           delete this.polls[generationId];
@@ -5475,7 +5484,10 @@ class Component extends DCLogic {
         failures += 1;
         if(failures >= 8){
           delete this.polls[generationId];
-          this.updateAgentMessage(messageId, { media:{ status:'failed', type:'image', progress:0 } });
+          const current = this.state.messages.find(message=>message.id === messageId);
+          const mediaType = current && current.media && current.media.type ? current.media.type : 'image';
+          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, progress:0, resultConfirmed:false }, streamLive:false, streamPhase:'error', streamError:true, typing:false });
+          this.notify('Le suivi du rendu a été interrompu. Tu peux réessayer.');
           return;
         }
         this.polls[generationId] = setTimeout(run, 4200);
