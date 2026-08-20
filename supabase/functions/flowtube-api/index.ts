@@ -2877,15 +2877,22 @@ function assertModelCapability(model: PricingModel, type: string, prompt: string
 }
 
 function resolveModelFromCatalog(catalog: PricingModel[], modelId: string | undefined, type: string) {
-  const requestedId = internalModelId(modelId);
+  const rawRequestedId = String(modelId || "").trim();
+  const requestedId = internalModelId(rawRequestedId);
+  const matchesRequestedModel = (model: PricingModel) => model.type === type && (
+    model.id === requestedId
+    || model.id === rawRequestedId
+    || publicModelKey(model.id) === rawRequestedId
+    || String(model.metadata?.model_key || "") === rawRequestedId
+  );
   const cheapestCompatible = [...catalog.filter((m) => m.type === type)]
     .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
   const registry = sanitizePricingCatalog(enabledModelRegistry());
   const cheapestRegistry = [...registry.filter((m) => m.type === type)]
     .sort((a, b) => quoteFor(a).credits - quoteFor(b).credits)[0];
-  return catalog.find((m) => m.id === requestedId && m.type === type)
+  return catalog.find(matchesRequestedModel)
     || cheapestCompatible
-    || registry.find((m) => m.id === requestedId && m.type === type)
+    || registry.find(matchesRequestedModel)
     || cheapestRegistry
     || registry[0];
 }
