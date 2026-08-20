@@ -2777,7 +2777,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                      <img src="{{ g.resultUrl }}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"/>
                   </sc-if>
                   <sc-if value="{{ g.hasVideoResult }}" hint-placeholder-val="{{ false }}">
-                     <video src="{{ g.resultUrl }}" muted loop playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
+                     <video src="{{ g.resultUrl }}" muted loop playsinline controls="true" preload="metadata" aria-label="Aperçu vidéo de {{ g.title }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>
                   </sc-if>
                   <sc-if value="{{ g.showSlot }}" hint-placeholder-val="{{ true }}">
                     <x-import component-from-global-scope="image-slot" from="/image-slot.js" id="{{ g.slotId }}" shape="rect" placeholder="{{ g.placeholder }}" style="position:absolute;inset:0;width:100%;height:100%" hint-size="100%,190px"></x-import>
