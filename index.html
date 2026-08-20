@@ -797,7 +797,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
               <sc-if value="{{ noNotifContent }}" hint-placeholder-val="{{ false }}">
                 <div data-hf-notif-empty="true" style="padding:16px 15px 18px;text-align:center">
                   <div style="font-size:22px;margin-bottom:8px">🔕</div>
-                  <div style="font-size:12px;color:#555759">Aucune notification pour l'instant.</div>
+                  <div style="font-size:12px;color:#555759">{{ notifEmptyMessage }}</div>
                 </div>
               </sc-if>
             </div>
@@ -7315,12 +7315,13 @@ class Component extends DCLogic {
       creditColor,
       showToast: !!st.toast,
       toastMessage: st.toast || '',
-      showBackgroundTasks: !!st.authToken && !!st.backgroundTaskPanelOpen,
+      showBackgroundTasks: !!st.backgroundTaskPanelOpen,
       backgroundTaskCards,
       backgroundWorkflowCards,
       showBackgroundWorkflows: backgroundWorkflowCards.length > 0,
       hasAnyNotifContent: backgroundTaskCards.length > 0 || backgroundWorkflowCards.length > 0,
-      noNotifContent: backgroundTaskCards.length === 0 && backgroundWorkflowCards.length === 0 && creditPct > 20,
+      noNotifContent: backgroundTaskCards.length === 0 && backgroundWorkflowCards.length === 0 && (!st.authToken || creditPct > 20),
+      notifEmptyMessage: st.authToken ? "Aucune notification pour l'instant." : 'Connecte-toi pour retrouver tes tâches et notifications.',
       hasBackgroundTaskNotice: !!st.backgroundTaskUnread || (creditPct <= 20 && !!st.authToken),
       toggleBackgroundTasks: ()=>this.toggleBackgroundTasks(),
       creditLowAlert: creditPct <= 20 && !!st.authToken,
