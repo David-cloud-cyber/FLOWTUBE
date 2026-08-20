@@ -9247,7 +9247,17 @@ async function profileRoute(req: Request) {
     .eq("id", userId)
     .select("*")
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("[generation-create-failed]", JSON.stringify({
+      code: String((error as { code?: unknown }).code || "GENERATION_INSERT_FAILED"),
+      message: safeLogMessage(error),
+      modelId: model.id,
+      type,
+    }));
+    throw new FlowtubeError(500, "La création n'a pas pu être initialisée. Réessaie dans quelques instants.", {
+      code: "GENERATION_CREATE_FAILED",
+    });
+  }
 
   return json({
     user: {

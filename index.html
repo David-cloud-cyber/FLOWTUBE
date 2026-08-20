@@ -3672,6 +3672,13 @@ class Component extends DCLogic {
     if(/api|backend|supabase|fal\.ai|provider|endpoint|stripe|moneyfusion|configuration|variable|price id|env/i.test(raw)) return safe;
     return raw;
   }
+  apiErrorMessage(payload, fallback){
+    const error = payload && payload.error;
+    if(typeof error === 'string' && error.trim()) return error.trim();
+    if(error && typeof error.message === 'string' && error.message.trim()) return error.message.trim();
+    if(payload && typeof payload.message === 'string' && payload.message.trim()) return payload.message.trim();
+    return fallback || 'Action indisponible pour le moment.';
+  }
   friendlyAuthError(message){
     const raw = String(message || '').trim();
     if(/page could not be found|not_found|route not found|404/i.test(raw)) return 'Connexion indisponible. La route vient d etre corrigee, recharge la page puis reessaie.';
@@ -5611,7 +5618,11 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/chat', { method:'POST', body:JSON.stringify(payload), signal:controller ? controller.signal : undefined });
       if(!res.ok){
         const data = await res.json().catch(()=>({}));
-        throw new Error(data && data.error && data.error.message ? data.error.message : 'Chat failed');
+        const requestError = this.apiErrorMessage(data, 'La création est indisponible pour le moment.');
+        if(typeof console !== 'undefined' && console.warn){
+          console.warn('[HuggyFlow] Requête agent refusée', { status:res.status, code:data && (data.code || (data.error && data.error.code)) || '', message:requestError });
+        }
+        throw new Error(requestError);
       }
       let delivered = false;
       if(res.body) delivered = await this.consumeChatStream(res, agentId);
