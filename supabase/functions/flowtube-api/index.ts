@@ -6439,18 +6439,99 @@ function generationReferenceUrls(generation: Record<string, unknown>) {
     .concat([String(params.imageUrl || "")].filter(Boolean));
 }
 
+function generatedMediaKind(type: unknown) {
+  const normalized = String(type || "image").toLowerCase();
+  if (normalized.includes("video") || normalized === "lipsync") return "video";
+  if (normalized.includes("audio") || normalized === "voice_clone") return "audio";
+  return "image";
+}
+
+function normalizedContentType(value: unknown) {
+  return String(value || "").split(";", 1)[0].trim().toLowerCase();
+}
+
+function generatedContentType(
+  bytes: Uint8Array,
+  declaredContentType: unknown,
+  generationType: unknown,
+) {
+  if (!bytes.byteLength) return "";
+  const kind = generatedMediaKind(generationType);
+  const declared = normalizedContentType(declaredContentType);
+  const starts = (...values: number[]) => values.every((value, index) => bytes[index] === value);
+  const at = (offset: number, ...values: number[]) => values.every((value, index) => bytes[offset + index] === value);
+  const isPng = starts(0x89, 0x50, 0x4e, 0x47);
+  const isJpeg = starts(0xff, 0xd8, 0xff);
+  const isGif = starts(0x47, 0x49, 0x46, 0x38);
+  const isWebp = starts(0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50);
+  const isMp4 = bytes.byteLength > 8 && at(4, 0x66, 0x74, 0x79, 0x70);
+  const isWebm = starts(0x1a, 0x45, 0xdf, 0xa3);
+  const isMp3 = starts(0x49, 0x44, 0x33) || starts(0xff, 0xfb) || starts(0xff, 0xf3) || starts(0xff, 0xf2);
+  const isWav = starts(0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x41, 0x56, 0x45);
+  const isOgg = starts(0x4f, 0x67, 0x67, 0x53);
+  const textHead = new TextDecoder().decode(bytes.slice(0, 160)).trimStart().toLowerCase();
+  const isSvg = textHead.startsWith("<svg") || textHead.startsWith("<?xml") && textHead.includes("<svg");
+
+  if (kind === "image") {
+    if (isPng) return "image/png";
+    if (isJpeg) return "image/jpeg";
+    if (isGif) return "image/gif";
+    if (isWebp) return "image/webp";
+    if (isSvg && declared === "image/svg+xml") return "image/svg+xml";
+    return "";
+  }
+  if (kind === "video") {
+    if (isMp4 && (declared === "video/mp4" || declared === "application/octet-stream" || declared === "")) return "video/mp4";
+    if (isWebm && (declared === "video/webm" || declared === "application/octet-stream" || declared === "")) return "video/webm";
+    return "";
+  }
+  if (isMp3 && (declared === "audio/mpeg" || declared === "application/octet-stream" || declared === "")) return "audio/mpeg";
+  if (isWav && (declared === "audio/wav" || declared === "audio/x-wav" || declared === "application/octet-stream" || declared === "")) return "audio/wav";
+  if (isOgg && (declared === "audio/ogg" || declared === "application/octet-stream" || declared === "")) return "audio/ogg";
+  if (isMp4 && (declared === "audio/mp4" || declared === "application/octet-stream" || declared === "")) return "audio/mp4";
+  return "";
+}
+
+async function fetchAndStoreProviderResult(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  resultUrl: string,
+  headers?: HeadersInit,
+) {
+  if (!isConfirmedResultUrl(resultUrl)) {
+    throw new FlowtubeError(502, "Le resultat media n'a pas pu etre verifie.", { code: "RESULT_URL_INVALID" });
+  }
+  const response = await fetch(resultUrl, { headers });
+  if (!response.ok) {
+    throw new FlowtubeError(502, "Le fichier media n'a pas pu etre recupere.", {
+      code: "RESULT_DOWNLOAD_FAILED",
+      providerStatus: response.status,
+    });
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const contentType = generatedContentType(bytes, response.headers.get("content-type"), generation.type);
+  if (!contentType) {
+    throw new FlowtubeError(502, "Le fichier media recu est invalide.", { code: "RESULT_MIME_INVALID" });
+  }
+  return storeProviderBytes(supabase, generation, bytes, contentType);
+}
+
 async function storeProviderBytes(
   supabase: ReturnType<typeof adminClient>,
   generation: Record<string, unknown>,
   bytes: Uint8Array,
   contentType: string,
 ) {
+  const verifiedContentType = generatedContentType(bytes, contentType, generation.type);
+  if (!verifiedContentType) {
+    throw new FlowtubeError(502, "Le fichier media recu est invalide.", { code: "RESULT_MIME_INVALID" });
+  }
   const params = cleanMetadata(generation.params);
   const retentionDays = Math.max(1, Number(params.media_retention_days || 30));
   const signedSeconds = Math.max(3600, Math.min(retentionDays * 24 * 60 * 60, 60 * 60 * 24 * 30));
-  const extension = extensionFromContentType(contentType, String(generation.type || "image"));
+  const extension = extensionFromContentType(verifiedContentType, String(generation.type || "image"));
   const path = `${generation.user_id}/${generation.id}/result.${extension}`;
-  const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], { type: contentType }), { contentType, upsert: true });
+  const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], { type: verifiedContentType }), { contentType: verifiedContentType, upsert: true });
   if (uploadError) throw uploadError;
   const { data: signed, error: signedError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, signedSeconds);
   if (signedError) throw signedError;
@@ -6461,14 +6542,14 @@ async function storeProviderBytes(
     generation_id: generation.id,
     bucket: MEDIA_BUCKET,
     object_path: path,
-    content_type: contentType,
+    content_type: verifiedContentType,
     bytes: bytes.byteLength,
     source_url: signedUrl,
     public_url: signedUrl,
     signed_url_expires_at: expiresAt,
     expires_at: expiresAt,
     status: "available",
-    metadata: { persisted: true, provider: "openrouter" },
+    metadata: { persisted: true, provider: String(generation.provider || "media") },
   };
   const { data: existingAsset } = await supabase.from("media_assets").select("id").eq("generation_id", generation.id).limit(1).maybeSingle();
   if (existingAsset?.id) await supabase.from("media_assets").update(asset).eq("id", existingAsset.id);
@@ -6497,13 +6578,23 @@ async function completeProviderGeneration(
   const { data, error } = await supabase.from("generations").update(update).eq("id", generation.id).select("*").single();
   if (error || !data) throw error || new Error("generation completion failed");
   await debitCredits(supabase, data);
-  await trackGenerationJob(supabase, data, "completed", { reconciled_at: new Date().toISOString(), provider: "openrouter" });
+  await trackGenerationJob(supabase, data, "completed", { reconciled_at: new Date().toISOString(), provider: String(data.provider || generation.provider || "media") });
   await advanceBatch(supabase, data);
   return data;
 }
 
+function mediaFailureMessage(code: string, error: unknown) {
+  if (["RESULT_URL_INVALID", "RESULT_URL_MISSING", "RESULT_MIME_INVALID", "RESULT_DOWNLOAD_FAILED"].includes(code)) {
+    return "Le résultat n’a pas pu être vérifié. Aucun rendu final n’a été enregistré.";
+  }
+  if (code.includes("RATE_LIMIT")) return "Le service est momentanément limité. Réessaie dans quelques instants.";
+  if (code.includes("CREDIT") || code.includes("PAYMENT")) return "Cette génération ne peut pas être lancée pour le moment.";
+  if (error instanceof FlowtubeError) return publicErrorMessage(error.message, "La création est indisponible pour le moment. Réessaie dans quelques instants.");
+  return "La création est indisponible pour le moment. Réessaie dans quelques instants.";
+}
+
 async function failProviderGeneration(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>, error: unknown, code = "provider_failed") {
-  const message = error instanceof FlowtubeError ? error.message : error instanceof Error ? error.message : "Le fournisseur media a echoue.";
+  const message = mediaFailureMessage(code, error);
   const { data } = await supabase.from("generations").update({
     status: "failed",
     error_message: message.slice(0, 500),
@@ -6552,18 +6643,8 @@ async function startOpenRouterImageGeneration(generation: Record<string, unknown
       return Boolean(await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd)));
     }
     if (!remoteUrl) throw new Error("Aucun fichier image n'a ete retourne.");
-    const mediaResponse = await fetch(remoteUrl);
-    if (mediaResponse.ok) {
-      const stored = await storeProviderBytes(
-        supabase,
-        generation,
-        new Uint8Array(await mediaResponse.arrayBuffer()),
-        mediaResponse.headers.get("content-type") || contentType,
-      );
-      await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
-    } else {
-      await completeProviderGeneration(supabase, generation, remoteUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
-    }
+    const stored = await fetchAndStoreProviderResult(supabase, generation, remoteUrl);
+    await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
     return true;
   } catch (error) {
     return failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_image_failed") : "openrouter_image_failed");
@@ -6595,8 +6676,8 @@ async function startOpenRouterVideoGeneration(generation: Record<string, unknown
       } : {}),
       ...((params.firstFrameUrl || params.lastFrameUrl) ? {
         frame_images: [
-          ...(params.firstFrameUrl ? [{ frame_type: "first_frame", image_url: { url: String(params.firstFrameUrl) } }] : []),
-          ...(params.lastFrameUrl ? [{ frame_type: "last_frame", image_url: { url: String(params.lastFrameUrl) } }] : []),
+          ...(params.firstFrameUrl ? [{ type: "image_url", frame_type: "first_frame", image_url: { url: String(params.firstFrameUrl) } }] : []),
+          ...(params.lastFrameUrl ? [{ type: "image_url", frame_type: "last_frame", image_url: { url: String(params.lastFrameUrl) } }] : []),
         ],
       } : {}),
     };
@@ -6717,19 +6798,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
     return true;
   } catch (err) {
     if (await retryWithOpenRouterFallback(supabase, generation, model)) return true;
-    const { data: failed } = await supabase.from("generations").update({
-      status: "failed",
-      error_message: err instanceof Error ? publicErrorMessage(err.message, "Le moteur media selectionne est momentanement indisponible.") : "Le moteur media selectionne est momentanement indisponible.",
-      provider_payload: {
-        provider_error: safeLogMessage(err),
-      },
-      completed_at: new Date().toISOString(),
-    }).eq("id", generation.id).select("*").single();
-    const terminal = failed || generation;
-    await refundFailedGeneration(supabase, terminal);
-    await trackGenerationJob(supabase, terminal, "failed", { error: terminal.error_message || "fal_submission_failed" });
-    await advanceBatch(supabase, terminal);
-    return false;
+    return failProviderGeneration(supabase, generation, err, "fal_submission_failed");
   }
 }
 
@@ -8832,17 +8901,9 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       if (["completed", "complete", "succeeded", "success"].includes(statusText)) {
         const unsignedUrls = Array.isArray(body.unsigned_urls) ? body.unsigned_urls.map(String) : [];
         const resultUrl = String(body.video_url || body.videoUrl || body.url || unsignedUrls[0] || extractUrl(body.output || body.data || body.result));
-        const contentUrl = `${OPENROUTER_BASE_URL}/videos/${generation.provider_job_id}/content`;
-        const mediaResponse = await fetch(resultUrl || contentUrl, { headers: resultUrl ? undefined : openRouterHeaders() });
-        if (!mediaResponse.ok && !resultUrl) throw openRouterProviderError(mediaResponse, String(generation.model_id || ""));
-        if (mediaResponse.ok) {
-          const contentType = mediaResponse.headers.get("content-type") || "video/mp4";
-          const bytes = new Uint8Array(await mediaResponse.arrayBuffer());
-          const stored = await storeProviderBytes(supabase, generation, bytes, contentType);
-          return await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
-        }
-        if (!resultUrl) throw new Error("La generation est terminee mais le fichier est indisponible.");
-        return await completeProviderGeneration(supabase, generation, resultUrl, body);
+        const contentUrl = `${OPENROUTER_BASE_URL}/videos/${generation.provider_job_id}/content?index=0`;
+        const stored = await fetchAndStoreProviderResult(supabase, generation, resultUrl || contentUrl, openRouterHeaders());
+        return await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
       }
       const providerProgress = Number(body.progress || body.percent || 0);
       const progress = Math.min(95, Math.max(Number(generation.progress || 5) + 4, providerProgress || Number(generation.progress || 5)));
@@ -8867,18 +8928,8 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       if (statusText === "COMPLETED") {
         const result = await fal.queue.result(endpoint, { requestId: String(generation.fal_job_id) });
         const resultUrl = extractUrl((result as Record<string, unknown>).data || result);
-        if (!isConfirmedResultUrl(resultUrl)) throw new FlowtubeError(502, "Le resultat media n'a pas pu etre verifie.", { code: "RESULT_URL_INVALID" });
-        const { data } = await supabase.from("generations").update({
-          status: "completed",
-          progress: 100,
-          result_url: resultUrl,
-          provider_payload: result,
-          completed_at: new Date().toISOString(),
-        }).eq("id", generation.id).select("*").single();
-        await debitCredits(supabase, data);
-        await trackGenerationJob(supabase, data, "completed", { reconciled_at: new Date().toISOString() });
-        await advanceBatch(supabase, data);
-        return data;
+        const stored = await fetchAndStoreProviderResult(supabase, generation, resultUrl);
+        return await completeProviderGeneration(supabase, generation, stored.signedUrl, result);
       }
       const progress = Math.min(95, Math.max(Number(generation.progress || 5), Number(generation.progress || 5) + 8));
       const { data } = await supabase.from("generations").update({ status: "running", progress, provider_payload: status }).eq("id", generation.id).select("*").single();
@@ -11215,17 +11266,14 @@ async function falWebhook(req: Request) {
       await advanceBatch(supabase, data);
       return json({ ok: true });
     }
-    const { data } = await supabase.from("generations").update({
-      status: "completed",
-      progress: 100,
-      result_url: resultUrl,
-      provider_payload: body,
-      completed_at: new Date().toISOString(),
-    }).eq("id", generation.id).select("*").single();
-    await debitCredits(supabase, data);
-    await trackGenerationJob(supabase, data, "completed", { completed_via: "webhook" });
-    await advanceBatch(supabase, data);
-    return json({ ok: true });
+    try {
+      const stored = await fetchAndStoreProviderResult(supabase, generation, resultUrl);
+      const completed = await completeProviderGeneration(supabase, generation, stored.signedUrl, body);
+      return json({ ok: true, generationId: completed.id });
+    } catch (error) {
+      const failed = await failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "provider_result_invalid") : "provider_result_invalid");
+      return json({ ok: true, failed: failed === false });
+    }
   }
   await supabase.from("generations").update({ status: "running", provider_payload: body }).eq("id", generation.id);
   await trackGenerationJob(supabase, generation, "running", { updated_via: "webhook" });

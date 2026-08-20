@@ -173,10 +173,27 @@ export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent):
         errorMessage: String(payload.message || payload.error || 'La réponse a été interrompue.'),
       };
     case 'run.completed':
+      const hasOutput = Boolean(state.responseText.trim() || state.artifacts.length || payload.text || payload.content || payload.resultUrl || payload.artifact);
+      if (['queued', 'pending', 'running'].includes(String(payload.status || '').toLowerCase())) {
+        return { ...next, status: 'working', phase: 'rendering' };
+      }
       if (payload.resultConfirmed === false) {
-        if (['queued', 'pending', 'running'].includes(String(payload.status || '').toLowerCase())) {
-          return { ...next, status: 'working', phase: 'rendering' };
-        }
+        return {
+          ...next,
+          status: 'interrupted',
+          progress: 0,
+          errorMessage: 'Le résultat n’a pas été confirmé.',
+        };
+      }
+      if (payload.resultConfirmed !== true && !hasOutput) {
+        return {
+          ...next,
+          status: 'interrupted',
+          progress: 0,
+          errorMessage: 'Le résultat n’a pas été confirmé.',
+        };
+      }
+      if (!hasOutput) {
         return {
           ...next,
           status: 'interrupted',

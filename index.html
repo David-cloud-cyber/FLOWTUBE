@@ -5729,9 +5729,21 @@ class Component extends DCLogic {
         } else if(payload.resultConfirmed === false){
           terminalStatus = 'interrupted';
           this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'interrupted', streamError:true, streamProgress:0, text:(current && current.text) || 'Le résultat n’a pas été confirmé. Tu peux reprendre.' });
-        } else if(terminalStatus !== 'error' && terminalStatus !== 'cancelled' && terminalStatus !== 'interrupted'){
+        } else {
+          const hasConfirmedOutput = payload.resultConfirmed === true
+            || Boolean(current && String(current.text || '').trim())
+            || Boolean(current && current.media && current.media.resultConfirmed === true)
+            || Boolean(payload.artifact || payload.artifacts);
+          if(!hasConfirmedOutput){
+            terminalStatus = 'interrupted';
+            this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamError:true, streamPhase:'interrupted', streamProgress:0, text:(current && current.text) || 'Le résultat n’a pas été confirmé. Tu peux reprendre.' });
+            delivered = true;
+            return;
+          }
+          if(terminalStatus !== 'error' && terminalStatus !== 'cancelled' && terminalStatus !== 'interrupted'){
           this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 });
           terminalStatus = 'complete';
+          }
         }
         delivered = true;
       }
