@@ -8298,7 +8298,10 @@ async function chat(req: Request) {
         }
 
         // Boucle agentique (flag AGENT_LOOP_ENABLED): l'agent decide lui-meme des outils a appeler.
-        if (agentLoopEnabled() && !simpleConversation) {
+        // Media requests use the typed generation lifecycle below so the UI
+        // receives a real queued job and never a speculative tool response.
+        // The agent loop remains available for non-media workflows.
+        if (agentLoopEnabled() && !simpleConversation && !shouldGenerateMedia(prompt, requestMode)) {
           if (!simpleConversation) send("status", { phase: "routing", progress: 32, label: "AgentFlow orchestre les outils adaptés", tool: "AgentFlow Loop" });
           const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, agentModelId, send, billingKey: `${billingRequestKey}:loop` };
           const loopMatched = matchLearnedSkill(prompt, learnedSkills);
