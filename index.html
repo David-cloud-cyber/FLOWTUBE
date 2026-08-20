@@ -5203,9 +5203,13 @@ class Component extends DCLogic {
     const status = message.streamPhase === 'interrupted' ? 'interrupted' : (message.streamLive || mediaWorking ? (message.streamPhase === 'cancelled' ? 'cancelled' : (message.streamPhase === 'paused' ? 'paused' : 'working')) : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete')));
     const interactionMode = message.interactionMode || (message.approvalRequest || media || (message.kind && ['image','video','voice','document'].includes(String(message.kind))) ? 'creation' : 'conversation');
     const compactConversation = interactionMode === 'conversation';
-    const activity = compactConversation ? [] : (Array.isArray(message.agentActivity) ? message.agentActivity : []);
+    // A failed media request must remain a compact, actionable error. Older
+    // runs may contain synthetic agent steps; do not replay those as proof of
+    // work that the current media pipeline never confirmed.
+    const mediaFailed = Boolean(media && mediaStatus === 'error');
+    const activity = compactConversation || mediaFailed ? [] : (Array.isArray(message.agentActivity) ? message.agentActivity : []);
     const phase = String(streamPhase || message.streamPhase || 'analyzing');
-    const tasks = compactConversation ? [] : (Array.isArray(message.agentTasks) ? message.agentTasks : (message.plan && Array.isArray(message.plan.steps) ? message.plan.steps : []));
+    const tasks = compactConversation || mediaFailed ? [] : (Array.isArray(message.agentTasks) ? message.agentTasks : (message.plan && Array.isArray(message.plan.steps) ? message.plan.steps : []));
     return {
       interactionMode, status, phase, progress:streamProgress, activity, tasks,
       citations:Array.isArray(message.citations) ? message.citations : [],
