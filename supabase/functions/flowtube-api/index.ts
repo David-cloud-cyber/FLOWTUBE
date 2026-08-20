@@ -8441,6 +8441,31 @@ async function chat(req: Request) {
           return;
         }
 
+        // Consultation de l'historique: repondre depuis les resultats verifies
+        // sans repasser par le modele ni exposer les statuts internes.
+        if (EXISTING_MEDIA_QUERY.test(stripAccents(prompt.toLowerCase()))) {
+          const { data: recentCreations } = await supabase.from("generations")
+            .select("type,prompt,created_at")
+            .eq("project_id", project.id)
+            .eq("user_id", userId)
+            .eq("status", "completed")
+            .not("result_url", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(10);
+          const creations = (recentCreations || []).slice().reverse();
+          const historyReply = creations.length
+            ? `Voici les ${creations.length} creation${creations.length > 1 ? "s" : ""} de ce projet :\n${creations.map((creation, index) => {
+              const kind = creation.type === "video" ? "Video" : creation.type === "audio" ? "Audio" : "Image";
+              const label = String(creation.prompt || "Creation sans titre").replace(/\s+/g, " ").trim().slice(0, 140);
+              return `${index + 1}. ${kind} - ${label}`;
+            }).join("\n")}`
+            : "Aucune creation finalisee n'est encore disponible dans ce projet.";
+          send("text", { delta: historyReply });
+          await saveAssistant(historyReply);
+          send("done", projectDonePayload(project, conversation));
+          return;
+        }
+
         // Commande "epingle ... comme @nom": sauvegarde la creation visee comme element reutilisable.
         const elementDirective = extractElementDirective(prompt);
         if (elementDirective) {
