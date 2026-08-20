@@ -1769,6 +1769,16 @@ function safeLogMessage(value: unknown) {
     .slice(0, 500);
 }
 
+function safeErrorDiagnostic(value: unknown) {
+  const source = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  return {
+    code: safeLogMessage(source.code || (value instanceof FlowtubeError ? value.payload.code : "UNHANDLED_ERROR")),
+    message: safeLogMessage(source.message || value),
+    details: safeLogMessage(source.details || ""),
+    hint: safeLogMessage(source.hint || ""),
+  };
+}
+
 function falModel(endpoint: string, override: ModelOverride = {}): PricingModel {
   const caps = override.capabilities || capabilitiesForEndpoint(endpoint);
   const type = override.type || mediaTypeForCapabilities(caps);
@@ -7688,7 +7698,16 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
   })
     .select("*")
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("[generation-create-failed]", JSON.stringify({
+      ...safeErrorDiagnostic(error),
+      modelId: model.id,
+      type,
+    }));
+    throw new FlowtubeError(500, "La création n'a pas pu être initialisée. Réessaie dans quelques instants.", {
+      code: "GENERATION_CREATE_FAILED",
+    });
+  }
 
   // The pre-check above is only a fast UX guard. This row-locked RPC is the
   // authoritative reservation that prevents concurrent jobs from spending
@@ -8649,10 +8668,7 @@ async function chat(req: Request) {
         send("credits", { credits: finalProfile?.credits ?? 0, creditsMax: finalProfile?.credits_max ?? 100 });
         send("done", projectDonePayload(project, conversation));
       } catch (err) {
-        console.error("[chat-run-failed]", JSON.stringify({
-          code: err instanceof FlowtubeError ? String(err.payload.code || "FLOWTUBE_ERROR") : "UNHANDLED_ERROR",
-          message: safeLogMessage(err),
-        }));
+        console.error("[chat-run-failed]", JSON.stringify(safeErrorDiagnostic(err)));
         if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
         else send("error", { message: "La création est indisponible pour le moment. Réessaie dans quelques instants." });
       } finally {
@@ -9251,17 +9267,7 @@ async function profileRoute(req: Request) {
     .eq("id", userId)
     .select("*")
     .single();
-  if (error) {
-    console.error("[generation-create-failed]", JSON.stringify({
-      code: String((error as { code?: unknown }).code || "GENERATION_INSERT_FAILED"),
-      message: safeLogMessage(error),
-      modelId: model.id,
-      type,
-    }));
-    throw new FlowtubeError(500, "La création n'a pas pu être initialisée. Réessaie dans quelques instants.", {
-      code: "GENERATION_CREATE_FAILED",
-    });
-  }
+  if (error) throw error;
 
   return json({
     user: {
