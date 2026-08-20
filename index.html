@@ -3647,7 +3647,16 @@ class Component extends DCLogic {
   }
 
   agentModelApiId(id){
-    return id || 'auto';
+    const model = this.modelPickerModels().find(item=>item.id === id);
+    const type = String(model && model.type || '').toLowerCase();
+    const media = ['image','image_edit','video','video_edit','audio','voice','music','lipsync','voice_clone','upscale'].includes(type);
+    return media ? 'auto' : (id || 'auto');
+  }
+  mediaModelApiId(id){
+    const model = this.modelPickerModels().find(item=>item.id === id);
+    const type = String(model && model.type || '').toLowerCase();
+    const media = ['image','image_edit','video','video_edit','audio','voice','music','lipsync','voice_clone','upscale'].includes(type);
+    return media ? (model.modelKey || model.id) : 'auto';
   }
   typeForModel(model){
     if(!model) return 'image';
@@ -4224,6 +4233,32 @@ class Component extends DCLogic {
       messages: (p.messages || []).map(m=>this.normalizeMessage(m))
     }));
   }
+  mergeBootstrapMessages(serverMessages, localMessages){
+    const server = Array.isArray(serverMessages) ? serverMessages : [];
+    const local = Array.isArray(localMessages) ? localMessages : [];
+    if(!local.length) return server;
+    const keyFor = message=>{
+      const item = message || {};
+      const media = item.media || {};
+      return [item.role || '', String(item.text || '').trim(), String(media.generationId || '')].join('|');
+    };
+    const known = new Set(server.map(keyFor));
+    const preserved = [];
+    local.forEach(message=>{
+      const item = message || {};
+      const key = keyFor(item);
+      if(known.has(key)) return;
+      const media = item.media || {};
+      const phase = String(item.streamPhase || '').toLowerCase();
+      const live = item.streamLive === true || ['queued','working','paused','rendering'].includes(phase);
+      const terminal = ['error','interrupted','cancelled','complete'].includes(phase) || media.status === 'loading';
+      if(item.role === 'user' || live || terminal){
+        preserved.push(item);
+        known.add(key);
+      }
+    });
+    return server.concat(preserved);
+  }
   loadPreviewData(){
     if(!this.demoMode || this.previewDataLoaded) return;
     this.previewDataLoaded = true;
@@ -4276,20 +4311,31 @@ class Component extends DCLogic {
           current:!!m.current,
           dot:dots[i % dots.length]
         })])).values()];
-        if(!this.MODELS.some(model=>model.id === this.state.modelId)) this.state.modelId = 'auto';
       }
       if(this.state.authToken && !data.user){
         this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
       }
+      const publicMediaKeys = Array.isArray(data.models)
+        ? data.models.map(model=>String(model && (model.modelKey || model.id) || '')).filter(Boolean)
+        : [];
+      const publicAgentKeys = agentModels.map(model=>String(model && (model.modelKey || model.id) || '')).filter(Boolean);
+      const selectedModelKey = String(this.state.modelId || 'auto');
+      if(selectedModelKey !== 'auto' && !publicAgentKeys.includes(selectedModelKey) && !publicMediaKeys.includes(selectedModelKey)) this.state.modelId = 'auto';
       const projects = this.normalizeProjects(data.projects || []);
       const currentId = this.state.activeProjectId;
       const requestedId = this.initialRoute && this.initialRoute.projectId;
       const active = projects.find(p=>p.id === requestedId) || projects.find(p=>p.id === currentId) || projects[0] || null;
+      const activeMessages = active && active.id === currentId
+        ? this.mergeBootstrapMessages(active.messages, this.state.messages)
+        : (active ? active.messages : this.state.messages);
+      const mergedProjects = projects.map(project=>project.id === (active && active.id)
+        ? Object.assign({}, project, { messages:activeMessages })
+        : project);
       const prefs = data.user && data.user.preferences ? Object.assign({ notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false }, data.user.preferences) : this.state.prefs;
       this.setState({
-        projectsData: projects,
+        projectsData: mergedProjects,
         activeProjectId: active ? active.id : currentId,
-        messages: active ? active.messages : this.state.messages,
+        messages: activeMessages,
         activeTitle: active ? active.title : this.state.activeTitle,
         credits: Number(data.credits !== undefined ? data.credits : this.state.credits),
         creditsMax: Number(data.creditsMax || this.state.creditsMax || 100),
@@ -5537,7 +5583,7 @@ class Component extends DCLogic {
       message:text,
       projectId:this.state.activeProjectId,
       mode,
-      modelId:'auto',
+      modelId:this.mediaModelApiId(model.id),
       agentModelId:this.agentModelApiId(model.id),
       idempotencyKey:agentId,
       aspectRatio:this.aspectRatioForMode(mode),

@@ -6615,6 +6615,49 @@ async function startOpenRouterVideoGeneration(generation: Record<string, unknown
   }
 }
 
+function openRouterFallbackModelFor(model: PricingModel) {
+  if (!OPENROUTER_MEDIA_ENABLED || !OPENROUTER_API_KEY || !openRouterCatalogCache.live) return null;
+  const family = publicMediaFamilyForModel(model);
+  if (!family) return null;
+  const liveIds = new Set([
+    ...openRouterCatalogCache.image.map((item) => String(item.id || "")),
+    ...openRouterCatalogCache.video.map((item) => String(item.id || "")),
+  ]);
+  const candidate = OPENROUTER_MEDIA_REGISTRY.find((item) =>
+    item.type === model.type
+    && publicMediaFamilyForModel(item) === family
+    && liveIds.has(item.id)
+  );
+  if (!candidate) return null;
+  const remote = [...openRouterCatalogCache.image, ...openRouterCatalogCache.video]
+    .find((item) => String(item.id || "") === candidate.id);
+  const resolved = openRouterMediaModel(candidate.id, candidate.type === "video" ? "video" : "image", remote);
+  return quoteFor(resolved).profitable ? resolved : null;
+}
+
+async function retryWithOpenRouterFallback(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  model: PricingModel,
+) {
+  const providerPayload = cleanMetadata(generation.provider_payload);
+  if (providerPayload.fallback_attempted === true) return false;
+  const fallback = openRouterFallbackModelFor(model);
+  if (!fallback) return false;
+  const { data: retryGeneration } = await supabase.from("generations").update({
+    status: "pending",
+    provider: "openrouter",
+    provider_job_id: null,
+    fal_job_id: null,
+    error_message: null,
+    provider_payload: { fallback_attempted: true, fallback_reason: "primary_media_route_failed" },
+  }).eq("id", generation.id).eq("status", "running").select("*").maybeSingle();
+  if (!retryGeneration) return false;
+  return fallback.type === "video"
+    ? await startOpenRouterVideoGeneration(retryGeneration, fallback)
+    : await startOpenRouterImageGeneration(retryGeneration, fallback);
+}
+
 async function startGeneration(generation: Record<string, unknown>, model: PricingModel) {
   if (model.provider === "openrouter") return model.type === "video" ? startOpenRouterVideoGeneration(generation, model) : startOpenRouterImageGeneration(generation, model);
   return startFalGeneration(generation, model);
@@ -6638,15 +6681,15 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
   if (!claimed) return false;
   generation = claimed;
   if (!key || !model.endpoint) {
-    await supabase.from("generations").update({
-      status: "failed",
-      error_message: "Le moteur media selectionne est momentanement indisponible.",
-      provider_payload: { provider_configured: false },
-      completed_at: new Date().toISOString(),
-    }).eq("id", generation.id);
-    await trackGenerationJob(supabase, generation, "failed", { error: !key ? "provider_not_configured" : "provider_endpoint_missing" });
-    await advanceBatch(supabase, generation);
-    return false;
+    if (await retryWithOpenRouterFallback(supabase, generation, model)) return true;
+    return failProviderGeneration(
+      supabase,
+      generation,
+      new FlowtubeError(503, "Le moteur media selectionne est momentanement indisponible.", {
+        code: !key ? "PROVIDER_NOT_CONFIGURED" : "PROVIDER_ENDPOINT_MISSING",
+      }),
+      !key ? "provider_not_configured" : "provider_endpoint_missing",
+    );
   }
   try {
     const routedModel = falRouteModelForGeneration(model, generation);
@@ -6666,6 +6709,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
     await trackGenerationJob(supabase, { ...generation, fal_job_id: request.request_id, provider_job_id: request.request_id }, "running", { submitted_at: new Date().toISOString(), provider: "fal" });
     return true;
   } catch (err) {
+    if (await retryWithOpenRouterFallback(supabase, generation, model)) return true;
     const { data: failed } = await supabase.from("generations").update({
       status: "failed",
       error_message: err instanceof Error ? publicErrorMessage(err.message, "Le moteur media selectionne est momentanement indisponible.") : "Le moteur media selectionne est momentanement indisponible.",
@@ -8374,19 +8418,22 @@ async function chat(req: Request) {
           learnedSkill: (() => { const s = matchLearnedSkill(prompt, learnedSkills); return s ? `${s.name}: ${s.playbook}`.slice(0, 800) : undefined; })(),
         };
         if (!simpleConversation) send("status", { phase: "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: "selected" });
-        const reply = await anthropicReply(
-          prompt,
-          type,
-          credits,
-          history,
-          (delta) => send("text", { delta }),
-          replyContext,
-          agentModelId,
-          // Media pricing is settled by the generation lifecycle after a
-          // confirmed result. Do not create a second hidden debit for the
-          // orchestration brief.
-          willGenerate ? undefined : billAgent("agent_chat_reply"),
-        );
+        const reply = willGenerate
+          ? `Je prépare le rendu ${type === "video" ? "vidéo" : type === "audio" ? "audio" : "image"}. Le résultat apparaîtra ici uniquement après confirmation.`
+          : await anthropicReply(
+            prompt,
+            type,
+            credits,
+            history,
+            (delta) => send("text", { delta }),
+            replyContext,
+            agentModelId,
+            // Media pricing is settled by the generation lifecycle after a
+            // confirmed result. Do not create a second hidden debit for the
+            // orchestration brief.
+            billAgent("agent_chat_reply"),
+          );
+        if (willGenerate) send("text", { delta: reply });
         if (!willGenerate) await saveAssistant(reply);
 
         const requestedArtifactType = artifactRequestType(prompt);
@@ -8458,7 +8505,7 @@ async function chat(req: Request) {
         send("done", projectDonePayload(project, conversation));
       } catch (err) {
         if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
-        else send("error", { message: publicErrorMessage(err instanceof Error ? err.message : "Chat failed") });
+        else send("error", { message: "La création est indisponible pour le moment. Réessaie dans quelques instants." });
       } finally {
         clearInterval(heartbeat);
         controller.close();
