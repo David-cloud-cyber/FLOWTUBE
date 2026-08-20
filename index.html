@@ -2271,6 +2271,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
             <sc-if value="{{ modalShowBilling }}" hint-placeholder-val="{{ false }}">
               <div class="hf-settings-section-head"><div><h3>Facturation</h3><p>Paiements sécurisés, crédits réels et historique de ton compte.</p></div><button class="hf-settings-secondary" onClick="{{ openPricing }}">Voir les offres</button></div>
               <div class="hf-settings-metric-grid"><div class="hf-settings-metric"><div class="hf-settings-metric-label">Offre actuelle</div><div class="hf-settings-metric-value" style="font-size:20px">{{ billingPlanName }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Crédits disponibles</div><div class="hf-settings-metric-value">{{ creditsLabel }}</div></div><div class="hf-settings-metric"><div class="hf-settings-metric-label">Prochain renouvellement</div><div class="hf-settings-metric-value" style="font-size:17px">{{ billingNextDate }}</div></div></div>
+              <sc-if value="{{ testBillingEnabled }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-card" style="margin-top:14px;border-color:rgba(110,231,255,.24);background:rgba(110,231,255,.035)"><div class="hf-settings-row"><div><div class="hf-settings-row-label">{{ testAccessLabel }}</div><div class="hf-settings-row-hint">Activation de test sans paiement, réservée à cet environnement.</div></div><sc-if value="{{ testAccessActive }}" hint-placeholder-val="{{ false }}"><button class="hf-settings-secondary" onClick="{{ revokeTestGrant }}" disabled="{{ testGrantLoading }}">Révoquer</button></sc-if><sc-if value="{{ testAccessInactive }}" hint-placeholder-val="{{ true }}"><button class="hf-settings-primary" onClick="{{ activateTestGrant }}" disabled="{{ testGrantLoading }}">{{ testAccessActionLabel }}</button></sc-if></div></div></sc-if>
               <div class="hf-settings-card"><div class="hf-settings-row"><div><div class="hf-settings-row-label">Statut de l’abonnement</div><div class="hf-settings-row-hint">{{ billingPlanPrice }} · Paiement en {{ billingCurrencyLabel }}</div></div><span class="hf-settings-badge">{{ billingProviderLabel }}</span></div><div class="hf-settings-row"><div><div class="hf-settings-row-label">E-mail de facturation</div><div class="hf-settings-row-hint">Les confirmations sont envoyées à cette adresse.</div></div><span style="color:#F7F7F8;font-size:13px">{{ settingsEmail }}</span></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-section-head" style="margin-bottom:12px"><div><h3>Recharger des crédits</h3><p>Achète uniquement le complément dont tu as besoin.</p></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"><sc-for list="{{ creditPackCards }}" as="pack" hint-placeholder-count="6"><button onClick="{{ pack.onSelect }}" class="hf-settings-secondary" style="display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;min-height:48px" disabled="{{ checkoutBusy }}"><span><strong style="display:block;color:#F7F7F8">{{ pack.credits }} crédits</strong><small style="display:block;margin-top:3px;color:#898A8B">{{ pack.amount }}</small></span><span style="color:#6EE7FF">Ajouter</span></button></sc-for></div></div>
               <div class="hf-settings-card" style="margin-top:14px"><div class="hf-settings-table-row"><span style="color:#F7F7F8;font-weight:700">Historique</span><button class="hf-settings-secondary" onClick="{{ downloadBillingExport }}">Exporter</button></div><sc-if value="{{ billingLoading }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Chargement de l’historique…</div></sc-if><sc-if value="{{ billingEmpty }}" hint-placeholder-val="{{ false }}"><div class="hf-settings-empty">Aucun paiement enregistré pour le moment.</div></sc-if><sc-for list="{{ invoices }}" as="invoice" hint-placeholder-count="5"><div class="hf-settings-table-row"><div><div style="color:#F7F7F8;font-weight:650">{{ invoice.label }}</div><div style="margin-top:4px;font-size:11px">{{ invoice.date }}</div></div><div style="text-align:right"><div style="color:#F7F7F8">{{ invoice.amount }}</div><div style="margin-top:4px;color:#6EE7FF;font-size:11px">{{ invoice.status }}</div></div></div></sc-for></div>
@@ -3297,6 +3298,9 @@ class Component extends DCLogic {
     billingCurrency: 'XOF',
     usdXofRate: 600,
     billingStatus: null,
+    testBilling: { enabled:false },
+    testGrant: { active:false, planId:null, credits:0, status:'inactive' },
+    testGrantLoading: false,
     billingLoading: false,
     pricingNotice: '',
     creditPaywallOpen: false,
@@ -3364,48 +3368,7 @@ class Component extends DCLogic {
     adminData: null, adminLoading: false, adminError: ''
   };
 
-  /*
-  MODELS = [
-    { id:'nvidia/nemotron-3-ultra-550b-a55b:free', name:'Nemotron 3 Ultra gratuit', group:'NVIDIA', provider:'nvidia', desc:'Raisonnement frontier et orchestration agentique', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
-    { id:'nvidia/nemotron-3-super-120b-a12b:free', name:'Nemotron 3 Super gratuit', group:'NVIDIA', provider:'nvidia', desc:'Planification multi-agents et raisonnement long contexte', creditsLabel:'Gratuit', free:true, dot:'#76B900', capabilities:['tools','reasoning'] },
-    { id:'openai/gpt-oss-120b:free', name:'GPT OSS 120B gratuit', group:'OpenAI', provider:'openai', desc:'Modele ouvert pour raisonnement et execution agentique', creditsLabel:'Gratuit', free:true, dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'google/gemma-4-31b-it:free', name:'Gemma 4 31B gratuit', group:'Google', provider:'google', desc:'Modele compact pour reponses rapides et outils', creditsLabel:'Gratuit', free:true, dot:'#4285F4', capabilities:['tools','reasoning'] },
-    { id:'tencent/hy3', name:'Tencent Hy3', group:'Tencent', provider:'tencent', desc:'Raisonnement et execution agentique polyvalente', creditsLabel:'5 cr', dot:'#18DCFF', capabilities:['tools','reasoning'] },
-    { id:'poolside/laguna-xs-2.1:free', name:'Laguna XS 2.1 gratuit', group:'Poolside', provider:'poolside', desc:'Agent code compact avec outils et raisonnement', creditsLabel:'Gratuit', free:true, dot:'#8F9BFF', capabilities:['tools','reasoning'] },
-    { id:'poolside/laguna-xs-2.1', name:'Laguna XS 2.1', group:'Poolside', provider:'poolside', desc:'Agent logiciel rapide et economique', creditsLabel:'2 cr', dot:'#8F9BFF', capabilities:['tools','reasoning'] },
-    { id:'aion-labs/aion-3.0', name:'Aion-3.0', group:'Aion Labs', provider:'aion-labs', desc:'Direction narrative et ideation creative', creditsLabel:'8 cr', dot:'#D6C3FF', capabilities:['reasoning'] },
-    { id:'aion-labs/aion-3.0-mini', name:'Aion-3.0-Mini', group:'Aion Labs', provider:'aion-labs', desc:'Idees et variantes rapides', creditsLabel:'3 cr', dot:'#D6C3FF', capabilities:['reasoning'] },
-    { id:'black-forest-labs/flux.2-klein-4b', name:'FLUX.2 Klein', group:'Black Forest Labs', provider:'black-forest-labs', desc:'Generation visuelle rapide et economique', creditsLabel:'25 cr', dot:'#F0A35B', capabilities:['vision'] },
-    { id:'black-forest-labs/flux.2-pro', name:'FLUX.2 Pro', group:'Black Forest Labs', provider:'black-forest-labs', desc:'Generation visuelle premium et edition de references', creditsLabel:'70 cr', dot:'#F0A35B', capabilities:['vision'] },
-    { id:'openai/gpt-image-1-mini', name:'GPT Image Mini', group:'OpenAI', provider:'openai', desc:'Creation et edition d images a cout maitrise', creditsLabel:'120 cr', dot:'#F4F4F5', capabilities:['vision'] },
-    { id:'openai/gpt-5-image-mini', name:'GPT-5 Image Mini', group:'OpenAI', provider:'openai', desc:'Modele multimodal compact pour creation visuelle', creditsLabel:'90 cr', dot:'#F4F4F5', capabilities:['vision','reasoning'] },
-    { id:'openai/gpt-5.6-luna-pro', name:'GPT-5.6 Luna Pro', group:'OpenAI', provider:'openai', desc:'Raisonnement pro rapide et precis', creditsLabel:'8 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-luna', name:'GPT-5.6 Luna', group:'OpenAI', provider:'openai', desc:'GPT rapide pour le volume et les iterations', creditsLabel:'4 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-terra-pro', name:'GPT-5.6 Terra Pro', group:'OpenAI', provider:'openai', desc:'Equilibre premium entre profondeur et vitesse', creditsLabel:'20 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-terra', name:'GPT-5.6 Terra', group:'OpenAI', provider:'openai', desc:'Modele polyvalent pour les workflows quotidiens', creditsLabel:'10 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-sol-pro', name:'GPT-5.6 Sol Pro', group:'OpenAI', provider:'openai', desc:'Qualite maximale pour les briefs complexes', creditsLabel:'40 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.6-sol', name:'GPT-5.6 Sol', group:'OpenAI', provider:'openai', desc:'Raisonnement frontier pour les plans longs', creditsLabel:'35 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.5', name:'GPT-5.5', group:'OpenAI', provider:'openai', desc:'Raisonnement avance et planification agentique', creditsLabel:'35 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/gpt-5.5-pro', name:'GPT-5.5 Pro', group:'OpenAI', provider:'openai', desc:'Raisonnement profond pour les workflows critiques', creditsLabel:'180 cr', dot:'#F4F4F5', capabilities:['tools','vision','reasoning'] },
-    { id:'openai/o4-mini', name:'o4-mini', group:'OpenAI', provider:'openai', desc:'Raisonnement rapide et economique', creditsLabel:'12 cr', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'openai/o3', name:'o3-pro', group:'OpenAI', provider:'openai', desc:'Resolution methodique de problemes complexes', creditsLabel:'30 cr', dot:'#F4F4F5', capabilities:['tools','reasoning'] },
-    { id:'openai/o3-deep-research', name:'o3 Deep Research', group:'OpenAI', provider:'openai', desc:'Recherche approfondie multi-etapes', creditsLabel:'100 cr', dot:'#F4F4F5', capabilities:['tools','reasoning','research'] },
-    { id:'openai/o4-mini-deep-research', name:'o4-mini Deep Research', group:'OpenAI', provider:'openai', desc:'Recherche approfondie a cout maitrise', creditsLabel:'60 cr', dot:'#F4F4F5', capabilities:['tools','reasoning','research'] },
-    { id:'x-ai/grok-4.5', name:'Grok 4.5', group:'xAI', provider:'x-ai', desc:'Connaissance, code et ideation avec outils', creditsLabel:'20 cr', dot:'#D6D6D6', capabilities:['tools','vision','reasoning'] },
-    { id:'x-ai/grok-latest', name:'Grok Latest', group:'xAI', provider:'x-ai', desc:'Alias dynamique du dernier modele Grok', creditsLabel:'20 cr', dot:'#D6D6D6', capabilities:['tools','vision','reasoning'] },
-    { id:'auto', name:'Auto AgentFlow', group:'AgentFlow', desc:'Choisit le meilleur cerveau pour ta demande', creditsLabel:'Recommandé', dot:'#6EE7FF' },
-    { id:'claude-fable-5', name:'Fable 5', group:'AgentFlow', desc:'Création ambitieuse, stratégie et production complexe', creditsLabel:'Max', dot:'#C9A8E8' },
-    { id:'claude-opus-4-8', name:'Opus 4.8', group:'AgentFlow', desc:'Agent très puissant pour les briefs longs et exigeants', creditsLabel:'Pro', dot:'#BCA7FF' },
-    { id:'claude-opus-4-7', name:'Opus 4.7', group:'AgentFlow', desc:'Raisonnement premium avec repli automatique si indisponible', creditsLabel:'Pro', dot:'#9BD1E8' },
-    { id:'claude-opus-4-6', name:'Opus 4.6', group:'AgentFlow', desc:'Direction créative premium avec repli automatique', creditsLabel:'Pro', dot:'#E8B29B' },
-    { id:'claude-sonnet-5', name:'Sonnet 5', group:'AgentFlow', desc:'Équilibre fort entre vitesse et qualité', creditsLabel:'Rapide', dot:'#E8D79B' },
-    { id:'claude-sonnet-4-6', name:'Sonnet 4.6', group:'AgentFlow', desc:'Agent fiable pour les demandes quotidiennes', creditsLabel:'Stable', dot:'#A8E8C0' },
-    { id:'claude-haiku-4-5-20251001', name:'Haiku 4.5', group:'AgentFlow', desc:'Réponses rapides et tâches simples', creditsLabel:'Éco', dot:'#C4C7CC' }
-  ];
-
-  */
-  // Network bootstrap replaces this fallback with the live OpenRouter catalog.
-  // Keep the offline shell small and aligned with the server allowlist.
+  // The live bootstrap is the only source of model availability.
   MODELS = [
     { id:'auto', modelKey:'auto', name:'Auto', group:'Rapide', desc:'Choisit automatiquement le meilleur modele pour ta demande', creditsLabel:'Selon la tache', free:true, current:true, dot:'#6EE7FF', capabilities:['tools','vision','reasoning'] },
   ];
@@ -3650,12 +3613,37 @@ class Component extends DCLogic {
       const refreshed = await this.refreshSession(true);
       token = typeof refreshed === 'string' ? refreshed : (refreshed ? this.state.authToken : '');
     }
-    const init = Object.assign({}, options || {});
-    init.headers = Object.assign({ Accept:'application/json' }, init.headers || {});
-    const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
-    if(init.body && !isFormData && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
-    if(token) init.headers.Authorization = 'Bearer ' + token;
-    return fetch(this.apiBase()+path, init);
+    const original = options || {};
+    const isFormData = typeof FormData !== 'undefined' && original.body instanceof FormData;
+    const canRetryAuth = Boolean(
+      token
+      && this.state.authRefreshToken
+      && !isFormData
+      && path.indexOf('/api/auth/refresh') !== 0
+      && path.indexOf('/api/auth/login') !== 0
+      && path.indexOf('/api/auth/signup') !== 0
+      && path.indexOf('/api/auth/recover') !== 0
+      && !original.__hfAuthRetried
+    );
+    const request = (authToken, retried)=>{
+      const init = Object.assign({}, original);
+      init.__hfAuthRetried = retried;
+      init.headers = Object.assign({ Accept:'application/json' }, original.headers || {});
+      if(init.body && !isFormData && !init.headers['Content-Type']) init.headers['Content-Type'] = 'application/json';
+      if(authToken) init.headers.Authorization = 'Bearer ' + authToken;
+      return fetch(this.apiBase()+path, init);
+    };
+    let response = await request(token, Boolean(original.__hfAuthRetried));
+    // A token can be rejected before its local expiry (revocation, clock
+    // skew, or a rotated session). Refresh once and replay JSON requests so
+    // a connected user is not abruptly sent back to the auth screen.
+    if(response.status === 401 && canRetryAuth){
+      const refreshed = await this.refreshSession(true);
+      if(refreshed){
+        response = await request(typeof refreshed === 'string' ? refreshed : this.state.authToken, true);
+      }
+    }
+    return response;
   }
 
   agentModelApiId(id){
@@ -3686,7 +3674,8 @@ class Component extends DCLogic {
     return this.friendlyError(raw, 'Connexion impossible pour le moment. Reessaie dans quelques instants.');
   }
   requireAuth(intent, pendingAction){
-    if(this.state.authToken || this.demoMode) return true;
+    const sessionUsable = this.state.authToken && (!this.isAuthExpired(0) || this.state.authRefreshToken);
+    if(sessionUsable || this.demoMode) return true;
     this.setState({
       page:'auth',
       authMode:'signup',
@@ -3929,20 +3918,24 @@ class Component extends DCLogic {
     if(!md || typeof md !== 'object') return null;
     const rawStatus = String(md.status || '').toLowerCase();
     const done = rawStatus === 'completed' || rawStatus === 'done' || rawStatus === 'succeeded';
-    const failed = rawStatus === 'failed' || rawStatus === 'error';
+    const failed = rawStatus === 'failed' || rawStatus === 'error' || rawStatus === 'cancelled' || rawStatus === 'canceled';
+    const rawUrl = String(md.resultUrl || md.result_url || '').trim();
+    const resultConfirmed = md.resultConfirmed === true || (done && /^https?:\/\/[^\s]+$/i.test(rawUrl));
+    const confirmedDone = done && resultConfirmed;
     const rawType = String(md.type || md.mediaType || 'image');
     const type = rawType === 'audio' ? 'voice' : rawType;
     return {
       type,
-      status: done ? 'done' : (failed ? 'failed' : 'loading'),
-      progress: Number(md.progress || (done ? 100 : 0)),
+      status: confirmedDone ? 'done' : (failed || (done && !resultConfirmed) ? 'failed' : 'loading'),
+      progress: Number(md.progress || (confirmedDone ? 100 : 0)),
       model: md.modelLabel || md.model || md.modelName || this.curModel().name,
       modelId: md.modelId || md.pricingModelId || '',
       prompt: md.prompt || '',
       ratio: md.aspectRatio || md.ratio || '',
       duration: md.duration || md.dur || '',
       generationId: md.generationId || md.id || '',
-      resultUrl: md.resultUrl || md.result_url || '',
+      resultUrl: confirmedDone ? rawUrl : '',
+      resultConfirmed: confirmedDone,
       credits: md.credits || md.creditsCharged || md.credits_charged || 0
     };
   }
@@ -4234,88 +4227,32 @@ class Component extends DCLogic {
   loadPreviewData(){
     if(!this.demoMode || this.previewDataLoaded) return;
     this.previewDataLoaded = true;
-    // Keep the local preview useful without weakening the production allowlist.
+    // Preview mode is intentionally data-free: it can exercise empty/loading/error
+    // states, but it must never present a fabricated generation or account.
     this.MODELS = [
-      { id:'auto', modelKey:'auto', name:'Auto', group:'Rapide', desc:'Choisit automatiquement le meilleur modèle pour ta demande', creditsLabel:'Selon la tâche', free:true, current:true, dot:'#6EE7FF', capabilities:['tools','vision','reasoning'] },
-      { id:'flash-v4', modelKey:'flash-v4', name:'Flash V4', group:'Rapide', desc:'Réponse rapide pour les idées, briefs et itérations', creditsLabel:'Dès 1 crédit', dot:'#C4C7CC', capabilities:['tools','vision'] },
-      { id:'deepseek-v4-flash', modelKey:'deepseek-v4-flash', name:'DeepSeek V4 Flash', group:'Rapide', desc:'Rapide et efficace pour les volumes importants', creditsLabel:'Dès 1 crédit', dot:'#BCA7FF', capabilities:['tools','reasoning'] },
-      { id:'gpt-5.5', modelKey:'gpt-5.5', name:'GPT 5.5', group:'Raisonnement', desc:'Analyse avancée et orchestration de workflows complexes', creditsLabel:'Dès 4 crédits', dot:'#9BD1E8', capabilities:['tools','vision','reasoning'] },
-      { id:'claude-fable-5', modelKey:'claude-fable-5', name:'Claude Fable 5', group:'Raisonnement', desc:'Contexte long et réponses structurées pour les projets créatifs', creditsLabel:'Dès 5 crédits', dot:'#E8B29B', capabilities:['tools','reasoning'] },
-      { id:'gpt-image-2', modelKey:'gpt-image-2', name:'GPT Image 2', group:'Image', desc:'Images propres, cohérentes et prêtes à intégrer', creditsLabel:'Dès 4 crédits', dot:'#E8D79B', capabilities:['vision','image'] },
-      { id:'recraft', modelKey:'recraft', name:'Recraft', group:'Image', desc:'Direction artistique, marque et compositions éditoriales', creditsLabel:'Dès 4 crédits', dot:'#C9A8E8', capabilities:['vision','image'] },
-      { id:'seedance-2', modelKey:'seedance-2', name:'Seedance 2.0', group:'Vidéo', desc:'Clips sociaux avec mouvement et rythme maîtrisés', creditsLabel:'Dès 16 crédits', dot:'#A8E8C0', capabilities:['vision','video','audio'] }
+      { id:'auto', modelKey:'auto', name:'Auto', group:'Rapide', desc:'Choisit une configuration disponible pour ta demande', creditsLabel:'Selon la tâche', free:true, current:true, dot:'#6EE7FF', capabilities:[] }
     ];
-    const imageUrl = 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=85';
-    const imageUrl2 = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=85';
-    const videoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
-    const citations = [
-      { id:'demo-source-1', title:'Creative trends report', domain:'huggyflow.fun', url:'https://www.huggyflow.fun/' },
-      { id:'demo-source-2', title:'Brand launch checklist', domain:'marketing.example', url:'https://www.huggyflow.fun/pricing' }
-    ];
-    const messages = [
-      { id:'demo-user-1', role:'user', text:'Cree une campagne visuelle premium pour le lancement de ma marque.' },
-      { id:'demo-agent-1', role:'agent', text:'J ai prepare une direction creative complete avec une image hero et un plan de campagne.', streamPhase:'complete', streamProgress:100, activity:'Resultat pret', citations, agentActivity:[
-        { id:'demo-step-1', label:'Brief analyse', detail:'Intention et audience identifiees', kind:'step', status:'complete' },
-        { id:'demo-step-2', label:'Direction creative choisie', detail:'Premium studio commercial', kind:'step', status:'complete' },
-        { id:'demo-step-3', label:'Image hero generee', detail:'GPT Image 2', kind:'tool', status:'complete' },
-        { id:'demo-step-4', label:'Controle qualite termine', detail:'Composition et lisibilite valides', kind:'step', status:'complete' }
-      ], media:{ type:'image', status:'done', progress:100, model:'GPT Image 2', ratio:'1:1', resultUrl:imageUrl, generationId:'demo-image-1', prompt:'Hero visuel premium pour le lancement de marque' } },
-      { id:'demo-user-2', role:'user', text:'Ajoute aussi une video courte avec un rythme social et une voix off.' },
-      { id:'demo-agent-2', role:'agent', text:'La video est en cours de rendu. Tu peux continuer a travailler pendant que je termine les plans.', streamLive:true, streamPhase:'rendering', streamProgress:64, activity:'AgentFlow genere le rendu video', streamTool:'Seedance 2.0', agentActivity:[
-        { id:'demo-live-1', label:'Brief video structure', detail:'8 secondes · 16:9', kind:'step', status:'complete' },
-        { id:'demo-live-2', label:'Plans en cours de rendu', detail:'Seedance 2.0', kind:'tool', status:'working' },
-        { id:'demo-live-3', label:'Voix off et mixage', detail:'ElevenLabs', kind:'tool', status:'pending' }
-      ], media:{ type:'video', status:'loading', progress:64, model:'Seedance 2.0', ratio:'16:9', duration:'8s', generationId:'demo-video-1', prompt:'Video sociale premium avec rythme dynamique et voix off' } },
-      { id:'demo-agent-3', role:'agent', text:'La campagne est prete a etre publiee. Verifie le resultat puis valide la publication.', streamPhase:'complete', streamProgress:100, activity:'Validation requise', agentActivity:[
-        { id:'demo-final-1', label:'Rendu final verifie', detail:'Aucun artefact detecte', kind:'step', status:'complete' },
-        { id:'demo-final-2', label:'Publication en attente', detail:'Ton approbation est requise', kind:'step', status:'complete' }
-      ], approval:{ title:'Publication de la campagne', description:'Publier cette version dans ton espace equipe et dans Explorer ?', status:'pending' }, approvalRequest:{ id:'demo-approval-1' }, citations }
-    ];
-    const projects = [
-      { id:'demo-brand', title:'Campagne lancement ete', messages },
-      { id:'demo-social', title:'Social media kit', messages:[
-        { id:'demo-social-user', role:'user', text:'Prepare cinq idees de posts pour cette semaine.' },
-        { id:'demo-social-agent', role:'agent', text:'Voici cinq angles de contenu prets a adapter pour tes reseaux.', streamPhase:'complete', streamProgress:100, agentActivity:[{ id:'demo-social-step', label:'5 idees preparees', detail:'Angles, hooks et CTA', kind:'step', status:'complete' }], media:{ type:'image', status:'done', progress:100, model:'Recraft', ratio:'1:1', resultUrl:imageUrl2, generationId:'demo-image-2', prompt:'Social media kit editorial' } }
-      ] }
-    ];
-    const artifact = { id:'demo-artifact-1', title:'Landing page campagne', type:'html', status:'ready', currentVersion:3, version:{ id:'demo-version-3', number:3, compileStatus:'passed', sourcePrompt:'Landing page premium campagne lancement', createdAt:new Date().toISOString(), files:[{ path:'index.html', content:'<main><h1>Campagne lancement ete</h1><p>Une experience de marque claire et premium.</p></main>' },{ path:'styles.css', content:'body { font-family: system-ui; color: #131517; }' }] } };
-    const explore = [
-      { id:'demo-explore-1', title:'Studio product launch', description:'Une direction premium pour presenter un nouveau produit.', prompt:'Product launch premium, studio lumineux, composition editoriale', creator:'Maya Studio', creatorInitials:'MS', date:'Il y a 2 h', url:imageUrl, type:'image', model:'GPT Image 2', ratio:'1:1', likes:248, saves:74, remixes:31, views:1820 },
-      { id:'demo-explore-2', title:'Campaign moodboard', description:'Un moodboard colore pour une campagne sociale.', prompt:'Moodboard campagne sociale, couleurs vives, mise en page moderne', creator:'Leo Creative', creatorInitials:'LC', date:'Il y a 5 h', url:imageUrl2, type:'image', model:'Recraft', ratio:'4:5', likes:186, saves:62, remixes:24, views:1304 },
-      { id:'demo-explore-3', title:'Social launch film', description:'Un apercu video court pour les reseaux.', prompt:'Film social rapide avec mouvement et lumiere naturelle', creator:'Studio North', creatorInitials:'SN', date:'Hier', url:videoUrl, type:'video', model:'Seedance 2.0', ratio:'16:9', duration:'8s', hasAudio:true, likes:312, saves:89, remixes:46, views:2410 },
-      { id:'demo-explore-4', title:'Editorial portrait', description:'Un portrait editorial construit pour une marque personnelle.', prompt:'Portrait editorial naturel, lumiere douce, rendu magazine', creator:'Amina Labs', creatorInitials:'AL', date:'Il y a 2 j', url:imageUrl, type:'image', model:'FLUX.2 Pro', ratio:'3:4', likes:164, saves:51, remixes:18, views:980 },
-      { id:'demo-explore-5', title:'Product voice identity', description:'Une identite audio claire pour presenter une offre.', prompt:'Voix de marque chaleureuse et confiante pour une annonce', creator:'Echo House', creatorInitials:'EH', date:'Il y a 3 j', url:'', type:'audio', model:'ElevenLabs', ratio:'audio', duration:'23s', likes:92, saves:38, remixes:11, views:642 }
-    ];
-    const previewProjects = this.previewEmpty
-      ? [{ id:'preview-empty', title:'Nouveau projet', messages:[] }].concat(projects)
-      : projects;
-    const previewMessages = this.previewEmpty ? [] : messages;
     this.setState({
-      authToken:'demo-token', authRefreshToken:'demo-refresh', authExpiresAt:Date.now()+86400000,
-      user:{ id:'demo-user', name:'Sarah Demo', email:'demo@huggyflow.local', plan:'Pro' },
-      authName:'Sarah Demo', authEmail:'demo@huggyflow.local', settingsName:'Sarah Demo', settingsEmail:'demo@huggyflow.local',
-      credits:742, creditsMax:1000, activeTitle:this.previewEmpty ? 'Nouveau projet' : 'Campagne lancement ete', activeProjectId:this.previewEmpty ? 'preview-empty' : 'demo-brand', messages:previewMessages, projectsData:previewProjects,
-      exploreItems:explore, exploreLoading:false, exploreNewDismissed:false,
-      backgroundTasks:this.previewEmpty ? [] : [{ id:'demo-task-1', generationId:'demo-video-1', type:'video', status:'loading', progress:64, model:'Seedance 2.0', title:'Social launch film' }],
-      workflowTasks:this.previewEmpty ? [] : [{ id:'demo-workflow-1', title:'Campagne multicanale', status:'running', progress:68 }], backgroundTaskPanelOpen:false, backgroundTaskUnread:!this.previewEmpty,
-      memoryItems:[{ id:'demo-memory-1', label:'Ton style de marque', content:'Premium, clair, editorial et chaleureux.', sourceType:'user', confidence:.94, projectId:'demo-brand', usedReason:'Utilise pour maintenir la coherence de la campagne.', isPinned:true }],
-      securitySessions:[{ id:'demo-session-current', deviceLabel:'Chrome sur Windows', userAgent:'HuggyFlow Preview', current:true, lastSeenAt:new Date().toISOString() },{ id:'demo-session-mobile', deviceLabel:'Safari sur iPhone', userAgent:'iOS 18', current:false, lastSeenAt:new Date(Date.now()-7200000).toISOString() }],
-      securityEvents:[{ id:'demo-event-1', action:'Connexion reussie', createdAt:new Date().toISOString(), deviceLabel:'Chrome sur Windows' },{ id:'demo-event-2', action:'MFA verifie', createdAt:new Date(Date.now()-86400000).toISOString(), deviceLabel:'Chrome sur Windows' }], securityLoading:false, tfa:true, recoveryCodes:['DEMO-1234','DEMO-5678','DEMO-9012'],
-      usageData:{ summary:{ dailyAverage:86, forecast30Days:2580, remainingCredits:742 }, alert:{ threshold_percent:80 } }, usageThreshold:80,
-      statsData:{ summary:{ credits:258, images:14, videos:4, voices:3 }, chart:[{ label:'Lun', currentPct:68, previousPct:42, credits:31 },{ label:'Mar', currentPct:82, previousPct:50, credits:46 },{ label:'Mer', currentPct:54, previousPct:38, credits:29 },{ label:'Jeu', currentPct:91, previousPct:62, credits:57 }], models:[{ name:'GPT Image 2', credits:96 },{ name:'Seedance 2.0', credits:82 },{ name:'Recraft', credits:44 }] }, statsPeriod:'30',
-      apiData:{ keys:[{ id:'demo-api-key', name:'Preview automation', masked:'hf_demo_••••••42', createdAt:new Date().toISOString(), scopes:['chat','generate','artifacts'], expiresAt:new Date(Date.now()+7776000000).toISOString(), dailyLimit:1000, usageCount:284 } ] },
-      teamData:{ seatLimit:5, members:[{ name:'Sarah Demo', email:'demo@huggyflow.local', initials:'SD', role:'owner', status:'active', isYou:true },{ name:'Alex Martin', email:'alex@huggyflow.local', initials:'AM', role:'editor', status:'active' },{ name:'Nina Cole', email:'nina@huggyflow.local', initials:'NC', role:'viewer', status:'active' }], invites:[{ id:'demo-invite-1', email:'studio@huggyflow.local', createdAt:new Date(Date.now()-86400000).toISOString() }], projectAccess:[{ projectId:'demo-brand', memberUserId:'Alex Martin', role:'editor', permissions:{ view:true, edit:true, publish:false } }], approvalRequests:[{ id:'demo-approval-team', artifact_id:'demo-artifact-1', status:'pending', created_at:new Date().toISOString() }] },
-      affiliateData:{ link:'https://huggyflow.fun/r/sarah-demo', stats:{ clicks:1248, activeSubscribers:18, earningsUsd:186.4, availableUsd:74.2, paidUsd:112.2 }, referrals:[{ name:'Studio M', amountUsd:28.4, status:'active' },{ name:'Nova Brand', amountUsd:16.8, status:'paid' }], payouts:[{ requested_at:new Date(Date.now()-2592000000).toISOString(), amount_usd:82, status:'paid' }] },
-      billingStatus:{ user:{ plan:'Pro', currentPeriodEnd:new Date(Date.now()+1728000000).toISOString() }, subscription:{ status:'active' }, paymentConfigured:true, invoices:[{ id:'demo-invoice-1', createdAt:new Date(Date.now()-2592000000).toISOString(), description:'Abonnement Pro', amount_paid:2900, currency:'USD', status:'paid' },{ id:'demo-invoice-2', createdAt:new Date(Date.now()-5184000000).toISOString(), description:'Pack de credits', amount_paid:1200, currency:'USD', status:'paid' }] },
-      pricingPlans:[{ id:'free', displayName:'Free', monthlyPriceUsd:0, includedCredits:100, monthlyMessageLimit:60, metadata:{ segment:'solo', tagline:'Pour decouvrir HuggyFlow' }, allowedMediaTypes:['image'], concurrentVideoJobs:0, concurrentImageJobs:1, dailyImageLimit:3, dailyVideoLimit:0, watermarkRequired:true, storageGb:1, mediaRetentionDays:7 },{ id:'basic', displayName:'Creator', monthlyPriceUsd:13.17, annualPriceUsd:138.25, includedCredits:500, monthlyMessageLimit:300, metadata:{ segment:'solo', popular:true, best_value:true, tagline:'Pour creer chaque semaine' }, creditOptions:[{ id:'creator-250', credits:250, monthlyPriceXof:4900, annualPriceXof:51450 },{ id:'creator-500', credits:500, monthlyPriceXof:7900, annualPriceXof:82950 },{ id:'creator-1000', credits:1000, monthlyPriceXof:14900, annualPriceXof:156450 },{ id:'creator-2500', credits:2500, monthlyPriceXof:34900, annualPriceXof:366450 },{ id:'creator-5000', credits:5000, monthlyPriceXof:64900, annualPriceXof:681450 },{ id:'creator-7500', credits:7500, monthlyPriceXof:89900, annualPriceXof:943950 }], allowedMediaTypes:['image','image_edit','video'], concurrentVideoJobs:1, concurrentImageJobs:2, dailyImageLimit:10, dailyVideoLimit:2, storageGb:10, mediaRetentionDays:30 },{ id:'pro', displayName:'Pro', monthlyPriceUsd:33.17, annualPriceUsd:348.25, includedCredits:1500, monthlyMessageLimit:900, metadata:{ segment:'solo', popular:false, priority:true, tagline:'Pour creer et publier plus vite' }, creditOptions:[{ id:'pro-750', credits:750, monthlyPriceXof:12900, annualPriceXof:135450 },{ id:'pro-1500', credits:1500, monthlyPriceXof:19900, annualPriceXof:208950 },{ id:'pro-3000', credits:3000, monthlyPriceXof:37900, annualPriceXof:397950 },{ id:'pro-6000', credits:6000, monthlyPriceXof:71900, annualPriceXof:754950 },{ id:'pro-10000', credits:10000, monthlyPriceXof:114900, annualPriceXof:1206450 },{ id:'pro-15000', credits:15000, monthlyPriceXof:159900, annualPriceXof:1678950 }], allowedMediaTypes:['image','image_edit','video','audio'], concurrentVideoJobs:2, concurrentImageJobs:4, dailyImageLimit:30, dailyVideoLimit:8, priorityQueue:true, storageGb:50, mediaRetentionDays:90 }], pricingModels:[{ name:'GPT Image 2', type:'image', creditsPerDefaultUnit:4, defaultUnits:1, pricingUnit:'unit' },{ name:'Seedance 2.0', type:'video', creditsPerDefaultUnit:32, defaultUnits:8, pricingUnit:'second' }], creditPacks:[{ id:'topup-5', label:'5 crédits', credits:5, amountXof:100 },{ id:'topup-10', label:'10 crédits', credits:10, amountXof:200 },{ id:'topup-25', label:'25 crédits', credits:25, amountXof:500 },{ id:'topup-50', label:'50 crédits', credits:50, amountXof:1000 },{ id:'topup-100', label:'100 crédits', credits:100, amountXof:2000 },{ id:'topup-250', label:'250 crédits', credits:250, amountXof:5000 }],
-      artifactItems:[artifact], activeArtifact:artifact, artifactVersions:[artifact.version], artifactEditorFile:'index.html', artifactEditorContent:artifact.version.files[0].content, artifactSaveState:'saved', skillItems:[{ id:'demo-skill-1', name:'Campaign Director', description:'Construit une campagne complete.', status:'active' },{ id:'demo-skill-2', name:'Quality Control', description:'Verifie le rendu et les contraintes.', status:'active' }],
-      integrationConnections:[{ provider:'google-drive', status:'connected', account_label:'sarah@huggyflow.local', sync_status:'healthy', permissions:{ scopes:['files.read','files.write'] }, connected_at:new Date().toISOString(), last_synced_at:new Date().toISOString() }], integrationsLoading:false,
-      backendReady:true, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm', modelId:'auto', studioPanelOpen:true, studioTab:'media', artifactView:'preview'
+      authToken:'', authRefreshToken:'', authExpiresAt:0,
+      user:null, authName:'', authEmail:'', settingsName:'', settingsEmail:'',
+      credits:0, creditsMax:0, activeTitle:'Nouveau projet', activeProjectId:'preview-empty',
+      messages:[], projectsData:[{ id:'preview-empty', title:'Nouveau projet', messages:[] }],
+      exploreItems:[], exploreLoading:false, exploreNewDismissed:false,
+      backgroundTasks:[], workflowTasks:[], backgroundTaskPanelOpen:false, backgroundTaskUnread:false,
+      memoryItems:[], memoryConflicts:[], securitySessions:[], securityEvents:[], securityLoading:false,
+      tfa:false, recoveryCodes:[], usageData:null, usageThreshold:80, statsData:null,
+      apiData:{ keys:[] }, teamData:{ seatLimit:0, members:[], invites:[], projectAccess:[], approvalRequests:[] },
+      affiliateData:null, billingStatus:null, pricingPlans:[], pricingModels:[], creditPacks:[],
+      artifactItems:[], activeArtifact:null, artifactVersions:[], artifactEditorFile:'', artifactEditorContent:'',
+      artifactSaveState:'idle', skillItems:[], integrationConnections:[], integrationsLoading:false,
+      backendReady:false, backendError:false, sendLocked:false, mode:'image', agentMode:'confirm',
+      modelId:'auto', studioPanelOpen:false, studioTab:'media', artifactView:'preview'
     }, ()=>{ this.applyDocumentMetadata(); this.syncChatInputSize(); });
   }
+
   updatePreviewApproval(id, status){
     if(!this.demoMode) return;
-    this.setState(s=>({ messages:(s.messages || []).map(message=>message.approvalRequest && message.approvalRequest.id === id ? Object.assign({}, message, { approval:Object.assign({}, message.approval || {}, { status:status === 'changes_requested' ? 'changes-requested' : status }) }) : message), teamData:Object.assign({}, s.teamData || {}, { approvalRequests:((s.teamData && s.teamData.approvalRequests) || []).map(request=>request.id === id ? Object.assign({}, request, { status }) : request) }) }), ()=>this.notify(status === 'approved' ? 'Publication approuvee dans le mode preview.' : 'Demande mise a jour dans le mode preview.'));
+    this.notify('Mode aperçu : aucune approbation réelle n’est disponible sans compte connecté.');
   }
   async bootstrap(){
     if(this.demoMode){ this.loadPreviewData(); return; }
@@ -4364,6 +4301,8 @@ class Component extends DCLogic {
          modelSync: data.modelSync || { available:false, capabilities:{} },
         creditPacks: data.creditPacks || [],
         billingStatus: data.billing || this.state.billingStatus,
+        testBilling: data.testBilling || this.state.testBilling,
+        testGrant: data.testGrant || (data.billing && data.billing.testGrant) || this.state.testGrant,
         billingCurrency: (data.pricing && data.pricing.currency) || (data.billing && data.billing.currency) || this.state.billingCurrency,
         usdXofRate: Number((data.pricing && data.pricing.usdXofRate) || (data.billing && data.billing.usdXofRate) || this.state.usdXofRate || 600),
         authEmail: this.state.authEmail || (data.user && data.user.email) || '',
@@ -4954,7 +4893,9 @@ class Component extends DCLogic {
     this.apiFetch('/api/events', { method:'POST', body:JSON.stringify({ event, sessionId, metadata:metadata || {} }) }).catch(()=>{});
   }
   isModelFree(model){
-    if(!model || !model.free) return false;
+    // Auto is a router, not a zero-cost model. Its eventual route may be
+    // paid, so low-credit protection must still be available in this mode.
+    if(!model || model.id === 'auto' || !model.free) return false;
     if(!model.freeUntil) return true;
     const until = Date.parse(model.freeUntil);
     return !Number.isFinite(until) || Date.now() <= until;
@@ -5165,7 +5106,7 @@ class Component extends DCLogic {
     this.updateAgentMessage(id, { agentTasks:tasks, backgroundTaskId:String(source.taskId || source.agentTaskId || source.rootTaskId || '') || undefined });
   }
   retryAgentMessage(id){
-    if(this.demoMode){ this.notify('Mode preview : la relance est simulee sans appel API.'); return; }
+    if(this.demoMode){ this.notify('Mode aperçu : aucune exécution n’est disponible sans compte connecté.'); return; }
     const messages = this.state.messages || [];
     const index = messages.findIndex(message=>message.id === id);
     const previous = index > 0 ? messages.slice(0, index).reverse().find(message=>message.role === 'user') : null;
@@ -5204,7 +5145,7 @@ class Component extends DCLogic {
       const message = messages.find(entry=>String(entry.id) === String(id));
       if(!message || message.role !== 'agent') return;
       const media = message.media && typeof message.media === 'object' ? message.media : null;
-      const mediaStatus = media && (media.status === 'loading' ? 'generating' : (media.status === 'done' ? 'complete' : (media.status === 'failed' ? 'error' : undefined)));
+      const mediaStatus = media && (media.status === 'loading' ? 'generating' : (media.status === 'done' && media.resultConfirmed !== false ? 'complete' : (media.status === 'failed' ? 'error' : undefined)));
       const progress = Math.max(0, Math.min(100, Math.round(Number(message.streamProgress || (message.streamLive ? 8 : 100)))));
       const phase = String(message.streamPhase || (message.streamLive ? 'analyzing' : 'complete'));
       window.HFComponents.mountAgentMessage(slot, this.agentMessageUi(message, media, mediaStatus, progress, phase));
@@ -5212,7 +5153,8 @@ class Component extends DCLogic {
   }
   agentMessageUi(message, media, mediaStatus, streamProgress, streamPhase){
     if(!message || !message.role || message.role !== 'agent') return {};
-    const status = message.streamLive ? (message.streamPhase === 'cancelled' ? 'cancelled' : (message.streamPhase === 'paused' ? 'paused' : 'working')) : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete'));
+    const mediaWorking = mediaStatus === 'generating';
+    const status = message.streamPhase === 'interrupted' ? 'interrupted' : (message.streamLive || mediaWorking ? (message.streamPhase === 'cancelled' ? 'cancelled' : (message.streamPhase === 'paused' ? 'paused' : 'working')) : (message.streamError || mediaStatus === 'error' ? 'error' : (message.streamPhase === 'cancelled' ? 'cancelled' : 'complete')));
     const interactionMode = message.interactionMode || (message.approvalRequest || media || (message.kind && ['image','video','voice','document'].includes(String(message.kind))) ? 'creation' : 'conversation');
     const compactConversation = interactionMode === 'conversation';
     const activity = compactConversation ? [] : (Array.isArray(message.agentActivity) ? message.agentActivity : []);
@@ -5228,7 +5170,7 @@ class Component extends DCLogic {
       onFeedback:(value)=>this.submitAgentFeedback(message.id, value),
       onPause:message.streamLive && message.backgroundTaskId ? ()=>this.controlAgentTask(message.backgroundTaskId, 'pause') : undefined,
       onResume:message.streamLive && message.backgroundTaskId ? ()=>this.controlAgentTask(message.backgroundTaskId, 'resume') : undefined,
-      onCancel:message.streamLive ? ()=>this.stopGeneration() : undefined,
+      onCancel:message.streamLive || mediaWorking ? ()=>this.stopGeneration() : undefined,
       approval:message.approval || undefined,
       onApprove:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'approved') : this.updateApprovalRequest(message.approvalRequest, 'approved') : undefined,
       onReject:message.approvalRequest ? ()=>this.demoMode ? this.updatePreviewApproval(message.approvalRequest.id, 'rejected') : this.updateApprovalRequest(message.approvalRequest, 'rejected') : undefined,
@@ -5245,7 +5187,8 @@ class Component extends DCLogic {
       assembling:'AgentFlow assemble les éléments',
       finalizing:'AgentFlow prépare le résultat',
       complete:'Résultat prêt',
-      cancelled:'Génération interrompue'
+      cancelled:'Génération interrompue',
+      interrupted:'Réponse interrompue'
     })[String(phase || '').toLowerCase()] || 'AgentFlow travaille sur ta demande';
   }
   streamPhraseFor(phase, index){
@@ -5305,7 +5248,7 @@ class Component extends DCLogic {
     if(!media) return;
     const text = generation && generation.text ? generation.text : (media.type === 'video' ? 'Je lance la video. Tu peux suivre la progression ici.' : 'Je lance la creation. Tu peux suivre la progression ici.');
     const msgId = id || (generation && generation.messageId) || ('g'+(media.generationId || Date.now()));
-      const patch = { id:msgId, role:'agent', typing:false, activity:media.status === 'loading' ? 'AgentFlow prépare la création' : 'Création prête', text, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image', media };
+      const patch = { id:msgId, role:'agent', typing:false, streamLive:media.status === 'loading', streamPhase:media.status === 'loading' ? 'rendering' : (media.status === 'done' ? 'complete' : 'error'), streamError:media.status === 'failed', activity:media.status === 'loading' ? 'AgentFlow prépare la création' : (media.status === 'done' ? 'Création prête' : 'Création échouée'), text, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image', media, backgroundTaskId:generation && generation.taskId ? String(generation.taskId) : undefined };
     this.setState(s=>{
       const exists = s.messages.some(m=>m.id === msgId);
       return { messages: exists ? s.messages.map(m=>m.id === msgId ? Object.assign({}, m, patch) : m) : s.messages.concat([patch]) };
@@ -5421,7 +5364,7 @@ class Component extends DCLogic {
       const updateMessage = (message, task)=>{
         if(!message) return message;
         return message.id === task.messageId || (message.media && message.media.generationId === task.generationId)
-          ? Object.assign({}, message, { media:task, kind:task.type === 'video' ? 'video' : (task.type === 'voice' ? 'voice' : 'image') })
+          ? Object.assign({}, message, { media:task, typing:false, streamLive:task.status === 'loading', streamPhase:task.status === 'done' ? 'complete' : (task.status === 'failed' ? 'error' : 'rendering'), streamError:task.status === 'failed', kind:task.type === 'video' ? 'video' : (task.type === 'voice' ? 'voice' : 'image') })
           : message;
       };
       this.setState(state=>({
@@ -5468,7 +5411,7 @@ class Component extends DCLogic {
         failures = 0;
         const data = await res.json();
         const media = this.normalizeMedia(data.generation || data);
-        if(media) this.updateAgentMessage(messageId, { media, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image' });
+        if(media) this.updateAgentMessage(messageId, { media, typing:false, streamLive:media.status === 'loading', streamPhase:media.status === 'done' ? 'complete' : (media.status === 'failed' ? 'error' : 'rendering'), streamError:media.status === 'failed', kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image' });
         this.applyCreditPayload(data);
         if(media && (media.status === 'done' || media.status === 'failed')){
           const stateMap = this.backgroundTaskStateMap();
@@ -5522,10 +5465,11 @@ class Component extends DCLogic {
     const userMsg = { id:'u'+Date.now()+Math.floor(Math.random()*999), role:'user', text:userText, attachments:currentAttachments };
     const interactionMode = this.interactionModeForPrompt(t, currentAttachments.length > 0, mode);
     const agentMsg = { id:agentId, role:'agent', typing:true, kind, interactionMode, streamLive:true, streamPhase:'analyzing', streamProgress:8, activity:'AgentFlow cadre ta demande', agentActivity:interactionMode === 'conversation' ? [] : [{ id:'understand', label:'Comprendre la demande', kind:'step', status:'working' }] };
-    // A deliberate send should follow the new message; background updates never
-    // steal the viewport once the user has scrolled away.
-    this.chatShouldStick = true;
-    this.chatScrollRequested = true;
+    // Follow only when the user was already reading the end of the thread.
+    // Sending a prompt must not pull a reader away from an older message.
+    const chatList = typeof document !== 'undefined' ? document.querySelector('[data-hf-chat-scroll="true"]') : null;
+    this.chatShouldStick = Boolean(chatList && (chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight) < 96);
+    this.chatScrollRequested = false;
     this.setState(s=>({
       messages:s.messages.concat([userMsg, agentMsg]),
       input:'',
@@ -5535,15 +5479,34 @@ class Component extends DCLogic {
     }), ()=>this.sendPromptToApi(prompt, agentId, attachmentPayload));
   }
   stopGeneration(){
-    const activeMessage = (this.state.messages || []).slice().reverse().find(message=>message && message.role === 'agent' && message.streamLive);
-    if(activeMessage && activeMessage.backgroundTaskId) this.controlAgentTask(activeMessage.backgroundTaskId, 'cancel');
+    const activeMessages = (this.state.messages || []).filter(message=>message && message.role === 'agent' && (message.streamLive || (message.media && message.media.status === 'loading')));
+    this.cancelRequestedAgentIds = this.cancelRequestedAgentIds || new Set();
+    activeMessages.forEach(message=>{
+      this.cancelRequestedAgentIds.add(String(message.id));
+      if(message.backgroundTaskId) this.controlAgentTask(message.backgroundTaskId, 'cancel');
+      const generationId = message.media && message.media.generationId;
+      if(generationId) this.cancelGeneration(generationId, message.id);
+    });
     if(this.chatAbort) this.chatAbort.abort();
     this.chatAbort = null;
     this.flushAllAgentText();
     this.setState(s=>({
       sendLocked:false,
-      messages:s.messages.map(m=>m.typing ? Object.assign({}, m, { typing:false, streamLive:false, streamPhase:'cancelled', streamProgress:0, text:'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
+      messages:s.messages.map(m=>activeMessages.some(active=>active.id === m.id) ? Object.assign({}, m, { typing:false, streamLive:false, streamPhase:'interrupted', streamError:false, streamProgress:0, cancelRequested:true, text:(m.text || '') || 'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
     }));
+  }
+  async cancelGeneration(generationId, messageId){
+    if(!generationId) return;
+    try{
+      const res = await this.apiFetch('/api/generations/'+encodeURIComponent(generationId)+'/cancel', { method:'POST', body:'{}' });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Annulation indisponible.');
+      const media = this.normalizeMedia(data.generation || data);
+      this.updateAgentMessage(messageId, { streamLive:false, streamPhase:'cancelled', streamError:false, cancelRequested:false, media:media || { generationId, status:'failed', resultConfirmed:false, progress:0 } });
+    }catch(err){
+      this.updateAgentMessage(messageId, { streamLive:false, streamPhase:'interrupted', cancelRequested:false, streamError:true, text:(this.state.messages.find(message=>message.id === messageId) || {}).text || 'La demande d’annulation n’a pas pu être confirmée.' });
+      this.notify('La demande d’annulation n’a pas pu être confirmée.');
+    }
   }
   bindProjectFromApi(payload){
     const projectId = payload && (payload.projectId || payload.project_id);
@@ -5596,18 +5559,17 @@ class Component extends DCLogic {
         if(data.generation){ this.addGenerationCard(data.generation, agentId); delivered = true; }
         if(data.message){ this.updateAgentMessage(agentId, { typing:false, text:data.message }); delivered = true; }
       }
-      if(!delivered) this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100, text:'Création lancée. Je synchronise les résultats avec HuggyFlow.' });
+      if(!delivered) this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'interrupted', streamError:true, streamProgress:0, text:(this.state.messages.find(message=>message.id === agentId) || {}).text || 'Réponse interrompue. Tu peux reprendre quand tu veux.' });
     }catch(err){
       const aborted = err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')));
+      const cancelRequested = this.cancelRequestedAgentIds && this.cancelRequestedAgentIds.has(String(agentId));
       if(!aborted && /solde insuffisant|credits requis|crédits requis/i.test(String(err && err.message || ''))){
         this.openCreditPaywall(String(err.message || 'Ton solde de crédits est insuffisant.'), this.state.modelId);
       }
-      this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:aborted ? 'cancelled' : 'error', streamError:!aborted, streamProgress:0, text: aborted ? 'Réponse interrompue. Tu peux reprendre quand tu veux.' : this.friendlyError(err && err.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.') });
+      this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:cancelRequested ? 'interrupted' : (aborted ? 'interrupted' : 'error'), streamError:!cancelRequested && !aborted, streamProgress:0, text: cancelRequested || aborted ? ((this.state.messages.find(message=>message.id === agentId) || {}).text || 'Réponse interrompue. Tu peux reprendre quand tu veux.') : this.friendlyError(err && err.message, 'La création est indisponible pour le moment. Réessaie dans quelques instants.') });
     }finally{
       this.chatAbort = null;
       this.flushAgentText(agentId);
-      const finishedMessage = this.state.messages.find(message=>message.id === agentId);
-      if(finishedMessage && finishedMessage.streamLive && !['cancelled','error'].includes(String(finishedMessage.streamPhase || ''))) this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 });
       this.setState({ sendLocked:false });
       this.trackEvent('agent_request_completed', { mode });
       this.scheduleBootstrap(1400);
@@ -5617,27 +5579,39 @@ class Component extends DCLogic {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '', delivered = false, textStarted = false, lastSequence = 0, terminalStatus = '';
+    let runId = '';
+    let pendingMedia = false;
+    const seenEvents = new Set();
     const handle = (block)=>{
-      const lines = block.split(/\r?\n/);
+      const lines = String(block || '').split(/\r?\n/);
       let type = 'message', dataLines = [];
       lines.forEach(line=>{
         if(line.indexOf('event:') === 0) type = line.slice(6).trim();
         if(line.indexOf('data:') === 0) dataLines.push(line.slice(5).replace(/^ /, ''));
       });
       const data = dataLines.join('\n');
-      if(!data) return;
+      if(!data || data === '[DONE]') return;
       let payload; try{ payload = JSON.parse(data); }catch(e){ return; }
+      const eventRunId = String(payload && (payload.runId || payload.run_id || '') || '');
+      if(eventRunId) {
+        if(runId && eventRunId !== runId) return;
+        runId = eventRunId;
+      }
       const sequence = Number(payload && (payload.sequence || payload.seq || 0));
       if(Number.isFinite(sequence) && sequence > 0){
-        if(sequence <= lastSequence) return;
+        const eventKey = (runId || 'stream') + ':' + sequence;
+        if(seenEvents.has(eventKey) || sequence <= lastSequence) return;
+        seenEvents.add(eventKey);
         lastSequence = sequence;
       }
       type = String((payload && payload.type) || type || 'message').toLowerCase();
       if(type === 'assistant.delta') type = 'text';
       if(type === 'run.failed') type = 'error';
       if(type === 'run.cancelled') type = 'cancelled';
+      if(type === 'run.interrupted') type = 'interrupted';
       if(type === 'run.completed') type = 'done';
       if(payload && (payload.error || payload.errorCode) && type === 'done') type = 'error';
+      if(type === 'heartbeat') return;
       if(type === 'run.started'){ this.updateAgentMessage(agentId, { streamLive:true, streamPhase:String(payload.phase || 'analyzing'), streamProgress:Number(payload.progress || 8), backgroundTaskId:String(payload.taskId || payload.agentTaskId || payload.rootTaskId || '') || undefined }); delivered = true; }
       if(type === 'run.paused'){ this.updateAgentMessage(agentId, { streamLive:true, streamPhase:'paused', streamProgress:Number(payload.progress || 0), backgroundTaskId:String(payload.taskId || payload.agentTaskId || payload.rootTaskId || '') || undefined }); delivered = true; }
       if(type === 'run.resumed'){ this.updateAgentMessage(agentId, { streamLive:true, streamPhase:String(payload.phase || 'analyzing'), streamProgress:Number(payload.progress || 0) }); delivered = true; }
@@ -5652,6 +5626,11 @@ class Component extends DCLogic {
         this.appendAgentText(agentId, payload.text || ''); delivered = true;
       }
       if(type === 'status'){ this.updateAgentMessage(agentId, this.streamStatusPatch(payload, 'analyzing', 18)); this.recordAgentActivity(agentId, payload, 'analyzing', payload && (payload.tool || payload.provider) ? 'tool' : 'step'); delivered = true; }
+      if(type === 'tool.started' || type === 'tool.completed' || type === 'tool.failed'){
+        const toolStatus = type === 'tool.failed' ? 'error' : (type === 'tool.completed' ? 'complete' : 'working');
+        this.recordAgentActivity(agentId, Object.assign({}, payload, { status:toolStatus, label:payload.label || payload.tool || 'Outil' }), 'assembling', 'tool');
+        delivered = true;
+      }
       if(type === 'skill'){
         const skillPatch = this.streamStatusPatch(payload, payload.phase === 'ready' ? 'finalizing' : 'assembling', payload.phase === 'ready' ? 78 : 28);
         this.setState({ skillActivity:payload.label || 'AgentFlow construit une compétence réutilisable', studioPanelOpen:true, studioTab:'skill' });
@@ -5662,14 +5641,71 @@ class Component extends DCLogic {
         this.setState({ studioPanelOpen:true, studioTab:'artifact', skillActivity:payload.label || 'AgentFlow prépare un artifact' });
         this.updateAgentMessage(agentId, artifactPatch); this.recordAgentActivity(agentId, payload, artifactPatch.streamPhase, 'generation'); delivered = true;
       }
-      if(type === 'artifact' && payload.artifact){ const artifact = this.normalizeArtifact(payload.artifact); this.setState(s=>({ artifactItems:[artifact].concat((s.artifactItems || []).filter(a=>a.id !== artifact.id)), studioPanelOpen:true, studioTab:'artifact' }), ()=>this.setActiveArtifact(artifact)); delivered = true; }
-      if(type === 'generation'){ this.updateAgentMessage(agentId, { streamLive:false, streamPhase:'complete', streamProgress:100, citations:this.normalizeAgentCitations(payload) }); this.recordAgentActivity(agentId, payload, 'finalizing', 'generation'); this.addGenerationCard(payload.generation || payload, agentId); delivered = true; }
-      if(type === 'done' && terminalStatus !== 'error' && terminalStatus !== 'cancelled'){ this.bindProjectFromApi(payload); this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 }); terminalStatus = 'complete'; delivered = true; }
+      if(type === 'artifact' && payload.artifact){ const artifact = this.normalizeArtifact(payload.artifact); if(artifact){ this.setState(s=>({ artifactItems:[artifact].concat((s.artifactItems || []).filter(a=>a.id !== artifact.id)), studioPanelOpen:true, studioTab:'artifact' }), ()=>this.setActiveArtifact(artifact)); } delivered = true; }
+      if(type === 'generation'){
+        const rawGeneration = payload.generation || payload;
+        const normalized = this.normalizeMedia(rawGeneration);
+        pendingMedia = Boolean(normalized && normalized.status === 'loading');
+        this.recordAgentActivity(agentId, payload, pendingMedia ? 'rendering' : 'finalizing', 'generation');
+        this.addGenerationCard(rawGeneration, agentId);
+        this.updateAgentMessage(agentId, {
+          interactionMode:'creation',
+          citations:this.normalizeAgentCitations(payload),
+          streamLive:pendingMedia,
+          streamPhase:pendingMedia ? 'rendering' : (normalized && normalized.status === 'done' ? 'complete' : 'error'),
+          streamError:Boolean(normalized && normalized.status === 'failed'),
+          streamProgress:pendingMedia ? Math.max(10, Number(normalized.progress || 10)) : (normalized && normalized.status === 'done' ? 100 : 0),
+          typing:false
+        });
+        if(normalized && normalized.status === 'done' && normalized.resultConfirmed === true) terminalStatus = 'complete';
+        if(normalized && normalized.status === 'failed') terminalStatus = 'error';
+        delivered = true;
+      }
+      if(type === 'batch'){
+        pendingMedia = true;
+        this.updateAgentMessage(agentId, { interactionMode:'creation', streamLive:true, streamPhase:'rendering', streamProgress:12, typing:false });
+        this.recordAgentActivity(agentId, payload, 'rendering', 'generation');
+        delivered = true;
+      }
+      if(type === 'done'){
+        this.bindProjectFromApi(payload);
+        const current = this.state.messages.find(message=>message.id === agentId);
+        const stillPending = pendingMedia || Boolean(current && current.media && current.media.status === 'loading');
+        const queuedMedia = payload.resultConfirmed === false && ['queued','pending','running'].includes(String(payload.status || '').toLowerCase());
+        if(stillPending || queuedMedia){
+          pendingMedia = true;
+          this.updateAgentMessage(agentId, { typing:false, streamLive:true, streamPhase:'rendering', streamError:false, streamProgress:Math.max(10, Number(current && current.streamProgress || 10)) });
+          terminalStatus = 'media_pending';
+        } else if(payload.resultConfirmed === false){
+          terminalStatus = 'interrupted';
+          this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'interrupted', streamError:true, streamProgress:0, text:(current && current.text) || 'Le résultat n’a pas été confirmé. Tu peux reprendre.' });
+        } else if(terminalStatus !== 'error' && terminalStatus !== 'cancelled' && terminalStatus !== 'interrupted'){
+          this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'complete', streamProgress:100 });
+          terminalStatus = 'complete';
+        }
+        delivered = true;
+      }
       if(type === 'credits') this.applyCreditPayload(payload);
-      if(type === 'error'){ terminalStatus = 'error'; this.updateAgentMessage(agentId, { streamError:true, streamLive:false, streamPhase:'error', streamProgress:0 }); }
       if(type === 'sources' || type === 'citations'){ this.updateAgentMessage(agentId, { citations:this.normalizeAgentCitations(payload) }); this.recordAgentActivity(agentId, payload, 'researching', 'search'); delivered = true; }
-      if(type === 'cancelled'){ terminalStatus = 'cancelled'; this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'cancelled', streamProgress:0, text:'Génération interrompue. Tu peux reprendre quand tu veux.' }); delivered = true; }
-      if(type === 'error'){ this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamError:true, streamPhase:'error', streamProgress:0, text:this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.') }); delivered = true; }
+      if(type === 'cancelled'){
+        terminalStatus = 'cancelled';
+        this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamPhase:'cancelled', streamProgress:0, text:(this.state.messages.find(message=>message.id === agentId) || {}).text || 'Génération interrompue. Tu peux reprendre quand tu veux.' });
+        delivered = true;
+      }
+      if(type === 'interrupted'){
+        terminalStatus = 'interrupted';
+        const current = this.state.messages.find(message=>message.id === agentId);
+        this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamError:true, streamPhase:'interrupted', streamProgress:0, text:(current && current.text) || 'Réponse interrompue. Tu peux reprendre quand tu veux.' });
+        delivered = true;
+      }
+      if(type === 'error'){
+        terminalStatus = 'error';
+        const current = this.state.messages.find(message=>message.id === agentId);
+        const interrupted = String(payload.code || payload.errorCode || '').toUpperCase() === 'STREAM_INTERRUPTED';
+        this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamError:true, streamPhase:interrupted ? 'interrupted' : 'error', streamProgress:0, text:interrupted ? ((current && current.text) || 'Réponse interrompue. Tu peux reprendre quand tu veux.') : this.friendlyError(payload.message, 'La création a échoué. Réessaie avec une consigne plus courte.') });
+        if(interrupted) terminalStatus = 'interrupted';
+        delivered = true;
+      }
     };
     while(true){
       const chunk = await reader.read();
@@ -5682,8 +5718,24 @@ class Component extends DCLogic {
     buffer += decoder.decode();
     if(buffer.trim()) handle(buffer);
     this.flushAgentText(agentId);
+    // A clean TCP close is not a successful run. Give the server event log one
+    // chance to replay events that were persisted after the browser lost them.
+    if(!terminalStatus && runId){
+      try{
+        await new Promise(resolve=>setTimeout(resolve, 80));
+        const replay = await this.apiFetch('/api/runs/'+encodeURIComponent(runId)+'/events?afterSequence='+encodeURIComponent(lastSequence));
+        const replayData = replay.ok ? await replay.json().catch(()=>({})) : {};
+        (Array.isArray(replayData.events) ? replayData.events : []).forEach(event=>handle('event: '+String(event.type || 'message')+'\ndata: '+JSON.stringify(event)));
+        this.flushAgentText(agentId);
+      }catch(e){}
+    }
+    const current = this.state.messages.find(message=>message.id === agentId);
+    if(!terminalStatus && !(current && current.media && current.media.status === 'loading')){
+      this.updateAgentMessage(agentId, { typing:false, streamLive:false, streamError:true, streamPhase:'interrupted', streamProgress:0, text:(current && current.text) || 'Réponse interrompue. Tu peux reprendre quand tu veux.' });
+    }
     return delivered;
   }
+
   checkoutPlanId(id){ return String(id || 'free'); }
   openCheckoutPhone(planId, creditOptionId, creditPackId){
     let storedPhone = '';
@@ -5757,12 +5809,47 @@ class Component extends DCLogic {
       const res = await this.apiFetch('/api/billing/status');
       if(!res.ok) throw new Error('billing '+res.status);
       const data = await res.json();
-      this.setState({ billingStatus:data });
+      this.setState({ billingStatus:data, testGrant:data.testGrant || this.state.testGrant });
       this.applyCreditPayload(data);
     }catch(err){
       this.setState({ pricingNotice:'Impossible de charger la facturation pour le moment.' });
     }finally{
       this.setState({ billingLoading:false });
+    }
+  }
+  async activateTestGrant(){
+    if(this.demoMode || !this.state.authToken || !this.state.testBilling || !this.state.testBilling.enabled) return;
+    if(this.state.testGrant && this.state.testGrant.active){ this.notify('L’accès de test est déjà actif.'); return; }
+    this.setState({ testGrantLoading:true, pricingNotice:'' });
+    try{
+      const accountId = this.state.user && this.state.user.id ? String(this.state.user.id) : 'account';
+      const res = await this.apiFetch('/api/billing/test-grant', { method:'POST', body:JSON.stringify({ planId:'pro', credits:1500, creditOptionId:'pro-1500', idempotencyKey:'hf-test-grant:' + accountId + ':pro:1500' }) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Activation indisponible.');
+      this.setState({ testGrant:{ active:true, planId:data.planId || 'pro', credits:Number(data.credits || 1500), status:data.status || 'active' }, pricingNotice:'Accès de test Pro activé sans paiement. 1 500 crédits sont disponibles.' });
+      await this.loadBillingStatus();
+      await this.bootstrap();
+    }catch(err){
+      this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible d’activer l’accès de test pour le moment.') });
+    }finally{
+      this.setState({ testGrantLoading:false });
+    }
+  }
+  async revokeTestGrant(){
+    if(this.demoMode || !this.state.authToken || !this.state.testGrant || !this.state.testGrant.active) return;
+    if(typeof window !== 'undefined' && !window.confirm('Révoquer l’accès test et restaurer l’état précédent du compte ?')) return;
+    this.setState({ testGrantLoading:true, pricingNotice:'' });
+    try{
+      const res = await this.apiFetch('/api/billing/test-grant/revoke', { method:'POST', body:JSON.stringify({}) });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data && data.error && data.error.message ? data.error.message : 'Révocation indisponible.');
+      this.setState({ testGrant:{ active:false, planId:null, credits:0, status:'revoked' }, pricingNotice:'Accès de test révoqué. L’état précédent du compte a été restauré.' });
+      await this.loadBillingStatus();
+      await this.bootstrap();
+    }catch(err){
+      this.setState({ pricingNotice:this.friendlyError(err && err.message, 'Impossible de révoquer l’accès de test pour le moment.') });
+    }finally{
+      this.setState({ testGrantLoading:false });
     }
   }
   async loadTeam(){
@@ -6133,12 +6220,7 @@ class Component extends DCLogic {
   async controlAgentTask(taskId, action){
     if(!taskId || !action) return;
     if(this.demoMode){
-      const nextStatus = action === 'pause' ? 'paused' : (action === 'cancel' ? 'cancelled' : (action === 'retry' || action === 'resume' ? 'running' : 'queued'));
-      this.setState(s=>({
-        workflowTasks:(s.workflowTasks || []).map(workflow=>String(workflow.id || workflow.rootTaskId || '') === String(taskId) ? Object.assign({}, workflow, { status:nextStatus, progress:nextStatus === 'cancelled' ? 0 : Math.max(1, Number(workflow.progress || 0)) }) : workflow),
-        backgroundTasks:(s.backgroundTasks || []).map(task=>String(task.id || task.generationId || '') === String(taskId) ? Object.assign({}, task, { status:nextStatus === 'running' ? 'loading' : (nextStatus === 'cancelled' ? 'failed' : task.status) }) : task)
-      }));
-      this.notify(({pause:'Tâche mise en pause.',resume:'Tâche reprise.',cancel:'Tâche annulée.',retry:'Nouvelle tentative lancée.'})[action] || 'Tâche mise à jour.');
+      this.notify('Mode aperçu : aucune tâche réelle n’est disponible sans compte connecté.');
       return;
     }
     try{
@@ -6857,24 +6939,103 @@ class Component extends DCLogic {
   agentUiModels(){
     return Array.isArray(this.MODELS) ? this.MODELS : [];
   }
+  mediaFamilyForUiModel(model){
+    const haystack = [model && model.name, model && model.label, model && model.family, model && model.id, model && model.modelKey]
+      .filter(Boolean).join(' ').toLowerCase();
+    if(/nano\s*banana\s*pro|gemini\s*3\s*pro\s*image/.test(haystack)) return 'nano-banana-pro';
+    if(/nano\s*banana\s*2|gemini\s*3\.1\s*flash\s*image/.test(haystack)) return 'nano-banana-2';
+    if(/soul\s*2(?:\.0)?|soul\s*id/.test(haystack)) return 'soul-2.0';
+    if(/seedream\s*5(?:\.0)?|seedream\/v5/.test(haystack)) return 'seedream-5.0';
+    if(/gpt[-\s]*image\s*2/.test(haystack)) return 'gpt-image-2';
+    if(/seedance[-\s]*2\.5/.test(haystack)) return 'seedance-2.5';
+    if(/seedance[-\s]*2\.0|seedance\s*2\b/.test(haystack)) return 'seedance-2.0';
+    if(/gemini\s*omni\s*flash/.test(haystack)) return 'gemini-omni-flash';
+    if(/kling(?:\s*video)?\s*v?3(?:\.0)?/.test(haystack)) return 'kling-3.0';
+    if(/veo\s*3\.1|veo3\.1/.test(haystack)) return 'veo-3.1';
+    if(/wan\s*2\.7|wan-2\.7/.test(haystack)) return 'wan-2.7';
+    return '';
+  }
+  mediaUiDefinition(family){
+    const definitions = {
+      'nano-banana-pro': { name:'Nano Banana Pro', type:'image', description:'Images premium avec références et édition.', capabilities:['text-to-image','image-to-image','edit','reference'] },
+      'nano-banana-2': { name:'Nano Banana 2', type:'image', description:'Images rapides avec références visuelles.', capabilities:['text-to-image','image-to-image','edit','reference'] },
+      'soul-2.0': { name:'Soul 2.0', type:'image', description:'Créations image avancées avec cohérence visuelle.', capabilities:['text-to-image','reference'] },
+      'seedream-5.0': { name:'Seedream 5.0', type:'image', description:'Images détaillées et mises en page complexes.', capabilities:['text-to-image','image-to-image','edit','reference'] },
+      'gpt-image-2': { name:'GPT Image 2', type:'image', description:'Création et édition avec consignes précises.', capabilities:['text-to-image','image-to-image','edit','reference'] },
+      'seedance-2.0': { name:'Seedance 2.0', type:'video', description:'Vidéos cinématiques à partir d’un texte ou d’une image.', capabilities:['text-to-video','image-to-video','reference-to-video','reference'] },
+      'seedance-2.5': { name:'Seedance 2.5', type:'video', description:'Vidéos longues avec références multimodales.', capabilities:['text-to-video','image-to-video','reference-to-video','reference'] },
+      'gemini-omni-flash': { name:'Gemini Omni Flash', type:'video', description:'Vidéos avec mouvement et audio synchronisé.', capabilities:['text-to-video','image-to-video','reference-to-video','reference'] },
+      'kling-3.0': { name:'Kling 3.0', type:'video', description:'Vidéos réalistes et cohérence des personnages.', capabilities:['text-to-video','image-to-video','reference-to-video','reference'] },
+      'veo-3.1': { name:'Veo 3.1', type:'video', description:'Vidéos premium avec audio et références.', capabilities:['text-to-video','image-to-video','reference-to-video','reference'] },
+      'wan-2.7': { name:'Wan 2.7', type:'video', description:'Vidéos rapides pour les formats sociaux.', capabilities:['text-to-video','image-to-video','reference-to-video','reference'] }
+    };
+    return definitions[family] || null;
+  }
+  mediaUiModels(){
+    const models = Array.isArray(this.state && this.state.pricingModels) ? this.state.pricingModels : [];
+    const selected = new Map();
+    const editRoute = model=>/(^|[\s/_-])edit(?:$|[\s/_-])|image-to-image|upscale/i.test([model && model.name, model && model.label, model && model.id].filter(Boolean).join(' '));
+    models.forEach(model=>{
+      if(!model || model.available === false) return;
+      const family = this.mediaFamilyForUiModel(model);
+      const definition = this.mediaUiDefinition(family);
+      if(!family || !definition) return;
+      const capabilities = Array.isArray(model.capabilities) ? model.capabilities : [];
+      const type = String(model.type || '').toLowerCase();
+      const pricingUnit = String(model.pricingUnit || 'unit').toLowerCase();
+      if((type === 'image' || type === 'image_edit') && pricingUnit === 'second') return null;
+      if((type === 'video' || type === 'video_edit' || type === 'lipsync') && pricingUnit !== 'second') return null;
+      if(type !== definition.type) return;
+      const previous = selected.get(family);
+      if(!previous || (editRoute(previous) && !editRoute(model))) selected.set(family, model);
+    });
+    return [...selected.entries()].map(([family, model], index)=>{
+      const definition = this.mediaUiDefinition(family);
+      const id = model.modelKey || model.id || ('media-' + index);
+      const capabilities = Array.isArray(model.capabilities) && model.capabilities.length ? model.capabilities : definition.capabilities;
+      const pricingUnit = String(model.pricingUnit || (definition.type === 'video' ? 'second' : 'unit')).toLowerCase();
+      const rawCreditsLabel = String(model.creditsLabel || 'Selon la création');
+      const creditsLabel = definition.type === 'video' && /par seconde/i.test(rawCreditsLabel)
+        ? 'Devis selon la durée'
+        : rawCreditsLabel;
+      return {
+        id,
+        modelKey:id,
+        family,
+        name:definition.name,
+        group:definition.type === 'video' ? 'Vidéo' : 'Image',
+        desc:definition.description,
+        description:definition.description,
+        creditsLabel,
+        free:false,
+        current:false,
+        available:true,
+        type:definition.type,
+        pricingUnit,
+        capabilities,
+        dot:['#6EE7FF','#C9A8E8','#9BD1E8','#E8D79B'][index % 4]
+      };
+    });
+  }
   modelIconRef(model){
     const item = model || {};
     const id = String(item.id || item.modelKey || '').toLowerCase();
     const capabilities = Array.isArray(item.capabilities) ? item.capabilities : [];
+    const type = String(item.type || '').toLowerCase();
     if(id === 'auto' || item.current) return '#hf-model-auto';
-    if(capabilities.includes('video') || capabilities.includes('video-upscale')) return '#hf-model-video';
-    if(capabilities.includes('image') || capabilities.includes('image-upscale')) return '#hf-model-image';
-    if(capabilities.includes('audio') || capabilities.includes('voice-clone')) return '#hf-model-audio';
+    if(type.includes('video') || capabilities.some(cap=>/video/i.test(String(cap)))) return '#hf-model-video';
+    if(type.includes('audio') || type.includes('voice') || type.includes('music') || capabilities.some(cap=>/audio|voice|music|tts|dubbing/i.test(String(cap)))) return '#hf-model-audio';
+    if(type.includes('image') || capabilities.some(cap=>/image|upscale|edit|outpaint/i.test(String(cap)))) return '#hf-model-image';
     if(capabilities.includes('vision')) return '#hf-model-vision';
     if(capabilities.includes('reasoning') || capabilities.includes('tools')) return '#hf-model-reasoning';
     if(id.includes('flash') || item.group === 'Rapide') return '#hf-model-fast';
     return '#hf-model-auto';
   }
   curModel(){
-    return this.agentUiModels().concat(this.MODELS).find(m=>m.id===this.state.modelId) || this.agentUiModels()[0] || this.MODELS[0];
+    return this.modelPickerModels().find(m=>m.id===this.state.modelId) || this.modelPickerModels()[0] || this.agentUiModels()[0] || this.MODELS[0];
   }
   modelPickerModels(){
-    const all = this.agentUiModels().concat(this.MODELS);
+    const all = this.agentUiModels().concat(this.mediaUiModels());
     return [...new Map(all.map(model=>[model.id, model])).values()];
   }
   modelGroupsHasResults(tab, search){
@@ -6927,6 +7088,11 @@ class Component extends DCLogic {
 
   renderVals(){
     const st = this.state;
+    const testGrant = st.testGrant || { active:false, planId:null, credits:0, status:'inactive' };
+    const testAccessActive = testGrant.active === true;
+    const testAccessInactive = !testAccessActive;
+    const testAccessLabel = testAccessActive ? 'Accès de test · aucun paiement' : 'Accès test Pro · 1 500 crédits';
+    const testAccessActionLabel = st.testGrantLoading ? 'Activation…' : 'Activer Pro';
     const showSuggestions = this.props.showSuggestions ?? true;
     const T = this.tokens();
     const compareItems = this.compareMediaItems();
@@ -6980,7 +7146,7 @@ class Component extends DCLogic {
       settingItem('privacy','Confidentialité','◈',['privacy','analytics','données']),
       settingItem('team','Équipe','♧',['membres','collaboration','invitation','roles']),
       settingItem('api','API','<>',['clés','intégrations','développeur','scopes']),
-      settingItem('capabilities','Capacités','◈',['marque','modèles','limites','openrouter']),
+      settingItem('capabilities','Capacités','◈',['marque','modèles','limites']),
       settingItem('skills','Compétences','◇',['templates','workflows']),
       settingItem('claudecode','Claude Code','&lt;/&gt;',['terminal','cli','auth']),
       settingItem('plugins','Plugins','✚',['store','extensions'])
@@ -7740,6 +7906,15 @@ class Component extends DCLogic {
       mfaStatusLabel: st.mfaLoading ? 'Configuration sécurisée en cours…' : (st.tfa ? 'MFA TOTP actif sur ce compte' : 'Ajoute une application d’authentification pour sécuriser ton compte'),
       mfaActionLabel: st.mfaLoading ? 'Configuration…' : (st.tfa ? 'Désactiver' : 'Activer'),
       billingCurrencyLabel: st.billingCurrency || 'XOF',
+      testBillingEnabled: !!(st.testBilling && st.testBilling.enabled),
+      testAccessActive,
+      testAccessInactive,
+      testAccessLabel,
+      testGrantLoading: !!st.testGrantLoading,
+      testAccessActionLabel,
+      testGrantLoading: !!st.testGrantLoading,
+      activateTestGrant: ()=>this.activateTestGrant(),
+      revokeTestGrant: ()=>this.revokeTestGrant(),
       creditPackCards,
       sessionCta: st.user ? 'Se déconnecter' : 'Se connecter',
       galleryNavStyle: 'display:flex;align-items:center;gap:11px;padding:7px 8px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? '650' : '500') + ';color:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? T.ink : T.text2) + ';background:' + (st.page === 'gallery' && (st.galleryFilter || 'all') === 'all' ? 'rgba(' + T.lineRGB + ',.07)' : 'transparent') + ';transition:background .18s,color .18s',
@@ -7760,9 +7935,9 @@ class Component extends DCLogic {
       galleryItems,
       galleryEmpty: galleryItems.length === 0,
       openBilling: ()=> this.openSettingsSection('billing'),
-      billingPlanName: (st.user && st.user.plan) || 'Free',
-      billingPlanPrice: st.billingLoading ? 'Chargement...' : 'Aucun abonnement actif',
-      billingNextDate: 'non planifié',
+      billingPlanName: testAccessActive ? 'Pro · test' : ((st.user && st.user.plan) || 'Free'),
+      billingPlanPrice: st.billingLoading ? 'Chargement...' : (testAccessActive ? '1 500 crédits · aucun paiement' : 'Aucun abonnement actif'),
+      billingNextDate: testAccessActive ? 'jusqu’à révocation' : 'non planifié',
       invoices: [],
       isEmpty: st.messages.length === 0,
       hasMessages: st.messages.length > 0,
@@ -8111,8 +8286,8 @@ class Component extends DCLogic {
       sessionCta: st.authToken ? 'Se déconnecter' : 'Se connecter',
       accountName: st.user ? (st.user.name || st.user.email || 'Utilisateur HuggyFlow') : 'Invité',
       planLabel: st.user ? ('Offre ' + (st.user.plan || 'Free')) : 'Offre gratuite',
-      billingPlanName: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.plan) || (st.user && st.user.plan) || 'Free',
-      billingPlanPrice: st.billingLoading ? 'Chargement...' : ((st.billingStatus && st.billingStatus.subscription) ? 'Abonnement actif' : 'Aucun abonnement actif'),
+      billingPlanName: testAccessActive ? 'Pro · test' : ((st.billingStatus && st.billingStatus.user && st.billingStatus.user.plan) || (st.user && st.user.plan) || 'Free'),
+      billingPlanPrice: st.billingLoading ? 'Chargement...' : (testAccessActive ? '1 500 crédits · aucun paiement' : ((st.billingStatus && st.billingStatus.subscription) ? 'Abonnement actif' : 'Aucun abonnement actif')),
       billingProviderLabel: 'PAIEMENT SÉCURISÉ',
       billingEmpty: !((st.billingStatus && st.billingStatus.invoices && st.billingStatus.invoices.length) || 0),
       openBillingHelp: ()=>this.openBillingHelp(),
@@ -8120,9 +8295,9 @@ class Component extends DCLogic {
       logout: ()=>this.logout(),
       configureAffiliatePayout: ()=>this.configureAffiliatePayout(),
       downloadBillingExport: ()=>this.downloadBillingExport(),
-      billingNextDate: (st.billingStatus && st.billingStatus.user && st.billingStatus.user.currentPeriodEnd)
+      billingNextDate: testAccessActive ? 'jusqu’à révocation' : ((st.billingStatus && st.billingStatus.user && st.billingStatus.user.currentPeriodEnd)
         ? new Date(st.billingStatus.user.currentPeriodEnd).toLocaleDateString('fr-FR')
-        : 'non planifié',
+        : 'non planifié'),
       invoices: ((st.billingStatus && st.billingStatus.invoices && st.billingStatus.invoices.length) ? st.billingStatus.invoices : []).map(inv=>({
         date: new Date(inv.created_at || inv.createdAt || Date.now()).toLocaleDateString('fr-FR'),
         label: inv.description || inv.invoice_number || inv.id || 'Facture HuggyFlow',

@@ -1,4 +1,4 @@
-export type AgentRunStatus = 'queued' | 'working' | 'paused' | 'complete' | 'error' | 'cancelled';
+export type AgentRunStatus = 'queued' | 'working' | 'paused' | 'complete' | 'error' | 'cancelled' | 'interrupted';
 
 export type AgentRunEventType =
   | 'run.started'
@@ -14,12 +14,13 @@ export type AgentRunEventType =
   | 'run.resumed'
   | 'run.failed'
   | 'run.cancelled'
+  | 'run.interrupted'
   | 'run.completed';
 
 export interface AgentRunEvent<TPayload = Record<string, unknown>> {
   type: AgentRunEventType;
   runId: string;
-  messageId: string;
+  messageId?: string;
   stepId?: string;
   sequence: number;
   timestamp: string;
@@ -114,7 +115,7 @@ export function parseSseBlock(block: string): AgentRunEvent | null {
   if (!Number.isFinite(sequence) || sequence <= 0) return null;
   const runId = String(parsed.runId || payload.runId || '');
   const messageId = String(parsed.messageId || payload.messageId || '');
-  if (!runId || !messageId) return null;
+  if (!runId) return null;
   return {
     type,
     runId,
@@ -127,7 +128,7 @@ export function parseSseBlock(block: string): AgentRunEvent | null {
 }
 
 export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent): AgentRunState {
-  if (!event || event.runId !== state.runId || event.messageId !== state.messageId) return state;
+  if (!event || event.runId !== state.runId || (state.messageId && event.messageId && event.messageId !== state.messageId)) return state;
   if (!Number.isFinite(event.sequence) || event.sequence <= state.sequence) return state;
 
   const payload = asRecord(event.payload);
@@ -164,7 +165,25 @@ export function reduceAgentRunEvent(state: AgentRunState, event: AgentRunEvent):
       return { ...next, status: 'error', progress: 0, errorMessage: String(payload.message || payload.error || 'La génération a échoué.') };
     case 'run.cancelled':
       return { ...next, status: 'cancelled', progress: 0 };
+    case 'run.interrupted':
+      return {
+        ...next,
+        status: 'interrupted',
+        progress: 0,
+        errorMessage: String(payload.message || payload.error || 'La réponse a été interrompue.'),
+      };
     case 'run.completed':
+      if (payload.resultConfirmed === false) {
+        if (['queued', 'pending', 'running'].includes(String(payload.status || '').toLowerCase())) {
+          return { ...next, status: 'working', phase: 'rendering' };
+        }
+        return {
+          ...next,
+          status: 'interrupted',
+          progress: 0,
+          errorMessage: 'Le résultat n’a pas été confirmé.',
+        };
+      }
       return { ...next, status: 'complete', progress: 100 };
     default:
       return state;
