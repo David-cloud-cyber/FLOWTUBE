@@ -18,7 +18,8 @@ const DEFAULT_MODEL = [
 const ANTHROPIC_VERSION = "2023-06-01";
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") || "https://www.huggyflow.fun").replace(/\/$/, "");
 const APP_RUNTIME_ENV = (Deno.env.get("APP_ENV") || Deno.env.get("NODE_ENV") || "production").toLowerCase();
-const TEST_BILLING_ENABLED = (Deno.env.get("HUGGYFLOW_TEST_BILLING_ENABLED") || "false").toLowerCase() === "true" && APP_RUNTIME_ENV !== "production";
+const TEST_BILLING_ENABLED = (Deno.env.get("HUGGYFLOW_TEST_BILLING_ENABLED") || "false").toLowerCase() === "true"
+  && (APP_RUNTIME_ENV !== "production" || (Deno.env.get("HUGGYFLOW_TEST_BILLING_PRODUCTION_ENABLED") || "false").toLowerCase() === "true");
 const MEDIA_BUCKET = Deno.env.get("FLOWTUBE_MEDIA_BUCKET") || "flowtube-media";
 const CREDIT_FLOOR_USD = 0.008;
 const RETAIL_CREDIT_USD = 0.013;
@@ -2402,6 +2403,9 @@ async function assertTestBillingAccess(req: Request, supabase: ReturnType<typeof
   }
   const userId = await authenticatedUserIdFromRequest(req, supabase);
   const { ids, emails } = testBillingAllowlist();
+  if (APP_RUNTIME_ENV === "production" && !ids.length && !emails.length) {
+    throw new FlowtubeError(404, "Cette action n’est pas disponible.", { code: "NOT_FOUND" });
+  }
   if (!ids.length && !emails.length) return userId;
   const { data: profile } = await supabase.from("profiles").select("id,email,billing_email").eq("id", userId).maybeSingle();
   const accountEmail = String(profile?.email || profile?.billing_email || "").toLowerCase();
