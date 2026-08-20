@@ -3482,6 +3482,7 @@ const CREATION_INTENT = /\b(genere|generes|cree|crees|fais|faire|produis|dessine
 const CONVERSATIONAL_ONLY = /^(salut|bonjour|bonsoir|coucou|hello|hey|merci|thanks|super|parfait|genial|top|cool|d'accord|dac|ca marche|bien recu|compris|je vois|ah ok|haha|lol)\b[\s!.,]*$/;
 const QUESTION_OPENERS = /^(comment|pourquoi|combien|quand|qui|que\b|quoi\b|quel(le)?s?\b|est[- ]ce|c'est quoi|qu'est[- ]ce|peux[- ]tu|tu peux|sais[- ]tu|explique|dis[- ]moi)/;
 const CAPABILITY_QUESTION = /\b(que sais[- ]tu faire|tu sais faire quoi|que peux[- ]tu faire|tu peux faire quoi|qu[' ]?est[- ]ce que tu peux faire|tes capacites|tes competences|aide[- ]moi|comment ca marche|comment fonctionne huggyflow|on cree quoi|on cree quoi aujourd'hui)\b/;
+const EXISTING_MEDIA_QUERY = /\b(images?|videos?|creations?|rendus?|medias?|fichiers?)\b.*\b(que tu as|deja|precedent(?:e|es|s)?|dernier(?:e|es|s)?|cree(?:e|es|s)?|genere(?:e|es|s)?|termine(?:e|es|s)?|historique|galerie)\b|\b(historique|galerie|precedent(?:e|es|s)?|dernier(?:e|es|s)?)\b.*\b(images?|videos?|creations?|rendus?|medias?|fichiers?)\b/;
 
 function shouldGenerateMedia(prompt: string, mode: string) {
   if (String(mode || '').toLowerCase() === 'document') return false;
@@ -3491,6 +3492,9 @@ function shouldGenerateMedia(prompt: string, mode: string) {
   if (CONVERSATIONAL_ONLY.test(text)) return false;
   // Questions sur l'agent ou l'interface: on explique, on ne lance pas de rendu.
   if (CAPABILITY_QUESTION.test(text)) return false;
+  // Consultation d'un resultat existant: ne jamais interpreter "cree" au passe
+  // comme un nouvel ordre de generation payant.
+  if (EXISTING_MEDIA_QUERY.test(text)) return false;
   // Question sans intention de creation ("combien coute une video ?"): on repond, on ne genere pas.
   if (QUESTION_OPENERS.test(text) && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre)\b/.test(text)) return false;
   if (text.endsWith("?") && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre|peux[- ]tu)\b/.test(text)) return false;
@@ -3800,6 +3804,7 @@ const HUGGYFLOW_SYSTEM_PROMPT = [
   "Tu es l'orchestrateur creatif et operationnel qui transforme une intention simple en livrable professionnel sans demander a l'utilisateur de faire du prompt engineering.",
   "Tu reponds en francais, avec un ton amical, direct, pragmatique et utile. Tu es un partenaire de travail chaleureux mais tres oriente execution.",
   "Style strict: reponse directe d'abord, phrases courtes, listes a puces ultra-courtes pour toute reponse multi-idee, zero bloc dense, zero jargon inutile.",
+  "Pour une simple salutation ou un remerciement, reponds en une phrase naturelle, sans liste, sans menu de capacites et sans emoji decoratif.",
   "",
   "Mission:",
   "- Comprendre l'intention: sujet, usage, public, format, style, references, budget credits et niveau de finition.",
