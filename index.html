@@ -275,6 +275,15 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
 [data-hf-plan-panel] + [data-hf-plan-panel]{margin-top:16px!important}
 @media (max-width:900px){.hf-pricing-grid{grid-template-columns:1fr!important}}
 @media (max-width:760px){.hf-cost-row{grid-template-columns:minmax(0,1fr) auto!important}.hf-cost-row > span:nth-child(3),.hf-cost-row > span:nth-child(4){grid-column:1/-1}.hf-cost-row > span:last-child{text-align:left!important}}
+@media (max-width:680px){
+  [data-hf-app-shell="true"]:has([data-screen-label="Pricing"]) > aside{display:none!important}
+  [data-screen-label="Pricing"]{left:0!important}
+  .hf-pricing-container{padding:16px 14px 56px!important}
+  .hf-pricing-header{margin-bottom:28px!important}
+  .hf-pricing-hero{padding:24px 20px!important;margin-bottom:32px!important;border-radius:18px!important}
+  .hf-pricing-hero-title{font-size:29px!important;line-height:1.16!important}
+  .hf-pricing-heading{font-size:32px!important;line-height:1.08!important}
+}
 .hf-settings-backdrop{display:none!important}
 .hf-settings-backdrop[data-hf-settings-theme="light"]{background:rgba(255,255,255,.68)}
 .hf-settings-shell{--hf-settings-page:#131517;--hf-settings-rail:#17191c;--hf-settings-surface:#1C1E20;--hf-settings-control:#23262A;--hf-settings-ink:#F7F7F8;--hf-settings-muted:#898A8B;--hf-settings-line:247,247,248;position:absolute;inset:0;z-index:20;width:auto;height:auto;margin:0;display:flex;overflow:hidden;background:var(--hf-settings-page);border:0;border-radius:0;box-shadow:none;animation:pageRise .28s cubic-bezier(.22,1,.36,1) both;color:var(--hf-settings-ink)}
@@ -716,7 +725,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
     </div>
   </aside>
 
-  <main data-hf-route-view="true" style="flex:1;display:flex;flex-direction:column;position:relative;min-width:0;box-sizing:border-box;padding-right:{{ studioContentInset }}">
+  <main data-hf-route-view="true" style="flex:1;display:{{ routeMainDisplay }};flex-direction:column;position:relative;min-width:0;box-sizing:border-box;padding-right:{{ studioContentInset }}">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 26px;z-index:3">
       <div style="display:flex;align-items:center;gap:9px;min-width:0;font-size:13.5px">
         <span style="color:{{ tText4 }}">Projet</span>
@@ -1172,8 +1181,8 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
 
   <sc-if value="{{ showPricing }}" hint-placeholder-val="{{ false }}">
     <div data-screen-label="Pricing" style="position:absolute;top:0;right:0;bottom:0;left:{{ contentInset }};z-index:20;background:{{ tPageBg }};overflow-y:auto;animation:pageRise .4s cubic-bezier(.22,1,.36,1) both">
-      <div style="max-width:1080px;margin:0 auto;padding:22px 32px 80px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:52px">
+      <div class="hf-pricing-container" style="max-width:1080px;margin:0 auto;padding:22px 32px 80px">
+        <div class="hf-pricing-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:52px">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:30px;height:30px;border-radius:9px;background:#131517;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6EE7FF" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l6 7-6 7"></path><path d="M13 5l6 7-6 7"></path></svg></div>
             <span style="font-size:16px;font-weight:700;letter-spacing:-.02em">HuggyFlow</span>
@@ -1189,9 +1198,9 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
           </div>
         </div>
 
-        <div style="background:#131517;border-radius:24px;padding:36px 40px;margin-bottom:48px">
+        <div class="hf-pricing-hero" style="background:#131517;border-radius:24px;padding:36px 40px;margin-bottom:48px">
           <span style="display:inline-block;padding:5px 13px;border-radius:999px;background:#6EE7FF;color:#131517;font-size:10.5px;font-weight:700;letter-spacing:.1em">OFFRES HUGGYFLOW</span>
-          <div style="margin-top:18px;font-family:'Space Grotesk',ui-sans-serif;font-size:36px;line-height:1.22;letter-spacing:-.005em">
+          <div class="hf-pricing-hero-title" style="margin-top:18px;font-family:'Space Grotesk',ui-sans-serif;font-size:36px;line-height:1.22;letter-spacing:-.005em">
             <div style="color:#6EE7FF">Des créations prêtes à publier.</div>
             <div style="color:#F7F7F8">Tu paies seulement ce qui réussit.</div>
           </div>
@@ -1199,7 +1208,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
         </div>
 
         <div style="margin-bottom:26px">
-          <div style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;letter-spacing:-.01em">Tarifs HuggyFlow</div>
+          <div class="hf-pricing-heading" style="font-family:'Space Grotesk',ui-sans-serif;font-size:42px;letter-spacing:-.01em">Tarifs HuggyFlow</div>
           <div style="margin-top:8px;font-size:14.5px;color:{{ tText3 }}">Des offres simples pour créer des images, vidéos, voix et contenus prêts à utiliser.</div>
         </div>
 
@@ -1253,22 +1262,6 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                   </sc-if>
                 </div>
               </sc-if>
-
-              <div data-hf-plan-panel="true" style="display:none">
-                <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700">
-                  <svg width="13" height="13" style="color:{{ tGreen }}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"></path></svg>
-                  {{ pl.creditsTitle }}
-                </div>
-                <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
-                  <sc-for list="{{ pl.equivalences }}" as="eq" hint-placeholder-count="3">
-                    <div style="font-size:12.5px;color:{{ tText2 }}">= {{ eq }}</div>
-                  </sc-for>
-                </div>
-                <div style="margin-top:12px;display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.09);font-size:11.5px;color:{{ tText2 }}">
-                  <svg width="11" height="11" style="color:{{ tGreen }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  {{ pl.creditsNote }}
-                </div>
-              </div>
 
               <div style="margin-top:18px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
                 <sc-if value="{{ pl.hasOldPrice }}" hint-placeholder-val="{{ false }}">
@@ -3121,7 +3114,10 @@ class Component extends DCLogic {
     if(typeof window === 'undefined' || !window.localStorage) return defaults;
     try{
       const saved = JSON.parse(window.localStorage.getItem('huggyflow_ui_state') || '{}') || {};
-      if(saved && typeof saved === 'object') return saved;
+      if(saved && typeof saved === 'object'){
+        const allowed = ['page','modelId','agentMode','mode','billing','segment','pricingCostFilter','theme','sidebarCollapsed','creationsExpanded','projectsExpanded','exploreSort','exploreNewDismissed','studioPanelOpen','studioTab','studioPanelWidth','artifactView','artifactPreviewDevice','artifactFullscreen'];
+        return Object.fromEntries(allowed.filter(key=>Object.prototype.hasOwnProperty.call(saved,key)).map(key=>[key,saved[key]]));
+      }
     }catch(e){}
     return defaults;
   }
@@ -3267,8 +3263,8 @@ class Component extends DCLogic {
   state = {
     theme: ['light','dark','system'].includes(this.initialUiState.theme) ? this.initialUiState.theme : 'dark',
     page: this.initialPage,
-    input: this.initialUiState.input || '',
-    messages: Array.isArray(this.initialUiState.messages) ? this.initialUiState.messages : [],
+    input: '',
+    messages: [],
     modelMenu: false,
     modelMenuSearch: '',
     modelCatalogTab: 'agent',
@@ -3294,10 +3290,10 @@ class Component extends DCLogic {
     pendingAuthAction: null,
     user: null,
     credits: 0, creditsMax: 100,
-    activeTitle: this.initialUiState.activeTitle || 'Nouveau projet',
-    activeProjectId: this.initialUiState.activeProjectId || 'welcome',
-    projectsData: Array.isArray(this.initialUiState.projectsData) ? this.initialUiState.projectsData : [],
-    studioContextByProject: this.initialUiState.studioContextByProject && typeof this.initialUiState.studioContextByProject === 'object' ? this.initialUiState.studioContextByProject : {},
+    activeTitle: 'Nouveau projet',
+    activeProjectId: 'welcome',
+    projectsData: [],
+    studioContextByProject: {},
     pricingPlans: [],
     pricingOptionOpenPlan: '',
     pricingSelections: {},
@@ -3364,7 +3360,7 @@ class Component extends DCLogic {
     evalOutputText: '',
     evalLoading: false,
     evalError: '',
-    attachments: Array.isArray(this.initialUiState.attachments) ? this.initialUiState.attachments : [],
+    attachments: [],
     uploadingAttachment: false,
     attachmentNotice: '',
     prefs: { notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false },
@@ -3417,7 +3413,7 @@ class Component extends DCLogic {
 
   FAQS = [
     { q:'Comment fonctionnent les crédits ?', a:"Chaque création consomme des crédits selon le rendu demandé : image rapide, image premium, vidéo courte, voix ou montage. HuggyFlow affiche le coût avant les créations importantes et ne retire les crédits qu'après un rendu réussi." },
-    { q:'Est-ce que mon abonnement se renouvelle ?', a:"Oui, chaque offre se renouvelle automatiquement (par mois ou par an selon ton choix). Tu peux annuler à tout moment depuis ton compte ; l'accès reste actif jusqu'à la fin de la période payée." },
+    { q:'Comment se renouvelle mon abonnement ?', a:"La période choisie est indiquée avant le paiement. Lorsque le moyen de paiement permet un renouvellement automatique, tu peux l'annuler depuis ton compte ; sinon HuggyFlow te prévient avant la prochaine échéance." },
     { q:'Puis-je ajouter des crédits ?', a:"Oui. Si tu épuises tes crédits avant le renouvellement, tu peux acheter des packs de crédits supplémentaires sans changer d'offre." },
     { q:'Pourquoi la vidéo utilise plus de crédits ?', a:"Une vidéo demande plus de calcul qu'une image : durée, qualité, mouvement, voix et cohérence changent le coût final. Les vidéos premium consomment donc plus de crédits que les rendus rapides." },
     { q:'Puis-je changer de plan ?', a:"À tout moment. Le passage à une offre supérieure est immédiat, la différence est calculée au prorata sur ta prochaine facture." }
@@ -3449,24 +3445,24 @@ class Component extends DCLogic {
       const meta = p.metadata || {};
       const name = String(p.displayName || p.id || 'Plan');
       const rawOptions = Array.isArray(p.creditOptions) ? p.creditOptions : [];
-      const launchOptions = p.id === 'basic' ? [{id:'creator-500',credits:500,monthlyPriceXof:7900,annualPriceXof:83000},{id:'creator-1000',credits:1000,monthlyPriceXof:14900,annualPriceXof:156450},{id:'creator-2500',credits:2500,monthlyPriceXof:34900,annualPriceXof:366450},{id:'creator-5000',credits:5000,monthlyPriceXof:64900,annualPriceXof:681450}] : p.id === 'pro' ? [{id:'pro-1500',credits:1500,monthlyPriceXof:19900,annualPriceXof:208950},{id:'pro-3000',credits:3000,monthlyPriceXof:37900,annualPriceXof:397950},{id:'pro-6000',credits:6000,monthlyPriceXof:71900,annualPriceXof:755950},{id:'pro-10000',credits:10000,monthlyPriceXof:114900,annualPriceXof:1206450}] : [];
-      const fallbackOption = launchOptions.length ? launchOptions : (Number(p.includedCredits || 0) > 0 && Number(p.monthlyPriceXof || 0) > 0 ? [{ id:p.id + '-default', credits:Number(p.includedCredits || 0), monthlyPriceXof:Number(p.monthlyPriceXof || 0), annualPriceXof:Number(p.annualPriceXof || 0) }] : []);
-      const options = rawOptions.length ? rawOptions : (this.demoMode ? launchOptions : fallbackOption);
+      const fallbackOption = Number(p.includedCredits || 0) > 0 && Number(p.monthlyPriceXof || 0) > 0 ? [{ id:p.id + '-default', credits:Number(p.includedCredits || 0), monthlyPriceXof:Number(p.monthlyPriceXof || 0), annualPriceXof:Number(p.annualPriceXof || 0) }] : [];
+      const options = rawOptions.length ? rawOptions : fallbackOption;
       const selectedId = this.state.pricingSelections && this.state.pricingSelections[p.id];
       const preferredId = p.id === 'basic' ? 'creator-500' : (p.id === 'pro' ? 'pro-1500' : '');
       const selected = options.find(o=>String(o.id) === String(selectedId)) || options.find(o=>String(o.id) === preferredId) || options[0] || null;
       const monthlyXof = selected ? Number(selected.monthlyPriceXof || 0) : Number(p.monthlyPriceXof || 0);
       const annualXof = selected ? Number(selected.annualPriceXof || 0) : Number(p.annualPriceXof || 0);
       const selectedCredits = selected ? Number(selected.credits || 0) : Number(p.includedCredits || 0);
+      const displayedCredits = annual ? selectedCredits * 12 : selectedCredits;
       const displayedXof = annual && annualXof ? Math.round(annualXof / 12) : monthlyXof;
       const annualDiscount = monthlyXof > 0 && annualXof > 0 ? Math.max(0, Math.round((1 - annualXof / (monthlyXof * 12)) * 100)) : 0;
       return {
         id:p.id, name:name, tag:meta.badge || ((meta.popular || meta.best_value || p.priorityQueue) ? 'POPULAIRE' : 'OFFRE'), tagKind:(meta.popular || meta.best_value || p.priorityQueue) ? 'lime' : 'muted',
         popular:!!(meta.popular || meta.best_value || p.priorityQueue), tagline:meta.tagline || meta.audience || meta.description || 'Pour creer avec HuggyFlow',
-        credits:selectedCredits, m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
+        credits:displayedCredits, m:Number(p.monthlyPriceUsd || 0), aM:p.annualPriceUsd ? Math.round(Number(p.annualPriceUsd || 0) / 12) : Number(p.monthlyPriceUsd || 0), aY:Number(p.annualPriceUsd || 0),
         mXof:monthlyXof, aMXof:annualXof ? Math.round(annualXof / 12) : monthlyXof, aYXof:annualXof,
-        creditOptions:options, selectedOptionId:selected ? String(selected.id) : '', selectedOptionLabel:selected ? fmt(selectedCredits) + ' crédits mensuels' : 'Crédits inclus', optionOpen:this.state.pricingOptionOpenPlan === p.id, annualDiscount,
-        optionItems:options.map(o=>({ label:fmt(Number(o.credits || 0)) + ' crédits mensuels', price:fmtXof(annual && o.annualPriceXof ? Math.round(Number(o.annualPriceXof) / 12) : Number(o.monthlyPriceXof || 0)), active:String(o.id) === String(selected ? selected.id : ''), activeStyle:String(o.id) === String(selected ? selected.id : '') ? 'rgba(110,231,255,.12)' : 'transparent', onClick:()=>this.setState(s=>({ pricingSelections:Object.assign({}, s.pricingSelections || {}, { [p.id]:String(o.id) }), pricingOptionOpenPlan:'' })) })),
+        creditOptions:options, selectedOptionId:selected ? String(selected.id) : '', selectedOptionLabel:selected ? fmt(displayedCredits) + (annual ? " crédits pour l'année" : ' crédits mensuels') : 'Crédits inclus', optionOpen:this.state.pricingOptionOpenPlan === p.id, annualDiscount,
+        optionItems:options.map(o=>({ label:fmt(Number(o.credits || 0) * (annual ? 12 : 1)) + (annual ? " crédits pour l'année" : ' crédits mensuels'), price:fmtXof(annual && o.annualPriceXof ? Math.round(Number(o.annualPriceXof) / 12) : Number(o.monthlyPriceXof || 0)), active:String(o.id) === String(selected ? selected.id : ''), activeStyle:String(o.id) === String(selected ? selected.id : '') ? 'rgba(110,231,255,.12)' : 'transparent', onClick:()=>this.setState(s=>({ pricingSelections:Object.assign({}, s.pricingSelections || {}, { [p.id]:String(o.id) }), pricingOptionOpenPlan:'' })) })),
         cta:meta.cta || (Number(p.monthlyPriceUsd || 0) > 0 ? ('Choisir ' + name) : 'Creer un compte'),
          vidJobs:Number(p.concurrentVideoJobs || 0), imgJobs:Number(p.concurrentImageJobs || 0), dailyImg:Number(p.dailyImageLimit || 0), dailyVid:Number(p.dailyVideoLimit || 0), msg:Number(p.monthlyMessageLimit || 0),
          gb:Number(p.storageGb || 1), days:Number(p.mediaRetentionDays || 30), types:p.allowedMediaTypes || ['image'], priority:!!p.priorityQueue, seats:Number(p.seatLimit || 1), watermark:!!p.watermarkRequired
@@ -3873,8 +3869,19 @@ class Component extends DCLogic {
     if(typeof window !== 'undefined' && window.localStorage){
       window.localStorage.removeItem('huggyflow_access_token');
       window.localStorage.removeItem('huggyflow_session');
+      window.localStorage.removeItem('huggyflow_ui_state');
+      window.localStorage.removeItem('huggyflow_background_tasks');
+      window.localStorage.removeItem('huggyflow_checkout_phone');
+      Object.keys(window.localStorage).filter(key=>key.indexOf('huggyflow_settings_draft') === 0).forEach(key=>window.localStorage.removeItem(key));
     }
-    this.setState({ authToken:'', authRefreshToken:'', authExpiresAt:0, user:null, credits:0, creditsMax:100, authStatus:status || 'Deconnecte.', page:'app', modelMenu:false, settingsSearchQuery:'', settingsHop:false });
+    this.setState({
+      authToken:'', authRefreshToken:'', authExpiresAt:0, user:null,
+      credits:0, creditsMax:100, authStatus:status || 'Deconnecte.', page:'app',
+      messages:[], attachments:[], projectsData:[], activeProjectId:'welcome', activeTitle:'Nouveau projet',
+      backgroundTasks:[], workflowTasks:[], memoryItems:[], memoryConflicts:[], artifactItems:[], activeArtifact:null,
+      studioContextByProject:{}, brandKits:[], billingStatus:null, usageData:null, securitySessions:[], securityEvents:[],
+      modelMenu:false, settingsSearchQuery:'', settingsHop:false, checkoutPhone:'', checkoutPhoneOpen:false
+    });
   }
   async refreshSession(silent){
     if(!this.state.authRefreshToken) return false;
@@ -4334,6 +4341,7 @@ class Component extends DCLogic {
       }
       if(this.state.authToken && !data.user){
         this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
+        return;
       }
       const publicMediaKeys = Array.isArray(data.models)
         ? data.models.map(model=>String(model && (model.modelKey || model.id) || '')).filter(Boolean)
@@ -4341,22 +4349,27 @@ class Component extends DCLogic {
       const publicAgentKeys = agentModels.map(model=>String(model && (model.modelKey || model.id) || '')).filter(Boolean);
       const selectedModelKey = String(this.state.modelId || 'auto');
       if(selectedModelKey !== 'auto' && !publicAgentKeys.includes(selectedModelKey) && !publicMediaKeys.includes(selectedModelKey)) this.state.modelId = 'auto';
-      const projects = this.normalizeProjects(data.projects || []);
+      const authenticated = !!this.state.authToken && !!data.user;
+      if(!authenticated && typeof window !== 'undefined' && window.localStorage){
+        const saved = this.storedUiState();
+        window.localStorage.setItem('huggyflow_ui_state', JSON.stringify(saved));
+      }
+      const projects = authenticated ? this.normalizeProjects(data.projects || []) : [];
       const currentId = this.state.activeProjectId;
       const requestedId = this.initialRoute && this.initialRoute.projectId;
       const active = projects.find(p=>p.id === requestedId) || projects.find(p=>p.id === currentId) || projects[0] || null;
-      const activeMessages = active && active.id === currentId
+      const activeMessages = !authenticated ? [] : active && active.id === currentId
         ? this.mergeBootstrapMessages(active.messages, this.state.messages)
-        : (active ? active.messages : this.state.messages);
+        : (active ? active.messages : []);
       const mergedProjects = projects.map(project=>project.id === (active && active.id)
         ? Object.assign({}, project, { messages:activeMessages })
         : project);
       const prefs = data.user && data.user.preferences ? Object.assign({ notif:true, autoplay:true, sounds:false, shareAnalytics:true, dataTraining:false }, data.user.preferences) : this.state.prefs;
       this.setState({
         projectsData: mergedProjects,
-        activeProjectId: active ? active.id : currentId,
+        activeProjectId: active ? active.id : 'welcome',
         messages: activeMessages,
-        activeTitle: active ? active.title : this.state.activeTitle,
+        activeTitle: active ? active.title : 'Nouveau projet',
         credits: Number(data.credits !== undefined ? data.credits : this.state.credits),
         creditsMax: Number(data.creditsMax || this.state.creditsMax || 100),
         user: data.user || null,
@@ -4702,11 +4715,6 @@ class Component extends DCLogic {
     try{
       const payload = {
         page:(!this.state.authToken && this.isSettingsPage(this.state.page)) || this.state.page === 'auth' ? 'app' : this.state.page,
-        input:this.state.input || '',
-        messages:this.state.authToken ? [] : (this.state.messages || []).slice(-40),
-        activeProjectId:this.state.activeProjectId || 'welcome',
-        activeTitle:this.state.activeTitle || 'Nouveau projet',
-        projectsData:[],
         modelId:this.state.modelId || 'auto',
         agentMode:this.state.agentMode || 'confirm',
         mode:this.state.mode || 'image',
@@ -4714,13 +4722,11 @@ class Component extends DCLogic {
         segment:this.state.segment || 'solo',
         pricingCostFilter:this.state.pricingCostFilter || 'all',
         theme:this.state.theme || 'dark',
-        attachments:(this.state.attachments || []).map(a=>({ id:a.id, name:a.name, kind:a.kind, url:a.url, contentType:a.contentType, bytes:a.bytes, textPreview:a.textPreview || '', status:a.status || 'ready' })),
         sidebarCollapsed:!!this.state.sidebarCollapsed,
         creationsExpanded:this.state.creationsExpanded !== false,
         projectsExpanded:this.state.projectsExpanded !== false,
         exploreSort:this.state.exploreSort || 'trending',
         exploreNewDismissed:this.state.exploreNewDismissed === true,
-        studioContextByProject:this.state.studioContextByProject || {},
         studioPanelOpen:!!this.state.studioPanelOpen,
         studioTab:this.state.studioTab || 'media',
         studioPanelWidth:Math.max(360, Number(this.state.studioPanelWidth || 560)),
@@ -5565,6 +5571,7 @@ class Component extends DCLogic {
     this.cancelRequestedAgentIds = this.cancelRequestedAgentIds || new Set();
     activeMessages.forEach(message=>{
       this.cancelRequestedAgentIds.add(String(message.id));
+      if(message.runId) this.cancelAgentRun(message.runId, message.id);
       if(message.backgroundTaskId) this.controlAgentTask(message.backgroundTaskId, 'cancel');
       const generationId = message.media && message.media.generationId;
       if(generationId) this.cancelGeneration(generationId, message.id);
@@ -5576,6 +5583,17 @@ class Component extends DCLogic {
       sendLocked:false,
       messages:s.messages.map(m=>activeMessages.some(active=>active.id === m.id) ? Object.assign({}, m, { typing:false, streamLive:false, streamPhase:'interrupted', streamError:false, streamProgress:0, cancelRequested:true, text:(m.text || '') || 'Réponse interrompue. Tu peux reprendre quand tu veux.' }) : m)
     }));
+  }
+  async cancelAgentRun(runId, messageId){
+    if(!runId) return;
+    try{
+      const res = await this.apiFetch('/api/runs/'+encodeURIComponent(runId)+'/cancel', { method:'POST', body:'{}' });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || data.status !== 'cancelled') throw new Error('Annulation non confirmée.');
+      this.updateAgentMessage(messageId, { typing:false, streamLive:false, streamPhase:'cancelled', streamError:false, cancelRequested:false, streamProgress:0 });
+    }catch(err){
+      this.updateAgentMessage(messageId, { typing:false, streamLive:false, streamPhase:'interrupted', streamError:true, cancelRequested:false, streamProgress:0 });
+    }
   }
   async cancelGeneration(generationId, messageId){
     if(!generationId) return;
@@ -5623,7 +5641,8 @@ class Component extends DCLogic {
       agentModelId:this.agentModelApiId(model.id),
       idempotencyKey:agentId,
       aspectRatio:this.aspectRatioForMode(mode),
-      interactionMode:(this.state.messages.find(message=>message.id === agentId) || {}).interactionMode || 'conversation'
+      interactionMode:(this.state.messages.find(message=>message.id === agentId) || {}).interactionMode || 'conversation',
+      intent:this.state.modelCatalogTab === 'media' ? 'generate' : 'auto'
     }, attachmentPayload || {});
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     this.chatAbort = controller;
@@ -5682,6 +5701,7 @@ class Component extends DCLogic {
       if(eventRunId) {
         if(runId && eventRunId !== runId) return;
         runId = eventRunId;
+        this.updateAgentMessage(agentId, { runId });
       }
       const sequence = Number(payload && (payload.sequence || payload.seq || 0));
       if(Number.isFinite(sequence) && sequence > 0){
@@ -7577,6 +7597,7 @@ class Component extends DCLogic {
       lightTabStyle: st.theme === 'light' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       darkTabStyle: st.theme === 'dark' ? 'background:rgba(' + T.lineRGB + ',.08);color:' + T.ink + ';font-weight:600' : 'background:transparent;color:' + T.text3,
       showApp: st.page === 'app' || ['pricing', 'gallery', 'explore', 'affiliate', 'admin'].includes(st.page) || ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
+      routeMainDisplay: st.page === 'pricing' || this.isSettingsPage(st.page) ? 'none' : 'flex',
       contentInset: st.sidebarCollapsed ? '72px' : '258px',
       tLineRGB: T.lineRGB, tGreen: T.green, tXMuted: T.xMuted, tStrike: T.strike, tMediaGrad: T.mediaGrad,
       toggleTheme: ()=> this.setState(s=>{

@@ -669,7 +669,75 @@ function requestedAgentModelValue(body: Record<string, unknown>) {
   return body.agentModelId || body.agent_model_id || body.anthropicModel || body.anthropic_model || "auto";
 }
 
-function requestedAgentCapabilities(prompt: string, body: Record<string, unknown>, simpleConversation = false): ModelCapability[] {
+type OrchestrationIntent = "conversation" | "analysis" | "research" | "document" | "media" | "workflow";
+type OrchestrationComplexity = "simple" | "standard" | "complex";
+
+type OrchestrationDecision = {
+  intent: OrchestrationIntent;
+  complexity: OrchestrationComplexity;
+  requiresProjectContext: boolean;
+  usesTools: boolean;
+  usesAgentLoop: boolean;
+  publicSummary: string;
+};
+
+function isProjectContinuationPrompt(prompt: string) {
+  const text = stripAccents(String(prompt || "").toLowerCase());
+  return /\b(continue|suite|reprends|reprendre|ce projet|ce brief|ce rendu|cette image|cette video|la derniere|le dernier|precedent|precedente|meme style|meme personnage|pareil|comme avant|refais|remix|variante|modifie|ajuste)\b/.test(text);
+}
+
+function orchestrateRequest(
+  prompt: string,
+  body: Record<string, unknown>,
+  attachments: ReturnType<typeof normalizeRequestAttachments>,
+): OrchestrationDecision {
+  const text = stripAccents(String(prompt || "").trim().toLowerCase());
+  const requestedIntent = String(body.intent || "auto").toLowerCase();
+  const requestedMode = String(body.mode || "").toLowerCase();
+  const media = shouldGenerateMedia(prompt, requestedMode, String(body.modelId || "auto"), requestedIntent);
+  const research = isResearchRequest(prompt) || body.useModelResearch === true || body.use_model_research === true;
+  const document = requestedMode === "document" || /\b(pdf|document|rapport|tableau|csv|presentation|presentation)\b/.test(text);
+  const explicitTools = Boolean(body.tools || body.toolChoice || body.tool_choice);
+  const multiStep = /\b(planifie|workflow|campagne|plusieurs|serie|série|lot|etape|étape|de la recherche|puis |ensuite |publie|publier|connecteur)\b/.test(text);
+  const analytical = /\b(analyse|audit|strategie|strat\w+gie|compare|raisonne|complexe|deep research|recherche)\b/.test(text);
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  let complexityScore = 0;
+  if (wordCount >= 35) complexityScore += 1;
+  if (attachments.length) complexityScore += 1;
+  if (analytical) complexityScore += 1;
+  if (multiStep) complexityScore += 2;
+  if (explicitTools || research) complexityScore += 2;
+  if (media && /\b(video|audio|lipsync|batch|lot)\b/.test(text)) complexityScore += 2;
+  const complexity: OrchestrationComplexity = complexityScore >= 3 ? "complex" : complexityScore >= 1 ? "standard" : "simple";
+  const intent: OrchestrationIntent = media
+    ? "media"
+    : research
+      ? "research"
+      : document
+        ? "document"
+        : (multiStep || explicitTools)
+          ? "workflow"
+          : analytical
+            ? "analysis"
+            : "conversation";
+  const requiresProjectContext = attachments.length > 0 || isProjectContinuationPrompt(prompt) || /\b(mon projet|ma marque|nos creations|nos créations|historique|galerie)\b/.test(text);
+  const usesTools = explicitTools || research || intent === "workflow";
+  const usesAgentLoop = agentLoopEnabled() && !media && (usesTools || (complexity === "complex" && intent !== "conversation"));
+  const publicSummary = intent === "media"
+    ? "Configuration adaptée au rendu demandé."
+    : intent === "research"
+      ? "Recherche et vérification adaptées à la demande."
+      : usesAgentLoop
+        ? "Plan de travail adapté à cette demande."
+        : "Réponse directe adaptée à votre demande.";
+  return { intent, complexity, requiresProjectContext, usesTools, usesAgentLoop, publicSummary };
+}
+
+function requestedAgentCapabilities(
+  prompt: string,
+  body: Record<string, unknown>,
+  decision: Pick<OrchestrationDecision, "complexity" | "usesTools">,
+): ModelCapability[] {
   const required = new Set<ModelCapability>(["text"]);
   const attachments = normalizeRequestAttachments(body.attachments);
   const attachmentText = attachments.map((item) => `${item.name || ""} ${item.kind || ""} ${item.contentType || ""} ${item.url || ""}`).join(" ").toLowerCase();
@@ -677,13 +745,18 @@ function requestedAgentCapabilities(prompt: string, body: Record<string, unknown
     required.add(/pdf|document|docx|txt|csv|spreadsheet|file/.test(attachmentText) ? "documents" : "vision");
   }
   if (body.outputFormat === "json" || body.output_format === "json" || body.responseFormat === "json" || body.response_format === "json" || body.structuredOutput || body.structured_output) required.add("structured_output");
-  if (body.tools || body.toolChoice || body.tool_choice || agentLoopEnabled()) required.add("tools");
+  if (body.tools || body.toolChoice || body.tool_choice || decision.usesTools) required.add("tools");
   if (body.useModelResearch === true || body.use_model_research === true) required.add("research");
-  if (!simpleConversation && /raisonne|analyse en profondeur|planifie|strategie|strat[eé]gie|complexe|deep research|think|reason/i.test(stripAccents(prompt))) required.add("reasoning");
+  if (decision.complexity === "complex" || /raisonne|analyse en profondeur|planifie|strategie|strat[eé]gie|complexe|deep research|think|reason/i.test(stripAccents(prompt))) required.add("reasoning");
   return [...required];
 }
 
-function selectAgentModelForRequest(body: Record<string, unknown>, prompt: string, required: ModelCapability[], simpleConversation = false) {
+function selectAgentModelForRequest(
+  body: Record<string, unknown>,
+  prompt: string,
+  required: ModelCapability[],
+  complexity: OrchestrationComplexity,
+) {
   const requested = String(requestedAgentModelValue(body) || "auto").trim();
   const isAuto = requested === "" || requested.toLowerCase() === "auto" || requested.toLowerCase() === "huggy-auto";
   const confirmed = openRouterCatalogCache.agent.filter((item) => {
@@ -713,7 +786,13 @@ function selectAgentModelForRequest(body: Record<string, unknown>, prompt: strin
       const id = String(item.id || "");
       const profile = capabilityProfileForOpenRouterModel(item);
       const price = agentTokenPriceForModel(id);
-      let score = (popularity.get(id) || 0) * 25 - price.input - price.output * 0.15;
+      const display = `${id} ${String(item.name || "")}`.toLowerCase();
+      const popularityScore = Math.min(12, popularity.get(id) || 0) * 3;
+      const tokenCostScore = Math.min(18, price.input + price.output * 0.2);
+      let score = popularityScore - tokenCostScore;
+      if (complexity === "simple" && /flash|mini|fast|haiku/.test(display)) score += 16;
+      if (complexity === "complex" && /opus|pro|reason|thinking|gpt-5|gemini.*pro/.test(display)) score += 18;
+      if (complexity === "complex" && /flash|mini|haiku/.test(display)) score -= 8;
       if (profile.capabilities.includes("reasoning") && /raisonne|strategie|complexe|deep|planifie/.test(normalizedPrompt)) score += 15;
       if (profile.capabilities.includes("vision") && required.includes("vision")) score += 12;
       if (profile.capabilities.includes("tools") && required.includes("tools")) score += 10;
@@ -3198,7 +3277,9 @@ function moneyFusionFeeXof(baseXof: number) {
 }
 
 function moneyFusionCheckoutAmountXof(baseXof: number) {
-  return Math.max(0, Math.round(Number(baseXof) || 0) + moneyFusionFeeXof(baseXof));
+  // The displayed catalogue price is the checkout price. Provider fees are an
+  // internal cost and must not become an undisclosed surcharge.
+  return Math.max(0, Math.round(Number(baseXof) || 0));
 }
 
 function moneyFusionCallbackUrl() {
@@ -3478,13 +3559,23 @@ function sceneFromPrompt(prompt: string) {
   return "studio";
 }
 
-const CREATION_INTENT = /\b(genere|generes|cree|crees|fais|faire|produis|dessine|realise|lance|montre|construis|concois|imagine|anime|remixe?|retouche|transforme|decline|upscale|ameliore)\b|image|video|affiche|visuel|poster|photo|packshot|logo|animation|miniature|thumbnail|banniere|clip|ugc|storyboard|variante|declinaison|mockup|avatar|lipsync|voix|musique|jingle/;
+const CREATION_VERB = /\b(genere|generes|cree|crees|fais|produis|dessine|realise|lance|construis|concois|imagine|anime|remixe?|retouche|transforme|decline|upscale|ameliore)\b/;
+const MEDIA_SUBJECT = /\b(image|video|affiche|visuel|poster|photo|packshot|logo|animation|miniature|thumbnail|banniere|clip|ugc|storyboard|variante|declinaison|mockup|avatar|lipsync|voix|musique|jingle|audio)\b/;
 const CONVERSATIONAL_ONLY = /^(salut|bonjour|bonsoir|coucou|hello|hey|merci|thanks|super|parfait|genial|top|cool|d'accord|dac|ca marche|bien recu|compris|je vois|ah ok|haha|lol)\b[\s!.,]*$/;
+const SOCIAL_GREETING = /^(salut|bonjour|bonsoir|coucou|hello|hey)(?:\s+(?:comment\s+(?:vas[- ]?tu|allez[- ]?vous|ca\s+va)|ca\s+va|quoi\s+de\s+neuf))?[\s!?.,]*$/;
+const SOCIAL_THANKS = /^(merci|thanks|super|parfait|genial|top|cool|d'accord|dac|ca marche|bien recu|compris|je vois|ah ok)[\s!?.,]*$/;
+
+function socialOnlyReply(prompt: string) {
+  const normalized = stripAccents(String(prompt || "").trim().toLowerCase());
+  if (SOCIAL_GREETING.test(normalized)) return "Bonjour ! Comment puis-je vous aider ?";
+  if (SOCIAL_THANKS.test(normalized)) return "Avec plaisir.";
+  return "";
+}
 const QUESTION_OPENERS = /^(comment|pourquoi|combien|quand|qui|que\b|quoi\b|quel(le)?s?\b|est[- ]ce|c'est quoi|qu'est[- ]ce|peux[- ]tu|tu peux|sais[- ]tu|explique|dis[- ]moi)/;
 const CAPABILITY_QUESTION = /\b(que sais[- ]tu faire|tu sais faire quoi|que peux[- ]tu faire|tu peux faire quoi|qu[' ]?est[- ]ce que tu peux faire|tes capacites|tes competences|aide[- ]moi|comment ca marche|comment fonctionne huggyflow|on cree quoi|on cree quoi aujourd'hui)\b/;
 const EXISTING_MEDIA_QUERY = /\b(images?|videos?|creations?|rendus?|medias?|fichiers?)\b.*\b(que tu as|deja|precedent(?:e|es|s)?|dernier(?:e|es|s)?|cree(?:e|es|s)?|genere(?:e|es|s)?|termine(?:e|es|s)?|historique|galerie)\b|\b(historique|galerie|precedent(?:e|es|s)?|dernier(?:e|es|s)?)\b.*\b(images?|videos?|creations?|rendus?|medias?|fichiers?)\b/;
 
-function shouldGenerateMedia(prompt: string, mode: string) {
+function shouldGenerateMedia(prompt: string, mode: string, selectedModel = "auto", explicitIntent = "auto") {
   if (String(mode || '').toLowerCase() === 'document') return false;
   const text = stripAccents(prompt.toLowerCase().trim());
   if (!text) return false;
@@ -3496,17 +3587,30 @@ function shouldGenerateMedia(prompt: string, mode: string) {
   // comme un nouvel ordre de generation payant.
   if (EXISTING_MEDIA_QUERY.test(text)) return false;
   // Question sans intention de creation ("combien coute une video ?"): on repond, on ne genere pas.
-  if (QUESTION_OPENERS.test(text) && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre)\b/.test(text)) return false;
-  if (text.endsWith("?") && !/\b(genere|cree|fais|produis|dessine|realise|lance|montre|peux[- ]tu)\b/.test(text)) return false;
-  // Description visuelle ou verbe de creation: on produit.
-  if (CREATION_INTENT.test(text)) return true;
-  // Prompt descriptif type "un chat astronaute, lumiere neon": assez long et sans tournure de question.
-  return text.split(/\s+/).length >= 4;
+  if (QUESTION_OPENERS.test(text) && !CREATION_VERB.test(text)) return false;
+  if (text.endsWith("?") && !CREATION_VERB.test(text)) return false;
+  if (/\b(prix|tarif|cout|combien|idee|exemple|conseil|prompt pour|parle[- ]moi|explique|compare|liste)\b/.test(text) && !CREATION_VERB.test(text)) return false;
+  if (CREATION_VERB.test(text)) return true;
+  // A descriptive prompt is executable only after an explicit Media choice.
+  // The default `mode=image` must never turn ordinary conversation into a paid job.
+  const mediaChoice = explicitIntent === "generate" || (selectedModel !== "" && selectedModel !== "auto");
+  return mediaChoice && MEDIA_SUBJECT.test(text) && text.split(/\s+/).length >= 3;
 }
 
 async function ensureProfile(supabase: ReturnType<typeof adminClient>, userId: string) {
   const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-  if (data) return data;
+  if (data) {
+    const paidPlan = normalizePlanId(String(data.plan || "free")) !== "free";
+    const periodEnd = data.current_period_end ? new Date(String(data.current_period_end)).getTime() : 0;
+    if (paidPlan && periodEnd > 0 && periodEnd <= Date.now()) {
+      const { data: expired } = await supabase.from("profiles").update({
+        plan: "free",
+        billing_status: "expired",
+      }).eq("id", userId).eq("current_period_end", data.current_period_end).select("*").maybeSingle();
+      if (expired) return expired;
+    }
+    return data;
+  }
   const profile = {
     id: userId,
     email: null,
@@ -3619,7 +3723,7 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
   const messages = messagesResult.data || [];
   const messageIds = messages.map((message) => message.id);
   const generationsResult = messageIds.length
-    ? await supabase.from("generations").select("id,message_id,type,status,model_id,model_label,provider,prompt,aspect_ratio,duration_seconds,progress,result_url,error_message,credits,created_at,completed_at,params").in("message_id", messageIds).limit(2000)
+    ? await supabase.from("generations").select("id,message_id,type,status,model_id,model_label,provider,prompt,aspect_ratio,duration_seconds,progress,result_url,error_message,credits,created_at,completed_at,params,storage_url_expires_at").in("message_id", messageIds).limit(2000)
     : { data: [], error: null };
   if (generationsResult.error) throw generationsResult.error;
   const conversationByProject = new Map((conversationsResult.data || []).map((conversation) => [conversation.project_id, conversation]));
@@ -3629,7 +3733,8 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
     list.push(message);
     messagesByProject.set(String(message.project_id), list);
   }
-  const genByMessage = new Map((generationsResult.data || []).map((generation) => [generation.message_id, generation]));
+  const refreshedGenerations = await refreshGenerationMediaUrls(supabase, (generationsResult.data || []) as Record<string, unknown>[]);
+  const genByMessage = new Map(refreshedGenerations.map((generation) => [generation.message_id, generation]));
 
   return projects.map((project) => {
     const conv = conversationByProject.get(project.id);
@@ -3756,6 +3861,61 @@ function fapshiHeaders() {
   };
 }
 
+function signedMediaUrlNeedsRefresh(generation: Record<string, unknown>) {
+  if (String(generation.status || "") !== "completed") return false;
+  const expiresAt = Date.parse(String(generation.storage_url_expires_at || ""));
+  return !Number.isFinite(expiresAt) || expiresAt <= Date.now() + 15 * 60 * 1000;
+}
+
+async function refreshGenerationMediaUrls(
+  supabase: ReturnType<typeof adminClient>,
+  generations: Record<string, unknown>[],
+) {
+  const candidates = generations.filter((generation) => generation?.id && signedMediaUrlNeedsRefresh(generation));
+  if (!candidates.length) return generations;
+
+  const ids = candidates.map((generation) => String(generation.id));
+  const { data: assets, error } = await supabase.from("media_assets")
+    .select("id,generation_id,bucket,object_path,status,expires_at,metadata")
+    .in("generation_id", ids)
+    .eq("status", "available");
+  if (error) throw error;
+  const assetByGeneration = new Map((assets || []).map((asset) => [String(asset.generation_id), asset]));
+  const refreshedById = new Map<string, Record<string, unknown>>();
+
+  await Promise.all(candidates.map(async (generation) => {
+    const generationId = String(generation.id);
+    const asset = assetByGeneration.get(generationId);
+    const retentionExpiresAt = Date.parse(String(asset?.expires_at || ""));
+    if (!asset?.object_path || cleanMetadata(asset.metadata).persisted !== true
+      || Number.isFinite(retentionExpiresAt) && retentionExpiresAt <= Date.now()) return;
+    const bucket = String(asset.bucket || MEDIA_BUCKET);
+    const signedSeconds = 24 * 60 * 60;
+    const { data: signed, error: signedError } = await supabase.storage.from(bucket)
+      .createSignedUrl(String(asset.object_path), signedSeconds);
+    if (signedError || !signed?.signedUrl) return;
+    const expiresAt = new Date(Date.now() + signedSeconds * 1000).toISOString();
+    const [generationUpdate, assetUpdate] = await Promise.all([
+      supabase.from("generations").update({
+        result_url: signed.signedUrl,
+        storage_bucket: bucket,
+        storage_path: String(asset.object_path),
+        storage_url_expires_at: expiresAt,
+      }).eq("id", generationId).select("*").single(),
+      supabase.from("media_assets").update({
+        public_url: signed.signedUrl,
+        signed_url_expires_at: expiresAt,
+      }).eq("id", asset.id),
+    ]);
+    if (!generationUpdate.error && generationUpdate.data) {
+      refreshedById.set(generationId, generationUpdate.data as Record<string, unknown>);
+    }
+    if (assetUpdate.error) console.error("media asset signed url refresh failed", safeLogMessage(assetUpdate.error));
+  }));
+
+  return generations.map((generation) => refreshedById.get(String(generation.id)) || generation);
+}
+
 function fapshiPhone(value: unknown) {
   const normalized = String(value || "").trim().replace(/[\s().-]/g, "");
   return /^\+?[0-9]{8,16}$/.test(normalized) ? normalized : "";
@@ -3796,6 +3956,54 @@ async function fapshiRequest(path: string, payload: Record<string, unknown>) {
       { code: "PAYMENT_PROVIDER_ERROR", status: response.status });
   }
   return data;
+}
+
+async function fapshiPaymentStatus(transactionId: string) {
+  if (!fapshiConfigured()) {
+    throw new FlowtubeError(503, "Le paiement est momentanément indisponible.", { code: "PAYMENT_NOT_CONFIGURED" });
+  }
+  const safeTransactionId = String(transactionId || "").trim();
+  if (!/^[A-Za-z0-9_-]{1,160}$/.test(safeTransactionId)) {
+    throw new FlowtubeError(400, "Référence de paiement invalide.", { code: "PAYMENT_REFERENCE_INVALID" });
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.max(3000, Number(Deno.env.get("FAPSHI_TIMEOUT_MS") || 12000)));
+  let response: Response;
+  try {
+    response = await fetch(`${FAPSHI_BASE_URL}/payment-status/${encodeURIComponent(safeTransactionId)}`, {
+      method: "GET",
+      headers: fapshiHeaders(),
+      signal: controller.signal,
+    });
+  } catch (_err) {
+    throw new FlowtubeError(503, "La confirmation du paiement est momentanément indisponible.", { code: "PAYMENT_VERIFICATION_UNAVAILABLE" });
+  } finally {
+    clearTimeout(timeout);
+  }
+  const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok) {
+    throw new FlowtubeError(response.status === 429 || response.status >= 500 ? 503 : 400,
+      "La confirmation du paiement est momentanément indisponible.",
+      { code: "PAYMENT_VERIFICATION_FAILED", status: response.status });
+  }
+  return data;
+}
+
+function fapshiPaymentMatchesSession(session: Record<string, unknown>, verified: Record<string, unknown>) {
+  const transactionId = String(verified.transId || verified.transactionId || verified.trans_id || "");
+  const expectedTransactionId = String(session.provider_session_id || "");
+  const amount = Number(verified.amount || 0);
+  const expectedAmount = Number(session.amount_xof || 0);
+  const userId = String(verified.userId || verified.user_id || "");
+  const externalId = String(verified.externalId || verified.external_id || "");
+  const sessionMetadata = cleanMetadata(session.metadata);
+  const expectedExternalId = String(sessionMetadata.external_id || sessionMetadata.externalId || "");
+  return Boolean(
+    transactionId && transactionId === expectedTransactionId
+    && Number.isInteger(amount) && amount > 0 && amount === expectedAmount
+    && userId && userId === String(session.user_id || "")
+    && expectedExternalId && externalId === expectedExternalId
+  );
 }
 
 const HUGGYFLOW_SYSTEM_PROMPT = [
@@ -5477,13 +5685,10 @@ async function geminiVideoAnalysis(videoUrl: string, question: string, preferred
   const apiKey = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("GOOGLE_AI_API_KEY") || "";
   if (!apiKey) return "";
   const maxMb = Math.max(5, Number(Deno.env.get("HUGGYFLOW_VIDEO_ANALYSIS_MAX_MB") || 24));
-  const video = await fetch(videoUrl, { headers: { Accept: "video/*,*/*" } });
+  const video = await safeExternalFetch(videoUrl, { headers: { Accept: "video/*,*/*" } });
   if (!video.ok) throw new Error(`video fetch ${video.status}`);
   const contentType = video.headers.get("content-type") || "video/mp4";
-  const bytes = new Uint8Array(await video.arrayBuffer());
-  if (bytes.byteLength > maxMb * 1024 * 1024) {
-    return `Video recue, mais trop lourde pour l'analyse instantanee (${Math.round(bytes.byteLength / 1024 / 1024)} Mo). Envoie un extrait plus court ou demande un decoupage en scenes.`;
-  }
+  const bytes = await readResponseBytes(video, maxMb * 1024 * 1024);
   const model = Deno.env.get("GEMINI_VIDEO_MODEL") || "gemini-2.5-flash";
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
     method: "POST",
@@ -5555,13 +5760,111 @@ function htmlToText(html: string): string {
     .slice(0, 6000);
 }
 
+function isPrivateIpv4(value: string) {
+  const parts = value.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  const [a, b] = parts;
+  return a === 0 || a === 10 || a === 127
+    || a === 169 && b === 254
+    || a === 172 && b >= 16 && b <= 31
+    || a === 192 && b === 168
+    || a === 100 && b >= 64 && b <= 127
+    || a >= 224;
+}
+
+function isPrivateIp(value: string) {
+  const normalized = value.toLowerCase().replace(/^\[|\]$/g, "").split("%", 1)[0];
+  if (isPrivateIpv4(normalized)) return true;
+  if (!normalized.includes(":")) return false;
+  return normalized === "::" || normalized === "::1" || normalized.startsWith("fc") || normalized.startsWith("fd")
+    || /^fe[89ab]/.test(normalized) || normalized.startsWith("ff") || normalized.startsWith("::ffff:127.")
+    || normalized.startsWith("::ffff:10.") || normalized.startsWith("::ffff:192.168.");
+}
+
+async function assertSafeExternalUrl(rawUrl: string) {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch (_err) {
+    throw new FlowtubeError(400, "Cette URL n’est pas valide.", { code: "EXTERNAL_URL_INVALID" });
+  }
+  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (url.protocol !== "https:" || url.username || url.password || !hostname
+    || hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")
+    || isPrivateIp(hostname)) {
+    throw new FlowtubeError(400, "Cette URL ne peut pas être utilisée.", { code: "EXTERNAL_URL_BLOCKED" });
+  }
+  const resolver = (Deno as unknown as { resolveDns?: (host: string, type: "A" | "AAAA") => Promise<string[]> }).resolveDns;
+  if (resolver) {
+    try {
+      const [ipv4, ipv6] = await Promise.all([
+        resolver(hostname, "A").catch(() => []),
+        resolver(hostname, "AAAA").catch(() => []),
+      ]);
+      if ([...ipv4, ...ipv6].some(isPrivateIp)) {
+        throw new FlowtubeError(400, "Cette URL ne peut pas être utilisée.", { code: "EXTERNAL_URL_BLOCKED" });
+      }
+    } catch (err) {
+      if (err instanceof FlowtubeError) throw err;
+    }
+  }
+  return url;
+}
+
+async function safeExternalFetch(rawUrl: string, init: RequestInit = {}, redirects = 3): Promise<Response> {
+  let current = await assertSafeExternalUrl(rawUrl);
+  for (let redirect = 0; redirect <= redirects; redirect += 1) {
+    const response = await fetch(current, { ...init, redirect: "manual" });
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+    const location = response.headers.get("location");
+    if (!location || redirect === redirects) {
+      response.body?.cancel().catch(() => undefined);
+      throw new FlowtubeError(502, "La ressource distante n’a pas pu être récupérée.", { code: "EXTERNAL_REDIRECT_INVALID" });
+    }
+    response.body?.cancel().catch(() => undefined);
+    current = await assertSafeExternalUrl(new URL(location, current).toString());
+  }
+  throw new FlowtubeError(502, "La ressource distante n’a pas pu être récupérée.", { code: "EXTERNAL_FETCH_FAILED" });
+}
+
+async function readResponseBytes(response: Response, maximumBytes: number) {
+  const declared = Number(response.headers.get("content-length") || 0);
+  if (declared > maximumBytes) throw new FlowtubeError(413, "Le fichier distant est trop volumineux.", { code: "EXTERNAL_FILE_TOO_LARGE" });
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maximumBytes) throw new FlowtubeError(413, "Le fichier distant est trop volumineux.", { code: "EXTERNAL_FILE_TOO_LARGE" });
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 async function fetchPageText(url: string): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
   try {
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 HuggyFlowBot", Accept: "text/html" }, signal: controller.signal });
+    const res = await safeExternalFetch(url, { headers: { "User-Agent": "Mozilla/5.0 HuggyFlowBot", Accept: "text/html" }, signal: controller.signal });
     if (!res.ok) throw new Error(`fetch ${res.status}`);
-    const html = await res.text();
+    const contentType = normalizedContentType(res.headers.get("content-type"));
+    if (contentType && contentType !== "text/html" && contentType !== "application/xhtml+xml") {
+      throw new FlowtubeError(415, "Cette page ne peut pas être analysée.", { code: "EXTERNAL_CONTENT_TYPE_INVALID" });
+    }
+    const html = new TextDecoder().decode(await readResponseBytes(res, 1024 * 1024));
     return htmlToText(html);
   } finally {
     clearTimeout(timer);
@@ -6062,7 +6365,7 @@ async function executeAgentTool(ctx: AgentLoopCtx, name: string, input: Record<s
         ok: true,
         status: "queued",
         message: `Generation mise en file${referenceUrl ? " avec reference visuelle" : ""}. Le resultat sera confirme apres finalisation.`,
-        generationId: result.generation?.generationId,
+        generationId: result.generation?.generationId ? String(result.generation.generationId) : undefined,
       } satisfies AgentToolResult);
     }
     if (name === "save_element") {
@@ -6516,14 +6819,20 @@ async function fetchAndStoreProviderResult(
   if (!isConfirmedResultUrl(resultUrl)) {
     throw new FlowtubeError(502, "Le resultat media n'a pas pu etre verifie.", { code: "RESULT_URL_INVALID" });
   }
-  const response = await fetch(resultUrl, { headers });
+  const response = await safeExternalFetch(resultUrl, { headers });
   if (!response.ok) {
     throw new FlowtubeError(502, "Le fichier media n'a pas pu etre recupere.", {
       code: "RESULT_DOWNLOAD_FAILED",
       providerStatus: response.status,
     });
   }
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const kind = generatedMediaKind(generation.type);
+  const maximumBytes = kind === "video"
+    ? Math.max(25, Number(Deno.env.get("HUGGYFLOW_VIDEO_RESULT_MAX_MB") || 500)) * 1024 * 1024
+    : kind === "audio"
+      ? Math.max(10, Number(Deno.env.get("HUGGYFLOW_AUDIO_RESULT_MAX_MB") || 100)) * 1024 * 1024
+      : Math.max(5, Number(Deno.env.get("HUGGYFLOW_IMAGE_RESULT_MAX_MB") || 30)) * 1024 * 1024;
+  const bytes = await readResponseBytes(response, maximumBytes);
   const contentType = generatedContentType(bytes, response.headers.get("content-type"), generation.type);
   if (!contentType) {
     throw new FlowtubeError(502, "Le fichier media recu est invalide.", { code: "RESULT_MIME_INVALID" });
@@ -6567,8 +6876,17 @@ async function storeProviderBytes(
     metadata: { persisted: true, provider: String(generation.provider || "media") },
   };
   const { data: existingAsset } = await supabase.from("media_assets").select("id").eq("generation_id", generation.id).limit(1).maybeSingle();
-  if (existingAsset?.id) await supabase.from("media_assets").update(asset).eq("id", existingAsset.id);
-  else await supabase.from("media_assets").insert(asset);
+  const assetWrite = existingAsset?.id
+    ? await supabase.from("media_assets").update(asset).eq("id", existingAsset.id)
+    : await supabase.from("media_assets").insert(asset);
+  if (assetWrite.error) throw assetWrite.error;
+  const { error: generationStorageError } = await supabase.from("generations").update({
+    storage_bucket: MEDIA_BUCKET,
+    storage_path: path,
+    storage_url_expires_at: expiresAt,
+    expires_at: new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000).toISOString(),
+  }).eq("id", generation.id);
+  if (generationStorageError) throw generationStorageError;
   return { path, signedUrl, expiresAt };
 }
 
@@ -6582,17 +6900,19 @@ async function completeProviderGeneration(
   if (!isConfirmedResultUrl(resultUrl)) {
     throw new FlowtubeError(502, "Le resultat media n'a pas pu etre verifie.", { code: "RESULT_URL_INVALID" });
   }
-  const update: Record<string, unknown> = {
-    status: "completed",
-    progress: 100,
-    result_url: resultUrl,
-    provider_payload: providerPayload,
-    completed_at: new Date().toISOString(),
-  };
-  if (Number.isFinite(providerCostUsd) && Number(providerCostUsd) >= 0) update.cost_usd = Number(providerCostUsd);
-  const { data, error } = await supabase.from("generations").update(update).eq("id", generation.id).select("*").single();
-  if (error || !data) throw error || new Error("generation completion failed");
-  await debitCredits(supabase, data);
+  const { data: finalizedRows, error: finalizeError } = await supabase.rpc("complete_generation_with_result", {
+    p_generation_id: generation.id,
+    p_result_url: resultUrl,
+    p_provider_payload: cleanMetadata(providerPayload),
+    p_provider_cost_usd: Number.isFinite(providerCostUsd) && Number(providerCostUsd) >= 0 ? Number(providerCostUsd) : null,
+  });
+  if (finalizeError) throw finalizeError;
+  const finalized = Array.isArray(finalizedRows) ? finalizedRows[0] as Record<string, unknown> | undefined : finalizedRows as Record<string, unknown> | undefined;
+  const { data, error } = await supabase.from("generations").select("*").eq("id", generation.id).single();
+  if (error || !data || data.status !== "completed" || !generationResultConfirmed(data)) {
+    throw error || new FlowtubeError(502, "Le résultat n’a pas pu être finalisé.", { code: "RESULT_FINALIZATION_FAILED" });
+  }
+  if (finalized?.finalized === true) await recordCompletedGenerationBilling(supabase, data);
   await trackGenerationJob(supabase, data, "completed", { reconciled_at: new Date().toISOString(), provider: String(data.provider || generation.provider || "media") });
   await advanceBatch(supabase, data);
   return data;
@@ -6702,7 +7022,8 @@ async function startOpenRouterVideoGeneration(generation: Record<string, unknown
     const directUrl = String(body.video_url || body.videoUrl || body.url || extractUrl(body.output || body.data || body.result));
     const jobId = String(body.id || body.job_id || body.request_id || body.generation_id || "");
     if (directUrl && !jobId) {
-      await completeProviderGeneration(supabase, generation, directUrl, body);
+      const stored = await fetchAndStoreProviderResult(supabase, generation, directUrl);
+      await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
       return true;
     }
     if (!jobId) throw new Error("Le suivi de cette generation est indisponible.");
@@ -8210,8 +8531,9 @@ async function chat(req: Request) {
     start: async (controller) => {
       let eventSequence = 0;
       let queuedMediaInRun = false;
+      let terminalEventSent = false;
+      const eventWrites: PromiseLike<unknown>[] = [];
       const send = (event: string, payload: unknown) => {
-        if (req.signal.aborted) return;
         if (event === "generation" || event === "batch") queuedMediaInRun = true;
         eventSequence += 1;
         const normalizedType = event === "text"
@@ -8233,17 +8555,18 @@ async function chat(req: Request) {
         if (normalizedType === "run.completed" && queuedMediaInRun && nextPayload.resultConfirmed === undefined) {
           nextPayload = { ...nextPayload, status: "queued", resultConfirmed: false };
         }
+        if (["run.completed", "run.failed", "run.cancelled", "run.interrupted"].includes(normalizedType)) terminalEventSent = true;
         if (streamSupabase && streamUserId) {
-          void streamSupabase.from("agent_run_events").upsert({
+          eventWrites.push(streamSupabase.from("agent_run_events").upsert({
             run_id: runId,
             user_id: streamUserId,
             message_id: streamMessageId || null,
             sequence: eventSequence,
             event_type: normalizedType,
             payload: cleanMetadata(nextPayload),
-          }, { onConflict: "run_id,sequence" });
+          }, { onConflict: "run_id,sequence" }).then(() => undefined));
         }
-        controller.enqueue(encoder.encode(`id: ${eventSequence}\nevent: ${event}\ndata: ${JSON.stringify(nextPayload)}\n\n`));
+        if (!req.signal.aborted) controller.enqueue(encoder.encode(`id: ${eventSequence}\nevent: ${event}\ndata: ${JSON.stringify(nextPayload)}\n\n`));
       };
       const heartbeat = setInterval(() => send("heartbeat", { at: new Date().toISOString() }), 15000);
       try {
@@ -8251,9 +8574,16 @@ async function chat(req: Request) {
         const userId = await userIdFromRequest(req, supabase);
         streamSupabase = supabase;
         streamUserId = userId;
-        void supabase.from("agent_run_events")
+        await supabase.from("agent_run_controls").upsert({
+          run_id: runId,
+          user_id: userId,
+          status: "active",
+          requested_at: null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "run_id,user_id" });
+        eventWrites.push(supabase.from("agent_run_events")
           .delete()
-          .lt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+          .lt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).then(() => undefined));
         await refreshOpenRouterCatalog();
         const profile = await ensureProfile(supabase, userId);
         await enforceRateLimit(req, supabase, "chat", userId, DEFAULT_RATE_LIMIT);
@@ -8270,15 +8600,17 @@ async function chat(req: Request) {
         const existingSkills = await loadLearnedSkills(supabase, userId);
         const matchedExistingSkill = matchLearnedSkill(prompt, existingSkills);
         const requestMode = String(body.mode || "image");
+        const requestedMediaModel = String(body.modelId || "auto");
+        const requestedIntent = String(body.intent || "auto");
+        const orchestration = orchestrateRequest(prompt, body as Record<string, unknown>, requestAttachments);
+        const socialReply = socialOnlyReply(prompt);
         const simpleConversation = !requestAttachments.length
-          && !shouldGenerateMedia(prompt, requestMode)
-          && !isVisualAnalysisRequest(prompt)
-          && !isResearchRequest(prompt)
+          && orchestration.intent === "conversation"
           && !extractSkillDirective(prompt)
           && !isCostReportRequest(prompt)
           && !extractElementDirective(prompt);
-        const requiredAgentCapabilities = requestedAgentCapabilities(prompt, body as Record<string, unknown>, simpleConversation);
-        agentModelId = selectAgentModelForRequest(body as Record<string, unknown>, prompt, requiredAgentCapabilities, simpleConversation);
+        const requiredAgentCapabilities = socialReply ? ["text" as ModelCapability] : requestedAgentCapabilities(prompt, body as Record<string, unknown>, orchestration);
+        agentModelId = socialReply ? activeDefaultAgentModel() : selectAgentModelForRequest(body as Record<string, unknown>, prompt, requiredAgentCapabilities, orchestration.complexity);
         send("run.started", { phase: simpleConversation ? "thinking" : "analyzing", progress: simpleConversation ? 4 : 10, model: agentModelId === "auto" ? undefined : "selected" });
         const billingRequestKey = String(body.idempotencyKey || body.idempotency_key || crypto.randomUUID()).slice(0, 120);
         const billingCounters = new Map<string, number>();
@@ -8287,9 +8619,9 @@ async function chat(req: Request) {
           billingCounters.set(reason, count);
           return `${billingRequestKey}:${reason}:${count}`.slice(0, 180);
         };
-        if (!simpleConversation) send("status", { phase: "analyzing", progress: 12, label: "AgentFlow cadre ta demande" });
+        if (!simpleConversation) send("status", { phase: "analyzing", progress: 12, label: orchestration.publicSummary });
         const learnedSkills = await loadLearnedSkills(supabase, userId);
-        if (!simpleConversation) send("status", { phase: "routing", progress: 24, label: matchedExistingSkill ? "AgentFlow réactive une compétence existante" : "AgentFlow prépare le meilleur workflow" });
+        if (!simpleConversation) send("status", { phase: "routing", progress: 24, label: matchedExistingSkill ? "AgentFlow réactive une compétence existante" : orchestration.publicSummary });
         const { data: userMessage } = await supabase.from("messages").insert({
           user_id: userId,
           project_id: project.id,
@@ -8356,6 +8688,15 @@ async function chat(req: Request) {
           return;
         }
 
+        // Social turns are intentionally resolved without project history. This
+        // prevents an old production brief from taking over a simple greeting.
+        if (socialReply) {
+          send("text", { delta: socialReply });
+          await saveAssistant(socialReply);
+          send("done", projectDonePayload(project, conversation));
+          return;
+        }
+
         if (isUgcPipelineRequest(prompt)) {
           const missing = ugcPipelineMissingInputs(prompt, requestAttachments);
           if (missing.length) {
@@ -8383,6 +8724,7 @@ async function chat(req: Request) {
 
         // Analyse visuelle: breakdown d'une image/pub de reference (attachee, @element, ou derniere creation).
         if (isVisualAnalysisRequest(prompt)) {
+          await assertAgentRunActive(req, supabase, userId, runId);
           const attached = String(body.imageUrl || body.image_url || body.referenceImageUrl || body.reference_image_url || body.videoUrl || body.video_url || "");
           const mentioned = resolveElementMentions(prompt, elements);
           let target = attached || (mentioned[0] && mentioned[0].media_url) || "";
@@ -8411,6 +8753,7 @@ async function chat(req: Request) {
         // Recherche web: lit une page (produit/marque/concurrent) et en tire un brief.
         const researchUrl = extractFirstUrl(prompt);
         if (researchUrl && isResearchRequest(prompt)) {
+          await assertAgentRunActive(req, supabase, userId, runId);
           send("status", { phase: "researching", progress: 34, label: "AgentFlow vérifie la source demandée", tool: "Recherche web" });
           send("text", { delta: `Je lis ${researchUrl}...` });
           const brief = await runWebResearch(researchUrl, prompt, agentModelId, billAgent("web_research"));
@@ -8420,6 +8763,7 @@ async function chat(req: Request) {
           return;
         }
         if (!researchUrl && isTrendResearchRequest(prompt)) {
+          await assertAgentRunActive(req, supabase, userId, runId);
           send("status", { phase: "researching", progress: 34, label: "AgentFlow analyse les signaux disponibles", tool: "Recherche marché" });
           send("text", { delta: "J'analyse les signaux marche disponibles..." });
           const brief = await runMarketResearch(prompt, prompt, agentModelId, billAgent("market_research"));
@@ -8495,20 +8839,21 @@ async function chat(req: Request) {
         // Media requests use the typed generation lifecycle below so the UI
         // receives a real queued job and never a speculative tool response.
         // The agent loop remains available for non-media workflows.
-        if (agentLoopEnabled() && !simpleConversation && !shouldGenerateMedia(prompt, requestMode)) {
+        if (orchestration.usesAgentLoop && !simpleConversation) {
+          await assertAgentRunActive(req, supabase, userId, runId);
           if (!simpleConversation) send("status", { phase: "routing", progress: 32, label: "AgentFlow orchestre les outils adaptés", tool: "AgentFlow Loop" });
           const loopCtx: AgentLoopCtx = { req, supabase, userId, project, conversation, profile, plan, body: body as Record<string, unknown>, agentModelId, send, billingKey: `${billingRequestKey}:loop` };
           const loopMatched = matchLearnedSkill(prompt, learnedSkills);
           const loopContext: ReplyContext = {
             planName: plan.displayName,
             creditsBalance: Number(profile.credits || 0),
-            projectTitle: String(project.title || ""),
+            projectTitle: orchestration.requiresProjectContext ? String(project.title || "") : undefined,
             memory,
             elements,
             learnedSkill: loopMatched ? `${loopMatched.name}: ${loopMatched.playbook}`.slice(0, 800) : undefined,
             attachments: attachmentContext,
           };
-          const reply = await runAgentLoop(loopCtx, prompt, history, loopContext);
+          const reply = await runAgentLoop(loopCtx, prompt, orchestration.requiresProjectContext ? history : [], loopContext);
           await saveAssistant(reply);
           const { data: loopProfile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
           send("credits", { credits: loopProfile?.credits ?? 0, creditsMax: loopProfile?.credits_max ?? 100 });
@@ -8522,7 +8867,7 @@ async function chat(req: Request) {
         const model = resolveBestModelFromCatalog(catalog, String(body.modelId || "auto"), type, prompt, body as Record<string, unknown>);
         const aspectRatio = aspectRatioForRequest(body as Record<string, unknown>, prompt, type);
         const quote = quoteFor(model, requestedUnitsForModel(model, body as Record<string, unknown>, prompt, type));
-        const willGenerate = shouldGenerateMedia(prompt, mode);
+        const willGenerate = orchestration.intent === "media";
         const batchCount = willGenerate ? batchCountFromPrompt(prompt) : 1;
         send("status", { phase: "routing", progress: 32, label: `AgentFlow sélectionne ${model.name}`, model: model.name });
 
@@ -8531,6 +8876,7 @@ async function chat(req: Request) {
         // hidden planning turn first could consume the remaining balance and
         // then make the actual generation fail with an inconsistent balance.
         if (willGenerate && batchCount < 2) {
+          await assertAgentRunActive(req, supabase, userId, runId);
           await enforceGenerationGuards(supabase, profile, plan, model, quote);
           ensureProviderReady(model);
         }
@@ -8597,6 +8943,8 @@ async function chat(req: Request) {
 
         if (willGenerate) ensureProviderReady(model);
         const credits = quote.credits;
+        const responseType = willGenerate ? type : (orchestration.intent === "document" ? "document" : "conversation");
+        const responseCredits = willGenerate ? credits : 0;
         const { data: recentGens } = await supabase.from("generations")
           .select("type,prompt,status")
           .eq("conversation_id", conversation.id)
@@ -8605,9 +8953,10 @@ async function chat(req: Request) {
         const replyContext: ReplyContext = {
           planName: plan.displayName,
           creditsBalance: Number(profile.credits || 0),
-          projectTitle: String(project.title || ""),
-          recentCreations: (recentGens || []).map((generation) =>
-            `${generation.type} (${generation.status}): ${String(generation.prompt || "").slice(0, 110)}`),
+          projectTitle: orchestration.requiresProjectContext ? String(project.title || "") : undefined,
+          recentCreations: orchestration.requiresProjectContext
+            ? (recentGens || []).map((generation) => `${generation.type} (${generation.status}): ${String(generation.prompt || "").slice(0, 110)}`)
+            : [],
           willGenerate,
           memory,
           elements,
@@ -8619,9 +8968,9 @@ async function chat(req: Request) {
           ? `Je prépare le rendu ${type === "video" ? "vidéo" : type === "audio" ? "audio" : "image"}. Le résultat apparaîtra ici uniquement après confirmation.`
           : await anthropicReply(
             prompt,
-            type,
-            credits,
-            history,
+            responseType,
+            responseCredits,
+            orchestration.requiresProjectContext ? history : [],
             (delta) => send("text", { delta }),
             replyContext,
             agentModelId,
@@ -8702,11 +9051,32 @@ async function chat(req: Request) {
         send("done", projectDonePayload(project, conversation));
       } catch (err) {
         console.error("[chat-run-failed]", JSON.stringify(safeErrorDiagnostic(err)));
-        if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
+        if (err instanceof FlowtubeError && err.payload?.code === "RUN_CANCELLED") send("cancelled", { status: "cancelled", resultConfirmed: false });
+        else if (err instanceof FlowtubeError) send("error", { message: publicErrorMessage(err.message), ...publicErrorPayload(err) });
         else send("error", { message: "La création est indisponible pour le moment. Réessaie dans quelques instants." });
       } finally {
         clearInterval(heartbeat);
-        controller.close();
+        if (!terminalEventSent && streamSupabase && streamUserId) {
+          eventSequence += 1;
+          eventWrites.push(streamSupabase.from("agent_run_events").upsert({
+            run_id: runId,
+            user_id: streamUserId,
+            message_id: streamMessageId || null,
+            sequence: eventSequence,
+            event_type: "run.interrupted",
+            payload: {
+              type: "run.interrupted",
+              runId,
+              messageId: requestedMessageId,
+              sequence: eventSequence,
+              timestamp: new Date().toISOString(),
+              status: "interrupted",
+              resultConfirmed: false,
+            },
+          }, { onConflict: "run_id,sequence" }).then(() => undefined));
+        }
+        await Promise.allSettled(eventWrites);
+        try { controller.close(); } catch (_err) { /* the browser already cancelled the stream */ }
       }
     },
   });
@@ -8777,10 +9147,14 @@ async function persistMediaAsset(supabase: ReturnType<typeof adminClient>, gener
 
   if (Deno.env.get("FLOWTUBE_STORE_MEDIA") === "true") {
     try {
-      const response = await fetch(resultUrl);
+      const response = await safeExternalFetch(resultUrl);
       if (!response.ok) throw new Error(`download ${response.status}`);
-      const contentType = response.headers.get("content-type") || "application/octet-stream";
-      const buffer = await response.arrayBuffer();
+      const kind = generatedMediaKind(generation.type);
+      const maximumBytes = (kind === "video" ? 500 : kind === "audio" ? 100 : 30) * 1024 * 1024;
+      const bytes = await readResponseBytes(response, maximumBytes);
+      const contentType = generatedContentType(bytes, response.headers.get("content-type"), generation.type);
+      if (!contentType) throw new Error("invalid media result");
+      const buffer = new Uint8Array(bytes).buffer as ArrayBuffer;
       const ext = extensionFromContentType(contentType, String(generation.type || "image"));
       const path = `${generation.user_id}/${generation.id}/result.${ext}`;
       const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, buffer, { contentType, upsert: true });
@@ -8969,7 +9343,15 @@ async function debitCredits(supabase: ReturnType<typeof adminClient>, generation
   if (debitError) throw debitError;
   const debit = Array.isArray(debitResult) ? debitResult[0] as Record<string, unknown> | undefined : undefined;
   if (!debit || debit.charged !== true) return;
-  const nextCredits = Number(debit.balance_after || 0);
+  await recordCompletedGenerationBilling(supabase, generation);
+}
+
+async function recordCompletedGenerationBilling(supabase: ReturnType<typeof adminClient>, generation: Record<string, unknown>) {
+  const { data: existingAudit } = await supabase.from("pricing_audit_logs")
+    .select("id").eq("generation_id", generation.id).eq("status", "completed").limit(1).maybeSingle();
+  if (existingAudit?.id) return;
+  const userId = String(generation.user_id);
+  const credits = Number(generation.credits || 0);
   const creditFloorUsd = Number(generation.credit_floor_usd || CREDIT_FLOOR_USD);
   const retailCreditUsd = Number(generation.retail_credit_usd || RETAIL_CREDIT_USD);
   const providerCostUsd = Number(generation.cost_usd || 0);
@@ -9094,8 +9476,9 @@ async function generationStatus(req: Request, generationId: string) {
   if (error) throw error;
   if (!generation) return json({ error: { message: "Generation not found" } }, 404);
   const synced = await syncGeneration(supabase, generation);
+  const [withFreshMediaUrl] = await refreshGenerationMediaUrls(supabase, [synced]);
   const { data: profile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
-  return json({ generation: mediaFromGeneration(synced), credits: profile?.credits, creditsMax: profile?.credits_max });
+  return json({ generation: mediaFromGeneration(withFreshMediaUrl), credits: profile?.credits, creditsMax: profile?.credits_max });
 }
 
 async function cancelGeneration(req: Request, generationId: string) {
@@ -9165,6 +9548,64 @@ async function agentRunEventsRoute(req: Request, runId: string) {
   });
 }
 
+async function agentRunCancellationRequested(
+  supabase: ReturnType<typeof adminClient>,
+  userId: string,
+  runId: string,
+) {
+  const { data } = await supabase.from("agent_run_controls")
+    .select("status")
+    .eq("run_id", runId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.status === "cancel_requested" || data?.status === "cancelled";
+}
+
+async function assertAgentRunActive(
+  req: Request,
+  supabase: ReturnType<typeof adminClient>,
+  userId: string,
+  runId: string,
+) {
+  if (req.signal.aborted || await agentRunCancellationRequested(supabase, userId, runId)) {
+    throw new FlowtubeError(409, "La tâche a été annulée.", { code: "RUN_CANCELLED" });
+  }
+}
+
+async function cancelAgentRun(req: Request, runId: string) {
+  const supabase = adminClient();
+  const userId = await userIdFromRequest(req, supabase);
+  const normalizedRunId = String(runId || "").trim().slice(0, 120);
+  if (!normalizedRunId) throw new FlowtubeError(400, "Référence de tâche invalide.", { code: "RUN_ID_INVALID" });
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("agent_run_controls").upsert({
+    run_id: normalizedRunId,
+    user_id: userId,
+    status: "cancel_requested",
+    requested_at: now,
+    updated_at: now,
+  }, { onConflict: "run_id,user_id" });
+  if (error) throw error;
+  const { data: lastEvent } = await supabase.from("agent_run_events")
+    .select("sequence")
+    .eq("run_id", normalizedRunId)
+    .eq("user_id", userId)
+    .order("sequence", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const sequence = Math.max(1, Number(lastEvent?.sequence || 0) + 1);
+  await supabase.from("agent_run_events").upsert({
+    run_id: normalizedRunId,
+    user_id: userId,
+    sequence,
+    event_type: "run.cancelled",
+    payload: { type: "run.cancelled", runId: normalizedRunId, sequence, timestamp: now, status: "cancelled", resultConfirmed: false },
+  }, { onConflict: "run_id,sequence" });
+  await supabase.from("agent_run_controls").update({ status: "cancelled", updated_at: now })
+    .eq("run_id", normalizedRunId).eq("user_id", userId);
+  return json({ runId: normalizedRunId, status: "cancelled", resultConfirmed: false });
+}
+
 async function backgroundTasksRoute(req: Request) {
   const supabase = adminClient();
   const userId = await userIdFromRequest(req, supabase);
@@ -9199,7 +9640,8 @@ async function backgroundTasksRoute(req: Request) {
   for (const generation of syncedActive) byId.set(String(generation.id), generation);
   for (const generation of recentResult.data || []) byId.set(String(generation.id), generation);
 
-  const tasks = Array.from(byId.values())
+  const refreshedTasks = await refreshGenerationMediaUrls(supabase, Array.from(byId.values()));
+  const tasks = refreshedTasks
     .sort((a, b) => new Date(String(b.completed_at || b.created_at || 0)).getTime() - new Date(String(a.completed_at || a.created_at || 0)).getTime())
     .map((generation) => mediaFromGeneration(generation));
   return json({
@@ -10087,6 +10529,7 @@ async function createFapshiCheckout(
     credit_pack_id: pack?.id || null,
     credit_option_id: creditOption?.id || null,
     amount_xof: amountXof,
+    external_id: externalId,
     direct,
   };
   await supabase.from("billing_checkout_sessions").insert({
@@ -10102,7 +10545,7 @@ async function createFapshiCheckout(
     payment_phone: phone || null,
     billing_interval: type === "credits" ? null : interval,
     status: "open",
-    amount_usd: plan ? (interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd) : Number(pack?.price_usd || 0),
+    amount_usd: Number((amountXof / DEFAULT_USD_XOF_RATE).toFixed(2)),
     amount_xof: amountXof,
     currency: "xaf",
     checkout_url: paymentUrl || null,
@@ -10219,10 +10662,35 @@ async function billingStatus(req: Request) {
   const supabase = adminClient();
   const userId = await authenticatedUserIdFromRequest(req, supabase);
   const profile = await ensureProfile(supabase, userId);
-  const { data: transactions } = await supabase.from("credit_transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
-  const { data: subscription } = await supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  const { data: invoices } = await supabase.from("invoices").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+  const { data: transactions } = await supabase.from("credit_transactions")
+    .select("id,amount,reason,balance_after,created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const { data: subscription } = await supabase.from("subscriptions")
+    .select("id,plan_id,status,billing_interval,current_period_start,current_period_end,cancel_at_period_end,created_at,updated_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { data: invoices } = await supabase.from("invoices")
+    .select("id,status,amount_due_usd,amount_paid_usd,currency,hosted_invoice_url,invoice_pdf,period_start,period_end,created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
   const testGrant = publicTestGrant(await activeTestGrant(supabase, userId));
+  const publicInvoices = (invoices || []).map((invoice) => ({
+    id: invoice.id,
+    status: invoice.status,
+    amount_due: Math.max(0, Math.round(Number(invoice.amount_due_usd || 0) * 100)),
+    amount_paid: Math.max(0, Math.round(Number(invoice.amount_paid_usd || 0) * 100)),
+    currency: String(invoice.currency || "usd").toLowerCase(),
+    hosted_invoice_url: invoice.hosted_invoice_url || null,
+    invoice_pdf: invoice.invoice_pdf || null,
+    period_start: invoice.period_start || null,
+    period_end: invoice.period_end || null,
+    created_at: invoice.created_at,
+  }));
   return json({
     user: { id: profile.id, plan: profile.plan, billingStatus: profile.billing_status, currentPeriodEnd: profile.current_period_end },
     credits: profile.credits,
@@ -10233,7 +10701,7 @@ async function billingStatus(req: Request) {
     paymentPhoneRequired: true,
     testGrant,
     subscription,
-    invoices: invoices || [],
+    invoices: publicInvoices,
     transactions: transactions || [],
   });
 }
@@ -10991,85 +11459,108 @@ async function verifyStripeSignature(req: Request, raw: string) {
   }
 }
 
-async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string, grantKey?: string, creditOptionId?: string) {
+type BillingGrantContext = {
+  creditsOverride?: number;
+  amountUsd?: number;
+  source?: string;
+  metadata?: Record<string, unknown>;
+};
+
+function billingSnapshotCredits(session: Record<string, unknown>) {
+  const snapshot = cleanMetadata(session.pricing_snapshot);
+  const interval = String(session.billing_interval || "monthly") === "annual" ? "annual" : "monthly";
+  const pack = cleanMetadata(snapshot.pack);
+  const option = cleanMetadata(snapshot.creditOption || snapshot.credit_option);
+  const baseCredits = Number(pack.credits || option.credits || snapshot.includedCredits || snapshot.included_credits || 0);
+  if (!Number.isFinite(baseCredits) || baseCredits <= 0) return 0;
+  return Math.round(baseCredits) * (interval === "annual" && !pack.credits ? 12 : 1);
+}
+
+function billingGrantContext(session: Record<string, unknown>, source: string): BillingGrantContext {
+  return {
+    creditsOverride: billingSnapshotCredits(session),
+    amountUsd: Number(session.amount_usd || (Number(session.amount_xof || 0) / DEFAULT_USD_XOF_RATE) || 0),
+    source,
+    metadata: {
+      checkout_session_id: session.id || null,
+      provider_session_id: session.provider_session_id || null,
+      amount_xof: session.amount_xof || null,
+      pricing_version: session.pricing_version || null,
+    },
+  };
+}
+
+function billingPeriodEnd(interval: string, from = new Date()) {
+  const end = new Date(from);
+  if (interval === "annual") end.setUTCFullYear(end.getUTCFullYear() + 1);
+  else end.setUTCMonth(end.getUTCMonth() + 1);
+  return end.toISOString();
+}
+
+async function grantPlanCredits(supabase: ReturnType<typeof adminClient>, userId: string, planId: string, interval: string, subscriptionId?: string, periodEnd?: string, grantKey?: string, creditOptionId?: string, context: BillingGrantContext = {}) {
   const plan = await resolvePlan(supabase, planId);
   const idempotencyKey = String(grantKey || (subscriptionId ? `plan:${subscriptionId}:${interval}:${periodEnd || "initial"}` : `plan:${userId}:${plan.id}:${interval}:${new Date().toISOString().slice(0, 10)}`));
-  const { data: existingGrant } = await supabase.from("credit_transactions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("reason", "subscription_renewal")
-    .contains("metadata", { grant_key: idempotencyKey })
-    .limit(1)
-    .maybeSingle();
-  if (existingGrant?.id) return;
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
-  let includedCredits = plan.includedCredits;
-  if (creditOptionId) {
+  let baseCredits = plan.includedCredits;
+  if (!context.creditsOverride && creditOptionId) {
     const { data: option } = await supabase.from("pricing_plan_options")
       .select("credits,plan_id")
       .eq("id", creditOptionId)
       .eq("plan_id", plan.id)
       .eq("active", true)
       .maybeSingle();
-    if (option) includedCredits = Number(option.credits || includedCredits);
+    if (option) baseCredits = Number(option.credits || baseCredits);
   }
-  const nextCredits = Number(profile?.credits || 0) + includedCredits;
-  await supabase.from("profiles").update({
-    plan: plan.id,
-    billing_status: "active",
-    credits: nextCredits,
-    credits_max: Math.max(Number(profile?.credits_max || 0), includedCredits),
-    current_period_end: periodEnd || null,
-  }).eq("id", userId);
-  await supabase.from("subscriptions").upsert({
-    user_id: userId,
-    plan_id: plan.id,
-    stripe_subscription_id: subscriptionId || null,
-    status: "active",
-    billing_interval: interval,
-    current_period_end: periodEnd || null,
-    metadata: { source: "stripe_webhook" },
-  }, { onConflict: "stripe_subscription_id" });
-  await supabase.from("credit_transactions").insert({
-    user_id: userId,
-    amount: includedCredits,
-    reason: "subscription_renewal",
-    balance_after: nextCredits,
-    metadata: { plan_id: plan.id, interval, subscription_id: subscriptionId || null, credit_option_id: creditOptionId || null, grant_key: idempotencyKey },
+  const includedCredits = Math.max(0, Math.round(Number(context.creditsOverride || (baseCredits * (interval === "annual" ? 12 : 1)))));
+  if (!includedCredits) throw new FlowtubeError(409, "Le quota de cet abonnement est invalide.", { code: "BILLING_CREDITS_INVALID" });
+  const source = String(context.source || "billing");
+  const effectivePeriodEnd = periodEnd || billingPeriodEnd(interval);
+  const { data: grantRows, error: grantError } = await supabase.rpc("grant_billing_credits", {
+    p_user_id: userId,
+    p_credits: includedCredits,
+    p_grant_key: idempotencyKey,
+    p_reason: "subscription_renewal",
+    p_plan_id: plan.id,
+    p_interval: interval,
+    p_subscription_id: subscriptionId || `${source}:${idempotencyKey}`,
+    p_period_end: effectivePeriodEnd,
+    p_credit_option_id: creditOptionId || null,
+    p_source: source,
+    p_metadata: context.metadata || {},
   });
-  await settleAffiliateConversion(
-    supabase,
-    userId,
-    interval === "annual" ? Number(plan.annualPriceUsd || 0) : Number(plan.monthlyPriceUsd || 0),
-    "subscription_renewal",
-    idempotencyKey,
-  );
+  if (grantError) throw grantError;
+  const grant = Array.isArray(grantRows) ? grantRows[0] : grantRows;
+  if (!grant?.granted) return;
+  const { data: profile } = await supabase.from("profiles").select("email").eq("id", userId).single();
+  await settleAffiliateConversion(supabase, userId,
+    Number(context.amountUsd || (interval === "annual" ? plan.annualPriceUsd : plan.monthlyPriceUsd) || 0),
+    "subscription_renewal", idempotencyKey);
   if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "subscription_active", "Ton plan Huggyflow est actif", `<p>Ton plan ${plan.displayName} est actif avec ${includedCredits} credits.</p>`, { plan_id: plan.id, credit_option_id: creditOptionId || null });
 }
 
-async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string, grantKey?: string) {
+async function grantCreditPack(supabase: ReturnType<typeof adminClient>, userId: string, packId: string, grantKey?: string, context: BillingGrantContext = {}) {
   const { data: pack } = await supabase.from("credit_packs").select("*").eq("id", packId).maybeSingle();
   if (!pack) return;
   const idempotencyKey = String(grantKey || `pack:${userId}:${pack.id}`);
-  const { data: existingGrant } = await supabase.from("credit_transactions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("reason", "credit_pack_purchase")
-    .contains("metadata", { grant_key: idempotencyKey })
-    .limit(1)
-    .maybeSingle();
-  if (existingGrant?.id) return;
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
-  const nextCredits = Number(profile?.credits || 0) + Number(pack.credits || 0);
-  await supabase.from("profiles").update({ credits: nextCredits, credits_max: Math.max(Number(profile?.credits_max || 0), nextCredits) }).eq("id", userId);
-  await supabase.from("credit_transactions").insert({
-    user_id: userId,
-    amount: Number(pack.credits || 0),
-    reason: "credit_pack_purchase",
-    balance_after: nextCredits,
-    metadata: { pack_id: pack.id, price_usd: pack.price_usd, grant_key: idempotencyKey },
+  const credits = Math.max(0, Math.round(Number(context.creditsOverride || pack.credits || 0)));
+  if (!credits) throw new FlowtubeError(409, "Le quota de cette recharge est invalide.", { code: "BILLING_CREDITS_INVALID" });
+  const { data: grantRows, error: grantError } = await supabase.rpc("grant_billing_credits", {
+    p_user_id: userId,
+    p_credits: credits,
+    p_grant_key: idempotencyKey,
+    p_reason: "credit_pack_purchase",
+    p_plan_id: null,
+    p_interval: null,
+    p_subscription_id: null,
+    p_period_end: null,
+    p_credit_option_id: null,
+    p_source: String(context.source || "billing"),
+    p_metadata: { pack_id: pack.id, price_usd: context.amountUsd || pack.price_usd, ...(context.metadata || {}) },
   });
-  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "credit_pack", "Tes credits Huggyflow sont disponibles", `<p>${pack.credits} credits ont ete ajoutes a ton compte.</p>`, { pack_id: pack.id });
+  if (grantError) throw grantError;
+  const grant = Array.isArray(grantRows) ? grantRows[0] : grantRows;
+  if (!grant?.granted) return;
+  const { data: profile } = await supabase.from("profiles").select("email").eq("id", userId).single();
+  if (profile?.email) await sendTransactionalEmail(supabase, userId, String(profile.email), "credit_pack", "Tes credits Huggyflow sont disponibles", `<p>${credits} credits ont ete ajoutes a ton compte.</p>`, { pack_id: pack.id });
 }
 
 async function stripeWebhook(req: Request) {
@@ -11093,15 +11584,20 @@ async function stripeWebhook(req: Request) {
   }, { onConflict: "provider,provider_event_id" });
 
   if (event.type === "checkout.session.completed") {
+    const { data: checkoutSession } = await supabase.from("billing_checkout_sessions")
+      .select("*").eq("stripe_session_id", object.id).maybeSingle();
     await supabase.from("billing_checkout_sessions").update({
       status: "completed",
       completed_at: new Date().toISOString(),
       metadata: object,
     }).eq("stripe_session_id", object.id);
     if (metadata.type === "credits" && metadata.credit_pack_id && userId) {
-      await grantCreditPack(supabase, String(userId), String(metadata.credit_pack_id), `stripe:credit:${event.id}`);
+      await grantCreditPack(supabase, String(userId), String(metadata.credit_pack_id), `stripe:credit:${event.id}`,
+        checkoutSession ? billingGrantContext(checkoutSession, "stripe") : { source: "stripe" });
     } else if (metadata.plan_id && userId) {
-      await grantPlanCredits(supabase, String(userId), String(metadata.plan_id), String(metadata.interval || "monthly"), object.subscription || undefined, undefined, `stripe:plan:${event.id}`);
+      await grantPlanCredits(supabase, String(userId), String(metadata.plan_id), String(metadata.interval || "monthly"), object.subscription || undefined, undefined, `stripe:plan:${event.id}`,
+        checkoutSession?.credit_option_id ? String(checkoutSession.credit_option_id) : undefined,
+        checkoutSession ? billingGrantContext(checkoutSession, "stripe") : { source: "stripe" });
     }
     if (userId) void recordProductEvent(supabase, String(userId), "checkout_completed", { provider: "stripe", type: metadata.type || "subscription" });
   }
@@ -11257,8 +11753,9 @@ async function moneyFusionCallback(req: Request) {
     if (claimed) {
       const userId = String(claimed.user_id || "");
       try {
-        if (claimed.credit_pack_id) await grantCreditPack(supabase, userId, String(claimed.credit_pack_id), `moneyfusion:credit:${eventId}`);
-        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`, undefined, `moneyfusion:plan:${eventId}`, claimed.credit_option_id ? String(claimed.credit_option_id) : undefined);
+        const context = billingGrantContext(claimed, "moneyfusion");
+        if (claimed.credit_pack_id) await grantCreditPack(supabase, userId, String(claimed.credit_pack_id), `moneyfusion:credit:${eventId}`, context);
+        else if (claimed.plan_id) await grantPlanCredits(supabase, userId, String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `moneyfusion:${eventId}`, undefined, `moneyfusion:plan:${eventId}`, claimed.credit_option_id ? String(claimed.credit_option_id) : undefined, context);
         await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", claimed.id);
         void recordProductEvent(supabase, userId, "checkout_completed", { provider: "moneyfusion", type: claimed.credit_pack_id ? "credits" : "subscription" });
       } catch (err) {
@@ -11281,7 +11778,7 @@ async function moneyFusionCallback(req: Request) {
 async function fapshiWebhook(req: Request) {
   const expectedSecret = Deno.env.get("FAPSHI_WEBHOOK_SECRET") || "";
   const receivedSecret = req.headers.get("x-wh-secret") || req.headers.get("x-fapshi-secret") || "";
-  if (expectedSecret && !safeEqual(receivedSecret, expectedSecret)) return unauthorized();
+  if (expectedSecret && receivedSecret && !safeEqual(receivedSecret, expectedSecret)) return unauthorized();
   const body = await bodyJson(req);
   const transactionId = String(body.transId || body.transactionId || body.trans_id || body.id || body.externalId || "");
   if (!transactionId) throw new FlowtubeError(400, "Référence de paiement manquante.", { code: "PAYMENT_REFERENCE_MISSING" });
@@ -11289,32 +11786,64 @@ async function fapshiWebhook(req: Request) {
   const { data: session } = await supabase.from("billing_checkout_sessions")
     .select("*").eq("provider", "fapshi").eq("provider_session_id", transactionId).maybeSingle();
   if (!session) return json({ received: true, ignored: true });
-  const rawStatus = String(body.status || body.state || body.paymentStatus || "").toLowerCase();
+  let verified: Record<string, unknown>;
+  try {
+    verified = await fapshiPaymentStatus(transactionId);
+  } catch (_err) {
+    await supabase.from("payment_events").upsert({
+      provider: "fapshi",
+      provider_event_id: `${transactionId}:verification_pending`,
+      event_type: "verification_pending",
+      user_id: session.user_id,
+      processed: false,
+      metadata: { transaction_id: transactionId },
+    }, { onConflict: "provider,provider_event_id" });
+    return json({ received: true, verificationPending: true }, 503);
+  }
+  if (!fapshiPaymentMatchesSession(session, verified)) {
+    await supabase.from("payment_events").upsert({
+      provider: "fapshi",
+      provider_event_id: `${transactionId}:verification_failed`,
+      event_type: "verification_failed",
+      user_id: session.user_id,
+      processed: true,
+      metadata: { transaction_id: transactionId },
+    }, { onConflict: "provider,provider_event_id" });
+    return json({ received: true, ignored: true, verified: false });
+  }
+  const rawStatus = String(verified.status || "").toLowerCase();
   const eventId = `${transactionId}:${rawStatus || "update"}`;
   const { data: existingEvent } = await supabase.from("payment_events")
     .select("processed").eq("provider", "fapshi").eq("provider_event_id", eventId).maybeSingle();
   if (existingEvent?.processed) return json({ received: true, duplicate: true });
   await supabase.from("payment_events").upsert({
     provider: "fapshi", provider_event_id: eventId, event_type: rawStatus || "update",
-    user_id: session.user_id, processed: false, metadata: { transaction_id: transactionId, status: rawStatus },
+    user_id: session.user_id, processed: false, metadata: { transaction_id: transactionId, status: rawStatus, verified: true },
   }, { onConflict: "provider,provider_event_id" });
 
-  const successful = ["successful", "success", "completed", "paid", "succeeded"].some((value) => rawStatus.includes(value));
-  const failed = ["failed", "expired", "cancelled", "canceled"].some((value) => rawStatus.includes(value));
+  const successful = rawStatus === "successful";
+  const failed = rawStatus === "failed" || rawStatus === "expired";
   if (successful) {
     const { data: claimed, error } = await supabase.from("billing_checkout_sessions")
-      .update({ status: "processing", provider_payload: { status: rawStatus, transaction_id: transactionId } })
+      .update({ status: "processing", provider_payload: verified })
       .eq("id", session.id).in("status", ["open", "pending", "failed"]).select("*").maybeSingle();
     if (error) throw error;
     if (claimed) {
-      if (claimed.credit_pack_id) await grantCreditPack(supabase, String(claimed.user_id), String(claimed.credit_pack_id), `fapshi:credit:${eventId}`);
-      else if (claimed.plan_id) await grantPlanCredits(supabase, String(claimed.user_id), String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `fapshi:${eventId}`, undefined, `fapshi:plan:${eventId}`, claimed.credit_option_id ? String(claimed.credit_option_id) : undefined);
-      await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", claimed.id);
+      const context = billingGrantContext(claimed, "fapshi");
+      try {
+        if (claimed.credit_pack_id) await grantCreditPack(supabase, String(claimed.user_id), String(claimed.credit_pack_id), `fapshi:credit:${eventId}`, context);
+        else if (claimed.plan_id) await grantPlanCredits(supabase, String(claimed.user_id), String(claimed.plan_id), String(claimed.billing_interval || "monthly"), `fapshi:${transactionId}`, undefined, `fapshi:plan:${eventId}`, claimed.credit_option_id ? String(claimed.credit_option_id) : undefined, context);
+        await supabase.from("billing_checkout_sessions").update({ status: "completed", completed_at: new Date().toISOString(), provider_payload: verified }).eq("id", claimed.id);
+        void recordProductEvent(supabase, String(claimed.user_id), "checkout_completed", { provider: "fapshi", type: claimed.credit_pack_id ? "credits" : "subscription" });
+      } catch (err) {
+        await supabase.from("billing_checkout_sessions").update({ status: "open" }).eq("id", claimed.id);
+        throw err;
+      }
     }
   } else if (failed) {
-    await supabase.from("billing_checkout_sessions").update({ status: rawStatus.includes("expired") ? "expired" : "failed", provider_payload: { status: rawStatus, transaction_id: transactionId } }).eq("id", session.id);
+    await supabase.from("billing_checkout_sessions").update({ status: rawStatus === "expired" ? "expired" : "failed", provider_payload: verified }).eq("id", session.id);
   } else {
-    await supabase.from("billing_checkout_sessions").update({ status: "pending", provider_payload: { status: rawStatus, transaction_id: transactionId } }).eq("id", session.id);
+    await supabase.from("billing_checkout_sessions").update({ status: "pending", provider_payload: verified }).eq("id", session.id);
   }
   await supabase.from("payment_events").update({ processed: true }).eq("provider", "fapshi").eq("provider_event_id", eventId);
   return json({ received: true, processed: successful });
@@ -11425,6 +11954,7 @@ Deno.serve(async (req: Request) => {
     if (first === "memory" && (req.method === "GET" || req.method === "POST")) return await agentMemoryRoute(req);
     if (first === "agent-tasks" && (req.method === "GET" || req.method === "POST")) return await agentTasksRoute(req);
     if (first === "runs" && route[1] && route[2] === "events" && req.method === "GET") return await agentRunEventsRoute(req, route[1]);
+    if (first === "runs" && route[1] && route[2] === "cancel" && req.method === "POST") return await cancelAgentRun(req, route[1]);
     if (first === "skills" && (req.method === "GET" || req.method === "POST")) return await skillsRoute(req);
     if (first === "skill-evals" && (req.method === "GET" || req.method === "POST")) return await skillEvaluationsRoute(req, route[1]);
     if (first === "background-tasks" && req.method === "GET") return await backgroundTasksRoute(req);

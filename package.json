@@ -9,6 +9,7 @@
     "build": "node scripts/validate-build.mjs && node build.js",
     "build:components": "vite build --config vite.config.ts",
     "validate:static": "node scripts/validate-build.mjs",
+    "test:critical": "node scripts/test-agent-run.mjs && node scripts/test-critical-contracts.mjs",
     "dev": "node dev-server.js"
   },
   "devDependencies": {
