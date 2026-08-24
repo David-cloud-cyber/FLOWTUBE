@@ -1,4 +1,6 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Check,
   ChevronDown,
@@ -7,7 +9,6 @@ import {
   Copy,
   ExternalLink,
   ListChecks,
-  Pause,
   Play,
   RotateCcw,
   Search,
@@ -97,6 +98,14 @@ const phaseLabels: Record<string, string> = {
   cancelled: 'Génération interrompue',
   interrupted: 'Réponse interrompue',
 };
+
+const shimmerPhrases = [
+  'L’agent réfléchit…',
+  'Traitement de votre demande…',
+  'Analyse des informations…',
+  'Préparation de la réponse…',
+  'Dernière vérification…',
+];
 
 function labelForPhase(phase?: string) {
   return phaseLabels[String(phase || 'analyzing').toLowerCase()] || 'AgentFlow travaille sur ta demande';
@@ -199,6 +208,35 @@ export function ReasoningText({ phase, active = true, compact = false }: { phase
   );
 }
 
+export function ResponseShimmer({ status = 'working' }: { status?: AgentRunStatus }) {
+  const reduce = useReducedMotion() ?? false;
+  const [index, setIndex] = useState(0);
+  const paused = status === 'paused';
+  useEffect(() => {
+    if (paused || reduce) return undefined;
+    const timer = window.setInterval(() => setIndex((value) => (value + 1) % shimmerPhrases.length), 3000);
+    return () => window.clearInterval(timer);
+  }, [paused, reduce]);
+  const text = paused ? 'Traitement en pause' : shimmerPhrases[index];
+  return (
+    <div className="hf-response-shimmer" role="status" aria-label={paused ? 'Traitement en pause' : 'Traitement en cours'} aria-live="polite" aria-atomic="true" aria-busy={!paused}>
+      <AnimatePresence initial={false} mode="wait">
+        <motion.span
+          aria-hidden="true"
+          key={text}
+          className="hf-response-shimmer-text"
+          initial={reduce ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: -6 }}
+          transition={{ duration: reduce ? 0 : 0.22, ease: EASE_OUT }}
+        >
+          {text}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function ActivityDisclosure({ items }: { items: AgentActivityItem[] }) {
   const reduce = useReducedMotion() ?? false;
   const baseId = useId();
@@ -290,13 +328,36 @@ function Citations({ citations }: { citations: AgentCitationItem[] }) {
   </div>;
 }
 
-function StreamingResponse({ text, status }: { text: string; status: AgentRunStatus }) {
-  const paragraphs = String(text || '').split(/\n{2,}/).filter(Boolean);
-  if (!paragraphs.length) return null;
-  return <div className="hf-agent-response-text" aria-live={status === 'working' ? 'off' : 'polite'}>
-    {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-    {status === 'working' ? <span className="hf-agent-response-cursor" aria-hidden="true" /> : null}
-  </div>;
+function normalizeResponseMarkdown(text: string) {
+  return String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t]+[◆♦🔹][ \t]+/g, '\n- ')
+    .replace(/(^|\n)[ \t]*[◆♦🔹][ \t]*/g, '$1- ')
+    .replace(/[ \t]+-[ \t]+(?=(?:\*\*)?[A-ZÀ-ÖØ-Þ][^:\n]{0,42}:)/g, '\n- ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function FinalResponse({ text }: { text: string }) {
+  const markdown = normalizeResponseMarkdown(text);
+  if (!markdown) return null;
+  return <motion.div
+    className="hf-agent-response-text"
+    aria-live="polite"
+    initial={{ opacity: 0, y: 6 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.24, ease: EASE_OUT }}
+  >
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      skipHtml
+      components={{
+        a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noreferrer noopener" />,
+      }}
+    >
+      {markdown}
+    </ReactMarkdown>
+  </motion.div>;
 }
 
 function MediaStatus({ status, label }: { status: AgentMediaStatus; label?: string }) {
@@ -333,12 +394,15 @@ export function AgentMessagePanel({
   const mode = interactionMode || (hasDetails ? 'creation' : 'conversation');
   const compactConversation = mode === 'conversation' && active;
   const hasResponse = Boolean(String(responseText || '').trim());
-  if (!active && !hasDetails && !onRetry && !onCopy) return null;
+  if (!active && !hasDetails && !hasResponse) return null;
+  if (active) {
+    return <div className={`hf-agent-panel is-active ${className || ''}`}>
+      <ResponseShimmer status={status} />
+      {(onResume || onCancel) ? <div className="hf-agent-run-controls">{status === 'paused' && onResume ? <button type="button" onClick={onResume}><Play /> Reprendre</button> : null}{onCancel ? <button type="button" className="is-quiet" onClick={onCancel}><X /> Annuler</button> : null}</div> : null}
+    </div>;
+  }
   return <div className={`hf-agent-panel ${active ? 'is-active' : ''} ${className || ''}`}>
-    {compactConversation && !hasResponse ? <ReasoningText phase={phase} active compact /> : null}
-    {active && !compactConversation ? <AgentProgress label={status === 'paused' ? 'Génération en pause' : labelForPhase(phase)} elapsedSeconds={elapsedSeconds} progress={progress} status={status} /> : null}
-    {active && !compactConversation && !hasResponse ? <ReasoningText phase={phase} /> : null}
-      {hasResponse ? <StreamingResponse text={responseText || ''} status={status} /> : null}
+      {hasResponse ? <FinalResponse text={responseText || ''} /> : null}
     <AnimatePresence initial={false} mode="popLayout">
       {!compactConversation && activity.length ? <motion.div key="activity" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><ActivityDisclosure items={activity} /></motion.div> : null}
       {!compactConversation && tasks.length ? <motion.div key="tasks" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><TaskList tasks={tasks} /></motion.div> : null}
@@ -346,7 +410,6 @@ export function AgentMessagePanel({
       {approval ? <motion.div key="approval" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><ApprovalCard approval={approval} onApprove={onApprove} onReject={onReject} onRequestChanges={onRequestChanges} /></motion.div> : null}
       {citations.length ? <motion.div key="citations" layout="position" initial={reduce ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -4 }} transition={reduce ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}><Citations citations={citations} /></motion.div> : null}
     </AnimatePresence>
-    {active && (onPause || onResume || onCancel) ? <div className="hf-agent-run-controls">{status === 'paused' && onResume ? <button type="button" onClick={onResume}><Play /> Reprendre</button> : status !== 'paused' && onPause ? <button type="button" onClick={onPause}><Pause /> Pause</button> : null}{onCancel ? <button type="button" className="is-quiet" onClick={onCancel}><X /> Annuler</button> : null}</div> : null}
     <ResponseActions responseText={responseText} status={status} onRetry={onRetry} onCopy={onCopy} onFeedback={onFeedback} retryLabel={retryLabel} />
   </div>;
 }

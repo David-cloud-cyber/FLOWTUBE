@@ -583,7 +583,6 @@ select {
 .hf-agent-grid-cell,
 .hf-agent-reasoning-mark,
 .hf-agent-status-dot,
-.hf-agent-response-cursor,
 .hf-agent-media-indicator > span,
 .hf-agent-task-mark.is-in-progress span {
   background: var(--beui-accent) !important;

@@ -3,6 +3,7 @@ import fs from "node:fs";
 
 const html = fs.readFileSync("index.html", "utf8");
 const edge = fs.readFileSync("supabase/functions/flowtube-api/index.ts", "utf8");
+const agentUi = fs.readFileSync("src/components/nexus-ui/agent-ui.tsx", "utf8");
 const billingSql = fs.readFileSync("supabase/migrations/20260821100000_atomic_billing_credit_grants.sql", "utf8");
 const generationSql = fs.readFileSync("supabase/migrations/20260821120000_atomic_generation_completion.sql", "utf8");
 const persistUiState = html.match(/persistUiState\(\)\{([\s\S]*?)\n  isSettingsPage\(/)?.[1] || "";
@@ -31,11 +32,14 @@ assert.match(edge, /refreshGenerationMediaUrls/, "Expired signed media URLs must
 assert.match(edge, /const socialReply = socialOnlyReply\(prompt\)/, "Social messages must bypass stale project orchestration");
 assert.match(edge, /Bonjour ! Comment puis-je vous aider \?/, "Simple greetings need a short deterministic response");
 assert.match(edge, /function orchestrateRequest\(/, "Every run must pass through one orchestration decision");
-assert.match(edge, /usesAgentLoop = agentLoopEnabled\(\) && !media/, "Agent tools must be reserved for complex, non-media work");
+assert.match(edge, /usesAgentLoop = agentLoopEnabled\(\) && !media && usesTools/, "Agent tools must require an explicit tool-bearing workflow");
 assert.match(edge, /orchestration\.requiresProjectContext \? history : \[\]/, "Independent prompts must not inherit unrelated project history");
+assert.match(edge, /memory: orchestration\.requiresProjectContext \? memory : \[\]/, "Independent prompts must not inherit project memory");
+assert.match(edge, /elements: orchestration\.requiresProjectContext \? elements : \[\]/, "Independent prompts must not inherit pinned project elements");
 assert.match(edge, /const responseType = willGenerate \? type : \(orchestration\.intent === "document" \? "document" : "conversation"\)/, "Conversational turns must not be framed as image generations");
 assert.match(edge, /complexity === "simple" && \/flash\|mini\|fast\|haiku\//, "Auto routing must prefer efficient models for simple requests");
 assert.match(edge, /complexity === "complex" && \/opus\|pro\|reason\|thinking\|gpt-5\|gemini\.\*pro\//, "Auto routing must favor capable models for complex work");
+assert.match(edge, /for \(const model of agentModelFallbacks\(requestedModel\)\)/, "Unavailable agent models must fall back to a confirmed compatible model");
 assert.ok(billingStatus, "The public billing status contract must remain detectable");
 assert.doesNotMatch(billingStatus, /\.select\("\*"\)/, "Billing status must not expose raw database rows");
 assert.doesNotMatch(billingStatus, /stripe_(?:customer|subscription|invoice)_id/, "Billing status must not expose provider identifiers");
@@ -46,5 +50,14 @@ assert.match(billingSql, /for update/i, "Billing grants must lock the account ba
 assert.match(billingSql, /credit_transactions_billing_grant_unique/, "Billing grants need a database idempotency constraint");
 assert.match(generationSql, /for update/i, "Generation completion must lock its terminal state");
 assert.match(generationSql, /generation_reserved/, "Generation completion must close an existing reservation");
+
+assert.doesNotMatch(html, /streamPhraseIndex|STREAM_PHRASES|streamPhraseFor/, "Legacy streaming phrases must not compete with the React shimmer");
+assert.match(html, /this\.streamBuffers\[id\] = \(this\.streamBuffers\[id\] \|\| ''\) \+ delta/, "Response chunks must be buffered off-screen");
+assert.doesNotMatch(html, /requestAnimationFrame\(\(\)=>\{[\s\S]{0,180}flushAgentText/, "Response chunks must not be rendered frame by frame");
+assert.match(html, /hasMedia: !!m\.media && status==='done' && !!resultUrl/, "Incomplete media must not render a legacy progress card");
+assert.match(agentUi, /import ReactMarkdown from 'react-markdown'/, "Agent responses must use a real Markdown renderer");
+assert.match(agentUi, /remarkPlugins=\{\[remarkGfm\]\}/, "Agent responses must support GitHub-flavored Markdown");
+assert.match(agentUi, /replace\(\/\[ \\t\]\+\[◆♦🔹\]/, "Inline model bullets must be normalized into readable lists");
+assert.match(agentUi, /if \(!active && !hasDetails && !hasResponse\) return null/, "A final response must render even without action callbacks");
 
 console.log("critical-contracts: ok");
