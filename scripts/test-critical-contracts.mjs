@@ -58,6 +58,8 @@ assert.match(html, /hasMedia: !!m\.media && status==='done' && !!resultUrl/, "In
 assert.match(html, /streamPhase: mediaFailed \? 'error' : \(mediaLoading \? 'rendering'/, "Failed hydrated media must never be marked complete");
 assert.match(html, /responseText:mediaFailed[\s\S]{0,260}media\.errorMessage/, "Failed media must replace provisional copy with an actionable error");
 assert.match(html, /responseStatus === 400 \|\| responseStatus === 401 \|\| responseStatus === 403/, "Transient refresh failures must not erase the local session");
+assert.match(html, /this\.state\.authRefreshToken && !this\.bootstrapRefreshAttempted/, "Public bootstrap data must trigger one session refresh before logout");
+assert.doesNotMatch(html, /if\(this\.state\.authToken && !data\.user\)\{\s*this\.clearSession/, "Bootstrap must not erase a renewable session immediately");
 assert.match(edge, /creditsRefunded: Boolean\(generation\.failure_refunded_at\)/, "The public media contract must distinguish confirmed refunds");
 assert.doesNotMatch(edge, /Je prépare le rendu/, "Media runs must not persist or stream provisional assistant copy");
 assert.match(edge, /content: String\(assistantText \|\| ""\)\.trim\(\)/, "Media lifecycle messages must not masquerade as final replies");
