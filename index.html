@@ -658,9 +658,9 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
         <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="m8.7 10.5 6.6-3"></path><path d="m8.7 13.5 6.6 3"></path></svg></span>
         <span data-hf-hide-rail="true" style="flex:1">Connecteurs</span>
       </div>
-      <div data-hf-rail-item="true" onClick="{{ openMemory }}" title="Memoire" class="{{ memoryNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
+      <div data-hf-rail-item="true" onClick="{{ openMemory }}" title="Mémoire" class="{{ memoryNavClass }}" style="display:flex;align-items:center;gap:11px;padding:5px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:550;color:#A8A8A8;transition:background .16s ease,color .16s ease" style-hover="background:rgba(247,247,248,.055);color:#F7F7F8">
         <span data-hf-rail-icon="true" style="width:27px;flex:0 0 auto;display:flex;justify-content:center;color:#A8A8A8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M8 7h8"></path><rect x="5" y="4" width="14" height="17" rx="3"></rect><path d="M8 12h8M8 16h5"></path></svg></span>
-        <span data-hf-hide-rail="true" style="flex:1">Memoire</span>
+        <span data-hf-hide-rail="true" style="flex:1">Mémoire</span>
       </div>
 
       <div onClick="{{ toggleProjectsSection }}" title="Afficher ou masquer les projets" style="display:flex;align-items:center;justify-content:space-between;padding:16px 8px 6px;cursor:pointer">
@@ -826,8 +826,8 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
         <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
           <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0 64px;animation:fadeUp .4s ease both">
             <div style="text-align:center;margin-bottom:34px">
-              <div data-hf-super-hero-title="true" style="color:{{ tInk }}">On cree quoi aujourd'hui ?</div>
-              <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos, documents et voix — décris ton idée, AgentFlow s'occupe du reste.</div>
+              <div data-hf-super-hero-title="true" style="color:{{ tInk }}">On crée quoi aujourd'hui ?</div>
+              <div style="margin-top:10px;font-size:14.5px;color:{{ tText3 }}">Images, vidéos, documents et voix — décris ton idée, HuggyFlow prépare et suit le résultat.</div>
             </div>
 
             <div style="position:relative;background:{{ tSurface }};border:1px solid rgba({{ tLineRGB }},.10);border-radius:18px;padding:12px 12px 8px;box-shadow:0 14px 34px -28px rgba(12,11,9,.35),0 2px 6px -2px rgba(12,11,9,.08)">
@@ -900,7 +900,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                   <sc-if value="{{ agentSettingsMenu }}" hint-placeholder-val="{{ false }}">
                     <div data-hf-agent-menu="true" role="menu" aria-label="Reglages de l agent">
                       <button type="button" data-hf-agent-option="true" class="{{ agentModeManualClass }}" onClick="{{ setManualMode }}"><span data-hf-agent-icon="true">—</span><span data-hf-agent-copy="true"><strong>Mode manuel</strong><span>Tu controles chaque generation</span></span><span data-hf-agent-check="true">{{ manualModeCheck }}</span></button>
-                      <button type="button" data-hf-agent-option="true" class="{{ agentModeAutoClass }}" onClick="{{ setAutoMode }}"><span data-hf-agent-icon="true">↯</span><span data-hf-agent-copy="true"><strong>Mode automatique</strong><span>AgentFlow choisit le bon modele</span></span><span data-hf-agent-check="true">{{ autoModeCheck }}</span></button>
+                      <button type="button" data-hf-agent-option="true" class="{{ agentModeAutoClass }}" onClick="{{ setAutoMode }}"><span data-hf-agent-icon="true">↯</span><span data-hf-agent-copy="true"><strong>Mode automatique</strong><span>Choisit le bon modèle pour la tâche</span></span><span data-hf-agent-check="true">{{ autoModeCheck }}</span></button>
                       <button type="button" data-hf-agent-option="true" class="{{ agentModeConfirmClass }}" onClick="{{ setConfirmMode }}"><span data-hf-agent-icon="true">✓</span><span data-hf-agent-copy="true"><strong>Demander confirmation</strong><span>Valide avant une action sensible</span></span><span data-hf-agent-check="true">{{ confirmModeCheck }}</span></button>
                     </div>
                   </sc-if>
@@ -3347,7 +3347,7 @@ class Component extends DCLogic {
   ];
 
   PLACEHOLDERS = [
-    "Decris ce que tu veux creer...",
+    "Décris ce que tu veux créer...",
     "Cree une video courte pour presenter mon produit...",
     "Ameliore cette image pour une publicite...",
     "Prepare une voix off claire pour mon contenu..."
@@ -3355,14 +3355,14 @@ class Component extends DCLogic {
 
   SUGGESTION_SETS = [
     [
-      { tag:'Image', tagBg:'#EAF5C8', text:"Une belle photo de mon produit, prete pour Instagram" },
-      { tag:'Video', tagBg:'#EBDDF2', text:"Une video courte pour annoncer le lancement de ma collection" },
+      { tag:'Image', tagBg:'#EAF5C8', text:"Une belle photo de mon produit, prête pour Instagram" },
+      { tag:'Vidéo', tagBg:'#EBDDF2', text:"Une vidéo courte pour annoncer le lancement de ma collection" },
       { tag:'Voix', tagBg:'#D8F0E2', text:"Une voix off chaleureuse pour presenter mon idee simplement" }
     ],
     [
       { tag:'Marketing', tagBg:'#F2E3DD', text:"Trois idees de visuels pour vendre mon offre cette semaine" },
       { tag:'Image', tagBg:'#EAF5C8', text:"Un portrait professionnel et naturel pour ma marque" },
-      { tag:'Video', tagBg:'#EBDDF2', text:"Une video simple et accrocheuse pour ma page d'accueil" }
+      { tag:'Vidéo', tagBg:'#EBDDF2', text:"Une vidéo simple et accrocheuse pour ma page d'accueil" }
     ]
   ];
 
@@ -3840,19 +3840,27 @@ class Component extends DCLogic {
   }
   async refreshSession(silent){
     if(!this.state.authRefreshToken) return false;
+    let responseStatus = 0;
     try{
       const res = await fetch(this.apiBase()+'/api/auth/refresh', {
         method:'POST',
         headers:{ Accept:'application/json', 'Content-Type':'application/json' },
         body:JSON.stringify({ refreshToken:this.state.authRefreshToken }),
       });
+      responseStatus = res.status;
       const data = await res.json().catch(()=>({}));
       if(!res.ok || !data.session) throw new Error(data && data.error && data.error.message ? data.error.message : 'Session expiree.');
       this.saveSession(data);
       return data.session.access_token || true;
     }catch(err){
-      this.clearSession(silent ? 'Session expiree. Reconnecte-toi pour continuer.' : (err && err.message ? err.message : 'Session expiree.'));
-      return false;
+      // Preserve the local session during transient network/server failures.
+      // Only an explicit authentication rejection is terminal.
+      if(responseStatus === 400 || responseStatus === 401 || responseStatus === 403){
+        this.clearSession(silent ? 'Session expiree. Reconnecte-toi pour continuer.' : (err && err.message ? err.message : 'Session expiree.'));
+        return false;
+      }
+      this.setState({ authStatus:'Connexion momentanément indisponible. Nouvelle tentative automatique.' });
+      return this.state.authToken || false;
     }
   }
   async authSubmit(action){
@@ -3925,6 +3933,10 @@ class Component extends DCLogic {
       generationId: md.generationId || md.id || '',
       resultUrl: confirmedDone ? rawUrl : '',
       resultConfirmed: confirmedDone,
+      creditsRefunded: md.creditsRefunded === true || md.credits_refunded === true,
+      errorMessage: failed || (done && !resultConfirmed)
+        ? this.friendlyError(md.errorMessage || md.error_message, (md.creditsRefunded === true || md.credits_refunded === true) ? 'La génération a échoué. Les crédits réservés ont été restaurés.' : 'La génération a échoué. Son solde sera resynchronisé automatiquement.')
+        : '',
       credits: md.credits || md.creditsCharged || md.credits_charged || 0
     };
   }
@@ -4191,6 +4203,8 @@ class Component extends DCLogic {
   normalizeMessage(m){
     const media = this.normalizeMedia(m && m.media);
     const role = m && m.role === 'assistant' ? 'agent' : ((m && m.role) || 'agent');
+    const mediaFailed = Boolean(media && media.status === 'failed');
+    const mediaLoading = Boolean(media && media.status === 'loading');
     return {
       id: (m && m.id) || ('m'+Date.now()+Math.floor(Math.random()*999)),
       role,
@@ -4198,9 +4212,12 @@ class Component extends DCLogic {
       attachments: Array.isArray(m && m.attachments) ? m.attachments : [],
       kind: media ? (media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image') : undefined,
       media: media || undefined,
+      interactionMode: media ? 'creation' : (m && m.interactionMode),
       agentActivity: Array.isArray(m && m.agentActivity) ? m.agentActivity : [],
       citations: this.normalizeAgentCitations(m || {}),
-      streamPhase: m && m.streamPhase || (media && media.status === 'loading' ? 'rendering' : 'complete'),
+      streamPhase: mediaFailed ? 'error' : (mediaLoading ? 'rendering' : (m && m.streamPhase || 'complete')),
+      streamError: mediaFailed || Boolean(m && m.streamError),
+      streamLive: mediaLoading || Boolean(m && m.streamLive),
       streamProgress: Number(m && m.streamProgress || 0),
       batch: m && m.batch
     };
@@ -5190,7 +5207,9 @@ class Component extends DCLogic {
       interactionMode, status, phase, progress:streamProgress, activity, tasks,
       citations:Array.isArray(message.citations) ? message.citations : [],
       mediaStatus, mediaLabel:media ? ((media.model || 'AgentFlow') + ' · ' + (media.type === 'video' ? 'video' : media.type === 'voice' ? 'audio' : 'image')) : '',
-      responseText:message.text || '',
+      responseText:mediaFailed
+        ? (media.errorMessage || (media.creditsRefunded ? 'La génération a échoué. Les crédits réservés ont été restaurés.' : 'La génération a échoué. Son solde sera resynchronisé automatiquement.'))
+        : (mediaStatus === 'complete' && /^Je (prépare|lance) (le rendu|la création)/i.test(String(message.text || '').trim()) ? '' : (message.text || '')),
       onRetry:()=>this.retryAgentMessage(message.id),
       onCopy:()=>this.copyAgentMessage(message.text || ''),
       onFeedback:(value)=>this.submitAgentFeedback(message.id, value),
@@ -5255,9 +5274,11 @@ class Component extends DCLogic {
   addGenerationCard(generation, id){
     const media = this.normalizeMedia(generation);
     if(!media) return;
-    const text = generation && generation.text ? generation.text : (media.type === 'video' ? 'Je lance la video. Tu peux suivre la progression ici.' : 'Je lance la creation. Tu peux suivre la progression ici.');
+    const text = media.status === 'failed'
+      ? (media.errorMessage || (media.creditsRefunded ? 'La génération a échoué. Les crédits réservés ont été restaurés.' : 'La génération a échoué. Son solde sera resynchronisé automatiquement.'))
+      : (generation && generation.text ? generation.text : '');
     const msgId = id || (generation && generation.messageId) || ('g'+(media.generationId || Date.now()));
-      const patch = { id:msgId, role:'agent', typing:false, streamLive:media.status === 'loading', streamPhase:media.status === 'loading' ? 'rendering' : (media.status === 'done' ? 'complete' : 'error'), streamError:media.status === 'failed', activity:media.status === 'loading' ? 'AgentFlow prépare la création' : (media.status === 'done' ? 'Création prête' : 'Création échouée'), text, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image', media, backgroundTaskId:generation && generation.taskId ? String(generation.taskId) : undefined };
+      const patch = { id:msgId, role:'agent', interactionMode:'creation', typing:false, streamLive:media.status === 'loading', streamPhase:media.status === 'loading' ? 'rendering' : (media.status === 'done' ? 'complete' : 'error'), streamError:media.status === 'failed', activity:media.status === 'loading' ? 'Création en cours' : (media.status === 'done' ? 'Création prête' : 'Création échouée'), text, kind:media.type === 'video' ? 'video' : media.type === 'voice' ? 'voice' : 'image', media, backgroundTaskId:generation && generation.taskId ? String(generation.taskId) : undefined };
     this.setState(s=>{
       const exists = s.messages.some(m=>m.id === msgId);
       return { messages: exists ? s.messages.map(m=>m.id === msgId ? Object.assign({}, m, patch) : m) : s.messages.concat([patch]) };
@@ -5378,7 +5399,9 @@ class Component extends DCLogic {
         return Object.assign({}, message, {
           media:task,
           typing:false,
-          text:buffered ? (message.text || '') + buffered : (message.text || ''),
+          text:task.status === 'failed'
+            ? (task.errorMessage || (task.creditsRefunded ? 'La génération a échoué. Les crédits réservés ont été restaurés.' : 'La génération a échoué. Son solde sera resynchronisé automatiquement.'))
+            : (buffered ? (message.text || '') + buffered : (task.status === 'done' ? '' : (message.text || ''))),
           streamLive:task.status === 'loading',
           streamPhase:task.status === 'done' ? 'complete' : (task.status === 'failed' ? 'error' : 'rendering'),
           streamError:task.status === 'failed',
@@ -5424,14 +5447,16 @@ class Component extends DCLogic {
           delete this.polls[generationId];
           const current = this.state.messages.find(message=>message.id === messageId);
           const mediaType = current && current.media && current.media.type ? current.media.type : 'image';
-          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, progress:0, resultConfirmed:false }, streamLive:false, streamPhase:'error', streamError:true, typing:false });
+          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, generationId, progress:0, resultConfirmed:false, creditsRefunded:false, errorMessage:'Le rendu a dépassé le délai prévu. Son état et le solde seront vérifiés automatiquement.' }, text:'Le rendu a dépassé le délai prévu. Son état et le solde seront vérifiés automatiquement.', streamLive:false, streamPhase:'error', streamError:true, typing:false });
           this.notify('Le rendu a dépassé le délai prévu. Aucun résultat incomplet n’a été enregistré.');
           return;
         }
         const res = await this.apiFetch('/api/generations/'+encodeURIComponent(generationId));
         if(res.status === 401 || res.status === 403 || res.status === 404){
           delete this.polls[generationId];
-          this.updateAgentMessage(messageId, { media:{ status:'failed', type:'image', progress:0 } });
+          const current = this.state.messages.find(message=>message.id === messageId);
+          const mediaType = current && current.media && current.media.type ? current.media.type : 'image';
+          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, generationId, progress:0, resultConfirmed:false, errorMessage:'Le suivi de cette génération est indisponible.' }, text:'Le suivi de cette génération est indisponible. Réessaie depuis ce message.', streamLive:false, streamPhase:'error', streamError:true, typing:false });
           return;
         }
         if(!res.ok) throw new Error('generation '+res.status);
@@ -5459,7 +5484,7 @@ class Component extends DCLogic {
           delete this.polls[generationId];
           const current = this.state.messages.find(message=>message.id === messageId);
           const mediaType = current && current.media && current.media.type ? current.media.type : 'image';
-          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, progress:0, resultConfirmed:false }, streamLive:false, streamPhase:'error', streamError:true, typing:false });
+          this.updateAgentMessage(messageId, { media:{ status:'failed', type:mediaType, generationId, progress:0, resultConfirmed:false, errorMessage:'Le suivi du rendu a été interrompu.' }, text:'Le suivi du rendu a été interrompu. Réessaie depuis ce message.', streamLive:false, streamPhase:'error', streamError:true, typing:false });
           this.notify('Le suivi du rendu a été interrompu. Tu peux réessayer.');
           return;
         }
