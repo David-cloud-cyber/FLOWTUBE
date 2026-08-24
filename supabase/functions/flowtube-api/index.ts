@@ -3721,6 +3721,7 @@ function mediaFromGeneration(generation: Record<string, unknown>) {
     dur: generation.duration_seconds ? `0:${String(generation.duration_seconds).padStart(2, "0")}` : undefined,
     resultUrl: resultConfirmed ? generation.result_url : "",
     credits: generation.credits || 0,
+    creditsRefunded: Boolean(generation.failure_refunded_at),
     errorMessage: !resultConfirmed && generation.status === "completed"
       ? "Le resultat n'a pas pu etre verifie."
       : generation.status === "failed"
@@ -7314,6 +7315,11 @@ function isConfirmationText(prompt: string) {
   return /^(oui|ok|okay|confirme|confirm|lance|go|vas-y|valide|je confirme)\b/i.test(prompt.trim());
 }
 
+function lastTurnRequestsGenerationConfirmation(history: ChatTurn[]) {
+  const lastAssistant = [...history].reverse().find((turn) => turn.role === "assistant");
+  return Boolean(lastAssistant && /confirme avec ["“]?oui["”]? pour lancer/i.test(stripAccents(lastAssistant.content)));
+}
+
 function isCancelText(prompt: string) {
   return /^(non|annule|stop|cancel|ne lance pas)\b/i.test(prompt.trim());
 }
@@ -7326,7 +7332,8 @@ async function savePendingGeneration(supabase: ReturnType<typeof adminClient>, p
   const metadata = cleanMetadata(profile.metadata);
   metadata.pending_generation = {
     ...pending,
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   };
   await supabase.from("profiles").update({ metadata }).eq("id", profile.id);
 }
@@ -8006,7 +8013,10 @@ async function createGeneration(req: Request, body: Record<string, unknown>, ass
       project_id: project.id,
       conversation_id: conversation.id,
       role: "assistant",
-      content: assistantText || "Demande reçue. Le résultat sera affiché uniquement après confirmation.",
+      // The generation lifecycle owns all provisional UI. Persisting a
+      // "preparing" sentence here makes it look like a final assistant reply
+      // after a refresh or a provider failure.
+      content: String(assistantText || "").trim(),
     })
     .select("*")
     .single();
@@ -8382,7 +8392,7 @@ async function createGenerationBatch(req: Request, body: Record<string, unknown>
       project_id: project.id,
       conversation_id: conversation.id,
       role: "assistant",
-      content: assistantText || `Lot de ${count} creations lance. Les rendus s'enchainent automatiquement.`,
+      content: String(assistantText || "").trim(),
       metadata: { batch: { id: batchId, total: count, type, model: model.name, credits: totalCredits } },
     })
     .select("*")
@@ -8682,6 +8692,9 @@ async function chat(req: Request) {
         const metadata = cleanMetadata(profile.metadata);
         const pending = metadata.pending_generation as Record<string, unknown> | undefined;
         const pendingExpired = pending?.expiresAt ? new Date(String(pending.expiresAt)).getTime() < Date.now() : false;
+        const pendingBody = pending ? (pending.body || {}) as Record<string, unknown> : {};
+        const pendingProjectId = String(pendingBody.projectId || "");
+        const pendingBelongsToProject = !pendingProjectId || pendingProjectId === String(project.id);
         if (pending && pendingExpired) await clearPendingGeneration(supabase, profile);
 
         if (pending && !pendingExpired && isCancelText(prompt)) {
@@ -8693,31 +8706,36 @@ async function chat(req: Request) {
           return;
         }
 
-        if (pending && !pendingExpired && isConfirmationText(prompt)) {
+        if (pending && !pendingExpired && pendingBelongsToProject && isConfirmationText(prompt)) {
           await clearPendingGeneration(supabase, profile);
-          const pendingBody = (pending.body || {}) as Record<string, unknown>;
           const pendingProjectId = isUuid(String(pendingBody.projectId || "")) ? String(pendingBody.projectId) : String(project.id);
           const pendingBatch = Number(pendingBody.batch || 1);
           if (pendingBatch >= 2) {
-            const reply = `Confirmation recue. Je lance le lot de ${pendingBatch} creations : les rendus vont s'enchainer automatiquement.`;
-            send("text", { delta: reply });
             const result = await createGenerationBatch(req, {
               ...pendingBody,
               projectId: pendingProjectId,
-            }, pendingBatch, reply);
+            }, pendingBatch);
             send("batch", result.batch);
           } else {
-            const reply = "Confirmation recue. Je lance la generation maintenant.";
-            send("text", { delta: reply });
             const result = await createGeneration(req, {
               ...pendingBody,
               projectId: pendingProjectId,
               confirmed: true,
-            }, reply);
+            });
             send("generation", result.generation);
           }
           const { data: freshProfile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
           send("credits", { credits: freshProfile?.credits ?? 0, creditsMax: freshProfile?.credits_max ?? 100 });
+          send("done", projectDonePayload(project, conversation));
+          return;
+        }
+
+        if (isConfirmationText(prompt) && lastTurnRequestsGenerationConfirmation(history)) {
+          const staleReply = pending && !pendingBelongsToProject
+            ? "Cette confirmation appartient à un autre projet. Ouvre ce projet pour la valider, ou reformule la création ici."
+            : "Cette confirmation a expiré. Reformule la création pour obtenir une nouvelle estimation avant lancement.";
+          send("text", { delta: staleReply });
+          await saveAssistant(staleReply);
           send("done", projectDonePayload(project, conversation));
           return;
         }
@@ -9003,7 +9021,7 @@ async function chat(req: Request) {
         };
         if (!simpleConversation) send("status", { phase: "writing", progress: 42, label: willGenerate ? "AgentFlow prépare le brief de production" : "AgentFlow compose la réponse", model: "selected" });
         const reply = willGenerate
-          ? `Je prépare le rendu ${type === "video" ? "vidéo" : type === "audio" ? "audio" : "image"}. Le résultat apparaîtra ici uniquement après confirmation.`
+          ? ""
           : await anthropicReply(
             prompt,
             responseType,
@@ -9017,7 +9035,6 @@ async function chat(req: Request) {
             // orchestration brief.
             billAgent("agent_chat_reply"),
           );
-        if (willGenerate) send("text", { delta: reply });
         if (!willGenerate) await saveAssistant(reply);
 
         const requestedArtifactType = artifactRequestType(prompt);
@@ -9081,7 +9098,7 @@ async function chat(req: Request) {
             referenceUrls: body.referenceUrls || body.reference_urls,
             firstFrameUrl: body.firstFrameUrl || body.first_frame_url,
             lastFrameUrl: body.lastFrameUrl || body.last_frame_url,
-          }, reply);
+          });
           send("generation", result.generation);
         }
         const { data: finalProfile } = await supabase.from("profiles").select("credits,credits_max").eq("id", userId).single();
