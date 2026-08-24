@@ -4312,7 +4312,24 @@ class Component extends DCLogic {
         })])).values()];
       }
       if(this.state.authToken && !data.user){
-        this.clearSession('Session expiree. Reconnecte-toi pour continuer.');
+        // Bootstrap also serves public catalogue data with HTTP 200. Missing
+        // user data can therefore mean an access token needs refreshing, not
+        // that the whole session is invalid. Refresh once before clearing any
+        // persisted credentials.
+        if(this.state.authRefreshToken && !this.bootstrapRefreshAttempted){
+          this.bootstrapRefreshAttempted = true;
+          const refreshed = await this.refreshSession(true);
+          this.bootstrapRefreshAttempted = false;
+          if(refreshed){
+            this.scheduleBootstrap(1400);
+            return;
+          }
+        }
+        if(this.state.authToken){
+          this.setState({ backendReady:false, backendError:true, authStatus:'Connexion momentanément indisponible. Nouvelle tentative automatique.' });
+          this.scheduleBootstrap(1800);
+          return;
+        }
         return;
       }
       const publicMediaKeys = Array.isArray(data.models)
