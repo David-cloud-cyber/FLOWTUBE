@@ -55,6 +55,15 @@ assert.doesNotMatch(html, /streamPhraseIndex|STREAM_PHRASES|streamPhraseFor/, "L
 assert.match(html, /this\.streamBuffers\[id\] = \(this\.streamBuffers\[id\] \|\| ''\) \+ delta/, "Response chunks must be buffered off-screen");
 assert.doesNotMatch(html, /requestAnimationFrame\(\(\)=>\{[\s\S]{0,180}flushAgentText/, "Response chunks must not be rendered frame by frame");
 assert.match(html, /hasMedia: !!m\.media && status==='done' && !!resultUrl/, "Incomplete media must not render a legacy progress card");
+assert.match(html, /streamPhase: mediaFailed \? 'error' : \(mediaLoading \? 'rendering'/, "Failed hydrated media must never be marked complete");
+assert.match(html, /responseText:mediaFailed[\s\S]{0,260}media\.errorMessage/, "Failed media must replace provisional copy with an actionable error");
+assert.match(html, /responseStatus === 400 \|\| responseStatus === 401 \|\| responseStatus === 403/, "Transient refresh failures must not erase the local session");
+assert.match(edge, /creditsRefunded: Boolean\(generation\.failure_refunded_at\)/, "The public media contract must distinguish confirmed refunds");
+assert.doesNotMatch(edge, /Je prépare le rendu/, "Media runs must not persist or stream provisional assistant copy");
+assert.match(edge, /content: String\(assistantText \|\| ""\)\.trim\(\)/, "Media lifecycle messages must not masquerade as final replies");
+assert.match(edge, /lastTurnRequestsGenerationConfirmation\(history\)/, "Stale media confirmations must be handled without a paid model call");
+assert.match(edge, /pendingBelongsToProject/, "Generation confirmations must be scoped to the active project");
+assert.match(edge, /24 \* 60 \* 60 \* 1000/, "Generation confirmations must remain usable during a normal project session");
 assert.match(agentUi, /import ReactMarkdown from 'react-markdown'/, "Agent responses must use a real Markdown renderer");
 assert.match(agentUi, /remarkPlugins=\{\[remarkGfm\]\}/, "Agent responses must support GitHub-flavored Markdown");
 assert.match(agentUi, /replace\(\/\[ \\t\]\+\[◆♦🔹\]/, "Inline model bullets must be normalized into readable lists");
