@@ -108,7 +108,7 @@ const shimmerPhrases = [
 ];
 
 function labelForPhase(phase?: string) {
-  return phaseLabels[String(phase || 'analyzing').toLowerCase()] || 'AgentFlow travaille sur ta demande';
+  return phaseLabels[String(phase || 'analyzing').toLowerCase()] || 'Traitement de la demande';
 }
 
 function formatElapsed(seconds: number) {
@@ -182,7 +182,7 @@ export function ReasoningText({ phase, active = true, compact = false }: { phase
   const phrases = useMemo(() => {
     if (compact) return ['Réflexion en cours'];
     const label = labelForPhase(phase);
-    return active ? [label, `${label}…`, 'AgentFlow coordonne les étapes'] : [label];
+    return active ? [label, `${label}…`, 'Coordination des étapes'] : [label];
   }, [active, compact, phase]);
   const [index, setIndex] = useState(0);
   useEffect(() => {
@@ -248,7 +248,7 @@ function ActivityDisclosure({ items }: { items: AgentActivityItem[] }) {
     <div className="hf-agent-activity">
       <button type="button" className="hf-agent-disclosure-trigger" aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
         <span className="hf-agent-disclosure-leading"><ListChecks aria-hidden="true" /></span>
-        <span className="hf-agent-disclosure-title">Activité AgentFlow</span>
+        <span className="hf-agent-disclosure-title">Détails d’exécution</span>
         <span className="hf-agent-disclosure-count">{completed}/{items.length}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={reduce ? { duration: 0 } : SPRING_SWAP}><ChevronDown aria-hidden="true" /></motion.span>
       </button>
@@ -363,7 +363,7 @@ function FinalResponse({ text }: { text: string }) {
 function MediaStatus({ status, label }: { status: AgentMediaStatus; label?: string }) {
   const active = status !== 'complete' && status !== 'error';
   const text = status === 'queued' ? 'En file d’attente' : status === 'generating' ? 'Génération en cours' : status === 'refining' ? 'Amélioration du rendu' : status === 'error' ? 'Génération échouée' : 'Rendu prêt';
-  return <div className={`hf-agent-media-status is-${status}`} role="status" aria-busy={active}><span className="hf-agent-media-indicator" aria-hidden="true">{status === 'complete' ? <Check /> : status === 'error' ? <CircleAlert /> : <span />}</span><span><strong>{label || text}</strong><small>{active ? 'Le rendu apparaitra ici sans deplacer la conversation.' : text}</small></span></div>;
+  return <div className={`hf-agent-media-status is-${status}`} role="status" aria-busy={active}><span className="hf-agent-media-indicator" aria-hidden="true">{status === 'complete' ? <Check /> : status === 'error' ? <CircleAlert /> : <span />}</span><span><strong>{text}</strong><small>{label || (active ? 'Le rendu apparaîtra ici sans déplacer la conversation.' : text)}</small></span></div>;
 }
 
 function ApprovalCard({ approval, onApprove, onReject, onRequestChanges }: { approval: AgentApproval; onApprove?: () => void; onReject?: () => void; onRequestChanges?: () => void }) {
