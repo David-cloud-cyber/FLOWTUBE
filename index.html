@@ -853,7 +853,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                       <div data-hf-model-tabs="true" role="tablist" aria-label="Type de modèle"><button type="button" role="tab" aria-selected="{{ modelCatalogTabAgentSelected }}" class="{{ modelCatalogTabAgentClass }}" onClick="{{ setModelCatalogTabAgent }}">Agent</button><button type="button" role="tab" aria-selected="{{ modelCatalogTabMediaSelected }}" class="{{ modelCatalogTabMediaClass }}" onClick="{{ setModelCatalogTabMedia }}">Média</button></div>
                       <div data-hf-model-search="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modele" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
+                        <input value="{{ modelMenuSearch }}" onChange="{{ onModelMenuSearch }}" placeholder="Recherche" aria-label="Rechercher un modèle" style="width:100%;border:0;outline:0;background:transparent;color:{{ tInk }};font:13px ui-sans-serif,system-ui,sans-serif"/>
                       </div>
                       <div data-hf-model-list="true">
                       <sc-for list="{{ modelGroups }}" as="g" hint-placeholder-count="3">
@@ -863,7 +863,7 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
                             <span data-hf-model-logo="true" style="color:{{ it.dot }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.iconRef }}"></use></svg></span>
                             <span data-hf-model-copy="true"><span data-hf-model-name="true">{{ it.name }}</span><span data-hf-model-desc="true">{{ it.desc }}</span></span>
                             <span data-hf-model-cost="true"><span data-hf-model-cost-mark="true">◉</span>{{ it.costLabel }}</span>
-                            <span data-hf-model-capabilities="true" title="{{ it.capabilityLabel }}" aria-label="{{ it.capabilityLabel }}"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.capabilityIconRef }}"></use></svg></span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modele verrouille"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modele selectionne">✓</span></sc-if>
+                            <span data-hf-model-capabilities="true" title="{{ it.capabilityLabel }}" aria-label="{{ it.capabilityLabel }}"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><use href="{{ it.capabilityIconRef }}"></use></svg></span><sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span data-hf-model-lock="true" aria-label="Modèle verrouillé"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ it.check }}" hint-placeholder-val="{{ false }}"><span data-hf-model-check="true" aria-label="Modèle sélectionné">✓</span></sc-if>
                           </button>
                         </sc-for>
                       </sc-for>
@@ -1180,11 +1180,6 @@ input:focus,textarea:focus{outline:1px solid rgba(110,231,255,.32);outline-offse
         </div>
 
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:34px">
-          <div style="display:none;gap:4px;padding:4px;border-radius:999px;background:rgba({{ tLineRGB }},.06);border:1px solid rgba({{ tLineRGB }},.08)">
-            <sc-for list="{{ segmentTabs }}" as="t" hint-placeholder-count="3">
-              <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
-            </sc-for>
-          </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <button onClick="{{ openCompare }}" style="display:none;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:1px solid rgba({{ tLineRGB }},.14);background:transparent;color:{{ tInk }};font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap" style-hover="background:rgba({{ tLineRGB }},.05)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -3357,7 +3352,7 @@ class Component extends DCLogic {
     [
       { tag:'Image', tagBg:'#EAF5C8', text:"Une belle photo de mon produit, prête pour Instagram" },
       { tag:'Vidéo', tagBg:'#EBDDF2', text:"Une vidéo courte pour annoncer le lancement de ma collection" },
-      { tag:'Voix', tagBg:'#D8F0E2', text:"Une voix off chaleureuse pour presenter mon idee simplement" }
+      { tag:'Voix', tagBg:'#D8F0E2', text:"Une voix off chaleureuse pour présenter mon idée simplement" }
     ],
     [
       { tag:'Marketing', tagBg:'#F2E3DD', text:"Trois idees de visuels pour vendre mon offre cette semaine" },
@@ -3408,7 +3403,7 @@ class Component extends DCLogic {
       const monthlyXof = selected ? Number(selected.monthlyPriceXof || 0) : Number(p.monthlyPriceXof || 0);
       const annualXof = selected ? Number(selected.annualPriceXof || 0) : Number(p.annualPriceXof || 0);
       const selectedCredits = selected ? Number(selected.credits || 0) : Number(p.includedCredits || 0);
-      const displayedCredits = annual ? selectedCredits * 12 : selectedCredits;
+      const displayedCredits = annual && String(p.id).toLowerCase() !== 'free' ? selectedCredits * 12 : selectedCredits;
       const displayedXof = annual && annualXof ? Math.round(annualXof / 12) : monthlyXof;
       const annualDiscount = monthlyXof > 0 && annualXof > 0 ? Math.max(0, Math.round((1 - annualXof / (monthlyXof * 12)) * 100)) : 0;
       return {
@@ -3958,7 +3953,7 @@ class Component extends DCLogic {
         isVideo:type === 'video',
         isVoice:type === 'voice',
         isLoading:media.status === 'loading',
-        statusLabel:media.status === 'failed' ? 'Echec' : (media.status === 'loading' ? ('Generation ' + Math.round(Number(media.progress || 0)) + '%') : 'Pret'),
+        statusLabel:media.status === 'failed' ? 'Échec' : (media.status === 'loading' ? ('Génération ' + Math.round(Number(media.progress || 0)) + '%') : 'Prêt'),
         meta:(media.model || 'AgentFlow') + (media.status === 'loading' ? '' : ' · ' + (media.ratio || 'rendu'))
       });
     });
@@ -4934,7 +4929,7 @@ class Component extends DCLogic {
     }, 0));
   }
   toggleBackgroundTasks(){
-    if(!this.state.authToken){ this.notify('Connecte-toi pour suivre tes taches en arriere-plan.'); return; }
+    if(!this.state.authToken){ this.notify('Connecte-toi pour suivre tes tâches en arrière-plan.'); return; }
     this.setState(s=>({ backgroundTaskPanelOpen:!s.backgroundTaskPanelOpen, backgroundTaskUnread:false }));
     this.loadBackgroundTasks();
   }
@@ -5315,7 +5310,7 @@ class Component extends DCLogic {
       const projectId = this.state.activeProjectId && this.state.activeProjectId !== 'welcome' ? '?projectId=' + encodeURIComponent(this.state.activeProjectId) : '';
       const res = await this.apiFetch('/api/memory' + projectId);
       const data = await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Memoire indisponible.');
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Mémoire indisponible.');
       this.setState({ memoryItems:Array.isArray(data.memory) ? data.memory : [], memoryConflicts:Array.isArray(data.conflicts) ? data.conflicts : [] });
     }catch(err){ this.notify(String(err && err.message || 'Impossible de charger la memoire.')); }
     finally{ this.memoryLoading=false; this.setState({ memoryLoading:false }); }
@@ -5325,7 +5320,7 @@ class Component extends DCLogic {
     try{
       const res = await this.apiFetch('/api/memory', { method:'POST', body:JSON.stringify({ action, memoryId:memory.id }) });
       const data = await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Memoire indisponible.');
+      if(!res.ok) throw new Error(data && data.error && data.error.message || 'Mémoire indisponible.');
       if(action === 'delete') this.setState(s=>({ memoryItems:(s.memoryItems || []).filter(item=>item.id !== memory.id) }));
       else if(data.memory) this.setState(s=>({ memoryItems:(s.memoryItems || []).map(item=>item.id === memory.id ? data.memory : item) }));
       this.notify(action === 'forget' ? 'Information oubliee.' : (action === 'restore' ? 'Information restauree.' : 'Memoire mise a jour.'));
@@ -5517,7 +5512,7 @@ class Component extends DCLogic {
     const wantsMedia = /\b(video|image|media|média|galerie)\b/.test(value);
     this.setState({ studioPanelOpen:true, studioTab:wantsMedia ? 'media' : 'artifact', artifactView:'preview', artifactFullscreen:false }, ()=>{
       if(!wantsMedia && this.state.activeArtifact) this.setActiveArtifact(this.state.activeArtifact);
-      this.notify(wantsMedia ? 'Panneau medias ouvert.' : 'Panneau droit ouvert.');
+      this.notify(wantsMedia ? 'Panneau médias ouvert.' : 'Panneau droit ouvert.');
     });
     return true;
   }
@@ -7415,8 +7410,8 @@ class Component extends DCLogic {
       checkoutBusy: !!st.checkoutBusy,
       checkoutButtonLabel: st.checkoutBusy ? 'Ouverture du paiement...' : 'Continuer vers le paiement',
       hasPricingNotice: !!st.pricingNotice,
-      pricingLoading: !st.backendReady && !st.backendError && renderedPlans.length === 0,
-      pricingEmpty: !!st.backendError && renderedPlans.length === 0,
+      pricingLoading: !this.demoMode && !st.backendReady && !st.backendError && renderedPlans.length === 0,
+      pricingEmpty: (this.demoMode || !!st.backendError || !!st.backendReady) && renderedPlans.length === 0,
       showSettingsWorkspace: ['settings', 'billing', 'team', 'api', 'stats', 'account', 'privacy', 'capabilities', 'claudecode', 'skills', 'connectors', 'plugins'].includes(st.page),
       closeSettings: ()=> this.closeSettingsModal(),
       settingsPrimaryItems,
@@ -8173,7 +8168,7 @@ class Component extends DCLogic {
       attachButtonStyle: 'width:34px;height:34px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       attachButtonStyleSmall: 'width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:transparent;border:1px solid rgba(' + T.lineRGB + ',.14);color:' + T.text2 + ';cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s,transform .12s;opacity:' + (st.uploadingAttachment ? '.55' : '1'),
       hasAttachments: ((st.attachments || []).length > 0),
-      attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', icon:this.attachmentIcon(a.kind), meta:this.attachmentMeta(a), statusLabel:a.status === 'uploading' ? 'Ajout...' : 'Pret', hasPreview:a.kind === 'image' && !!(a.previewUrl || a.url), showIcon:!(a.kind === 'image' && !!(a.previewUrl || a.url)), previewUrl:a.previewUrl || (a.kind === 'image' ? a.url : ''), onRemove:()=>this.removeAttachment(a.id) })),
+      attachments: (st.attachments || []).map(a=>({ name:a.name || 'Fichier', icon:this.attachmentIcon(a.kind), meta:this.attachmentMeta(a), statusLabel:a.status === 'uploading' ? 'Ajout...' : 'Prêt', hasPreview:a.kind === 'image' && !!(a.previewUrl || a.url), showIcon:!(a.kind === 'image' && !!(a.previewUrl || a.url)), previewUrl:a.previewUrl || (a.kind === 'image' ? a.url : ''), onRemove:()=>this.removeAttachment(a.id) })),
       onKey: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendPrompt(this.state.input); } },
       send: ()=> this.sendPrompt(st.input),
       sendAction: ()=> st.sendLocked ? this.stopGeneration() : this.sendPrompt(st.input),
@@ -8288,11 +8283,6 @@ class Component extends DCLogic {
        pricingCostRows,
        pricingCostEmpty: pricingCostRows.length === 0,
        pricingFeeNote: 'Le montant affiché est la source de vérité du paiement. Aucun frais caché n’est ajouté au checkout.',
-      segmentTabs: [['solo','Solo'],['team','Équipe'],['business','Business Plan']].map(p=>({
-        label: p[1],
-        style: this.tabStyle(st.segment === p[0]),
-        onClick: ()=> this.setState({ segment: p[0] })
-      })),
       selectPro: ()=> this.setState({ page:'auth', authMode:'signup' }),
       faqs: this.FAQS.map((f,i)=>({
         q: f.q, a: f.a,
