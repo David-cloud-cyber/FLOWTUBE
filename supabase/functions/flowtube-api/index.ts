@@ -57,6 +57,7 @@ const OPENROUTER_MEDIA_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER
 const OPENROUTER_AGENT_ENABLED = OPENROUTER_ENABLED && (Deno.env.get("OPENROUTER_AGENT_ENABLED") || "true").toLowerCase() !== "false";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const OPENROUTER_CATALOG_TTL_MS = 10 * 60 * 1000;
+const OPENROUTER_CATALOG_TIMEOUT_MS = Math.max(1500, Math.min(8000, Number(Deno.env.get("OPENROUTER_CATALOG_TIMEOUT_MS") || 4500)));
 const MODEL_POPULARITY_TTL_MS = 10 * 60 * 1000;
 const MODEL_POPULARITY_WINDOW_DAYS = 30;
 const OPENROUTER_CURATED_AGENT_IDS = [
@@ -383,13 +384,17 @@ function openRouterHeaders() {
 
 async function openRouterList(path: string): Promise<OpenRouterRemoteModel[]> {
   if (!OPENROUTER_API_KEY) return [];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), OPENROUTER_CATALOG_TIMEOUT_MS);
   try {
-    const response = await fetch(`${OPENROUTER_BASE_URL}${path}`, { headers: openRouterHeaders() });
+    const response = await fetch(`${OPENROUTER_BASE_URL}${path}`, { headers: openRouterHeaders(), signal: controller.signal });
     if (!response.ok) return [];
     const body = await response.json() as { data?: OpenRouterRemoteModel[] };
     return Array.isArray(body.data) ? body.data : [];
   } catch (_error) {
     return [];
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
