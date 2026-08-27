@@ -18,6 +18,9 @@ assert.doesNotMatch(persistUiState, /messages\s*:/, "Messages must never be pers
 assert.doesNotMatch(persistUiState, /studioContextByProject\s*:/, "Project context must remain server-backed");
 assert.doesNotMatch(persistUiState, /attachments\s*:/, "Attachments must never be persisted in localStorage");
 assert.doesNotMatch(html, /pl\.creditsTitle|pl\.creditsNote/, "Dead pricing placeholders must not return");
+assert.match(html, /pricingLoading: !this\.demoMode/, "Pricing preview mode must not remain on an infinite loading skeleton");
+assert.match(html, /annual && String\(p\.id\)\.toLowerCase\(\) !== 'free'/, "Annual billing must not multiply one-time free credits");
+assert.doesNotMatch(html, /\[\['solo','Solo'\],\['team','Équipe'\],\['business','Business Plan'\]\]/, "Legacy pricing segments must not return to the three-plan experience");
 assert.match(html, /routeMainDisplay: st\.page === 'pricing' \|\| this\.isSettingsPage\(st\.page\) \? 'none' : 'flex'/, "Overlay routes must remove the private chat from the accessible tree");
 assert.match(html, /intent\s*:\s*this\.state\.modelCatalogTab === 'media' \? 'generate' : 'auto'/, "The frontend must send explicit media intent");
 assert.ok(html.includes("this.apiFetch('/api/runs/'+encodeURIComponent(runId)+'/cancel'"), "Run cancellation must reach the server");
