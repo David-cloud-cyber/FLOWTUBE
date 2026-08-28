@@ -2281,6 +2281,16 @@ async function bodyText(req: Request) {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 function requestIp(req: Request) {
   return req.headers.get("cf-connecting-ip")
     || req.headers.get("x-real-ip")
@@ -3796,19 +3806,19 @@ async function listProjectData(supabase: ReturnType<typeof adminClient>, userId:
 
 async function bootstrap(req: Request) {
   const supabase = adminClient();
-  const userId = await optionalUserIdFromRequest(req, supabase);
+  const userId = await withTimeout(optionalUserIdFromRequest(req, supabase), 4000, null);
   const [profile, projects, plans, creditPacksResult, subscriptionResult, generationCountResult, catalog] = await Promise.all([
-    userId ? ensureProfile(supabase, userId) : Promise.resolve(null),
-    userId ? listProjectData(supabase, userId) : Promise.resolve([]),
-    publicPricingPlans(supabase),
-    supabase.from("credit_packs").select("*").eq("active", true).order("amount_xof", { ascending: true }),
+    userId ? withTimeout(ensureProfile(supabase, userId), 7000, null) : Promise.resolve(null),
+    userId ? withTimeout(listProjectData(supabase, userId), 7000, []) : Promise.resolve([]),
+    withTimeout(publicPricingPlans(supabase), 7000, []),
+    withTimeout(Promise.resolve(supabase.from("credit_packs").select("*").eq("active", true).order("amount_xof", { ascending: true })), 7000, { data: [], error: null }),
     userId
-      ? supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      ? withTimeout(Promise.resolve(supabase.from("subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle()), 7000, { data: null, error: null })
       : Promise.resolve({ data: null, error: null }),
     userId
-      ? supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)
+      ? withTimeout(Promise.resolve(supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", userId)), 7000, { count: 0, error: null })
       : Promise.resolve({ count: 0, error: null }),
-    pricingCatalog(supabase),
+    withTimeout(pricingCatalog(supabase), 7000, []),
   ]);
   if (creditPacksResult.error) throw creditPacksResult.error;
   if (subscriptionResult.error) throw subscriptionResult.error;
