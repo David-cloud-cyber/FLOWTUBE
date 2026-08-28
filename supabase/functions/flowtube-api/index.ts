@@ -1988,7 +1988,7 @@ function openRouterMediaModel(id: string, type: "image" | "video", remote?: Open
     .map(([key, value]) => ({ key: key.toLowerCase(), value: Number(value) }))
     .filter((item) => Number.isFinite(item.value) && item.value > 0);
   const sku = skuValues.find((item) => video
-    ? /duration_seconds(?!.*without_audio)/.test(item.key)
+    ? /(?:duration_seconds|per-video-second)(?!.*without_audio)/.test(item.key)
     : /(^|[._-])image([._-]|$)|image_generation|request/.test(item.key));
   const requestPrice = Number(remote?.pricing?.request);
   // Image token prices are not per-image prices. Never interpret them as a
@@ -3605,7 +3605,7 @@ function sceneFromPrompt(prompt: string) {
   return "studio";
 }
 
-const CREATION_VERB = /\b(genere|generes|cree|crees|fais|produis|dessine|realise|lance|construis|concois|imagine|anime|remixe?|retouche|transforme|decline|upscale|ameliore)\b/;
+const CREATION_VERB = /\b(?:gener(?:e|es|er|ez)|cre(?:e|es|er|ez)|fais|faire|produi(?:s|re|sez)|dessin(?:e|er|ez)|realis(?:e|er|ez)|lanc(?:e|er|ez)|constru(?:is|ire|isez)|concoi(?:s|r|voir)|imagin(?:e|er|ez)|anim(?:e|er|ez)|remix(?:e|er|ez)|retouch(?:e|er|ez)|transform(?:e|er|ez)|declin(?:e|er|ez)|upscale|amelior(?:e|er|ez)|generat(?:e|ing)|creat(?:e|ing)|render(?:e|ing)|make)\b/;
 const MEDIA_SUBJECT = /\b(image|video|affiche|visuel|poster|photo|packshot|logo|animation|miniature|thumbnail|banniere|clip|ugc|storyboard|variante|declinaison|mockup|avatar|lipsync|voix|musique|jingle|audio)\b/;
 const CONVERSATIONAL_ONLY = /^(salut|bonjour|bonsoir|coucou|hello|hey|merci|thanks|super|parfait|genial|top|cool|d'accord|dac|ca marche|bien recu|compris|je vois|ah ok|haha|lol)\b[\s!.,]*$/;
 const SOCIAL_GREETING = /^(salut|bonjour|bonsoir|coucou|hello|hey)(?:\s+(?:comment\s+(?:vas[- ]?tu|allez[- ]?vous|ca\s+va)|ca\s+va|quoi\s+de\s+neuf))?[\s!?.,]*$/;
@@ -3625,6 +3625,8 @@ function shouldGenerateMedia(prompt: string, mode: string, selectedModel = "auto
   if (String(mode || '').toLowerCase() === 'document') return false;
   const text = stripAccents(prompt.toLowerCase().trim());
   if (!text) return false;
+  const asksForMedia = CREATION_VERB.test(text) ||
+    (/\b(?:je veux|je voudrais|j aimerais|j aimerai|il me faut|j ai besoin d|fais[- ]moi|peux[- ]tu)\b/.test(text) && MEDIA_SUBJECT.test(text));
   // Politesses et acquiescements: on discute, on ne genere pas.
   if (CONVERSATIONAL_ONLY.test(text)) return false;
   // Questions sur l'agent ou l'interface: on explique, on ne lance pas de rendu.
@@ -3633,10 +3635,10 @@ function shouldGenerateMedia(prompt: string, mode: string, selectedModel = "auto
   // comme un nouvel ordre de generation payant.
   if (EXISTING_MEDIA_QUERY.test(text)) return false;
   // Question sans intention de creation ("combien coute une video ?"): on repond, on ne genere pas.
-  if (QUESTION_OPENERS.test(text) && !CREATION_VERB.test(text)) return false;
-  if (text.endsWith("?") && !CREATION_VERB.test(text)) return false;
+  if (QUESTION_OPENERS.test(text) && !asksForMedia) return false;
+  if (text.endsWith("?") && !asksForMedia) return false;
   if (/\b(prix|tarif|cout|combien|idee|exemple|conseil|prompt pour|parle[- ]moi|explique|compare|liste)\b/.test(text) && !CREATION_VERB.test(text)) return false;
-  if (CREATION_VERB.test(text)) return true;
+  if (asksForMedia) return true;
   // A descriptive prompt is executable only after an explicit Media choice.
   // The default `mode=image` must never turn ordinary conversation into a paid job.
   const mediaChoice = explicitIntent === "generate" || (selectedModel !== "" && selectedModel !== "auto");
@@ -7032,6 +7034,7 @@ async function startOpenRouterImageGeneration(generation: Record<string, unknown
     await completeProviderGeneration(supabase, generation, stored.signedUrl, body, Number((body.usage as Record<string, unknown> | undefined)?.cost || generation.cost_usd));
     return true;
   } catch (error) {
+    if (await retryWithFalFallback(supabase, generation, model)) return true;
     return failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_image_failed") : "openrouter_image_failed");
   }
 }
@@ -7069,6 +7072,10 @@ async function startOpenRouterVideoGeneration(generation: Record<string, unknown
     const response = await fetch(`${OPENROUTER_BASE_URL}/videos`, { method: "POST", headers: { ...openRouterHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
     if (!response.ok) throw openRouterProviderError(response, model.id);
     const body = await response.json() as Record<string, unknown>;
+    const submissionStatus = String(body.status || body.state || "").toLowerCase();
+    if (["failed", "error", "cancelled", "canceled", "expired"].includes(submissionStatus)) {
+      throw new Error("La generation video n'a pas pu etre mise en file.");
+    }
     const directUrl = String(body.video_url || body.videoUrl || body.url || extractUrl(body.output || body.data || body.result));
     const jobId = String(body.id || body.job_id || body.request_id || body.generation_id || "");
     if (directUrl && !jobId) {
@@ -7085,8 +7092,62 @@ async function startOpenRouterVideoGeneration(generation: Record<string, unknown
     await trackGenerationJob(supabase, { ...generation, provider_job_id: jobId }, "running", { submitted_at: new Date().toISOString(), provider: "openrouter" });
     return true;
   } catch (error) {
+    if (await retryWithFalFallback(supabase, generation, model)) return true;
     return failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_video_failed") : "openrouter_video_failed");
   }
+}
+
+function falFallbackModelFor(model: PricingModel) {
+  if (!falMediaConfigured() || model.provider !== "openrouter") return null;
+  const variants = Array.isArray(model.metadata?.route_variants) ? model.metadata.route_variants : [];
+  const candidate = variants.find((variant) => {
+    if (!variant || typeof variant !== "object") return false;
+    const item = variant as Record<string, unknown>;
+    const endpoint = String(item.endpoint || "").toLowerCase();
+    return endpoint && String(item.provider || "") !== "openrouter";
+  }) as Record<string, unknown> | undefined;
+  if (!candidate?.endpoint) return null;
+  const endpoint = String(candidate.endpoint);
+  const override = FAL_ENDPOINT_OVERRIDES[endpoint] || {};
+  const fallback = falModel(endpoint, {
+    ...override,
+    costPerUnitUsd: Number(candidate.costPerUnitUsd || override.costPerUnitUsd || 0) || override.costPerUnitUsd,
+    pricingUnit: candidate.pricingUnit === "second" ? "second" : override.pricingUnit,
+    maximumUnits: Number(candidate.maximumUnits || override.maximumUnits || 0) || override.maximumUnits,
+    metadata: {
+      ...(override.metadata || {}),
+      huggyflow_family: publicMediaFamilyForModel(model) || override.metadata?.huggyflow_family,
+      route_variants: variants,
+      fallback_for: model.id,
+    },
+  });
+  return fallback.type === model.type ? fallback : null;
+}
+
+async function retryWithFalFallback(
+  supabase: ReturnType<typeof adminClient>,
+  generation: Record<string, unknown>,
+  model: PricingModel,
+) {
+  const providerPayload = cleanMetadata(generation.provider_payload);
+  if (providerPayload.fallback_attempted === true) return false;
+  const fallback = falFallbackModelFor(model);
+  if (!fallback) return false;
+  const { data: retryGeneration } = await supabase.from("generations").update({
+    status: "pending",
+    provider: "fal",
+    provider_job_id: null,
+    fal_job_id: null,
+    error_message: null,
+    provider_payload: {
+      ...providerPayload,
+      fallback_attempted: true,
+      fallback_provider: "fal",
+      fallback_reason: "primary_openrouter_media_route_failed",
+    },
+  }).eq("id", generation.id).eq("status", "running").select("*").maybeSingle();
+  if (!retryGeneration) return false;
+  return await startFalGeneration(retryGeneration, fallback);
 }
 
 function openRouterFallbackModelFor(model: PricingModel) {
@@ -7141,7 +7202,7 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
   const key = Deno.env.get("FAL_KEY");
   const supabase = adminClient();
   const { data: claimed, error: claimError } = await supabase.from("generations")
-    .update({ status: "running", progress: Math.max(5, Number(generation.progress || 1)) })
+    .update({ provider: model.provider || "fal", status: "running", progress: Math.max(5, Number(generation.progress || 1)) })
     .eq("id", generation.id)
     .eq("status", "pending")
     .is("fal_job_id", null)
@@ -7178,7 +7239,13 @@ async function startFalGeneration(generation: Record<string, unknown>, model: Pr
       status: "running",
       fal_job_id: request.request_id,
       provider_job_id: request.request_id,
-      provider_payload: { submitted: request, endpoint: routedModel.endpoint, pricing_unit: routedModel.pricingUnit, provider_cost_per_unit_usd: routedModel.costPerUnitUsd },
+      provider_payload: {
+        ...cleanMetadata(generation.provider_payload),
+        submitted: request,
+        endpoint: routedModel.endpoint,
+        pricing_unit: routedModel.pricingUnit,
+        provider_cost_per_unit_usd: routedModel.costPerUnitUsd,
+      },
     }).eq("id", generation.id);
     await trackGenerationJob(supabase, { ...generation, fal_job_id: request.request_id, provider_job_id: request.request_id }, "running", { submitted_at: new Date().toISOString(), provider: "fal" });
     return true;
@@ -9472,7 +9539,7 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       if (!response.ok) throw openRouterProviderError(response, String(generation.model_id || ""));
       const body = await response.json() as Record<string, unknown>;
       const statusText = String(body.status || body.state || "").toLowerCase();
-      if (["failed", "error", "cancelled", "canceled"].includes(statusText)) throw new Error("La generation video a echoue. Aucun credit supplementaire ne sera debite.");
+      if (["failed", "error", "cancelled", "canceled", "expired"].includes(statusText)) throw new Error("La generation video a echoue. Aucun credit supplementaire ne sera debite.");
       if (["completed", "complete", "succeeded", "success"].includes(statusText)) {
         const unsignedUrls = Array.isArray(body.unsigned_urls) ? body.unsigned_urls.map(String) : [];
         const resultUrl = String(body.video_url || body.videoUrl || body.url || unsignedUrls[0] || extractUrl(body.output || body.data || body.result));
@@ -9486,6 +9553,9 @@ async function syncGeneration(supabase: ReturnType<typeof adminClient>, generati
       await trackGenerationJob(supabase, data || generation, "running", { reconciled_at: new Date().toISOString(), provider: "openrouter" });
       return data || generation;
     } catch (error) {
+      const catalog = await pricingCatalog(supabase);
+      const model = resolveModelFromCatalog(catalog, String(generation.model_id || ""), String(generation.type || "video"));
+      if (await retryWithFalFallback(supabase, generation, model)) return { ...generation, status: "running", provider: "fal" };
       return await failProviderGeneration(supabase, generation, error, error instanceof FlowtubeError ? String(error.payload.code || "openrouter_poll_failed") : "openrouter_poll_failed").then(() => ({ ...generation, status: "failed" }));
     }
   }
