@@ -33,6 +33,15 @@ assert.match(edge, /complete_generation_with_result/, "Media completion and cred
 assert.match(edge, /generatedMediaKind\(generation\.type\)/, "Media limits must be selected from the real generation type");
 assert.match(edge, /refreshGenerationMediaUrls/, "Expired signed media URLs must be renewable");
 assert.match(edge, /const socialReply = socialOnlyReply\(prompt\)/, "Social messages must bypass stale project orchestration");
+const creationVerbLiteral = edge.match(/const CREATION_VERB = (\/[^;]+\/);/)?.[1];
+assert.ok(creationVerbLiteral, "Media creation intent must remain explicitly declared");
+const creationVerb = Function("return " + creationVerbLiteral)();
+assert.ok(creationVerb.test("je veux generer une video"), "Video intent must recognize the infinitive generer");
+assert.ok(creationVerb.test("peux tu creer une video"), "Video intent must recognize the infinitive creer");
+assert.match(edge, /const asksForMedia = CREATION_VERB\\.test\\(text\\)/, "Natural media requests must be routed to generation");
+assert.match(edge, /per-video-second/, "Video pricing must understand the dedicated per-video-second SKU");
+assert.match(edge, /retryWithFalFallback/, "Video failures must have one controlled media fallback");
+assert.match(edge, /\[\"failed\", \"error\", \"cancelled\", \"canceled\", \"expired\"\]/, "Expired video jobs must terminate as failures");
 assert.match(edge, /Bonjour ! Comment puis-je vous aider \?/, "Simple greetings need a short deterministic response");
 assert.match(edge, /function orchestrateRequest\(/, "Every run must pass through one orchestration decision");
 assert.match(edge, /usesAgentLoop = agentLoopEnabled\(\) && !media && usesTools/, "Agent tools must require an explicit tool-bearing workflow");
